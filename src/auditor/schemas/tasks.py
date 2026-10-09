@@ -28,7 +28,7 @@ class MarkerTarget(Record):
 
 class SettingTarget(Record):
     kind: Literal["setting"] = "setting"
-    key: NonEmptyStr
+    key: NonEmptyStr = Field(pattern=r"^[a-z][a-z0-9_]*$")
 
 
 class RuleTarget(Record):

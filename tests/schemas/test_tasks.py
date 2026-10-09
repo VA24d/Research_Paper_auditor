@@ -152,6 +152,8 @@ def test_citation_task_for_unlinked_marker_is_valid() -> None:
 def test_setting_key_must_be_snake_case() -> None:
     with pytest.raises(ValidationError):
         setting(key="Learning Rate")
+    with pytest.raises(ValidationError):
+        SettingTarget(key="Learning Rate")
 
 
 @pytest.mark.parametrize(
