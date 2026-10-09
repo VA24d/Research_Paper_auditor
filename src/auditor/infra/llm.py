@@ -14,15 +14,18 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from langchain.chat_models import init_chat_model
+from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 from pydantic import BaseModel, ValidationError
 
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
-from auditor.infra.scope import current_scope
+from auditor.infra.scope import Scope, current_scope
 from auditor.schemas import CallStatus, LLMCallRecord
 
 
@@ -255,6 +258,55 @@ class StructuredLLM:
                 cache_hit=cache_hit,
                 started_at=started_at,
                 duration_s=duration_s,
+                status=CallStatus.ERROR if error else CallStatus.OK,
+                error=error,
+            )
+        )
+
+
+class UsageCallback(AsyncCallbackHandler):
+    """Records every chat-model call made under it, for code that calls models directly
+    (such as the B1 agent) instead of through StructuredLLM."""
+
+    def __init__(self, scope: Scope, model_name: str) -> None:
+        self._scope = scope
+        self._model_name = model_name
+        self._started: dict[UUID, tuple[datetime, float]] = {}
+
+    async def on_chat_model_start(
+        self,
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
+        *,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> None:
+        self._started[run_id] = (datetime.now(UTC), time.perf_counter())
+
+    async def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
+        usage = TokenUsage()
+        for generations in response.generations:
+            for generation in generations:
+                if isinstance(generation, ChatGeneration):
+                    usage += TokenUsage.from_message(generation.message)
+        self._add(run_id, usage, None)
+
+    async def on_llm_error(self, error: BaseException, *, run_id: UUID, **kwargs: Any) -> None:
+        self._add(run_id, TokenUsage(), f"{type(error).__name__}: {error}")
+
+    def _add(self, run_id: UUID, usage: TokenUsage, error: str | None) -> None:
+        started_at, started = self._started.pop(run_id, (datetime.now(UTC), time.perf_counter()))
+        self._scope.record(
+            LLMCallRecord(
+                run_id=self._scope.run_id,
+                task_id=self._scope.task_id,
+                model=self._model_name,
+                input_tokens=usage.input_tokens,
+                output_tokens=usage.output_tokens,
+                reasoning_tokens=usage.reasoning_tokens,
+                cached_input_tokens=usage.cached_input_tokens,
+                started_at=started_at,
+                duration_s=time.perf_counter() - started,
                 status=CallStatus.ERROR if error else CallStatus.OK,
                 error=error,
             )
