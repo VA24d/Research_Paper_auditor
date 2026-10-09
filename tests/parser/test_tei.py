@@ -183,3 +183,17 @@ def test_parse_coords_skips_malformed_parts() -> None:
 )
 def test_normalise_arxiv_id(value: str, expected: str | None) -> None:
     assert normalise_arxiv_id(value) == expected
+
+
+def test_urls_broken_at_line_ends_are_repaired_from_annotations(tei: str) -> None:
+    broken = tei.replace(
+        "We use a learning rate of 3e-4.",
+        "Code is available at https://github.com/ example/vit-code.",
+    )
+    annotation = Link(
+        url="https://github.com/example/vit-code", page=2, source=LinkSource.ANNOTATION
+    )
+    paper = tei_to_paper(broken, paper_id="x", extra_links=[annotation])
+    repaired = [link for link in paper.links if link.sentence_id == "s9"]
+    assert [link.url for link in repaired] == ["https://github.com/example/vit-code"]
+    assert [link.url for link in paper.links].count("https://github.com/example/vit-code") == 1

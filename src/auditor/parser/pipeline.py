@@ -17,7 +17,7 @@ from auditor.schemas import Layout, Link, ParsedPaper
 logger = logging.getLogger(__name__)
 
 # Bump when the conversion changes, so cached results from older code are not reused.
-PARSER_VERSION = "1"
+PARSER_VERSION = "2"
 
 
 class ParseError(RuntimeError):

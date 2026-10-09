@@ -332,6 +332,24 @@ def page_sizes(root: ET.Element) -> Layout | None:
     return Layout(pages=tuple(pages)) if pages else None
 
 
+def _repair_url(link: Link, sentence_text: dict[str, str], annotations: list[Link]) -> Link:
+    """Use the PDF's own link when GROBID cut a URL at a line break.
+
+    "https://github.com/ google-research/vit" in the text becomes the annotation's
+    "https://github.com/google-research/vit" if that full URL appears in the sentence once
+    whitespace is removed.
+    """
+    if link.sentence_id is None:
+        return link
+    compact = re.sub(r"\s+", "", sentence_text[link.sentence_id])
+    for annotation in annotations:
+        longer = annotation.url != link.url and annotation.url.startswith(link.url)
+        same_page = annotation.page is None or link.page is None or annotation.page == link.page
+        if longer and same_page and annotation.url in compact:
+            return link.model_copy(update={"url": annotation.url})
+    return link
+
+
 def tei_to_paper(
     tei: str | bytes,
     *,
@@ -400,12 +418,19 @@ def tei_to_paper(
         for mention in builder.citations
     ]
 
-    links = list(builder.links)
-    seen = {(link.url, link.page) for link in links}
-    for link in extra_links:
-        if (link.url, link.page) not in seen:
-            links.append(link)
-            seen.add((link.url, link.page))
+    annotations = list(extra_links)
+    sentence_text = {sentence.id: sentence.text for sentence in builder.sentences}
+    links: list[Link] = []
+    for link in builder.links:
+        repaired = _repair_url(link, sentence_text, annotations)
+        if repaired not in links:
+            links.append(repaired)
+    # Annotations add links the text does not show, e.g. a hyperlinked word.
+    in_text = {(link.url, link.page) for link in links}
+    for annotation in annotations:
+        if (annotation.url, annotation.page) not in in_text:
+            links.append(annotation)
+            in_text.add((annotation.url, annotation.page))
 
     return ParsedPaper(
         paper_id=paper_id,
