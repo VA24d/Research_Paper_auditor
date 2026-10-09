@@ -1,8 +1,11 @@
 """Test doubles that other parts can use in their own tests."""
 
+import logging
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any
 
+import httpx
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, BaseMessage
@@ -10,6 +13,13 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from auditor.config import Settings
+from auditor.infra.context import RunContext
+from auditor.infra.http import HttpClient
+from auditor.infra.llm import StructuredLLM
+from auditor.schemas import AuditTask, ParsedPaper, TaskOutcome, TaskResult
+from auditor.schemas.examples import example_paper
 
 
 class ScriptedChatModel(BaseChatModel):
@@ -67,4 +77,42 @@ def tool_reply(
             "output_tokens": output_tokens,
             "total_tokens": input_tokens + output_tokens,
         },
+    )
+
+
+def offline_http(cache_dir: Path) -> HttpClient:
+    """An HTTP client that fails the test if anything tries to use the network."""
+
+    def refuse(request: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"unexpected request to {request.url}")
+
+    return HttpClient(Settings(cache_dir=cache_dir), transport=httpx.MockTransport(refuse))
+
+
+def offline_context(
+    tmp_path: Path,
+    *,
+    paper: ParsedPaper | None = None,
+    http: HttpClient | None = None,
+    llm: StructuredLLM | None = None,
+) -> RunContext:
+    """A RunContext for unit tests: example paper, no network, optional scripted LLM."""
+    cache_dir = tmp_path / "cache"
+    return RunContext(
+        settings=Settings(cache_dir=cache_dir),
+        paper=paper or example_paper(),
+        http=http or offline_http(cache_dir),
+        llm=llm,
+        logger=logging.getLogger("auditor.test"),
+    )
+
+
+def checked_result(task: AuditTask) -> TaskResult:
+    """A `checked` result with no findings for the given task."""
+    return TaskResult(
+        task_id=task.task_id,
+        paper_id=task.paper_id,
+        variant=task.variant,
+        kind=task.kind,
+        outcome=TaskOutcome.CHECKED,
     )
