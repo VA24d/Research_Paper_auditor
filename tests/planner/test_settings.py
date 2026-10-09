@@ -22,7 +22,7 @@ def found(text: str) -> list[tuple[str, str, object]]:
             [("learning_rate", "3e-4", 3e-4), ("batch_size", "256", 256)],
         ),
         (
-            "The model is trained for 10 epochs with AdamW, weight decay 0.01 and dropout 0.1.",
+            "We train for 10 epochs with AdamW, weight decay 0.01 and dropout 0.1.",
             [
                 ("epochs", "10", 10),
                 ("optimizer", "AdamW", "adamw"),
@@ -48,6 +48,18 @@ def found(text: str) -> list[tuple[str, str, object]]:
         ),
         ("Dropout is set to 10%.", [("dropout", "10%", 10)]),
         ("Following Adam [12], we report accuracy.", []),
+        ("Compared to GPT-3 175B fine-tuned with Adam, LoRA uses less memory.", []),
+        ("The model is trained with AdamW.", []),
+        ("Batch Size 8 8 32 4 6 8 4 4 Learning Rate 1E- 45", []),
+        ("We set 7 and 5 steps for HotpotQA and FEVER.", []),
+        (
+            "We finetune ReAct for 4, 000 steps.",
+            [("training_steps", "4, 000", 4000)],
+        ),
+        (
+            "We use learning rate warmup over the first 10,000 steps.",
+            [("warmup_steps", "10,000", 10_000)],
+        ),
         ("Accuracy improves by 3 points.", []),
     ],
 )

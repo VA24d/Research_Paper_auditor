@@ -18,12 +18,22 @@ from auditor.schemas import (
 )
 
 _MINUS = "-\u2212\u2013"
+# "4, 000" is how GROBID sometimes renders 4,000, so a comma may be followed by a space
+# when exactly three digits come next.
 _NUMBER = (
-    rf"\d+(?:[.,]\d+)*(?:\s*[eE]\s*[{_MINUS}+]?\s*\d+)?"
+    rf"\d+(?:[.,]\d+|,\s\d{{3}}(?!\d))*(?:\s*[eE]\s*[{_MINUS}+]?\s*\d+)?"
     rf"(?:\s*(?:[x\u00d7\u00b7]|\\times)\s*10\s*\^?\s*\{{?\s*[{_MINUS}]?\s*\d+\s*\}}?)?"
     r"\s*[kKM]?"
 )
 _LINK = r"(?:\s+(?:of|is|was|were|=|:|set\s+to|to|at|as))*\s*:?\s*"
+
+
+_NUMERIC_TOKEN = re.compile(r"[\d.,%+-]*\d[\d.,%+-]*[eE]?[\d+-]*")
+_FIRST_PERSON = re.compile(r"\b(we|our)\b", re.IGNORECASE)
+_STEP_QUALIFIER = re.compile(r"training|gradient|optimi[sz]ation", re.IGNORECASE)
+_TRAINING_CONTEXT = re.compile(
+    r"\b(train\w*|pre-?train\w*|fine-?tun\w*|finetun\w*|optimi[sz]\w*)\b", re.IGNORECASE
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +62,13 @@ PATTERNS = (
     _Pattern(
         "warmup_steps",
         _compile(rf"(?P<value>{_NUMBER})\s+(?P<name>warm-?up\s+(?:steps|iterations))"),
+    ),
+    _Pattern(
+        "warmup_steps",
+        _compile(
+            rf"(?P<name>warm-?up)\s+(?:over|for|of|during)\s+(?:the\s+first\s+)?"
+            rf"(?P<value>{_NUMBER})\s+(?:steps|iterations)"
+        ),
     ),
     _Pattern(
         "training_steps",
@@ -119,11 +136,33 @@ def _value(pattern: _Pattern, raw: str) -> SettingValue | None:
     return parse_number(raw)
 
 
+def looks_like_table_row(text: str) -> bool:
+    """Table cells flattened into text ("Batch Size 8 8 32 4 6") give no single value."""
+    tokens = text.split()
+    numeric = sum(1 for token in tokens if _NUMERIC_TOKEN.fullmatch(token))
+    return numeric >= 5 and numeric / len(tokens) >= 0.3
+
+
 def settings_in_sentence(sentence: Sentence) -> list[ExtractedSetting]:
+    if looks_like_table_row(sentence.text):
+        return []
+    first_person = bool(_FIRST_PERSON.search(sentence.text))
     found: list[ExtractedSetting] = []
     taken: list[tuple[int, int]] = []
     for pattern in PATTERNS:
+        # Optimizer names also appear when describing other people's systems
+        # ("GPT-3 fine-tuned with Adam"), so only first-person sentences count.
+        if pattern.key == "optimizer" and not first_person:
+            continue
         for match in pattern.regex.finditer(sentence.text):
+            # A bare "7 steps" can be reasoning or environment steps; it only counts as
+            # training when qualified or when the sentence is about training.
+            if (
+                pattern.key == "training_steps"
+                and not _STEP_QUALIFIER.search(match.group("name"))
+                and not _TRAINING_CONTEXT.search(sentence.text)
+            ):
+                continue
             raw_value = match.group("value").strip()
             start = match.start("value")
             end = start + len(raw_value)
