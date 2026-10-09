@@ -3,8 +3,10 @@
 Two rules, both conservative:
 - Numeric markers ("[12]", "[3-5]"), when the markers GROBID did resolve show that entry
   `b{n-1}` is reference number n.
-- Author-year markers ("Smith et al., 2020"), when exactly one entry has that first author
-  surname and year.
+- Author-year markers ("Smith et al., 2020", "(Yao et al., 2020; Huang et al., 2022a)"),
+  when every citation in the marker matches exactly one entry by first-author surname and
+  year. A year with a letter ("2022a") must appear with that letter in the entry's raw
+  reference text.
 Mentions linked here are marked `LinkMethod.HEURISTIC`.
 """
 
@@ -16,8 +18,12 @@ from auditor.schemas import BibEntry, CitationMention, LinkMethod, ParsedPaper
 # Ranges may use an en dash and surnames a typographic apostrophe, hence the escapes.
 _NUMERIC_MARKER = re.compile(r"^[\[(]?\s*\d+(?:\s*[-\u2013,;]\s*\d+)*\s*[\])]?$")
 _NUMBER_OR_RANGE = re.compile(r"(\d+)\s*[-\u2013]\s*(\d+)|(\d+)")
-_YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})[a-z]?(?!\d)")
+_YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})([a-z])?(?![\da-z])")
 _SURNAME = re.compile(r"[^\W\d_][^\W\d_'\u2019-]*(?:[-'\u2019][^\W\d_]+)*")
+_SURNAME_BEFORE_ETAL = re.compile(
+    r"([^\W\d_][^\W\d_'\u2019-]*)\s+(?:et\s+al\b|and\b|&)", re.IGNORECASE
+)
+_LETTER_LIST = re.compile(r"((?:19|20)\d{2}[a-z]|;[a-z])\s*,\s*([a-z])\b")
 _MAX_RANGE = 20
 _MIN_EVIDENCE = 3
 _MIN_AGREEMENT = 0.9
@@ -39,9 +45,7 @@ def link_unresolved(paper: ParsedPaper) -> ParsedPaper:
                 if numbers and all(c in known for c in candidates):
                     bib_ids = candidates
         else:
-            match = _author_year_match(mention.marker, paper.bibliography)
-            if match is not None:
-                bib_ids = (match,)
+            bib_ids = _author_year_links(mention.marker, paper.bibliography)
         if bib_ids:
             updated[mention.id] = mention.model_copy(
                 update={"bib_ids": bib_ids, "link_method": LinkMethod.HEURISTIC}
@@ -95,16 +99,66 @@ def _first_author_surname(entry: BibEntry) -> str | None:
     return _fold(parts[-1]) if parts else None
 
 
-def _author_year_match(marker: str, bibliography: tuple[BibEntry, ...]) -> str | None:
-    year_match = _YEAR.search(marker)
-    surname_match = _SURNAME.search(marker)
-    if year_match is None or surname_match is None:
-        return None
-    year = int(year_match.group(1))
-    surname = _fold(surname_match.group(0))
-    candidates = [
-        entry.id
-        for entry in bibliography
-        if entry.year == year and _first_author_surname(entry) == surname
-    ]
-    return candidates[0] if len(candidates) == 1 else None
+def _surname_in(text: str) -> str | None:
+    """The surname just before "et al." / "and", else the last capitalised word."""
+    named = _SURNAME_BEFORE_ETAL.search(text)
+    if named:
+        return named.group(1)
+    words = _SURNAME.findall(text)
+    return words[-1] if words else None
+
+
+def _parts(marker: str) -> list[tuple[str, int, str | None]] | None:
+    """Split "(Yao et al., 2020; Huang et al., 2022a;b)" into (surname, year, suffix)."""
+    parts: list[tuple[str, int, str | None]] = []
+    # "2022a,b" cites two works; rewrite it as "2022a;b" so each letter becomes a part.
+    marker = _LETTER_LIST.sub(lambda m: m.group(1) + ";" + m.group(2), marker)
+    marker = _LETTER_LIST.sub(lambda m: m.group(1) + ";" + m.group(2), marker)
+    for raw_part in marker.split(";"):
+        part = raw_part.strip(" ()[],")
+        if not part:
+            continue
+        if re.fullmatch(r"[a-z]", part) and parts:
+            previous_surname, previous_year, _ = parts[-1]
+            parts.append((previous_surname, previous_year, part))
+            continue
+        year_match = _YEAR.search(part)
+        if year_match is None:
+            return None
+        surname = _surname_in(part[: year_match.start()])
+        if surname is None:
+            return None
+        parts.append((surname, int(year_match.group(1)), year_match.group(2)))
+    return parts or None
+
+
+def _match_part(
+    surname: str, year: int, suffix: str | None, bibliography: tuple[BibEntry, ...]
+) -> str | None:
+    folded = _fold(surname)
+    same_author = [e for e in bibliography if _first_author_surname(e) == folded]
+    if suffix is not None:
+        # "2018a" only links to an entry whose own reference text says "2018a". Parsed
+        # years drop the letter, so matching on the year alone could pick the 2018b paper.
+        label = re.compile(rf"\b{year}{suffix}\b")
+        candidates = [e for e in same_author if e.raw and label.search(e.raw)]
+    else:
+        lettered = re.compile(rf"\b{year}[a-z]\b")
+        candidates = [
+            e for e in same_author if e.year == year and not (e.raw and lettered.search(e.raw))
+        ]
+    return candidates[0].id if len(candidates) == 1 else None
+
+
+def _author_year_links(marker: str, bibliography: tuple[BibEntry, ...]) -> tuple[str, ...]:
+    """Links for every part of the marker, or none if any part is unclear."""
+    parts = _parts(marker)
+    if parts is None:
+        return ()
+    links = []
+    for surname, year, suffix in parts:
+        bib_id = _match_part(surname, year, suffix, bibliography)
+        if bib_id is None:
+            return ()
+        links.append(bib_id)
+    return tuple(dict.fromkeys(links))

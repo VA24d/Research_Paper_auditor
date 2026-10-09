@@ -96,3 +96,66 @@ def test_ambiguous_author_year_marker_is_left_alone() -> None:
 def test_paper_without_unresolved_markers_is_returned_unchanged() -> None:
     original = paper(NUMBERED)
     assert link_unresolved(original) is original
+
+
+LETTERED = (
+    # Parsed without a year, as GROBID did for this entry in BERT's bibliography.
+    BibEntry(
+        id="b0", authors=("Matthew Peters",), raw="Matthew Peters. 2018a. Deep contextualized."
+    ),
+    BibEntry(
+        id="b1", authors=("Matthew Peters",), year=2018, raw="Matthew Peters. 2018b. Dissecting."
+    ),
+    BibEntry(id="b2", authors=("Wenlong Huang",), year=2022, raw="W. Huang. Planners. 2022a."),
+    BibEntry(id="b3", authors=("Wenlong Huang",), year=2022, raw="W. Huang. Monologue. 2022b."),
+    BibEntry(id="b4", authors=("Shunyu Yao",), year=2020, raw="S. Yao. Keep calm. 2020."),
+    BibEntry(id="b5", authors=("James Thorne",), year=2018, raw="J. Thorne. FEVER. 2018."),
+)
+
+
+def lettered(markers: Sequence[str]) -> dict[str, tuple[str, ...]]:
+    base = paper([(m, ()) for m in markers])
+    data = base.model_dump()
+    data["bibliography"] = [e.model_dump() for e in LETTERED]
+    result = link_unresolved(ParsedPaper.model_validate(data))
+    return {c.marker: c.bib_ids for c in result.citations}
+
+
+def test_year_letters_must_match_the_reference_text() -> None:
+    links = lettered(["(Peters et al., 2018a)", "Peters et al. (2018b)", "Huang et al. (2022b)"])
+    assert links == {
+        "(Peters et al., 2018a)": ("b0",),
+        "Peters et al. (2018b)": ("b1",),
+        "Huang et al. (2022b)": ("b3",),
+    }
+
+
+def test_letter_without_a_matching_entry_is_not_guessed() -> None:
+    # The BERT failure: only the 2018b entry carried a year, so "2018a" used to link to it.
+    data = paper([("(Peters et al., 2018a)", ())]).model_dump()
+    data["bibliography"] = [LETTERED[1].model_dump()]
+    result = link_unresolved(ParsedPaper.model_validate(data))
+    assert result.citations[0].bib_ids == ()
+
+
+def test_year_without_letter_is_ambiguous_when_entries_have_letters() -> None:
+    assert lettered(["Huang et al. (2022)"]) == {"Huang et al. (2022)": ()}
+
+
+def test_every_part_of_a_multi_citation_marker_must_resolve() -> None:
+    links = lettered(
+        [
+            "(Yao et al., 2020;Huang et al., 2022a)",
+            "(Huang et al., 2022a,b)",
+            "(Yao et al., 2020; Nobody et al., 2019)",
+        ]
+    )
+    assert links == {
+        "(Yao et al., 2020;Huang et al., 2022a)": ("b4", "b2"),
+        "(Huang et al., 2022a,b)": ("b2", "b3"),
+        "(Yao et al., 2020; Nobody et al., 2019)": (),
+    }
+
+
+def test_surname_is_taken_from_before_et_al() -> None:
+    assert lettered(["(Fever, Thorne et al., 2018"]) == {"(Fever, Thorne et al., 2018": ("b5",)}
