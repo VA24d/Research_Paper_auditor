@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Checking Claims in Research Papers</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<date type="published" when="2026-05-01">1 May 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author><persName><forename type="first">Ada</forename><surname>Example</surname></persName></author>
+						<author><persName><forename type="first">Alan</forename><forename type="middle">B</forename><surname>Sample</surname></persName></author>
+					</analytic>
+					<monogr><imprint><date type="published" when="2026-05-01"/></imprint></monogr>
+					<idno type="arXiv">arXiv:2605.01234v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-10-09T20:20+0000"><desc>GROBID</desc></application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+				<div><p><s coords="1,100.00,200.00,300.00,9.00">We check whether cited papers support claims.</s></p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+			<div><head n="1" coords="1,100.00,250.00,80.00,11.00">Introduction</head>
+				<p><s coords="1,100.00,270.00,400.00,9.00">Transformers <ref type="bibr" coords="1,160.00,270.00,12.00,9.00" target="#b0">[1]</ref> changed sequence modelling.</s><s coords="1,100.00,281.00,400.00,9.00">Two works study retrieval <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3]</ref>.</s><s coords="1,100.00,292.00,400.00,9.00">
+	Earlier results <ref type="bibr">[9]</ref> are disputed.</s></p>
+				<p><s coords="1,100.00,303.00,400.00,9.00">As Smith et al. <ref type="bibr" target="#b2">(2020)</ref> note, see <ref type="figure" target="#fig_0">Figure 1</ref> and <ref type="url" target="https://github.com/example/claims">our code</ref>.</s></p>
+			</div>
+			<div><head n="2" coords="2,100.00,100.00,80.00,11.00">Method</head>
+				<p>A paragraph that GROBID did not split into sentences, see https://example.org/data.</p>
+				<formula xml:id="formula_0">E = mc^2</formula>
+			</div>
+			<figure xml:id="fig_0">
+				<head>Figure 1:</head>
+				<figDesc><div><p><s coords="2,100.00,400.00,300.00,8.00">Figure 1: Accuracy against model size.</s></p></div></figDesc>
+			</figure>
+			<note place="foot" n="1" xml:id="foot_0"><p><s coords="2,100.00,700.00,200.00,7.00">https://github.com/example/claims.</s></p></note>
+		</body>
+		<back>
+			<div type="acknowledgement"><div><head>Acknowledgements</head><p><s>We thank the reviewers.</s></p></div></div>
+			<div type="annex"><div><head n="A">Hyperparameters</head><p><s coords="2,100.00,500.00,300.00,9.00">We use a learning rate of 3e-4.</s></p></div></div>
+			<div type="references">
+				<listBibl>
+					<biblStruct coords="2,100.00,600.00,400.00,9.00" xml:id="b0">
+						<analytic>
+							<title level="a" type="main">Attention is all you need</title>
+							<author><persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName></author>
+							<author><persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName></author>
+						</analytic>
+						<monogr>
+							<title level="m">Advances in Neural Information Processing Systems</title>
+							<imprint><date type="published" when="2017"/></imprint>
+						</monogr>
+						<idno type="arXiv">arXiv:1706.03762</idno>
+						<note type="raw_reference">Vaswani, A. and Shazeer, N. Attention is all you need. NeurIPS 2017.</note>
+					</biblStruct>
+					<biblStruct xml:id="b1">
+						<monogr>
+							<title level="m" type="main">A Book on Retrieval</title>
+							<author><persName><forename type="first">María</forename><surname>Núñez</surname></persName></author>
+							<imprint><date type="published" when="2019-03"/></imprint>
+						</monogr>
+						<ptr target="https://example.org/book"/>
+					</biblStruct>
+					<biblStruct xml:id="b2">
+						<analytic>
+							<title level="a" type="main">Dense retrieval at scale</title>
+							<author><persName><forename type="first">John</forename><surname>Smith</surname></persName></author>
+							<idno type="DOI">10.1000/xyz123</idno>
+						</analytic>
+						<monogr>
+							<title level="j">Journal of Retrieval</title>
+							<imprint><date type="published" when="2020"/></imprint>
+						</monogr>
+					</biblStruct>
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
