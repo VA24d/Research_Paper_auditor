@@ -27,7 +27,7 @@ merged, and put your name next to a task when you start it.
    [Part 2] Citation agent       [Part 3] Code agent / Template checker
           +---------+--------------------+
                     v
-           CandidateFinding[]
+   TaskResult[] (outcome + CandidateFinding[])
                     |
                     v
    [Part 4] Verifier -------------------------> VerifiedFinding[]
@@ -77,13 +77,15 @@ Foundation (others depend on these, so they come first):
   CI on Linux/Windows/macOS, GROBID compose file, setup docs.
 - [ ] **P1.2** Schemas v0 for every contract in D5, with contract tests and example JSON
   fixtures that other parts can build against.
-- [ ] **P1.3** `RunContext`, budgets, logging and `RunManifest`.
+- [ ] **P1.3** `RunContext`, budgets, logging, `RunManifest`, and tool-call
+  instrumentation on the shared tool functions (counted separately from HTTP requests, D8).
 - [ ] **P1.4** Shared HTTP client and policy gate (D8): allowlist, per-host rate limits,
-  on-disk cache, retries, call log.
+  on-disk cache, retries, request log.
 - [ ] **P1.5** LLM factory (D9): provider from config, structured-output helper with
   validation and retries, token usage tracking, LLM cache switch.
-- [ ] **P1.6** Orchestration graph with mock specialists: fan-out per task, finding
-  collection, retries, timeouts, failure isolation, checkpointing and resume.
+- [ ] **P1.6** Orchestration graph with mock specialists: fan-out per task, result
+  collection, retries, timeouts, failure isolation, checkpointing and resume, with one
+  checkpoint thread per run, system, paper and variant (D10).
 
 Parser:
 
@@ -101,14 +103,16 @@ Planner:
   experimental settings (`ExtractedSetting`), repository links.
 - [ ] **P1.12** LLM refinement: decide which claims are worth checking and split sentences
   that cite several works. Output must quote the paper exactly; anchors come from parser
-  sentence ids (D3).
-- [ ] **P1.13** Task generation: citation, code and template `AuditTask`s with deterministic
-  task ids.
+  ids (D3).
+- [ ] **P1.13** Task generation with deterministic task ids and the right anchor kind (D3):
+  reference tasks (one per bibliography entry, for existence and metadata), citation tasks
+  (one per claim), code tasks and template tasks. Every citation mention gets a task,
+  including mentions the parser could not link (D6).
 
 Integration and baselines:
 
 - [ ] **P1.14** `auditor audit` command: runs the full pipeline on one paper and writes
-  findings, predictions and the run manifest.
+  task results, findings, predictions and the run manifest.
 - [ ] **P1.15** B0 runner: one model call over the whole paper, no tools.
 - [ ] **P1.16** B1 runner: one tool-calling agent, one pass, no verifier, using the tools
   from P2.6 and P3.7.
@@ -126,16 +130,19 @@ Integration and baselines:
 - [ ] **P2.4** Chunking and passage retrieval with exact character offsets into the source,
   and an abstract-only mode for the ablation. Any embedding model must run on all three
   operating systems.
-- [ ] **P2.5** Citation agent `check()`: existence, metadata, support (supported,
-  contradicted, insufficient) and number checks, returning `CandidateFinding`s with
-  `Evidence` quotes.
+- [ ] **P2.5** Citation agent `check()` for reference tasks (existence, metadata) and citation
+  tasks (support: supported, contradicted, insufficient; number checks), returning a
+  `TaskResult` with `CandidateFinding`s and `Evidence` quotes. Unlinked citation mentions are
+  resolved from the marker text where possible, otherwise returned as `unverifiable` (D6).
 - [ ] **P2.6** Citation tools for B1 (D7).
 - [ ] **P2.7** HALLMARK test split: loader and existence-check evaluation.
 - [ ] **P2.8** Set B: 60 recent arXiv papers, about 600 claim–source pairs, injection scripts
-  that edit `ParsedPaper` copies, `GoldLabel`s including clean controls, and the gold
-  evidence passage for each pair (needed for Recall@5).
+  that edit `ParsedPaper` copies (the unchanged originals are kept too), `GoldLabel`s
+  including clean controls, and the gold evidence passage for each pair (needed for
+  Recall@5). Every label is validated against its source and a sample is reviewed by a
+  second person before freezing (D18).
 - [ ] **P2.9** Citation module evaluation: Recall@5, precision, recall and F1, full text
-  against abstract only.
+  against abstract only, and tool-call accuracy of reference lookups (D8).
 
 ### Part 3 — Vijay: code agent and template checker
 
@@ -145,35 +152,43 @@ Integration and baselines:
   defaults), `.yaml`, `.json` and `.toml` files, as `ExtractedSetting`s with file and line.
 - [ ] **P3.3** Normalisation and comparison: units, number formats (`3e-4` and `0.0003`),
   and name aliases (`lr` and `learning_rate`).
-- [ ] **P3.4** Code agent `check()` returning `CandidateFinding`s with file/line `Evidence`.
+- [ ] **P3.4** Code agent `check()` returning a `TaskResult` with `CandidateFinding`s and
+  file/line `Evidence`; settings that cannot be located are `unverifiable` with a reason.
 - [ ] **P3.5** Venue profiles in `configs/venues/` (start with the venues of the papers in
   sets B and C).
 - [ ] **P3.6** Template checker `check()`: deterministic rules over `ParsedPaper.layout`
-  and sections. No LLM calls. Rules that need visual inspection are marked unresolved.
+  and sections. No LLM calls. Findings use page or document anchors where there is no
+  sentence (D3). Rules that need visual inspection return `unverifiable`.
 - [ ] **P3.7** Code and template tools for B1 (D7).
 - [ ] **P3.8** Set C: 40 repositories, 160 instances, injected mismatches (paper side by
-  editing `ParsedPaper` copies, or code side by patching a pinned copy), `GoldLabel`s
-  including clean controls.
+  editing `ParsedPaper` copies, or code side by patching a pinned copy; the unchanged
+  originals are kept too), `GoldLabel`s including clean controls. Every label is validated
+  against the paper and the code the experiment actually uses, and a sample is reviewed by
+  a second person before freezing (D18).
 - [ ] **P3.9** Template fixtures and evaluation; code module evaluation (precision, recall,
-  F1, false positives on matching settings).
+  F1, false positives on matching settings, tool-call accuracy of repository searches).
 
 ### Part 4 — Sudheera: verifier, report, evaluation
 
 - [ ] **P4.1** Quote validation: a quote counts only if it appears verbatim in the source
   text after the agreed normalisation (whitespace, hyphenation, ligatures). File and line
   evidence is checked against the fetched repository; rule findings must name their rule.
-- [ ] **P4.2** Gating logic with the three states and a reason for every decision. Failed
-  tasks go to `NEEDS_HUMAN_REVIEW`. Bounded rechecks reuse the specialist tools. Missing
-  evidence alone never produces `VERIFIED_FLAG`.
+- [ ] **P4.2** Gating logic with the three states and a reason for every decision.
+  Suspicions attached to `unverifiable` or `failed` task results go to
+  `NEEDS_HUMAN_REVIEW`. Bounded rechecks reuse the specialist tools. Missing evidence alone
+  never produces `VERIFIED_FLAG`.
 - [ ] **P4.3** Verifier fixtures (true errors, false accusations, uncertain cases) and
   decision accuracy.
 - [ ] **P4.4** Report generator: JSON and Markdown, advisory wording that never asserts
-  intent, verified items separated from items for human review.
+  intent, with three sections: verified flags, items for human review, and items not
+  checked with their reasons (D6).
 - [ ] **P4.5** Evaluation runner: load `GoldLabel`s and `Prediction`s, apply the matching
-  rule (D3), compute Macro-F1, precision, recall, false-positive rate on clean items,
-  grounding rate, and cost from the call log and token usage.
-- [ ] **P4.6** Experiment configs for B0, B1 and the full system, three runs each, with run
-  manifests.
+  rule for every anchor kind (D3), compute Macro-F1, precision, recall, false-positive
+  rate on clean controls, flags per original paper and share of original papers flagged
+  (D14), unlabelled flags, coverage (share of tasks checked), grounding rate, and cost
+  from token usage, tool calls and HTTP requests.
+- [ ] **P4.6** Experiment configs for B0, B1 and the full system, three runs each on both
+  the injected and the original papers, with run manifests.
 - [ ] **P4.7** Ablations: no verifier, abstract-only retrieval, single agent.
 - [ ] **P4.8** Result tables and failure analysis.
 
@@ -184,6 +199,8 @@ Integration and baselines:
 - [ ] **S3** Write-up: each person writes the method and results for their part; everyone
   edits the introduction, the discussion and the limitations.
 - [ ] **S4** Demo.
+- [ ] **S5** Adjudicate a random sample of flags raised on original papers (D14): split
+  by area, each flag checked by one person against the source, unclear ones by two.
 
 ## 5. Dependencies and what to use until they land
 
@@ -216,16 +233,18 @@ mocks from week 1, and each real module replaces its mock as soon as it merges.
 | Set | Owner | Size | Ground truth | Used for |
 |---|---|---|---|---|
 | A. Reference existence (HALLMARK) | Anurag | Released test split | Released labels | Sanity check of citation lookup |
-| B. Claim–source support | Anurag | ~600 pairs from 60 papers | `GoldLabel`s from injection log | Citation agent and RQ1 |
-| C. Paper–code consistency | Vijay | 160 instances from 40 repositories | `GoldLabel`s from injection log | Code agent and RQ1 |
+| B. Claim–source support | Anurag | ~600 pairs from 60 papers | Validated `GoldLabel`s (D18) | Citation agent and RQ1 |
+| C. Paper–code consistency | Vijay | 160 instances from 40 repositories | Validated `GoldLabel`s (D18) | Code agent and RQ1 |
 | Template fixtures | Vijay | One case per supported rule | Expected result per rule | Template checker |
 | Verifier fixtures | Sudheera | True, false and uncertain cases | Expected state | Verifier |
 | Parser and planner fixtures | Bhaskar | ~10 papers | Hand-checked extraction | Parser and planner |
 
 Systems: B0, B1 and the full system, three runs each, on the same injected `ParsedPaper`
-files. Metrics: Macro-F1 over the classes in D4, precision, recall, false-positive rate on
-clean items, grounding rate of quotes, Recall@5, tool calls, tokens, steps and cost per
-paper. Results are reported as measured, including if the target is missed.
+files and on the unchanged originals. Metrics: Macro-F1 over the classes in D4,
+precision, recall, false-positive rate on clean controls, flags per clean paper with an
+adjudicated false-alarm estimate (D14), coverage, grounding rate of quotes, Recall@5,
+tool-call accuracy, tool calls, HTTP requests, tokens, steps and cost per paper. Results
+are reported as measured, including if the target is missed.
 
 ## 8. Definition of project completion
 

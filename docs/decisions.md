@@ -27,28 +27,43 @@ Consequences:
 
 | Level | Input | Used for |
 |---|---|---|
-| Paper level (end to end) | Injected `ParsedPaper` files | RQ1 numbers for B0, B1 and the full system |
+| Paper level (end to end) | Injected `ParsedPaper` files, plus the unchanged original of every paper | RQ1 numbers for B0, B1 and the full system; false alarms on clean papers (D14) |
 | Component level | Hand-built `AuditTask` / `CandidateFinding` fixtures, and hand-annotated parser fixtures | Module metrics for each part (Recall@5, parser extraction accuracy, verifier decision accuracy, template rule accuracy) |
 
 ## D3. Gold labels and how predictions are matched to them — Agreed
 
 Every injected error and every sampled clean item gets a `GoldLabel`:
 
-- `paper_id`, `label_id`
+- `paper_id`, `variant` (`injected` or `original`), `label_id`
 - `error_class` (D4), or `none` for clean control items
-- `anchor`: the sentence id in the `ParsedPaper` (or a character span within it)
+- `anchor`: where the error is (see below)
 - `target`: what the error is about — a bibliography entry id, a setting key, or a rule id
 
+Not every finding sits in a sentence (a page-limit violation or a missing section does not),
+so an anchor is one of four kinds:
+
+| Anchor kind | Fields | Used for | Matches when |
+|---|---|---|---|
+| `sentence` | sentence id, optional character span | Claims, numbers and settings stated in the text | Same sentence id; if both sides give spans, the spans overlap |
+| `bibliography` | bibliography entry id | `reference_not_found`, `reference_metadata_mismatch` | Same entry id |
+| `page` | page numbers | Layout rules such as margins or font size | Page sets overlap |
+| `document` | none | Document-level rules such as the page limit or a missing required section | Always (the target decides) |
+
 Every system (B0, B1, full) emits `Prediction` records with the same `anchor` and `target`
-fields. A prediction matches a gold label when the paper, the target and the anchor agree
-(same sentence id, or overlapping character spans). Matching is one-to-one.
+fields. A prediction matches a gold label when the paper, the variant, the target and the
+anchor kind agree, and the anchors match as in the table. Matching is one-to-one; the error
+class is then compared for per-class scores.
 
 For headline metrics only `VERIFIED_FLAG` predictions count as positive. Items the full
 system sends to `NEEDS_HUMAN_REVIEW` are reported separately as review load, not hidden.
 B0 and B1 have no verifier, so all of their flags count as positive.
 
-Because of this rule, the planner must assign task anchors from parser sentence ids, never
-from free text produced by an LLM.
+A prediction that matches no gold label is an unlabelled flag. It may be a false alarm or a
+real error already present in the original paper, so it is not scored as a false positive.
+Unlabelled flags are reported per paper, and a random sample is adjudicated by hand (D14).
+
+Because of these rules, the planner must assign anchors from parser ids (sentence,
+bibliography entry, page), never from free text produced by an LLM.
 
 ## D4. Error classes — Agreed
 
@@ -82,8 +97,10 @@ Contracts:
 | `ParsedPaper` (sections, sentences, bibliography, citation mentions, layout) | Parser (Part 1) | Planner, template checker, verifier, B0/B1 |
 | `ExtractedSetting` (name, value, unit, normalised value, source location) | Parser/planner (paper side), code agent (repo side) | Code agent, verifier |
 | `VenueProfile` / `VenueRule` | Template checker owner writes the rule files | Planner, template checker |
+| `Anchor` (sentence, bibliography, page or document; D3) | Parser ids, used by the planner | Every model that points into the paper |
 | `AuditTask` | Planner | Citation agent, code agent, template checker |
 | `Evidence` (quote or file/line or rule, plus source identity) | Specialists | Verifier, report |
+| `TaskResult` (outcome, reason, findings; D6) | Specialists, orchestrator | Verifier, report, evaluation |
 | `CandidateFinding` | Specialists | Verifier |
 | `VerifiedFinding` | Verifier | Report, evaluation |
 | `Prediction` | Full system, B0, B1 | Evaluation |
@@ -95,7 +112,7 @@ Contracts:
 Each specialist is a plain async function:
 
 ```python
-async def check(task: AuditTask, ctx: RunContext) -> list[CandidateFinding]: ...
+async def check(task: AuditTask, ctx: RunContext) -> TaskResult: ...
 ```
 
 `RunContext` gives access to settings, the shared LLM factory, the shared HTTP client,
@@ -103,11 +120,25 @@ a logger and the task's budget. Specialists never import LangGraph; the orchestr
 wraps them in graph nodes. This lets each part be built and tested on its own, and lets mock
 specialists stand in until the real ones are ready.
 
-Failure rules:
-- Missing or unreachable evidence is not an error. Return a finding marked uncertain, or no
-  finding. Never turn "could not find evidence" into an accusation.
-- Unexpected exceptions are caught by the orchestrator, recorded as a failed task, and the
-  verifier routes that task to `NEEDS_HUMAN_REVIEW`.
+A `TaskResult` holds the task id, exactly one outcome, a reason, and zero or more
+`CandidateFinding`s:
+
+| Outcome | Set by | Meaning |
+|---|---|---|
+| `checked` | Specialist | The check ran to completion. No findings means nothing wrong was found. |
+| `unverifiable` | Specialist | The check could not be completed (source not available, repository too large, rule needs visual inspection). The reason is required. Findings may be attached if something suspicious was seen. |
+| `failed` | Orchestrator | The specialist raised an exception after retries. The error is recorded. |
+
+Rules:
+- Missing or unreachable evidence is never an accusation and never disappears silently. It
+  is an `unverifiable` result with a reason.
+- The planner emits a task for every citation mention, including mentions the parser could
+  not link to a bibliography entry, so unlinked citations end up as checked or unverifiable
+  instead of vanishing.
+- The report has three sections: verified flags; items needing human review (suspected
+  issues the verifier could not settle); and items not checked (`unverifiable` or `failed`
+  with no suspicion), listed with their reasons so a human can check them by hand.
+- In evaluation, a gold error on a task that was not checked counts as a miss.
 
 ## D7. Tools for baseline B1 come from the specialist owners — Agreed
 
@@ -127,11 +158,18 @@ No module calls `httpx`, `requests` or `urllib` directly. Everything goes throug
 - per-host rate limits (arXiv: 1 request every 3 seconds; Crossref: within polite-pool limits);
 - an on-disk HTTP cache, always on;
 - retries with backoff on 429 and 5xx only;
-- a call log, which gives the "tool calls per paper" metric for free;
+- a request log (host, status, retries, cache hits, duration, task id);
 - per-task budgets (maximum tool calls and LLM calls), enforced through `RunContext`.
 
 Cloning GitHub repositories also goes through an `infra` helper, which pins the commit and
 never executes repository code.
+
+HTTP requests are not tool calls: one tool can make several requests, and local tools (for
+example reading a cloned repository) make none. Tool calls are counted separately by
+instrumenting the shared tool functions (D7), local ones included, and both counts are
+reported. Tool-call accuracy, which the proposal lists for the tool-calling capability, is
+measured on labelled fixtures: the share of reference lookups that resolve to the gold work
+(sets A and B) and of repository searches that reach the gold file (set C).
 
 ## D9. One LLM factory, provider chosen by config — Pending (decide by end of week 1)
 
@@ -167,6 +205,10 @@ Facts that affect the choice (checked October 2026):
 - Every run writes a `RunManifest`: git commit, config, model ID, package versions, dataset
   version and seed (where the provider supports one).
 - Reported numbers are the mean and range over three runs, as in the proposal.
+- Every execution gets its own checkpoint identity: the LangGraph thread id is
+  `{run_id}/{system}/{paper_id}/{variant}`. Invoking a graph again on an existing thread
+  continues that thread's state, so findings from the earlier invocation would be added to
+  the new ones. A thread id is reused only to resume the same interrupted execution.
 
 ## D11. Code is analysed statically only — Agreed
 
@@ -197,11 +239,26 @@ so RQ1 is answered against B1. B0 shows the combined effect of tools and agents.
 "+10 points Macro-F1, no increase in false alarms" target from the proposal is checked
 against both and reported as measured.
 
-## D15. Audit item count — Agreed
+The proposal promises no increase in false alarms "on clean, correct papers", so that part
+is measured on the unchanged original of every paper (D2), not only on clean items inside
+injected papers. For each system we report:
+- false-positive rate on the sampled clean control items (item level, from gold labels);
+- flags per original paper, and the share of original papers with at least one flag;
+- an adjudicated estimate: a random sample of flags on original papers is checked by hand
+  (shared task S5), because an original paper can contain real errors. The estimated number
+  of false alarms per paper is reported together with that caveat.
+
+## D15. Audit item count and other corrections — Agreed
 
 Sets B and C give 600 + 160 = 760 audit items. HALLMARK (set A) is a sanity check of the
-citation lookup and is reported separately. The "960 items" figure in the proposal is
-corrected to 760 in the write-up and the token budget is recomputed.
+citation lookup and is reported separately. Running the unchanged originals (D14) adds 100
+paper runs per system and run, and the token budget is recomputed with them.
+
+Corrections for the final write-up (the submitted proposal files stay unchanged):
+- "about 960 audit items" becomes 760.
+- "ICLR 2026 had over 60K submissions" is wrong. The official ICLR 2026 fact sheet reports
+  19,525 submissions (11,603 in 2025):
+  <https://media.iclr.cc/Conferences/ICLR2026/ICLR2026_Fact_Sheet.pdf>
 
 ## D16. Repository layout and tooling — Agreed
 
@@ -213,6 +270,8 @@ corrected to 760 in the write-up and the token budget is recomputed.
 Cross-platform rules, since the team uses all three systems:
 - Use `pathlib`; never build paths by joining strings with `/` or `\`.
 - Always pass `encoding="utf-8"` when reading or writing text (ruff enforces this).
+- Pass `newline="\n"` when writing files that are hashed, compared byte for byte or committed
+  (fixtures, caches, gold labels). Without it, Python writes `\r\n` on Windows.
 - Write helper scripts in Python under `scripts/`, not shell or batch files.
 - Docker is only needed for GROBID.
 - Line endings are normalised to LF by `.gitattributes`.
@@ -224,3 +283,22 @@ Cross-platform rules, since the team uses all three systems:
 - Schema changes go in their own small PRs (D5).
 - Anyone may pick up a task from another part. Claim it on the task list in
   `docs/team_plan.md` first, and ask the part owner to review the PR.
+
+## D18. Gold labels are validated before they are frozen — Agreed
+
+An injection log alone is not ground truth. A swapped citation can still support the claim,
+and a changed configuration value can be irrelevant to the experiment the paper reports.
+So every label is checked against its source before the evaluation data is frozen:
+
+- **Clean controls.** The builder records the evidence that makes the item correct: the
+  supporting passage in the cited work (this is also the gold passage for Recall@5), or the
+  repository file and line that the reported experiment actually uses.
+- **Injected errors.** After the mutation, the builder confirms against the source that the
+  result really is an error, and records why. For example: the newly cited work does not
+  contain the claim, or the paper's value now differs from the value the experiment's
+  configuration uses. Mutations that turn out not to be errors are discarded.
+- **Second review.** Another team member independently reviews a random sample of at least
+  20% of each set's labels (all of them for sets under 100 items). Disagreements are
+  resolved, the labelling rule is clarified if needed, and the agreement rate is reported.
+- **Freeze.** The labels are then versioned and frozen. Any later change means re-running the
+  affected experiments.
