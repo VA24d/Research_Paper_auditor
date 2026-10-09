@@ -1,0 +1,12 @@
+# Papers used to measure the parser (task P1.10). PDFs are fetched, not committed (D13).
+# id            citation style   template
+1706.03762      numeric          NeurIPS 2017
+1512.03385      numeric          CVPR 2016
+2005.11401      numeric          NeurIPS 2020
+2310.06825      numeric          custom
+1810.04805      author-year      NAACL 2019 (ACL)
+2106.09685      author-year      ICLR 2022
+2010.11929      author-year      ICLR 2021
+2201.11903      author-year      NeurIPS 2022
+2210.03629      author-year      ICLR 2023
+2305.18290      author-year      NeurIPS 2023
