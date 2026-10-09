@@ -197,3 +197,18 @@ def test_urls_broken_at_line_ends_are_repaired_from_annotations(tei: str) -> Non
     repaired = [link for link in paper.links if link.sentence_id == "s9"]
     assert [link.url for link in repaired] == ["https://github.com/example/vit-code"]
     assert [link.url for link in paper.links].count("https://github.com/example/vit-code") == 1
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("2022a. PromptChainer: Chaining prompts", "PromptChainer: Chaining prompts"),
+        ("b. AI chains: Transparent interaction", "AI chains: Transparent interaction"),
+        ("A. Very short title", "A. Very short title"),
+        ("2020 Vision benchmarks", "2020 Vision benchmarks"),
+    ],
+)
+def test_year_labels_are_removed_from_titles(tei: str, title: str, expected: str) -> None:
+    changed = tei.replace(">Dense retrieval at scale<", f">{title}<")
+    paper = tei_to_paper(changed, paper_id="x")
+    assert paper.bib_entry("b2").title == expected

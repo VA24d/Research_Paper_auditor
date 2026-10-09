@@ -34,6 +34,9 @@ XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
 # New-style ids (2310.06825) and old-style ids (hep-th/9901001), without the version.
 _ARXIV_ID = re.compile(r"(\d{4}\.\d{4,5}|[a-z][a-z.-]*/\d{7})(?:v\d+)?", re.IGNORECASE)
 _URL = re.compile(r"https?://[^\s<>\"'()\[\]{}]+")
+# GROBID sometimes keeps the year label in front of a title: "2022a. PromptChainer: ..."
+# or "b. AI chains: ...".
+_TITLE_YEAR_LABEL = re.compile(r"^(?:(?:19|20)\d{2}[a-z]?|[a-z])\.\s+")
 _MARKER_GAP = re.compile(r"^[\s,;]*$")
 
 
@@ -280,6 +283,7 @@ def _bib_entry(element: ET.Element) -> BibEntry:
     for note in element.findall(f"{TEI}note"):
         if note.get("type") == "raw_reference":
             raw = _text(note) or None
+    title = _TITLE_YEAR_LABEL.sub("", title)
     return BibEntry(
         id=bib_id,
         raw=raw,
