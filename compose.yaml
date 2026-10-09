@@ -1,0 +1,10 @@
+name: research-paper-auditor
+
+services:
+  grobid:
+    image: grobid/grobid:0.9.1-crf
+    init: true
+    ulimits:
+      core: 0
+    ports:
+      - "8070:8070"
