@@ -220,7 +220,8 @@ the proposal diagram is dropped.
 - GROBID 0.9.1 (Docker image `grobid/grobid:0.9.1-crf`) for structure, bibliography,
   sentence segmentation and in-text citation linking, with page coordinates.
 - pdfplumber for page count, page sizes, fonts, margins and link annotations.
-- Parsed output is cached by the PDF's SHA-256 and the parser version.
+- GROBID's TEI output is cached by the PDF's SHA-256. The conversion to `ParsedPaper` and
+  the citation linking run on every parse, so improvements to them apply to cached papers.
 - `ParsedPaper` JSON fixtures are committed for tests, so only people working on the parser
   need Docker running.
 
@@ -302,3 +303,19 @@ So every label is checked against its source before the evaluation data is froze
   resolved, the labelling rule is clarified if needed, and the agreement rate is reported.
 - **Freeze.** The labels are then versioned and frozen. Any later change means re-running the
   affected experiments.
+
+## D19. How parts plug into the pipeline — Agreed
+
+Each part exposes fixed entry points, and the pipeline finds them by name
+(`auditor.orchestration.registry`):
+
+| Part | Entry point |
+|---|---|
+| Citation agent, code agent, template checker | `check(task, ctx) -> TaskResult` in `auditor.agents.<name>` |
+| Verifier | `verify(results, ctx) -> list[VerifiedFinding]` in `auditor.agents.verifier` |
+| Tools for B1 (D7) | `make_tools(ctx) -> list[BaseTool]` in `auditor.agents.<name>.tools` |
+
+Until an entry point exists, a mock runs in its place (specialists check nothing; the
+verifier sends every finding to human review). Every run manifest lists which parts were
+mocked, so the evaluation runner can refuse runs that used a mock. An entry point that
+exists but fails to import stops the run instead of falling back.
