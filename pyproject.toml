@@ -6,8 +6,12 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28,<1",
+    "langchain>=1.4,<2",
     "langchain-core>=1.6,<2",
+    "langchain-google-genai>=4.4,<5",
+    "langchain-openai>=1.7,<2",
     "langgraph>=1.2,<2",
+    "langgraph-checkpoint-sqlite>=3.1,<4",
     "pydantic>=2.12,<3",
     "pydantic-settings>=2.10,<3",
 ]
@@ -62,7 +66,7 @@ ban-relative-imports = "all"
 python_version = "3.12"
 strict = true
 warn_unreachable = true
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
 plugins = ["pydantic.mypy"]
 
 [tool.pydantic-mypy]
