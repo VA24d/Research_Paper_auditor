@@ -50,16 +50,21 @@ Models in `auditor.schemas` (frozen, `extra="forbid"`, `schema_version` on top-l
   link confidence), `links[]` (URLs with page), `layout` (page count, page sizes, font
   statistics, margins).
 - `SourceLocation`: page, boxes, section id, sentence id, character span.
+- `Anchor`: a discriminated union of `sentence` (sentence id, optional character span),
+  `bibliography` (entry id), `page` (page numbers) and `document` (D3).
 - `ExtractedSetting`: key, raw value, normalised value, unit, location (paper or repository
   file and line).
 - `VenueProfile`, `VenueRule`.
-- `AuditTask`: deterministic `task_id`, `paper_id`, `kind` (citation, code, template),
-  claim text, anchor sentence id, target (bibliography id, setting keys or rule id),
-  context.
+- `AuditTask`: deterministic `task_id`, `paper_id`, `kind` (reference, citation, code,
+  template), claim text, `anchor`, target (bibliography id or unlinked marker text, setting
+  keys, or rule id), context.
 - `Evidence`: kind (quote, code, rule), source identity, exact text, location.
+- `TaskResult`: task id, outcome (`checked`, `unverifiable`, `failed`), reason, candidate
+  findings (D6).
 - `CandidateFinding`, `VerifiedFinding` with `VerificationState` (`VERIFIED_FLAG`,
   `NEEDS_HUMAN_REVIEW`, `DROPPED`).
-- `ErrorClass` enum (D4), `Prediction`, `GoldLabel`, `RunManifest`.
+- `ErrorClass` enum (D4), `Prediction` and `GoldLabel` (both with paper variant and
+  `Anchor`), `RunManifest`.
 
 Also:
 
@@ -69,7 +74,8 @@ Also:
 
 Tests:
 
-- Every fixture validates and round-trips through JSON unchanged.
+- Every fixture validates and round-trips through JSON unchanged, including one of each
+  anchor kind and each task outcome.
 - Unknown fields are rejected.
 - Task ids are stable across runs and processes.
 - Enums match the class table in D4.
@@ -80,6 +86,11 @@ Tests:
 client, the LLM factory and a per-task budget (tool calls and LLM calls). Exceeding a budget
 raises a specific error that the orchestrator records as a failed task.
 
+Tool calls are counted by a decorator that the shared tool functions (D7) use, so local
+tools such as reading a cloned repository are counted too. Each record holds the tool name,
+task id, an argument hash, duration and outcome. This is separate from the HTTP request log,
+and it is what the B1 tool budget and the tool-call metrics use.
+
 HTTP gate (`auditor.infra.http`), built on `httpx.AsyncClient`:
 
 - Host allowlist from config; any other host raises before a request is sent.
@@ -89,7 +100,10 @@ HTTP gate (`auditor.infra.http`), built on `httpx.AsyncClient`:
   SQLite cache with an explicit TTL is used instead.
 - Retries with exponential backoff and jitter on 429, 5xx and connection errors only;
   `Retry-After` is respected.
-- A call log record per request (host, path, status, cache hit, duration, task id).
+- A request log record per request (host, path, status, retries, cache hit, duration,
+  task id).
+- A contact address from config (`AUDITOR_CONTACT_EMAIL`) in the User-Agent, and as
+  `mailto` for Crossref.
 
 LLM factory (`auditor.infra.llm`):
 
@@ -99,7 +113,7 @@ LLM factory (`auditor.infra.llm`):
 - A `structured()` helper: picks the structured-output method that the provider supports,
   validates against the Pydantic model, retries a bounded number of times on parse
   failures, and returns the parsed object together with token usage.
-- Token usage collected with `UsageMetadataCallbackHandler` and attached to the call log.
+- Token usage collected with `UsageMetadataCallbackHandler` and recorded per task.
   Cache hits are counted separately, because LangChain reports the original token counts on
   a hit.
 - LLM cache switch (D10).
@@ -108,8 +122,9 @@ LLM factory (`auditor.infra.llm`):
 
 Tests:
 
-- HTTP: `httpx.MockTransport` for allowlist, retries, `Retry-After`, caching and call log;
-  the rate limiter with a fake clock.
+- HTTP: `httpx.MockTransport` for allowlist, retries, `Retry-After`, caching and request
+  log; the rate limiter with a fake clock.
+- Tool-call counting for both a remote and a local tool, and budget enforcement.
 - LLM: a fake chat model that supports `bind_tools`, used for the structured-output helper,
   retries and usage accounting.
 
@@ -117,29 +132,43 @@ Tests:
 
 LangGraph `StateGraph` (v1.2):
 
-- State is a `TypedDict` whose values are Pydantic models; lists of findings and task
-  records use `operator.add` reducers.
+- State is a `TypedDict` whose values are Pydantic models; the list of `TaskResult`s uses an
+  `operator.add` reducer.
 - The planner node is followed by a fan-out through `Send`, one branch per `AuditTask`,
   routed by task kind to the citation, code and template nodes.
 - Each specialist node wraps a `check(task, ctx)` function from a registry (D6). Mocks are
   registered by default until the real modules land.
-- Per node:
-  - `RetryPolicy` with a custom `retry_on` that retries only transient errors;
-  - `TimeoutPolicy` (nodes are async);
-  - an `error_handler` that records the task as failed instead of failing the whole step.
+- Failure isolation lives inside the node wrapper, not in LangGraph's node policies. In the
+  pinned LangGraph 1.2.14, an exception that leaves one `Send` branch still aborts the whole
+  run when other branches run in parallel, even though the node's `error_handler` has
+  already recorded the failure (reproduced locally with sync and async nodes; a single
+  branch is handled correctly). So the wrapper:
+  - retries transient errors itself (bounded attempts, exponential backoff with jitter);
+  - applies a per-attempt timeout with `asyncio.timeout`;
+  - converts any error left after that, including budget errors, into a `failed`
+    `TaskResult`, so no exception ever leaves a specialist node.
+  A regression test pins the upstream behaviour, so the workaround is revisited only when a
+  LangGraph upgrade makes that test fail.
 - Specialist nodes connect to the verifier with separate edges, so a paper with no code
   tasks still reaches the verifier.
-- Checkpointing with `SqliteSaver`, one thread per paper, so an interrupted run resumes and
-  completed tasks are not re-run. `max_concurrency` is set at the top level of the run
-  config.
+- Checkpointing with `AsyncSqliteSaver` (package `langgraph-checkpoint-sqlite`), because the
+  graph is async and the sync `SqliteSaver` raises `NotImplementedError` from its async
+  methods. The connection stays open for the whole run.
+- Thread id `{run_id}/{system}/{paper_id}/{variant}` (D10): re-invoking an existing thread
+  continues its state and the reducer would add the old results to the new ones, so a
+  thread id is reused only to resume the same interrupted execution.
+- `max_concurrency` is set at the top level of the run config.
 
 Tests:
 
 - Mixed task kinds all reach the verifier.
 - No tasks of one kind.
-- One task raising does not stop the others and is reported as failed.
+- One task raising, timing out or exceeding its budget, while other tasks run in parallel,
+  yields a `failed` result and the rest complete.
 - A transient error is retried; a validation error is not.
-- A run interrupted mid-way resumes without re-running finished tasks.
+- A run interrupted mid-way resumes on the same thread without re-running finished tasks.
+- Two executions with different thread ids do not share results.
+- Regression test for the upstream fan-out behaviour described above.
 - The concurrency cap is respected.
 - A paper with zero tasks finishes cleanly.
 
@@ -202,7 +231,8 @@ Metrics for the write-up:
 Deterministic pass:
 
 - Every sentence with a citation mention gives one candidate claim per linked bibliography
-  entry.
+  entry. A mention the parser could not link still gives a candidate, carrying the marker
+  text as its target, so it ends up checked or `unverifiable` instead of disappearing (D6).
 - Numbers with units and experimental settings are found with patterns: learning rate,
   batch size, epochs, optimiser, weight decay, dropout, warmup, seeds, splits, dataset
   names, metrics. Hyperparameter tables are included once table extraction is added.
@@ -219,27 +249,34 @@ LLM pass (structured output):
 
 Task generation:
 
-- Citation tasks per claim.
-- Code tasks per setting group when a repository URL exists.
-- Template tasks per venue rule.
+- Reference tasks, one per bibliography entry, for existence and metadata
+  (`bibliography` anchor).
+- Citation tasks per claim (`sentence` anchor).
+- Code tasks per setting group when a repository URL exists (`sentence` anchor of the
+  sentence that states the setting).
+- Template tasks per venue rule (`page` or `document` anchor).
 - `task_id` is a hash of paper id, kind, anchor and target, so ids are stable across runs.
 
 Tests:
 
 - Deterministic extraction on fixture papers against expected outputs.
+- Unlinked citation mentions still produce tasks.
 - LLM pass with a fake model, including a model returning text that is not in the paper.
 - Task-id stability.
 
 ## M6. End-to-end command, B0, B1 (P1.14–P1.16)
 
 - `auditor audit <pdf | parsed.json> [--repo URL] [--venue NAME]` runs the full pipeline and
-  writes candidate and verified findings, predictions and the run manifest under `runs/`.
-- B0: one model call with the full paper text and instructions to list errors in the
-  `Prediction` format (anchored by sentence id, so the matching rule applies). No tools.
+  writes task results, candidate and verified findings, predictions and the run manifest
+  under `runs/`.
+- B0: one model call with the full paper text, where sentences, bibliography entries and
+  pages are shown with their ids, and instructions to list errors in the `Prediction`
+  format with an anchor of the right kind (D3). No tools.
 - B1: `langchain.agents.create_agent` with the registered tools from Parts 2 and 3,
   a structured response in the `Prediction` format, and call-limit middleware to enforce a
   single pass with a fixed tool budget. No verifier.
-- Both baselines go through the same LLM factory and call log, so cost is comparable.
+- Both baselines go through the same LLM factory, tool-call counting and request log, so
+  cost is comparable.
 
 Tests:
 
@@ -264,7 +301,8 @@ Tests:
 | GROBID misses author-year links or garbles references in some templates | Fallback linker, link confidence on every mention, parser metrics reported honestly |
 | LLM provider decision is late | Provider-agnostic factory, fake models in tests, probe script ready |
 | A provider's structured output is unreliable | Validation and bounded retries in one helper, raw output logged on failure |
-| Large fan-out slows LangGraph (hundreds of tasks per paper) | One graph thread per paper; batch tasks per node if a paper exceeds a few hundred tasks |
-| SQLite checkpoint contention under concurrency | One writer per run; tune durability; resume tested |
+| An exception escaping one parallel branch aborts the whole fan-out (LangGraph 1.2.14, reproduced) | Specialist wrapper does its own retries and timeouts and never lets an exception escape; regression test tracks the upstream behaviour |
+| Large fan-out slows LangGraph (hundreds of tasks per paper) | One graph thread per paper and variant; batch tasks per node if a paper exceeds a few hundred tasks |
+| SQLite checkpoint contention under concurrency (`AsyncSqliteSaver`) | One writer per run; tune durability; resume tested |
 | Schema churn breaks other parts | Versioned schemas, small dedicated PRs, contract tests in CI |
 | Windows or macOS-only bugs | CI on all three operating systems; pathlib and UTF-8 enforced by lint |
