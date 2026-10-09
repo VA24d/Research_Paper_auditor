@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "run_id": "run-example",
+  "system": "full",
+  "started_at": "2026-10-10T12:00:00Z",
+  "finished_at": "2026-10-10T12:05:00Z",
+  "git_commit": "0000000000000000000000000000000000000000",
+  "git_dirty": false,
+  "model": "example-model",
+  "llm_cache": false,
+  "seed": null,
+  "dataset_version": null,
+  "python_version": "3.13.3",
+  "platform": "Linux-x86_64",
+  "packages": {
+    "langgraph": "1.2.14"
+  },
+  "config": {
+    "max_concurrency": 8
+  }
+}

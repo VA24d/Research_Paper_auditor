@@ -1,0 +1,128 @@
+[
+  {
+    "schema_version": 1,
+    "task_id": "reference-716e993b187e7804",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "kind": "reference",
+    "anchor": {
+      "kind": "bibliography",
+      "bib_id": "b0"
+    },
+    "target": {
+      "kind": "bibliography",
+      "bib_id": "b0"
+    },
+    "claim": null,
+    "setting": null,
+    "repository": null,
+    "rule": null
+  },
+  {
+    "schema_version": 1,
+    "task_id": "citation-ed715714d10f1af0",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "kind": "citation",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s2",
+      "start": null,
+      "end": null
+    },
+    "target": {
+      "kind": "bibliography",
+      "bib_id": "b1"
+    },
+    "claim": "Prior work reports 92.1% exact match on SQuAD [2, 3].",
+    "setting": null,
+    "repository": null,
+    "rule": null
+  },
+  {
+    "schema_version": 1,
+    "task_id": "citation-f648c619c3c4a800",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "kind": "citation",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s3",
+      "start": null,
+      "end": null
+    },
+    "target": {
+      "kind": "marker",
+      "marker": "[7]"
+    },
+    "claim": "Retrieval also improves factual accuracy [7].",
+    "setting": null,
+    "repository": null,
+    "rule": null
+  },
+  {
+    "schema_version": 1,
+    "task_id": "code-35a0d3269a95fa69",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "kind": "code",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s4",
+      "start": null,
+      "end": null
+    },
+    "target": {
+      "kind": "setting",
+      "key": "learning_rate"
+    },
+    "claim": null,
+    "setting": {
+      "key": "learning_rate",
+      "raw_name": "learning rate",
+      "raw_value": "3e-4",
+      "value": 0.0003,
+      "unit": null,
+      "source": {
+        "kind": "paper",
+        "anchor": {
+          "kind": "sentence",
+          "sentence_id": "s4",
+          "start": 33,
+          "end": 37
+        }
+      }
+    },
+    "repository": {
+      "url": "https://github.com/example/auditor-demo",
+      "commit": "0123abcd"
+    },
+    "rule": null
+  },
+  {
+    "schema_version": 1,
+    "task_id": "template-c90a0151950ba034",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "kind": "template",
+    "anchor": {
+      "kind": "document"
+    },
+    "target": {
+      "kind": "rule",
+      "rule_id": "page-limit"
+    },
+    "claim": null,
+    "setting": null,
+    "repository": null,
+    "rule": {
+      "id": "page-limit",
+      "description": "The main text is at most 9 pages.",
+      "check": "max_pages",
+      "params": {
+        "max_pages": 9
+      },
+      "needs_visual_inspection": false
+    }
+  }
+]

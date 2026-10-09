@@ -1,0 +1,63 @@
+[
+  {
+    "schema_version": 1,
+    "run_id": "run-example",
+    "system": "full",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "error_class": "claim_number_mismatch",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s2",
+      "start": 19,
+      "end": 24
+    },
+    "target": {
+      "kind": "bibliography",
+      "bib_id": "b1"
+    },
+    "state": "verified_flag",
+    "summary": "The cited work does not report 92.1% exact match on SQuAD.",
+    "evidence": [
+      {
+        "kind": "quote",
+        "source": {
+          "kind": "cited_work",
+          "id": "doi:10.18653/v1/D16-1264",
+          "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+          "url": null
+        },
+        "text": "which achieves an F1 score of 51.0%",
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "path": null,
+        "line_start": null,
+        "line_end": null
+      }
+    ],
+    "finding_id": "citation-ed715714d10f1af0-f0"
+  },
+  {
+    "schema_version": 1,
+    "run_id": "run-example",
+    "system": "b0",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "error_class": "setting_mismatch",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s4",
+      "start": null,
+      "end": null
+    },
+    "target": {
+      "kind": "setting",
+      "key": "learning_rate"
+    },
+    "state": null,
+    "summary": "The learning rate may differ from the released code.",
+    "evidence": [],
+    "finding_id": null
+  }
+]
