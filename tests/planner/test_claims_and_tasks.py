@@ -1,6 +1,8 @@
 from collections import Counter
 from pathlib import Path
 
+import pytest
+
 from auditor.infra.llm import StructuredLLM
 from auditor.orchestration.graph import AuditPipeline, run_audit
 from auditor.planner.claims import ClaimJudgements, citation_candidates, refine_candidates
@@ -148,3 +150,31 @@ async def test_planner_runs_inside_the_audit_graph(tmp_path: Path) -> None:
     assert len(outcome.tasks) == 12
     assert len(outcome.results) == 12
     assert all(r.outcome is TaskOutcome.CHECKED for r in outcome.results)
+
+
+@pytest.mark.parametrize(
+    ("sentence", "found"),
+    [
+        ("Code is available at https://github.com/a/b.", True),
+        ("We provide our implementations at https://github.com/a/b.", True),
+        ("Code: https://github.com/a/b", True),
+        ("Scripts to run experiments can be found at https://github.com/a/b.", True),
+        ("The original dataset is from https://github.com/a/b.", False),
+        ("Our implementation is based on the open-sourced code in https://github.com/a/b.", False),
+        ("https://github.com/a/b", False),
+    ],
+)
+def test_only_sentences_announcing_code_give_the_repository(sentence: str, found: bool) -> None:
+    data = example_paper().model_dump()
+    data["sentences"][5]["text"] = sentence
+    data["links"] = [
+        {
+            "url": "https://github.com/a/b/tree/main/src",
+            "page": 2,
+            "sentence_id": "s5",
+            "source": "text",
+        }
+    ]
+    paper = type(example_paper()).model_validate(data)
+    expected = RepositoryRef(url="https://github.com/a/b") if found else None
+    assert find_repository(paper) == expected
