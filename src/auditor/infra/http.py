@@ -201,7 +201,11 @@ class HttpClient:
         backoff_base_s: float = 1.0,
         max_wait_s: float = 60.0,
     ) -> None:
-        self._allowed_hosts = frozenset(host.lower() for host in settings.allowed_hosts)
+        # The configured GROBID service is trusted by configuration, wherever it runs.
+        grobid_host = httpx.URL(settings.grobid_url).host
+        self._allowed_hosts = frozenset(
+            host.lower() for host in (*settings.allowed_hosts, grobid_host) if host
+        )
         self._max_attempts = settings.http_max_attempts
         if cache is None and use_default_cache and settings.http_cache_ttl_days > 0:
             cache = ResponseCache(
@@ -253,8 +257,11 @@ class HttpClient:
         params: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
         use_cache: bool = True,
+        attempts: int | None = None,
     ) -> HttpResponse:
-        return await self._send("GET", url, params=params, headers=headers, use_cache=use_cache)
+        return await self._send(
+            "GET", url, params=params, headers=headers, use_cache=use_cache, attempts=attempts
+        )
 
     async def post(
         self,
@@ -264,6 +271,7 @@ class HttpClient:
         files: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
         request_timeout_s: float | None = None,
+        attempts: int | None = None,
     ) -> HttpResponse:
         return await self._send(
             "POST",
@@ -273,6 +281,7 @@ class HttpClient:
             headers=headers,
             request_timeout_s=request_timeout_s,
             use_cache=False,
+            attempts=attempts,
         )
 
     async def _send(
@@ -286,7 +295,9 @@ class HttpClient:
         headers: Mapping[str, str] | None = None,
         request_timeout_s: float | None = None,
         use_cache: bool,
+        attempts: int | None = None,
     ) -> HttpResponse:
+        max_attempts = attempts if attempts is not None else self._max_attempts
         request_url = httpx.URL(url)
         if params:
             request_url = request_url.copy_merge_params(params)
@@ -322,14 +333,14 @@ class HttpClient:
                     ),
                 )
             except httpx.TransportError as exc:
-                if attempt < self._max_attempts:
+                if attempt < max_attempts:
                     await self._sleep(self._backoff(attempt))
                     continue
                 error = f"{type(exc).__name__}: {exc}"
                 self._record(method, request_url, None, attempt, False, started_at, started, error)
                 raise HttpRequestError(f"{method} {request_url} failed: {error}") from exc
 
-            if raw.status_code in RETRY_STATUSES and attempt < self._max_attempts:
+            if raw.status_code in RETRY_STATUSES and attempt < max_attempts:
                 wait = _retry_after_seconds(raw, datetime.now(UTC))
                 await self._sleep(
                     min(wait if wait is not None else self._backoff(attempt), self._max_wait_s)
