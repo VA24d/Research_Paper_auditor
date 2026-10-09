@@ -8,7 +8,7 @@ from auditor.cli import main
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
 from auditor.parser.grobid import GrobidClient, GrobidError
-from auditor.parser.pipeline import ParseError, cache_path, parse_pdf
+from auditor.parser.pipeline import ParseError, parse_pdf, tei_cache_path
 from auditor.schemas import LinkSource
 
 FIXTURES = Path(__file__).parents[1] / "fixtures"
@@ -103,18 +103,25 @@ async def test_parse_pdf_uses_the_cache(tmp_path: Path) -> None:
     await parse_pdf(PROPOSAL, grobid=grobid, cache_dir=cache_dir, refresh=True)
     assert calls == 2
     assert first.parser.pdf_sha256 is not None
-    cached = cache_path(cache_dir, first.parser.pdf_sha256)
-    assert b"\r\n" not in cached.read_bytes()
+    assert tei_cache_path(cache_dir, first.parser.pdf_sha256).read_bytes() == SAMPLE_TEI
 
 
-async def test_corrupt_cache_entry_is_ignored(tmp_path: Path) -> None:
-    grobid = grobid_with(tei_response, tmp_path)
+async def test_corrupt_cache_entry_is_parsed_again(tmp_path: Path) -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return tei_response(request)
+
+    grobid = grobid_with(handler, tmp_path)
     cache_dir = tmp_path / "cache"
     paper = await parse_pdf(PROPOSAL, grobid=grobid, cache_dir=cache_dir)
     assert paper.parser.pdf_sha256 is not None
-    cache_path(cache_dir, paper.parser.pdf_sha256).write_text("{}", encoding="utf-8")
+    tei_cache_path(cache_dir, paper.parser.pdf_sha256).write_text("{}", encoding="utf-8")
     again = await parse_pdf(PROPOSAL, grobid=grobid, cache_dir=cache_dir)
     assert again.sentences == paper.sentences
+    assert calls == 2
 
 
 async def test_grobid_failure_becomes_parse_error(tmp_path: Path) -> None:

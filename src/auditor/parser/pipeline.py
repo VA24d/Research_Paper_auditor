@@ -1,4 +1,9 @@
-"""PDF to ParsedPaper: GROBID for structure, pdfplumber for layout, cached by content hash."""
+"""PDF to ParsedPaper: GROBID for structure, pdfplumber for layout.
+
+Only GROBID's TEI output is cached (by PDF hash), because that is the slow step. The
+conversion and the citation linking run on every call, so improving them never needs a
+cache bump; bump GROBID_REQUEST_VERSION only when the request sent to GROBID changes.
+"""
 
 import asyncio
 import hashlib
@@ -16,16 +21,33 @@ from auditor.schemas import Layout, Link, ParsedPaper
 
 logger = logging.getLogger(__name__)
 
-# Bump when the conversion changes, so cached results from older code are not reused.
-PARSER_VERSION = "2"
+GROBID_REQUEST_VERSION = "1"
 
 
 class ParseError(RuntimeError):
     """A PDF could not be turned into a ParsedPaper."""
 
 
-def cache_path(cache_dir: Path, pdf_sha256: str) -> Path:
-    return cache_dir / "parsed" / f"{pdf_sha256}-v{PARSER_VERSION}.json"
+def tei_cache_path(cache_dir: Path, pdf_sha256: str) -> Path:
+    return cache_dir / "grobid" / f"{pdf_sha256}-r{GROBID_REQUEST_VERSION}.tei.xml"
+
+
+async def _tei_for(
+    path: Path, data: bytes, digest: str, grobid: GrobidClient, cache_file: Path | None
+) -> tuple[str, bool]:
+    """The TEI for a PDF, and whether it came from the cache."""
+    if cache_file is not None:
+        try:
+            return await asyncio.to_thread(cache_file.read_text, encoding="utf-8"), True
+        except FileNotFoundError:
+            pass
+    try:
+        tei = await grobid.process_fulltext(data, path.name)
+    except GrobidError as exc:
+        raise ParseError(f"{path.name}: {exc}") from exc
+    if cache_file is not None:
+        atomic_write(cache_file, tei.encode("utf-8"))
+    return tei, False
 
 
 async def parse_pdf(
@@ -38,19 +60,11 @@ async def parse_pdf(
 ) -> ParsedPaper:
     data = await asyncio.to_thread(path.read_bytes)
     digest = hashlib.sha256(data).hexdigest()
-    wanted_id = paper_id or path.stem
-    cached_file = cache_path(cache_dir, digest) if cache_dir is not None else None
+    cache_file = tei_cache_path(cache_dir, digest) if cache_dir is not None else None
+    if refresh and cache_file is not None:
+        cache_file.unlink(missing_ok=True)
 
-    if cached_file is not None and not refresh:
-        cached = _load(cached_file)
-        if cached is not None:
-            logger.info("using cached parse of %s", path.name)
-            return cached.model_copy(update={"paper_id": wanted_id})
-
-    try:
-        tei = await grobid.process_fulltext(data, path.name)
-    except GrobidError as exc:
-        raise ParseError(f"{path.name}: {exc}") from exc
+    tei, cached = await _tei_for(path, data, digest, grobid, cache_file)
 
     layout: Layout | None = None
     links: list[Link] = []
@@ -59,24 +73,25 @@ async def parse_pdf(
     except LayoutError as exc:
         logger.warning("%s; falling back to page sizes from GROBID", exc)
 
-    try:
-        paper = tei_to_paper(
-            tei, paper_id=wanted_id, pdf_sha256=digest, layout=layout, extra_links=links
+    def convert(document: str) -> ParsedPaper:
+        return tei_to_paper(
+            document,
+            paper_id=paper_id or path.stem,
+            pdf_sha256=digest,
+            layout=layout,
+            extra_links=links,
         )
-    except (TeiError, ValidationError) as exc:
-        raise ParseError(f"{path.name}: {exc}") from exc
-    paper = link_unresolved(paper)
 
-    if cached_file is not None:
-        atomic_write(cached_file, paper.model_dump_json(indent=1).encode("utf-8"))
-    return paper
-
-
-def _load(path: Path) -> ParsedPaper | None:
     try:
-        return ParsedPaper.model_validate_json(path.read_bytes())
-    except FileNotFoundError:
-        return None
-    except (OSError, ValidationError):
-        logger.warning("ignoring unreadable parse cache %s", path)
-        return None
+        paper = convert(tei)
+    except (TeiError, ValidationError) as exc:
+        if not cached or cache_file is None:
+            raise ParseError(f"{path.name}: {exc}") from exc
+        logger.warning("cached GROBID output for %s is unusable; parsing again", path.name)
+        cache_file.unlink(missing_ok=True)
+        tei, _ = await _tei_for(path, data, digest, grobid, cache_file)
+        try:
+            paper = convert(tei)
+        except (TeiError, ValidationError) as retry_exc:
+            raise ParseError(f"{path.name}: {retry_exc}") from retry_exc
+    return link_unresolved(paper)
