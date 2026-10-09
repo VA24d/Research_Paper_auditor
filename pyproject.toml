@@ -17,6 +17,9 @@ dependencies = [
     "pydantic-settings>=2.10,<3",
 ]
 
+[project.scripts]
+auditor = "auditor.cli:main"
+
 [dependency-groups]
 dev = [
     "mypy>=2.4",
