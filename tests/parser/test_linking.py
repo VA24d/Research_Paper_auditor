@@ -159,3 +159,24 @@ def test_every_part_of_a_multi_citation_marker_must_resolve() -> None:
 
 def test_surname_is_taken_from_before_et_al() -> None:
     assert lettered(["(Fever, Thorne et al., 2018"]) == {"(Fever, Thorne et al., 2018": ("b5",)}
+
+
+def test_author_count_separates_same_year_works() -> None:
+    entries = [
+        BibEntry(id="b0", authors=("Sarah Wiegreffe", "Ana Marasovic"), year=2021, raw="2021."),
+        BibEntry(
+            id="b1",
+            authors=("Sarah Wiegreffe", "Ana Marasovic", "Noah Smith"),
+            year=2021,
+            raw="2021.",
+        ),
+    ]
+    markers = ["(Wiegreffe and Marasovic, 2021)", "Wiegreffe et al. (2021)", "Wiegreffe (2021)"]
+    data = paper([(m, ()) for m in markers]).model_dump()
+    data["bibliography"] = [e.model_dump() for e in entries]
+    result = link_unresolved(ParsedPaper.model_validate(data))
+    assert {c.marker: c.bib_ids for c in result.citations} == {
+        "(Wiegreffe and Marasovic, 2021)": ("b0",),
+        "Wiegreffe et al. (2021)": ("b1",),
+        "Wiegreffe (2021)": (),
+    }

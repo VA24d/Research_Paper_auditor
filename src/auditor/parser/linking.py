@@ -12,6 +12,7 @@ Mentions linked here are marked `LinkMethod.HEURISTIC`.
 
 import re
 import unicodedata
+from dataclasses import dataclass, replace
 
 from auditor.schemas import BibEntry, CitationMention, LinkMethod, ParsedPaper
 
@@ -24,6 +25,8 @@ _SURNAME_BEFORE_ETAL = re.compile(
     r"([^\W\d_][^\W\d_'\u2019-]*)\s+(?:et\s+al\b|and\b|&)", re.IGNORECASE
 )
 _LETTER_LIST = re.compile(r"((?:19|20)\d{2}[a-z]|;[a-z])\s*,\s*([a-z])\b")
+_AUTHOR_PAIR = re.compile(r"([^\W\d_][^\W\d_'\u2019-]*)\s+(?:and|&)\s+([^\W\d_][^\W\d_'\u2019-]*)")
+_ET_AL = re.compile(r"\bet\s+al\b", re.IGNORECASE)
 _MAX_RANGE = 20
 _MIN_EVIDENCE = 3
 _MIN_AGREEMENT = 0.9
@@ -108,9 +111,18 @@ def _surname_in(text: str) -> str | None:
     return words[-1] if words else None
 
 
-def _parts(marker: str) -> list[tuple[str, int, str | None]] | None:
-    """Split "(Yao et al., 2020; Huang et al., 2022a;b)" into (surname, year, suffix)."""
-    parts: list[tuple[str, int, str | None]] = []
+@dataclass(frozen=True)
+class _Cited:
+    surname: str
+    year: int
+    suffix: str | None
+    coauthor: str | None = None
+    et_al: bool = False
+
+
+def _parts(marker: str) -> list[_Cited] | None:
+    """Split "(Yao et al., 2020; Huang and Abbeel, 2022a;b)" into one citation per work."""
+    parts: list[_Cited] = []
     # "2022a,b" cites two works; rewrite it as "2022a;b" so each letter becomes a part.
     marker = _LETTER_LIST.sub(lambda m: m.group(1) + ";" + m.group(2), marker)
     marker = _LETTER_LIST.sub(lambda m: m.group(1) + ";" + m.group(2), marker)
@@ -119,34 +131,60 @@ def _parts(marker: str) -> list[tuple[str, int, str | None]] | None:
         if not part:
             continue
         if re.fullmatch(r"[a-z]", part) and parts:
-            previous_surname, previous_year, _ = parts[-1]
-            parts.append((previous_surname, previous_year, part))
+            parts.append(replace(parts[-1], suffix=part))
             continue
         year_match = _YEAR.search(part)
         if year_match is None:
             return None
-        surname = _surname_in(part[: year_match.start()])
+        names = part[: year_match.start()]
+        surname = _surname_in(names)
         if surname is None:
             return None
-        parts.append((surname, int(year_match.group(1)), year_match.group(2)))
+        pair = _AUTHOR_PAIR.search(names)
+        parts.append(
+            _Cited(
+                surname=surname,
+                year=int(year_match.group(1)),
+                suffix=year_match.group(2),
+                coauthor=pair.group(2) if pair else None,
+                et_al=bool(_ET_AL.search(names)),
+            )
+        )
     return parts or None
 
 
-def _match_part(
-    surname: str, year: int, suffix: str | None, bibliography: tuple[BibEntry, ...]
-) -> str | None:
-    folded = _fold(surname)
+def _by_author_count(cited: _Cited, candidates: list[BibEntry]) -> list[BibEntry]:
+    """Author-year style tells the author count: "X" is one author, "X and Y" two (with Y
+    second), "X et al." three or more. Used only to choose between same-year works."""
+    if cited.coauthor is not None:
+        second = _fold(cited.coauthor)
+        return [
+            e
+            for e in candidates
+            if len(e.authors) == 2 and _fold(e.authors[1].split()[-1]) == second
+        ]
+    if cited.et_al:
+        return [e for e in candidates if len(e.authors) >= 3]
+    return [e for e in candidates if len(e.authors) == 1]
+
+
+def _match_part(cited: _Cited, bibliography: tuple[BibEntry, ...]) -> str | None:
+    folded = _fold(cited.surname)
     same_author = [e for e in bibliography if _first_author_surname(e) == folded]
-    if suffix is not None:
+    if cited.suffix is not None:
         # "2018a" only links to an entry whose own reference text says "2018a". Parsed
         # years drop the letter, so matching on the year alone could pick the 2018b paper.
-        label = re.compile(rf"\b{year}{suffix}\b")
+        label = re.compile(rf"\b{cited.year}{cited.suffix}\b")
         candidates = [e for e in same_author if e.raw and label.search(e.raw)]
     else:
-        lettered = re.compile(rf"\b{year}[a-z]\b")
+        lettered = re.compile(rf"\b{cited.year}[a-z]\b")
         candidates = [
-            e for e in same_author if e.year == year and not (e.raw and lettered.search(e.raw))
+            e
+            for e in same_author
+            if e.year == cited.year and not (e.raw and lettered.search(e.raw))
         ]
+    if len(candidates) > 1:
+        candidates = _by_author_count(cited, candidates)
     return candidates[0].id if len(candidates) == 1 else None
 
 
@@ -156,8 +194,8 @@ def _author_year_links(marker: str, bibliography: tuple[BibEntry, ...]) -> tuple
     if parts is None:
         return ()
     links = []
-    for surname, year, suffix in parts:
-        bib_id = _match_part(surname, year, suffix, bibliography)
+    for cited in parts:
+        bib_id = _match_part(cited, bibliography)
         if bib_id is None:
             return ()
         links.append(bib_id)
