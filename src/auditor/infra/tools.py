@@ -68,6 +68,7 @@ def tracked_tool[**P, R](
                         ToolCallRecord(
                             run_id=active.run_id,
                             paper_id=active.paper_id,
+                            variant=active.variant,
                             task_id=active.task_id,
                             tool=tool_name,
                             args_hash=args_hash(args, kwargs),

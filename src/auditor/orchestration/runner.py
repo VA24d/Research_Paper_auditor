@@ -55,7 +55,12 @@ async def run_task(
     rng = rng or random.Random()
     budget = Budget(max_tool_calls=policy.max_tool_calls, max_llm_calls=policy.max_llm_calls)
     task_scope = Scope(
-        run_id=run_id, paper_id=task.paper_id, task_id=task.task_id, budget=budget, usage=usage
+        run_id=run_id,
+        paper_id=task.paper_id,
+        variant=task.variant,
+        task_id=task.task_id,
+        budget=budget,
+        usage=usage,
     )
     attempt = 0
     with enter_scope(task_scope):

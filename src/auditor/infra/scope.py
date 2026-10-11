@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 
 from auditor.infra.usage import UsageLog, UsageRecord
+from auditor.schemas import PaperVariant, ParsedPaper
 
 
 class BudgetExceededError(Exception):
@@ -39,9 +40,14 @@ class Budget:
 class Scope:
     run_id: str
     paper_id: str | None = None
+    variant: PaperVariant | None = None
     task_id: str | None = None
     budget: Budget = field(default_factory=Budget)
     usage: UsageLog | None = None
+
+    @classmethod
+    def for_paper(cls, run_id: str, paper: ParsedPaper, usage: UsageLog | None = None) -> "Scope":
+        return cls(run_id=run_id, paper_id=paper.paper_id, variant=paper.variant, usage=usage)
 
     def record(self, record: UsageRecord) -> None:
         if self.usage is not None:

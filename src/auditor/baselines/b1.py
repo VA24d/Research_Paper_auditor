@@ -64,7 +64,7 @@ async def run_b1(
         response_format=ToolStrategy(ReportedErrors),
         middleware=limits,
     )
-    scope = Scope(run_id=run_id, paper_id=paper.paper_id, usage=usage)
+    scope = Scope.for_paper(run_id, paper, usage)
     config = RunnableConfig(
         callbacks=[UsageCallback(scope, model_name)],
         recursion_limit=4 * max_model_calls + 10,

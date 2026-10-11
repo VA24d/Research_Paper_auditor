@@ -384,6 +384,8 @@ class HttpClient:
         active.record(
             HttpRequestRecord(
                 run_id=active.run_id,
+                paper_id=active.paper_id,
+                variant=active.variant,
                 task_id=active.task_id,
                 method=method,
                 host=url.host,

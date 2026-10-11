@@ -263,6 +263,8 @@ class StructuredLLM:
         active.record(
             LLMCallRecord(
                 run_id=active.run_id,
+                paper_id=active.paper_id,
+                variant=active.variant,
                 task_id=active.task_id,
                 model=self.name,
                 input_tokens=usage.input_tokens,
@@ -313,6 +315,8 @@ class UsageCallback(AsyncCallbackHandler):
         self._scope.record(
             LLMCallRecord(
                 run_id=self._scope.run_id,
+                paper_id=self._scope.paper_id,
+                variant=self._scope.variant,
                 task_id=self._scope.task_id,
                 model=self._model_name,
                 input_tokens=usage.input_tokens,

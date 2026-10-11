@@ -15,6 +15,7 @@ from auditor.schemas import (
     ErrorClass,
     MarkerTarget,
     PageAnchor,
+    PaperVariant,
     RuleTarget,
     SentenceAnchor,
     SettingTarget,
@@ -143,7 +144,12 @@ async def test_b0_asks_once_and_records_usage() -> None:
     assert len(model.received) == 1
     assert "[s2]" in str(model.received[0][-1].content)
     assert len(usage.llm_calls) == 1
-    assert usage.llm_calls[0].task_id is None
+    (record,) = usage.llm_calls
+    assert (record.paper_id, record.variant, record.task_id) == (
+        example_paper().paper_id,
+        PaperVariant.ORIGINAL,
+        None,
+    )
 
 
 @tracked_tool("lookup_reference")
@@ -177,6 +183,9 @@ async def test_b1_uses_tools_then_answers() -> None:
     assert result.dropped == []
     assert [r.tool for r in usage.tool_calls] == ["lookup_reference"]
     assert [r.input_tokens for r in usage.llm_calls] == [100, 150]
+    expected = (example_paper().paper_id, PaperVariant.ORIGINAL)
+    assert {(r.paper_id, r.variant) for r in usage.tool_calls} == {expected}
+    assert {(r.paper_id, r.variant) for r in usage.llm_calls} == {expected}
     tool_result = model.received[1][-1]
     assert "Found: SQuAD" in str(tool_result.content)
 

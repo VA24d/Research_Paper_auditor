@@ -37,18 +37,28 @@ async def run(check: CheckFn, tmp_path: Path, policy: TaskPolicy = FAST) -> Task
 
 
 async def test_successful_check_runs_inside_the_task_scope(tmp_path: Path) -> None:
-    seen: dict[str, str | None] = {}
+    seen: dict[str, object] = {}
 
     async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         active = current_scope()
         assert active is not None
-        seen.update(task_id=active.task_id, paper_id=active.paper_id, run_id=active.run_id)
+        seen.update(
+            task_id=active.task_id,
+            paper_id=active.paper_id,
+            variant=active.variant,
+            run_id=active.run_id,
+        )
         return checked_result(task)
 
     result = await run(check, tmp_path)
     assert result.outcome is TaskOutcome.CHECKED
     assert result.attempts == 1
-    assert seen == {"task_id": TASK.task_id, "paper_id": TASK.paper_id, "run_id": "r1"}
+    assert seen == {
+        "task_id": TASK.task_id,
+        "paper_id": TASK.paper_id,
+        "variant": TASK.variant,
+        "run_id": "r1",
+    }
 
 
 async def test_transient_error_is_retried(tmp_path: Path) -> None:
