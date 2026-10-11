@@ -21,6 +21,19 @@ def test_run_ids_are_readable_and_unique() -> None:
     assert first != second
 
 
+@pytest.mark.parametrize(
+    "name",
+    ["api_key", "google_api_key", "apiKey", "access_token", "client_secret", "credentials"],
+)
+def test_redact_hides_credential_names(name: str) -> None:
+    assert redact({name: "x"}) == {name: "<redacted>"}
+
+
+@pytest.mark.parametrize("name", ["max_output_tokens", "max_tokens", "thinking_level", "model"])
+def test_redact_keeps_settings_that_change_answers(name: str) -> None:
+    assert redact({name: 16}) == {name: 16}
+
+
 def test_redact_hides_credentials_at_any_depth() -> None:
     config = {
         "llm_options": {"api_key": "sk-123", "temperature": 0},

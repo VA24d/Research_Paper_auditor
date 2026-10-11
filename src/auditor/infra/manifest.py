@@ -1,6 +1,7 @@
 """Run ids and run manifests (decision D10)."""
 
 import platform
+import re
 import secrets
 import subprocess
 from datetime import UTC, datetime
@@ -25,7 +26,11 @@ TRACKED_PACKAGES = (
     "httpx",
 )
 
-_SECRET_MARKERS = ("key", "token", "secret", "password", "credential")
+# Name parts that mark a credential. Matched against whole parts of the name, so
+# "api_key" and "accessToken" are hidden but "max_output_tokens" is kept.
+_SECRET_PARTS = frozenset(
+    {"key", "apikey", "token", "secret", "password", "credential", "credentials", "auth"}
+)
 
 
 def new_run_id(system: SystemName, now: datetime | None = None) -> str:
@@ -33,13 +38,16 @@ def new_run_id(system: SystemName, now: datetime | None = None) -> str:
     return f"{system.value}-{moment}-{secrets.token_hex(3)}"
 
 
+def _is_secret(name: str) -> bool:
+    words = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
+    return any(part in _SECRET_PARTS for part in re.split(r"[^a-z0-9]+", words))
+
+
 def redact(value: Any) -> Any:
     """Drop values stored under names that look like credentials."""
     if isinstance(value, dict):
         return {
-            key: "<redacted>"
-            if any(marker in key.lower() for marker in _SECRET_MARKERS)
-            else redact(item)
+            key: "<redacted>" if _is_secret(str(key)) else redact(item)
             for key, item in value.items()
         }
     if isinstance(value, list):
