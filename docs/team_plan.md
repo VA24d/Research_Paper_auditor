@@ -71,11 +71,13 @@ operating systems.
 
 ### Part 1 — Bhaskar: parsing, planning, orchestration, infrastructure, baselines
 
-Status: P1.1 is in PR #1. P1.2–P1.9, P1.11, P1.13–P1.16 are implemented and tested in PR #2,
-awaiting review. P1.10 is partly done (statistics on ten papers and hand-checked fallback
-links in [parser_evaluation.md](parser_evaluation.md); a gold sample is still to annotate).
-P1.12 is implemented and tested with a scripted model, and needs a run with the chosen
-provider. P1.17 is open.
+Status: P1.1 is merged (PR #1). P1.2–P1.11 and P1.13–P1.16 are implemented and tested
+(PR #2 and the follow-up PR). P1.10 includes a gold sample of 100 hand-checked citation
+links (see [parser_evaluation.md](parser_evaluation.md)). P1.12 is implemented and tested
+with a scripted model and against Gemini's request format offline; it needs one live run
+once the provider is settled (D9). P1.17 is open. Also available for Part 4: hyperparameter
+tables read into settings, `auditor batch` for repeated runs over a dataset (P4.6), and a
+Docker image for the final runs.
 
 Foundation (others depend on these, so they come first):
 
@@ -194,7 +196,8 @@ Integration and baselines:
   (D14), unlabelled flags, coverage (share of tasks checked), grounding rate, and cost
   from token usage, tool calls and HTTP requests.
 - [ ] **P4.6** Experiment configs for B0, B1 and the full system, three runs each on both
-  the injected and the original papers, with run manifests.
+  the injected and the original papers, with run manifests. `auditor batch` (README,
+  "Experiments") runs a dataset file this way and resumes after interruptions.
 - [ ] **P4.7** Ablations: no verifier, abstract-only retrieval, single agent.
 - [ ] **P4.8** Result tables and failure analysis.
 
