@@ -12,6 +12,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from auditor.schemas import (
+    CELL_SEPARATOR,
     BibEntry,
     Box,
     CitationMention,
@@ -26,6 +27,7 @@ from auditor.schemas import (
     Section,
     Sentence,
     SentenceKind,
+    Table,
 )
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
@@ -57,6 +59,34 @@ class _Builder:
     sentences: list[Sentence] = field(default_factory=list)
     citations: list[CitationMention] = field(default_factory=list)
     links: list[Link] = field(default_factory=list)
+    tables: list[Table] = field(default_factory=list)
+
+    def add_table(self, figure: ET.Element) -> None:
+        """Each row becomes a TABLE sentence; empty cells are kept so columns line up."""
+        table = figure.find(f"{TEI}table")
+        if table is None:
+            return
+        boxes = parse_coords(table.get("coords") or figure.get("coords"))
+        row_ids = []
+        for row in table.findall(f"{TEI}row"):
+            cells = [_text(cell) for cell in row.findall(f"{TEI}cell")]
+            if not any(cells):
+                continue
+            sentence_id = f"s{len(self.sentences)}"
+            self.sentences.append(
+                Sentence(
+                    id=sentence_id,
+                    kind=SentenceKind.TABLE,
+                    text=CELL_SEPARATOR.join(cells),
+                    boxes=boxes,
+                )
+            )
+            row_ids.append(sentence_id)
+        if row_ids:
+            label = _text(figure.find(f"{TEI}head")).rstrip(" :") or None
+            self.tables.append(
+                Table(id=f"t{len(self.tables)}", label=label, row_ids=tuple(row_ids))
+            )
 
     def add_section(self, title: str, number: str | None) -> str:
         section_id = f"sec{len(self.sections)}"
@@ -390,6 +420,8 @@ def tei_to_paper(
                 if description is not None:
                     for sentence in _sentences_in(description):
                         builder.add_sentence(sentence, SentenceKind.CAPTION, None)
+                if child.get("type") == "table":
+                    builder.add_table(child)
             elif tag == "note" and child.get("place") == "foot":
                 for sentence in _sentences_in(child):
                     builder.add_sentence(sentence, SentenceKind.FOOTNOTE, None)
@@ -446,6 +478,7 @@ def tei_to_paper(
         sentences=tuple(builder.sentences),
         bibliography=tuple(bibliography),
         citations=tuple(citations),
+        tables=tuple(builder.tables),
         links=tuple(links),
         layout=layout if layout is not None else page_sizes(root),
     )
