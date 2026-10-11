@@ -203,6 +203,7 @@
       "link_method": "none"
     }
   ],
+  "tables": [],
   "links": [
     {
       "url": "https://github.com/example/auditor-demo",

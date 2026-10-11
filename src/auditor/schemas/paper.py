@@ -28,6 +28,7 @@ class SentenceKind(StrEnum):
     BODY = "body"
     CAPTION = "caption"
     FOOTNOTE = "footnote"
+    TABLE = "table"
 
 
 class LinkMethod(StrEnum):
@@ -108,6 +109,17 @@ class CitationMention(Record):
         return bool(self.bib_ids)
 
 
+class Table(Record):
+    """A table whose rows are sentences of kind TABLE, cells joined by `CELL_SEPARATOR`."""
+
+    id: NonEmptyStr
+    label: str | None = None
+    row_ids: tuple[str, ...] = ()
+
+
+CELL_SEPARATOR = " | "
+
+
 class Link(Record):
     url: NonEmptyStr
     page: int | None = Field(default=None, ge=1)
@@ -174,6 +186,7 @@ class ParsedPaper(Record):
     sentences: tuple[Sentence, ...] = Field(min_length=1)
     bibliography: tuple[BibEntry, ...] = ()
     citations: tuple[CitationMention, ...] = ()
+    tables: tuple[Table, ...] = ()
     links: tuple[Link, ...] = ()
     layout: Layout | None = None
 
@@ -200,6 +213,12 @@ class ParsedPaper(Record):
             unknown = set(mention.bib_ids) - bib_ids
             if unknown:
                 raise ValueError(f"citation {mention.id} links unknown entries {sorted(unknown)}")
+        _require_unique("table", (t.id for t in self.tables))
+        for table in self.tables:
+            for row_id in table.row_ids:
+                row = sentences.get(row_id)
+                if row is None or row.kind is not SentenceKind.TABLE:
+                    raise ValueError(f"table {table.id} row {row_id} is not a table sentence")
         for link in self.links:
             if link.sentence_id is not None and link.sentence_id not in sentences:
                 raise ValueError(f"link {link.url} refers to unknown sentence")

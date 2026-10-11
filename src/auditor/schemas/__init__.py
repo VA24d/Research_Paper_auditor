@@ -38,6 +38,7 @@ from auditor.schemas.findings import (
     VerifiedFinding,
 )
 from auditor.schemas.paper import (
+    CELL_SEPARATOR,
     BibEntry,
     Box,
     CitationMention,
@@ -54,6 +55,7 @@ from auditor.schemas.paper import (
     Section,
     Sentence,
     SentenceKind,
+    Table,
 )
 from auditor.schemas.tasks import (
     AuditTask,
@@ -74,6 +76,7 @@ from auditor.schemas.telemetry import (
 from auditor.schemas.venue import VenueProfile, VenueRule
 
 __all__ = [
+    "CELL_SEPARATOR",
     "NO_ERROR",
     "SCHEMA_VERSION",
     "Anchor",
@@ -122,6 +125,7 @@ __all__ = [
     "SourceKind",
     "SourceRef",
     "SystemName",
+    "Table",
     "Target",
     "TaskKind",
     "TaskOutcome",
