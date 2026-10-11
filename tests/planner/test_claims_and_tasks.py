@@ -5,9 +5,14 @@ import pytest
 
 from auditor.infra.llm import StructuredLLM
 from auditor.orchestration.graph import AuditPipeline, run_audit
-from auditor.planner.claims import ClaimJudgements, citation_candidates, refine_candidates
+from auditor.planner.claims import (
+    ClaimCandidate,
+    ClaimJudgements,
+    citation_candidates,
+    refine_candidates,
+)
 from auditor.planner.repository import find_repository, repository_url
-from auditor.planner.tasks import PlannerOptions, make_planner, plan_paper
+from auditor.planner.tasks import PlannerOptions, citation_tasks, make_planner, plan_paper
 from auditor.schemas import (
     BibTarget,
     Link,
@@ -122,6 +127,27 @@ async def test_plan_without_llm_covers_every_kind(tmp_path: Path) -> None:
     assert {t.repository.url for t in code if t.repository} == {
         "https://github.com/example/auditor-demo"
     }
+
+
+def test_different_claims_about_one_work_in_a_sentence_stay_separate() -> None:
+    paper = example_paper()
+
+    def candidate(mention_id: str, claim: str) -> ClaimCandidate:
+        return ClaimCandidate(
+            mention_id=mention_id, sentence_id="s1", bib_id="b0", marker="[1]", claim=claim
+        )
+
+    tasks = citation_tasks(
+        paper,
+        [
+            candidate("c0", "Transformers"),
+            candidate("c9", "replaced recurrent networks"),
+            candidate("c10", "Transformers"),
+        ],
+    )
+    ids = [t.task_id for t in tasks]
+    assert ids[0] != ids[1]
+    assert ids[0] == ids[2]
 
 
 async def test_plan_skips_claims_judged_not_check_worthy(tmp_path: Path) -> None:

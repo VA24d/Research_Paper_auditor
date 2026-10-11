@@ -55,16 +55,24 @@ def compute_task_id(
     kind: TaskKind,
     anchor: Anchor,
     target: Target,
+    claim: str | None = None,
 ) -> str:
-    """Deterministic id, identical across runs, processes and operating systems."""
+    """Deterministic id, identical across runs, processes and operating systems.
+
+    A citation task's claim is part of its identity: one sentence can make two different
+    claims about the same work ("90% on A [3] and 80% on B [3]"), and each needs a check.
+    """
+    parts = [
+        paper_id,
+        variant.value,
+        kind.value,
+        anchor.model_dump(mode="json"),
+        target.model_dump(mode="json"),
+    ]
+    if claim is not None:
+        parts.append(claim)
     payload = json.dumps(
-        [
-            paper_id,
-            variant.value,
-            kind.value,
-            anchor.model_dump(mode="json"),
-            target.model_dump(mode="json"),
-        ],
+        parts,
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=True,
@@ -103,7 +111,7 @@ class AuditTask(Record):
         rule: VenueRule | None = None,
     ) -> Self:
         return cls(
-            task_id=compute_task_id(paper_id, variant, kind, anchor, target),
+            task_id=compute_task_id(paper_id, variant, kind, anchor, target, claim),
             paper_id=paper_id,
             variant=variant,
             kind=kind,
@@ -117,7 +125,9 @@ class AuditTask(Record):
 
     @model_validator(mode="after")
     def _check(self) -> Self:
-        expected = compute_task_id(self.paper_id, self.variant, self.kind, self.anchor, self.target)
+        expected = compute_task_id(
+            self.paper_id, self.variant, self.kind, self.anchor, self.target, self.claim
+        )
         if self.task_id != expected:
             raise ValueError(f"task_id should be {expected}; build tasks with AuditTask.create")
 

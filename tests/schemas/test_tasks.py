@@ -26,8 +26,8 @@ def test_task_ids_are_pinned() -> None:
     # so a change here must be deliberate.
     assert [t.task_id for t in example_tasks()] == [
         "reference-716e993b187e7804",
-        "citation-ed715714d10f1af0",
-        "citation-f648c619c3c4a800",
+        "citation-ff90ef73025cd80d",
+        "citation-a7af1d358c8d24c7",
         "code-35a0d3269a95fa69",
         "template-c90a0151950ba034",
     ]
