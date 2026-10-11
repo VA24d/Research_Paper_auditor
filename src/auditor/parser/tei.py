@@ -8,7 +8,7 @@ markers are `<ref type="bibr">` elements inside sentences; adjacent markers such
 
 import re
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from auditor.schemas import (
@@ -197,11 +197,13 @@ def _merge_adjacent(refs: list[_Ref], text: str) -> list[_Ref]:
     return merged
 
 
-def _sentences_in(container: ET.Element) -> Iterator[ET.Element]:
-    """`<s>` elements of each paragraph; a paragraph without them counts as one sentence."""
-    for paragraph in container.iter(f"{TEI}p"):
-        sentences = paragraph.findall(f"{TEI}s")
-        yield from sentences if sentences else [paragraph]
+def _sentences_in(container: ET.Element) -> list[ET.Element]:
+    """Sentences of every paragraph in the container. A paragraph without `<s>` counts as
+    one sentence, and a container without paragraphs counts as one sentence itself."""
+    paragraphs = list(container.iter(f"{TEI}p"))
+    if not paragraphs:
+        return [container]
+    return [s for paragraph in paragraphs for s in _sentences_in_paragraph(paragraph)]
 
 
 def _collect_div(
@@ -386,7 +388,7 @@ def tei_to_paper(
             elif tag == "figure":
                 description = child.find(f"{TEI}figDesc")
                 if description is not None:
-                    for sentence in _sentences_in(description) or [description]:
+                    for sentence in _sentences_in(description):
                         builder.add_sentence(sentence, SentenceKind.CAPTION, None)
             elif tag == "note" and child.get("place") == "foot":
                 for sentence in _sentences_in(child):

@@ -212,3 +212,18 @@ def test_year_labels_are_removed_from_titles(tei: str, title: str, expected: str
     changed = tei.replace(">Dense retrieval at scale<", f">{title}<")
     paper = tei_to_paper(changed, paper_id="x")
     assert paper.bib_entry("b2").title == expected
+
+
+def test_captions_and_footnotes_without_paragraphs_are_kept(tei: str) -> None:
+    changed = tei.replace(
+        '<figDesc><div><p><s coords="2,100.00,400.00,300.00,8.00">'
+        "Figure 1: Accuracy against model size.</s></p></div></figDesc>",
+        "<figDesc>Figure 1: Accuracy against model size.</figDesc>",
+    ).replace(
+        '<p><s coords="2,100.00,700.00,200.00,7.00">https://github.com/example/claims.</s></p>',
+        "Code: https://github.com/example/claims",
+    )
+    paper = tei_to_paper(changed, paper_id="x")
+    texts = {s.kind: s.text for s in paper.sentences if s.kind is not SentenceKind.BODY}
+    assert texts[SentenceKind.CAPTION] == "Figure 1: Accuracy against model size."
+    assert texts[SentenceKind.FOOTNOTE] == "Code: https://github.com/example/claims"
