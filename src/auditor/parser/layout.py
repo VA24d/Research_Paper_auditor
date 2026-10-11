@@ -64,6 +64,8 @@ def _extract(path: Path) -> tuple[Layout, list[Link]]:
                 uri = str(link.get("uri") or "")
                 if uri.startswith(("http://", "https://")):
                     links.append(Link(url=uri, page=page.page_number, source=LinkSource.ANNOTATION))
+            # Release the page's cached objects; long papers otherwise keep every page alive.
+            page.close()
     usage = tuple(
         FontUsage(name=name, size=size, chars=count)
         for (name, size), count in fonts.most_common()

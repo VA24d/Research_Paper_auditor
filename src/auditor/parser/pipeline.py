@@ -74,13 +74,24 @@ async def parse_pdf(
         logger.warning("%s; falling back to page sizes from GROBID", exc)
 
     def convert(document: str) -> ParsedPaper:
-        return tei_to_paper(
-            document,
-            paper_id=paper_id or path.stem,
-            pdf_sha256=digest,
-            layout=layout,
-            extra_links=links,
-        )
+        def build(pdf_layout: Layout | None) -> ParsedPaper:
+            return tei_to_paper(
+                document,
+                paper_id=paper_id or path.stem,
+                pdf_sha256=digest,
+                layout=pdf_layout,
+                extra_links=links,
+            )
+
+        try:
+            return build(layout)
+        except ValidationError:
+            if layout is None:
+                raise
+            # GROBID and pdfplumber can disagree on the page count of an odd PDF; keep the
+            # text and fall back to GROBID's own page sizes rather than lose the paper.
+            logger.warning("PDF layout of %s disagrees with GROBID's pages", path.name)
+            return build(None)
 
     try:
         paper = convert(tei)

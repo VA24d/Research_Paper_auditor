@@ -7,9 +7,10 @@ import pytest
 from auditor.cli import main
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
+from auditor.parser import pipeline
 from auditor.parser.grobid import GrobidClient, GrobidError
 from auditor.parser.pipeline import ParseError, parse_pdf, tei_cache_path
-from auditor.schemas import LinkSource
+from auditor.schemas import Layout, LinkSource, PageLayout
 
 FIXTURES = Path(__file__).parents[1] / "fixtures"
 SAMPLE_TEI = (FIXTURES / "tei" / "sample.tei.xml").read_bytes()
@@ -142,3 +143,13 @@ def test_cli_reports_unreachable_grobid(
     monkeypatch.setenv("AUDITOR_GROBID_URL", "http://127.0.0.1:9")
     assert main(["parse", str(PROPOSAL)]) == 2
     assert "docker compose up -d" in capsys.readouterr().err
+
+
+async def test_layout_that_disagrees_with_grobid_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    one_page = Layout(pages=(PageLayout(number=1, width=612.0, height=792.0),))
+    monkeypatch.setattr(pipeline, "extract_layout", lambda path: (one_page, []))
+    paper = await parse_pdf(PROPOSAL, grobid=grobid_with(tei_response, tmp_path))
+    assert paper.layout is not None
+    assert paper.layout.page_count == 2
