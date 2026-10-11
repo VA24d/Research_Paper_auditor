@@ -107,8 +107,10 @@ def parse_number(raw: str) -> int | float | None:
     text = raw.strip().rstrip("%").strip()
     for minus in "\u2212\u2013":
         text = text.replace(minus, "-")
+    if not text:
+        return None
     multiplier = 1
-    if text[-1:] in "kKM":
+    if text[-1] in "kKM":
         multiplier = 1_000_000 if text[-1] == "M" else 1_000
         text = text[:-1].strip()
     power = re.match(
