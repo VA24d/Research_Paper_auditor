@@ -73,7 +73,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
 
     async with HttpClient(settings) as http:
         paper = await load_paper(args.input, settings, http)
-        repository = resolve_repository(args.repo, paper)
+        repository = resolve_repository(args.repo, paper, args.repo_commit)
         llm = optional_llm(settings, not args.no_llm)
         manifest = build_manifest(
             run_id=run_id,
@@ -84,6 +84,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                 "paper_id": paper.paper_id,
                 "variant": paper.variant.value,
                 "repository": repository.url if repository else None,
+                "repository_commit": repository.commit if repository else None,
                 "venue": venue.id if venue else None,
                 "mocked_parts": list(mocked_parts()),
             },
@@ -133,7 +134,7 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
 
     async with HttpClient(settings) as http:
         paper = await load_paper(args.input, settings, http)
-        repository = resolve_repository(args.repo, paper)
+        repository = resolve_repository(args.repo, paper, args.repo_commit)
         manifest = build_manifest(
             run_id=run_id,
             system=system,
@@ -201,6 +202,9 @@ def build_parser() -> argparse.ArgumentParser:
     def add_common(command: argparse.ArgumentParser) -> None:
         command.add_argument("input", type=Path, help="A PDF, or ParsedPaper JSON")
         command.add_argument("--repo", help="Code repository URL (default: found in the paper)")
+        command.add_argument(
+            "--repo-commit", help="Commit, tag or branch of the repository to check against"
+        )
         command.add_argument("--venue", type=Path, help="Venue profile JSON")
         command.add_argument("--run-id", help="Run id (default: generated)")
 

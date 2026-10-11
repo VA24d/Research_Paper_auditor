@@ -81,11 +81,13 @@ class DatasetEntry(Record):
 
     `paper` is a ParsedPaper JSON file (for example an injected copy) or a PDF; relative
     paths are relative to the dataset file. Without `repository`, the repository is taken
-    from the paper when it announces one.
+    from the paper when it announces one. `repository_commit` pins the snapshot the gold
+    labels were checked against; a /tree/<ref> or /commit/<sha> URL does the same.
     """
 
     paper: NonEmptyStr
     repository: str | None = None
+    repository_commit: str | None = None
     venue: str | None = None
 
 

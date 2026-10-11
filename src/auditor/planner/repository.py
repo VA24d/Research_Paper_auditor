@@ -15,6 +15,9 @@ _REPOSITORY = re.compile(
     r"^https?://(?:www\.)?(?P<host>github\.com|gitlab\.com)/"
     r"(?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+?)(?:\.git)?(?:[/#?].*)?$"
 )
+# The part of a link after owner/name that names a snapshot: /tree/<ref>, /commit/<sha>
+# or /blob/<ref>/..., with GitLab's extra "/-".
+_SNAPSHOT = re.compile(r"^/(?:-/)?(?:tree|commit|blob)/(?P<ref>[^/#?]+)")
 _NOT_OWNERS = {"orgs", "features", "topics", "sponsors", "marketplace", "about", "settings"}
 _CODE_NOUN = re.compile(r"\b(codes?|implementations?|source|scripts?|software)\b", re.IGNORECASE)
 _ANNOUNCEMENT = re.compile(
@@ -36,6 +39,16 @@ def repository_url(url: str) -> str | None:
     if match is None or match["owner"].lower() in _NOT_OWNERS:
         return None
     return f"https://{match['host']}/{match['owner']}/{match['name']}"
+
+
+def snapshot_ref(url: str) -> str | None:
+    """The commit, tag or branch a repository link points at, if it names one."""
+    match = _REPOSITORY.match(url.strip())
+    if match is None:
+        return None
+    rest = url.strip()[match.end("name") :].removeprefix(".git")
+    found = _SNAPSHOT.match(rest)
+    return found["ref"] if found else None
 
 
 def announces_code(sentence: str) -> bool:

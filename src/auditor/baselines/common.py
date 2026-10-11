@@ -76,7 +76,8 @@ def render_paper(
     if paper.layout is not None:
         lines.append(f"Pages: {paper.layout.page_count}")
     if repository is not None:
-        lines.append(f"Code repository: {repository.url}")
+        commit = f" (commit {repository.commit})" if repository.commit else ""
+        lines.append(f"Code repository: {repository.url}{commit}")
     lines.append("")
     current = None
     for sentence in paper.sentences:

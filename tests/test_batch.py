@@ -5,13 +5,14 @@ import pytest
 
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
+from auditor.experiments import InputError, resolve_repository
 from auditor.infra.llm import StructuredLLM
-from auditor.schemas import PaperVariant, RunManifest
+from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest
 from auditor.schemas.examples import example_paper
 from auditor.testing import ScriptedChatModel, tool_reply
 
 
-def write_dataset(tmp_path: Path, *variants: PaperVariant) -> Path:
+def write_dataset(tmp_path: Path, *variants: PaperVariant, **fields: str) -> Path:
     folder = tmp_path / "dataset"
     folder.mkdir()
     lines = []
@@ -19,7 +20,7 @@ def write_dataset(tmp_path: Path, *variants: PaperVariant) -> Path:
         paper = example_paper().model_copy(update={"variant": variant})
         name = f"paper-{variant.value}.json"
         (folder / name).write_text(paper.model_dump_json(), encoding="utf-8")
-        lines.append(json.dumps({"paper": name}))
+        lines.append(json.dumps({"paper": name, **fields}))
     dataset = folder / "dataset.jsonl"
     dataset.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return dataset
@@ -100,3 +101,34 @@ def test_batch_rejects_duplicate_papers(tmp_path: Path, capsys: pytest.CaptureFi
     dataset.write_text(line + line, encoding="utf-8")
     assert main(["batch", str(dataset), "--experiment", "exp", "--systems", "full"]) == 2
     assert "listed twice" in capsys.readouterr().err
+
+
+def test_batch_checks_code_against_the_given_commit(tmp_path: Path) -> None:
+    dataset = write_dataset(
+        tmp_path,
+        PaperVariant.ORIGINAL,
+        repository="https://github.com/example/auditor-demo",
+        repository_commit="0123abc",
+    )
+    assert main(["batch", str(dataset), "--experiment", "exp", "--systems", "full"]) == 0
+    folder = predictions(tmp_path, "exp-full-r1", "original").parent
+    lines = (folder / "tasks.jsonl").read_text(encoding="utf-8").splitlines()
+    code = [t for t in map(AuditTask.model_validate_json, lines) if t.repository]
+    assert code
+    assert {t.repository for t in code} == {
+        RepositoryRef(url="https://github.com/example/auditor-demo", commit="0123abc")
+    }
+
+
+def test_repository_commit_from_the_url_or_alone() -> None:
+    paper = example_paper()
+    from_url = resolve_repository("https://github.com/a/b/tree/0123abc", paper)
+    assert from_url == RepositoryRef(url="https://github.com/a/b", commit="0123abc")
+    found = resolve_repository(None, paper, "0123abc")
+    assert found is not None
+    assert found.commit == "0123abc"
+    with pytest.raises(InputError, match="names 0123abc"):
+        resolve_repository("https://github.com/a/b/commit/0123abc", paper, "fff0000")
+    without_links = paper.model_copy(update={"links": ()})
+    with pytest.raises(InputError, match="no repository"):
+        resolve_repository(None, without_links, "0123abc")

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
 from auditor.infra.llm import LLMNotConfiguredError, StructuredLLM
-from auditor.schemas import ParsedPaper
+from auditor.schemas import ParsedPaper, RepositoryRef
 
 
 @dataclass(frozen=True)
@@ -16,6 +16,8 @@ class RunContext:
     http: HttpClient
     llm: StructuredLLM | None
     logger: logging.Logger
+    # The code repository of this run, when one is known; B1's code tools inspect it.
+    repository: RepositoryRef | None = None
 
     def require_llm(self) -> StructuredLLM:
         if self.llm is None:

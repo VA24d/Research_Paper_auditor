@@ -11,7 +11,7 @@ from auditor.planner.claims import (
     citation_candidates,
     refine_candidates,
 )
-from auditor.planner.repository import find_repository, repository_url
+from auditor.planner.repository import find_repository, repository_url, snapshot_ref
 from auditor.planner.tasks import PlannerOptions, citation_tasks, make_planner, plan_paper
 from auditor.schemas import (
     BibTarget,
@@ -89,6 +89,22 @@ def test_repository_urls_are_canonicalised() -> None:
     assert repository_url("https://github.com/owner/name#readme") == "https://github.com/owner/name"
     assert repository_url("https://github.com/owner") is None
     assert repository_url("https://example.org/owner/name") is None
+
+
+@pytest.mark.parametrize(
+    ("url", "ref"),
+    [
+        ("https://github.com/owner/name/tree/0123abc", "0123abc"),
+        ("https://github.com/owner/name/commit/0123abc", "0123abc"),
+        ("https://github.com/owner/name.git/tree/v1.0", "v1.0"),
+        ("https://gitlab.com/owner/name/-/tree/v1.0/src", "v1.0"),
+        ("https://github.com/owner/name/blob/main/train.py", "main"),
+        ("https://github.com/owner/name", None),
+        ("https://github.com/owner/name/issues/3", None),
+    ],
+)
+def test_snapshot_ref_reads_the_commit_a_link_names(url: str, ref: str | None) -> None:
+    assert snapshot_ref(url) == ref
 
 
 def test_repository_next_to_code_words_is_preferred() -> None:
