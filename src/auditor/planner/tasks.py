@@ -78,13 +78,14 @@ def code_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[Aud
     for setting in extract_settings(paper):
         if not isinstance(setting.source, PaperSource):
             continue
-        anchor = setting.source.anchor
+        # The value's span keeps two values of one setting in one sentence apart
+        # ("1e-4 for BERT and 2e-5 for RoBERTa"); a span-less gold anchor still matches.
         tasks.append(
             AuditTask.create(
                 paper_id=paper.paper_id,
                 variant=paper.variant,
                 kind=TaskKind.CODE,
-                anchor=SentenceAnchor(sentence_id=anchor.sentence_id),
+                anchor=setting.source.anchor,
                 target=SettingTarget(key=setting.key),
                 setting=setting,
                 repository=repository,

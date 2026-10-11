@@ -1,8 +1,12 @@
+from pathlib import Path
+
 import pytest
 
 from auditor.planner.settings import extract_settings, parse_number, settings_in_sentence
-from auditor.schemas import PaperSource, Sentence
+from auditor.planner.tasks import plan_paper
+from auditor.schemas import PaperSource, ParsedPaper, Sentence
 from auditor.schemas.examples import example_paper
+from auditor.testing import offline_context
 
 MINUS = chr(0x2212)
 TIMES = chr(0x00D7)
@@ -106,3 +110,14 @@ def test_extract_settings_reads_the_whole_paper() -> None:
 def test_parse_number(raw: str, value: float | None) -> None:
     result = parse_number(raw)
     assert result == pytest.approx(value) if value is not None else result is None
+
+
+async def test_two_values_of_one_setting_become_two_code_tasks(tmp_path: Path) -> None:
+    data = example_paper().model_dump()
+    data["sentences"][4]["text"] = (
+        "We use a learning rate of 1e-4 for BERT and a learning rate of 2e-5 for RoBERTa."
+    )
+    paper = ParsedPaper.model_validate(data)
+    tasks = await plan_paper(paper, offline_context(tmp_path, paper=paper))
+    values = sorted(t.setting.raw_value for t in tasks if t.setting is not None)
+    assert values == ["1e-4", "2e-5"]
