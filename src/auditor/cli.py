@@ -10,48 +10,36 @@ from pathlib import Path
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from auditor.baselines.b0 import BaselineResult, run_b0
-from auditor.baselines.b1 import run_b1
 from auditor.config import Settings
-from auditor.infra.context import RunContext
+from auditor.experiments import (
+    BATCH_SYSTEMS,
+    InputError,
+    load_paper,
+    load_venue,
+    mocked_parts,
+    optional_llm,
+    required_llm,
+    resolve_repository,
+    run_baseline,
+    run_batch,
+    run_full,
+)
 from auditor.infra.files import atomic_write
 from auditor.infra.http import HttpClient
-from auditor.infra.llm import (
-    LLMNotConfiguredError,
-    StructuredLLM,
-    create_chat_model,
-    model_id,
-)
 from auditor.infra.log import configure_logging
 from auditor.infra.manifest import build_manifest, new_run_id, write_manifest
 from auditor.infra.usage import UsageLog
-from auditor.orchestration.graph import (
-    AuditPipeline,
-    NothingToResumeError,
-    ThreadInUseError,
-    run_audit,
-)
-from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
-from auditor.orchestration.registry import load_specialists, load_tools, load_verifier
-from auditor.parser.grobid import GrobidClient
-from auditor.parser.pipeline import ParseError, parse_pdf
-from auditor.planner.repository import find_repository, repository_url
-from auditor.planner.tasks import PlannerOptions, make_planner
+from auditor.orchestration.graph import NothingToResumeError, ThreadInUseError
+from auditor.orchestration.outputs import RunDirectory
 from auditor.schemas import (
     LinkMethod,
     ParsedPaper,
-    RepositoryRef,
     SystemName,
     TaskOutcome,
-    VenueProfile,
     VerificationState,
 )
 
 logger = logging.getLogger("auditor.cli")
-
-
-class UsageError(Exception):
-    """A problem with the command's input, reported without a traceback."""
 
 
 def _summary(paper: ParsedPaper) -> str:
@@ -62,58 +50,13 @@ def _summary(paper: ParsedPaper) -> str:
         f"{paper.paper_id}: {pages} pages, {len(paper.sections)} sections, "
         f"{len(paper.sentences)} sentences, {len(paper.bibliography)} references, "
         f"{linked}/{len(paper.citations)} citation markers linked ({heuristic} by heuristic), "
-        f"{len(paper.links)} links"
+        f"{len(paper.tables)} tables, {len(paper.links)} links"
     )
-
-
-async def _load_paper(
-    source: Path, settings: Settings, http: HttpClient, *, refresh: bool = False
-) -> ParsedPaper:
-    if not await asyncio.to_thread(source.is_file):
-        raise UsageError(f"No such file: {source}")
-    if source.suffix.lower() == ".json":
-        return ParsedPaper.model_validate_json(await asyncio.to_thread(source.read_bytes))
-    grobid = GrobidClient(http, settings.grobid_url)
-    if not await grobid.is_alive():
-        raise UsageError(
-            f"GROBID is not reachable at {settings.grobid_url}. Start it with: docker compose up -d"
-        )
-    try:
-        return await parse_pdf(source, grobid=grobid, cache_dir=settings.cache_dir, refresh=refresh)
-    except ParseError as exc:
-        raise UsageError(f"Could not parse: {exc}") from exc
-
-
-def _load_venue(path: Path | None) -> VenueProfile | None:
-    if path is None:
-        return None
-    if not path.is_file():
-        raise UsageError(f"No such venue profile: {path}")
-    return VenueProfile.model_validate_json(path.read_bytes())
-
-
-def _repository(value: str | None, paper: ParsedPaper) -> RepositoryRef | None:
-    if value is None:
-        return find_repository(paper)
-    url = repository_url(value)
-    if url is None:
-        raise UsageError(f"Not a GitHub or GitLab repository URL: {value}")
-    return RepositoryRef(url=url)
-
-
-def _optional_llm(settings: Settings, enabled: bool) -> StructuredLLM | None:
-    if not enabled:
-        return None
-    try:
-        return StructuredLLM.from_settings(settings)
-    except LLMNotConfiguredError:
-        logger.warning("no LLM configured; the planner runs without its LLM pass")
-        return None
 
 
 async def _parse(args: argparse.Namespace, settings: Settings) -> int:
     async with HttpClient(settings) as http:
-        paper = await _load_paper(args.pdf, settings, http, refresh=args.refresh)
+        paper = await load_paper(args.pdf, settings, http, refresh=args.refresh)
     if args.output is not None:
         atomic_write(args.output, (paper.model_dump_json(indent=1) + "\n").encode("utf-8"))
     print(_summary(paper))
@@ -122,29 +65,16 @@ async def _parse(args: argparse.Namespace, settings: Settings) -> int:
 
 async def _audit(args: argparse.Namespace, settings: Settings) -> int:
     if args.resume and not args.run_id:
-        raise UsageError("--resume needs the --run-id of the run to continue")
+        raise InputError("--resume needs the --run-id of the run to continue")
     run_id = args.run_id or new_run_id(SystemName.FULL)
     run = RunDirectory(settings.runs_dir, run_id)
     configure_logging(settings.log_level, run.path / "run.log")
-    usage = UsageLog(run.usage_dir)
-    venue = _load_venue(args.venue)
+    venue = load_venue(args.venue)
 
     async with HttpClient(settings) as http:
-        paper = await _load_paper(args.input, settings, http)
-        repository = _repository(args.repo, paper)
-        llm = _optional_llm(settings, not args.no_llm)
-        ctx = RunContext(settings=settings, paper=paper, http=http, llm=llm, logger=logger)
-        specialists, mocked = load_specialists()
-        verifier, mock_verifier = load_verifier()
-        pipeline = AuditPipeline(
-            ctx=ctx,
-            planner=make_planner(
-                PlannerOptions(repository=repository, venue=venue, use_llm=llm is not None)
-            ),
-            specialists=specialists,
-            verifier=verifier,
-            max_concurrency=args.max_concurrency,
-        )
+        paper = await load_paper(args.input, settings, http)
+        repository = resolve_repository(args.repo, paper)
+        llm = optional_llm(settings, not args.no_llm)
         manifest = build_manifest(
             run_id=run_id,
             system=SystemName.FULL,
@@ -155,29 +85,31 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                 "variant": paper.variant.value,
                 "repository": repository.url if repository else None,
                 "venue": venue.id if venue else None,
-                "mocked_specialists": list(mocked),
-                "mocked_verifier": mock_verifier,
+                "mocked_parts": list(mocked_parts()),
             },
         )
         write_manifest(manifest, run.path)
         async with AsyncSqliteSaver.from_conn_string(str(run.path / "checkpoints.sqlite")) as saver:
             try:
-                outcome = await run_audit(
-                    pipeline,
+                result = await run_full(
                     paper,
+                    settings=settings,
+                    http=http,
+                    llm=llm,
+                    run=run,
                     run_id=run_id,
-                    system=SystemName.FULL,
-                    usage=usage,
+                    usage=UsageLog(run.usage_dir),
                     checkpointer=saver,
+                    repository=repository,
+                    venue=venue,
+                    max_concurrency=args.max_concurrency,
                     resume=args.resume,
                 )
             except (ThreadInUseError, NothingToResumeError) as exc:
-                raise UsageError(str(exc)) from exc
-
-    predictions = predictions_from_verified(outcome.verified, run_id=run_id, system=SystemName.FULL)
-    folder = run.save_audit(paper, outcome, predictions)
+                raise InputError(str(exc)) from exc
     write_manifest(manifest.model_copy(update={"finished_at": datetime.now(UTC)}), run.path)
 
+    outcome = result.outcome
     outcomes = {o: sum(1 for r in outcome.results if r.outcome is o) for o in TaskOutcome}
     states = {s: sum(1 for v in outcome.verified if v.state is s) for s in VerificationState}
     print(
@@ -186,7 +118,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
         f"unverifiable, {outcomes[TaskOutcome.FAILED]} failed); "
         f"{states[VerificationState.VERIFIED_FLAG]} verified flags, "
         f"{states[VerificationState.NEEDS_HUMAN_REVIEW]} for human review, "
-        f"{states[VerificationState.DROPPED]} dropped. Output: {folder}"
+        f"{states[VerificationState.DROPPED]} dropped. Output: {result.folder}"
     )
     return 0
 
@@ -196,16 +128,12 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
     run_id = args.run_id or new_run_id(system)
     run = RunDirectory(settings.runs_dir, run_id)
     configure_logging(settings.log_level, run.path / "run.log")
-    usage = UsageLog(run.usage_dir)
-    venue = _load_venue(args.venue)
-    try:
-        llm = StructuredLLM.from_settings(settings)
-    except LLMNotConfiguredError as exc:
-        raise UsageError(f"Baselines need an LLM. {exc}") from exc
+    venue = load_venue(args.venue)
+    llm = required_llm(settings)
 
     async with HttpClient(settings) as http:
-        paper = await _load_paper(args.input, settings, http)
-        repository = _repository(args.repo, paper)
+        paper = await load_paper(args.input, settings, http)
+        repository = resolve_repository(args.repo, paper)
         manifest = build_manifest(
             run_id=run_id,
             system=system,
@@ -214,31 +142,51 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
             extra_config={"paper_id": paper.paper_id, "variant": paper.variant.value},
         )
         write_manifest(manifest, run.path)
-        result: BaselineResult
-        if system is SystemName.B0:
-            result = await run_b0(
-                paper, llm, run_id=run_id, usage=usage, venue=venue, repository=repository
-            )
-        else:
-            ctx = RunContext(settings=settings, paper=paper, http=http, llm=llm, logger=logger)
-            result = await run_b1(
-                paper,
-                create_chat_model(settings),
-                load_tools(ctx),
-                run_id=run_id,
-                model_name=model_id(settings),
-                usage=usage,
-                venue=venue,
-                repository=repository,
-            )
-
-    path = run.save_predictions(paper, result.predictions)
+        result, path = await run_baseline(
+            system,
+            paper,
+            settings=settings,
+            http=http,
+            llm=llm,
+            run=run,
+            run_id=run_id,
+            usage=UsageLog(run.usage_dir),
+            repository=repository,
+            venue=venue,
+        )
     write_manifest(manifest.model_copy(update={"finished_at": datetime.now(UTC)}), run.path)
     print(
         f"{run_id}: {len(result.predictions)} predictions "
         f"({len(result.dropped)} answers dropped as invalid). Output: {path}"
     )
     return 0
+
+
+async def _batch(args: argparse.Namespace, settings: Settings) -> int:
+    if not args.dataset.is_file():
+        raise InputError(f"No such dataset file: {args.dataset}")
+    if not args.llm_cache:
+        # Reported runs must not reuse cached answers (decision D10).
+        settings = settings.model_copy(update={"llm_cache": False})
+    summaries = await run_batch(
+        args.dataset,
+        experiment=args.experiment,
+        systems=[SystemName(s) for s in args.systems],
+        runs=args.runs,
+        settings=settings,
+        strict=args.strict,
+        max_concurrency=args.max_concurrency,
+    )
+    failed = 0
+    for summary in summaries:
+        print(
+            f"{summary.run_id}: {summary.done} done, {summary.skipped} already done, "
+            f"{len(summary.failed)} failed"
+        )
+        for message in summary.failed:
+            print(f"    {message}")
+        failed += len(summary.failed)
+    return 1 if failed else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -265,6 +213,26 @@ def build_parser() -> argparse.ArgumentParser:
     baseline = commands.add_parser("baseline", help="Run baseline B0 or B1 on one paper")
     baseline.add_argument("system", choices=[SystemName.B0.value, SystemName.B1.value])
     add_common(baseline)
+
+    batch = commands.add_parser(
+        "batch", help="Run systems over a dataset several times (resumable)"
+    )
+    batch.add_argument("dataset", type=Path, help="JSON Lines file of DatasetEntry records")
+    batch.add_argument("--experiment", required=True, help="Name used in the run ids")
+    batch.add_argument(
+        "--systems",
+        nargs="+",
+        default=[s.value for s in BATCH_SYSTEMS],
+        choices=[s.value for s in BATCH_SYSTEMS],
+    )
+    batch.add_argument("--runs", type=int, default=3, help="Repetitions of each system")
+    batch.add_argument(
+        "--llm-cache", action="store_true", help="Reuse cached LLM answers (development only)"
+    )
+    batch.add_argument(
+        "--strict", action="store_true", help="Refuse to run while any part is still a mock"
+    )
+    batch.add_argument("--max-concurrency", type=int, default=8)
     return parser
 
 
@@ -272,10 +240,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     settings = Settings()
     configure_logging(settings.log_level)
-    commands = {"parse": _parse, "audit": _audit, "baseline": _baseline}
+    commands = {"parse": _parse, "audit": _audit, "baseline": _baseline, "batch": _batch}
     try:
         return asyncio.run(commands[args.command](args, settings))
-    except UsageError as exc:
+    except InputError as exc:
         print(exc, file=sys.stderr)
         return 2
 
