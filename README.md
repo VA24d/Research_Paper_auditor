@@ -124,12 +124,49 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 | Full audit | `uv run auditor audit paper.pdf [--repo URL] [--venue venue.json] [--no-llm]` |
 | Resume an interrupted audit | `uv run auditor audit paper.pdf --run-id <id> --resume` |
 | Baseline B0 or B1 | `uv run auditor baseline b0 paper.pdf` (needs an LLM in `.env`) |
+| Experiment over a dataset | `uv run auditor batch dataset.jsonl --experiment main [--systems full b0 b1] [--runs 3]` |
 | Check the LLM provider | `uv run python scripts/probe_llm.py` |
 | Parser statistics | `uv run python scripts/parser_report.py data/papers` |
+| Citation-link accuracy | `uv run python scripts/citation_sample.py score data/papers datasets/parser_fixtures/citation_gold.jsonl` |
 
 Each run writes to `runs/<run_id>/`: `manifest.json` (git commit, settings with secrets
 removed, package versions), `usage/*.jsonl` (every tool call, HTTP request and LLM call),
 and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.jsonl`.
+
+### Experiments
+
+A dataset file lists one paper per line as JSON:
+
+```json
+{"paper": "papers/2106.09685.pdf", "repository": "https://github.com/microsoft/LoRA"}
+{"paper": "injected/2106.09685-citation.json", "venue": "venues/neurips.json"}
+```
+
+`paper` is a PDF or a `ParsedPaper` JSON file (such as a copy with injected errors);
+`repository` and `venue` are optional. Relative paths are relative to the dataset file.
+
+`auditor batch` runs each system `--runs` times. Run ids are `<experiment>-<system>-r<n>`,
+so running the same command again skips papers that already have predictions and resumes
+interrupted ones. Papers that fail are listed in the run's `failures.jsonl` and the batch
+continues. LLM answers are not cached in a batch unless `--llm-cache` is given, and
+`--strict` refuses to start while any part is still a mock.
+
+### Docker
+
+For the final runs, the whole pipeline also runs in a container, so everyone gets the same
+Python and package versions:
+
+```bash
+docker compose run --rm auditor batch dataset.jsonl --experiment main
+```
+
+This builds the image on first use, starts GROBID and waits until it is ready, and mounts
+the repository at the container's working directory, so paths and `.env` work as they do
+on the host. Rebuild after pulling code changes with `docker compose build auditor`.
+An API key in `.env` reaches the container as is. Gemini on Vertex AI is different: the
+container cannot see your `gcloud` login, so point `GOOGLE_APPLICATION_CREDENTIALS` in
+`.env` at a service-account key file kept under `data/` (git-ignored), using the path
+relative to the repository root.
 
 ## Plugging In Your Part
 

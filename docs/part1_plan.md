@@ -9,8 +9,9 @@ planner quality work comes after that.
 
 ## Status
 
-M0–M6 are implemented on `feature/core-planner` (PR #2). There are 285 tests, run on
-Linux, Windows and macOS in CI, plus live GROBID tests. Parser results on ten arXiv papers
+M0–M6 are implemented: PR #2 (`feature/core-planner`) and its follow-up
+(`feature/part1-completion`). There are 320 tests, run on Linux, Windows and macOS in CI,
+plus live GROBID tests. Parser results on ten arXiv papers
 are in [parser_evaluation.md](parser_evaluation.md).
 
 Where the build differs from the plan below, and why:
@@ -25,13 +26,17 @@ Where the build differs from the plan below, and why:
   that announces code, because a wrong repository would produce false mismatches.
 - **Settings extraction.** Skips flattened table rows, takes optimizer names only from
   first-person sentences, and needs a training context for bare "N steps".
+- **Tables.** GROBID's table rows are kept as table sentences and read by rules (known key
+  names in a row or column), instead of adding Docling. When a repository is known, an LLM
+  pass reads garbled tables too, keeping only values quoted exactly from a row.
+- **Experiments.** `auditor batch` runs systems over a dataset file several times with
+  resumable run ids, and a Docker image pins the environment for final runs.
 
 Still open:
 
-- Run `scripts/probe_llm.py` and the planner's LLM pass (P1.12) once the provider is
-  chosen (D9).
-- Table extraction for hyperparameter tables (the main gap for code tasks).
-- A hand-annotated gold sample for parser link accuracy (P1.10).
+- Run `scripts/probe_llm.py` and the planner's LLM pass (P1.12) with a real key once the
+  provider is settled (D9; Gemini is likely, and its request format is already tested
+  offline).
 - Failure analysis (P1.17) once real specialists are connected.
 
 ---
@@ -262,7 +267,7 @@ Deterministic pass:
   text as its target, so it ends up checked or `unverifiable` instead of disappearing (D6).
 - Numbers with units and experimental settings are found with patterns: learning rate,
   batch size, epochs, optimiser, weight decay, dropout, warmup, seeds, splits, dataset
-  names, metrics. Hyperparameter tables are included once table extraction is added.
+  names, metrics, and the rows and columns of hyperparameter tables.
 - Repository links come from layout links and text.
 
 LLM pass (structured output):

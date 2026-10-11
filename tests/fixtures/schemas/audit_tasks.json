@@ -83,6 +83,7 @@
       "raw_value": "3e-4",
       "value": 0.0003,
       "unit": null,
+      "context": null,
       "source": {
         "kind": "paper",
         "anchor": {

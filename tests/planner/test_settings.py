@@ -105,6 +105,8 @@ def test_extract_settings_reads_the_whole_paper() -> None:
         ("256", 256),
         ("10%", 10),
         ("abc", None),
+        ("16 32", None),
+        ("20 000", 20_000),
     ],
 )
 def test_parse_number(raw: str, value: float | None) -> None:

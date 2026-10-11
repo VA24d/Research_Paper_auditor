@@ -202,6 +202,7 @@ Facts that affect the choice (checked October 2026):
 - The HTTP cache is always on.
 - The LLM response cache is on during development and **off** for reported runs, otherwise
   repeated runs would be identical and the variance estimate would be meaningless.
+  `auditor batch` turns it off unless given `--llm-cache`.
 - Every run writes a `RunManifest`: git commit, config, model ID, package versions, dataset
   version and seed (where the provider supports one).
 - Reported numbers are the mean and range over three runs, as in the proposal.
@@ -274,7 +275,8 @@ Cross-platform rules, since the team uses all three systems:
 - Pass `newline="\n"` when writing files that are hashed, compared byte for byte or committed
   (fixtures, caches, gold labels). Without it, Python writes `\r\n` on Windows.
 - Write helper scripts in Python under `scripts/`, not shell or batch files.
-- Docker is only needed for GROBID.
+- Docker is needed for GROBID. The `auditor` image in `compose.yaml` is optional; it pins
+  the environment for the final runs, and `uv run` gives the same results without it.
 - Line endings are normalised to LF by `.gitattributes`.
 
 ## D17. Branches and reviews — Agreed

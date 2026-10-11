@@ -11,6 +11,7 @@ from auditor.schemas.anchors import (
 from auditor.schemas.base import SCHEMA_VERSION, Record
 from auditor.schemas.evaluation import (
     NO_ERROR,
+    DatasetEntry,
     GoldLabel,
     Prediction,
     RunManifest,
@@ -38,6 +39,7 @@ from auditor.schemas.findings import (
     VerifiedFinding,
 )
 from auditor.schemas.paper import (
+    CELL_SEPARATOR,
     BibEntry,
     Box,
     CitationMention,
@@ -54,6 +56,7 @@ from auditor.schemas.paper import (
     Section,
     Sentence,
     SentenceKind,
+    Table,
 )
 from auditor.schemas.tasks import (
     AuditTask,
@@ -74,6 +77,7 @@ from auditor.schemas.telemetry import (
 from auditor.schemas.venue import VenueProfile, VenueRule
 
 __all__ = [
+    "CELL_SEPARATOR",
     "NO_ERROR",
     "SCHEMA_VERSION",
     "Anchor",
@@ -85,6 +89,7 @@ __all__ = [
     "CallStatus",
     "CandidateFinding",
     "CitationMention",
+    "DatasetEntry",
     "DocumentAnchor",
     "ErrorClass",
     "Evidence",
@@ -122,6 +127,7 @@ __all__ = [
     "SourceKind",
     "SourceRef",
     "SystemName",
+    "Table",
     "Target",
     "TaskKind",
     "TaskOutcome",

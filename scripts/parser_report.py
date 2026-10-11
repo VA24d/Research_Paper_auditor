@@ -16,7 +16,7 @@ from auditor.infra.http import HttpClient
 from auditor.parser.grobid import GrobidClient
 from auditor.parser.pipeline import ParseError, parse_pdf
 from auditor.planner.repository import find_repository
-from auditor.planner.settings import extract_settings
+from auditor.planner.tables import paper_settings
 from auditor.schemas import LinkMethod, ParsedPaper
 
 HEADER = (
@@ -43,7 +43,7 @@ def row(paper: ParsedPaper) -> str:
         f"| {len(paper.sentences)} | {len(entries)} "
         f"| {_percent(titled, len(entries))} / {_percent(dated, len(entries))} "
         f"| {len(markers)} | {_percent(by_parser + by_rule, len(markers))} "
-        f"({by_parser} + {by_rule}) | {len(extract_settings(paper))} "
+        f"({by_parser} + {by_rule}) | {len(paper_settings(paper))} "
         f"| {repository.url if repository else '-'} |"
     )
 

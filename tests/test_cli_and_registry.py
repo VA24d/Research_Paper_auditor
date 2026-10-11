@@ -101,7 +101,7 @@ def test_audit_command_writes_a_complete_run(tmp_path: Path) -> None:
     run = tmp_path / "runs" / "t1"
     manifest = RunManifest.model_validate_json((run / "manifest.json").read_bytes())
     assert manifest.finished_at is not None
-    assert manifest.config["mocked_specialists"] == ["citation", "code", "template"]
+    assert manifest.config["mocked_parts"] == ["citation", "code", "template", "verifier"]
     assert manifest.config["repository"] == "https://github.com/example/auditor-demo"
     paper_dir = run / "example-paper-original"
     assert len(lines(paper_dir / "tasks.jsonl")) == 12

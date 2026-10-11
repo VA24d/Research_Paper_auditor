@@ -76,6 +76,19 @@ def matches(prediction: Prediction, label: GoldLabel) -> bool:
     )
 
 
+class DatasetEntry(Record):
+    """One paper in an experiment dataset file (JSON Lines, read by `auditor batch`).
+
+    `paper` is a ParsedPaper JSON file (for example an injected copy) or a PDF; relative
+    paths are relative to the dataset file. Without `repository`, the repository is taken
+    from the paper when it announces one.
+    """
+
+    paper: NonEmptyStr
+    repository: str | None = None
+    venue: str | None = None
+
+
 class RunManifest(Record):
     schema_version: SchemaVersion = SCHEMA_VERSION
     run_id: NonEmptyStr

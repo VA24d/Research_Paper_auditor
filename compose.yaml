@@ -8,3 +8,24 @@ services:
       core: 0
     ports:
       - "127.0.0.1:8070:8070"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8070/api/isalive"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # The pipeline itself, for reproducible runs: docker compose run --rm auditor <command>.
+  # Not started by "docker compose up"; only "run" uses it.
+  auditor:
+    build: .
+    profiles: ["run"]
+    depends_on:
+      grobid:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      AUDITOR_GROBID_URL: http://grobid:8070
+    volumes:
+      - .:/work

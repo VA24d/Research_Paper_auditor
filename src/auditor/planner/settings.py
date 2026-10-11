@@ -14,6 +14,7 @@ from auditor.schemas import (
     ParsedPaper,
     Sentence,
     SentenceAnchor,
+    SentenceKind,
     SettingValue,
 )
 
@@ -118,7 +119,9 @@ def parse_number(raw: str) -> int | float | None:
         if power:
             value: float = float(power["base"]) * 10 ** int(power["exp"].replace(" ", ""))
         else:
-            compact = text.replace(" ", "")
+            # Spaces and commas count only as thousands separators ("20 000", "4, 000");
+            # "16 32" is two numbers from merged table cells, not 1632.
+            compact = re.sub(r"(?<=\d),? (?=\d{3}(?!\d))", "", text)
             if re.fullmatch(r"\d{1,3}(?:,\d{3})+", compact):
                 compact = compact.replace(",", "")
             value = float(compact)
@@ -194,4 +197,10 @@ def _start(setting: ExtractedSetting) -> int:
 
 
 def extract_settings(paper: ParsedPaper) -> list[ExtractedSetting]:
-    return [setting for sentence in paper.sentences for setting in settings_in_sentence(sentence)]
+    """Settings stated in sentences; table rows are read by `auditor.planner.tables`."""
+    return [
+        setting
+        for sentence in paper.sentences
+        if sentence.kind is not SentenceKind.TABLE
+        for setting in settings_in_sentence(sentence)
+    ]

@@ -34,7 +34,9 @@ class ExtractedSetting(Record):
     """One setting, such as a learning rate, as written and in normalised form.
 
     `key` is the canonical name shared by the paper side and the repository side
-    (for example `learning_rate` for both "lr" and "learning rate").
+    (for example `learning_rate` for both "lr" and "learning rate"). `context` says which
+    configuration the value belongs to when a paper gives several, such as a table column
+    "SST-2" or a row "ViT-L/16".
     """
 
     key: NonEmptyStr = Field(pattern=r"^[a-z][a-z0-9_]*$")
@@ -42,4 +44,5 @@ class ExtractedSetting(Record):
     raw_value: NonEmptyStr
     value: SettingValue | None = None
     unit: str | None = None
+    context: str | None = None
     source: SettingSource
