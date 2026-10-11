@@ -182,3 +182,15 @@ def test_token_usage_reads_reasoning_and_cache_details() -> None:
         },
     )
     assert TokenUsage.from_message(message) == TokenUsage(100, 30, 20, 60)
+
+
+def test_cache_key_changes_with_model_options() -> None:
+    from auditor.infra.llm import _cache_context
+
+    low = _cache_context(Settings(llm_options={"thinking_level": "low", "api_key": "a"}))
+    high = _cache_context(Settings(llm_options={"thinking_level": "high", "api_key": "a"}))
+    rotated_key = _cache_context(Settings(llm_options={"thinking_level": "low", "api_key": "b"}))
+    assert LLMCache.key("m", None, Verdict, MESSAGES, low) != LLMCache.key(
+        "m", None, Verdict, MESSAGES, high
+    )
+    assert low == rotated_key

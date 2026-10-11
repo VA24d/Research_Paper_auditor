@@ -25,6 +25,7 @@ from pydantic import BaseModel, ValidationError
 
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
+from auditor.infra.manifest import redact
 from auditor.infra.scope import Scope, current_scope
 from auditor.schemas import CallStatus, LLMCallRecord
 
@@ -95,6 +96,14 @@ def create_chat_model(settings: Settings) -> BaseChatModel:
     return model
 
 
+def _cache_context(settings: Settings) -> str:
+    """Settings that change answers (endpoint, thinking level, temperature), minus secrets."""
+    return json.dumps(
+        {"base_url": settings.llm_base_url, "options": redact(settings.llm_options)},
+        sort_keys=True,
+    )
+
+
 class LLMCache:
     """Validated structured results on disk, keyed by model, schema and messages."""
 
@@ -107,10 +116,12 @@ class LLMCache:
         method: str | None,
         schema: type[BaseModel],
         messages: Sequence[BaseMessage],
+        context: str = "",
     ) -> str:
         payload = json.dumps(
             {
                 "model": model,
+                "context": context,
                 "method": method,
                 "schema": schema.model_json_schema(),
                 "messages": [{"type": m.type, "content": m.content} for m in messages],
@@ -150,10 +161,12 @@ class StructuredLLM:
         name: str,
         method: str | None = None,
         cache: LLMCache | None = None,
+        cache_context: str = "",
         max_attempts: int = 3,
     ) -> None:
         self.model = model
         self.name = name
+        self.cache_context = cache_context
         self.method = method
         self.cache = cache
         self.max_attempts = max_attempts
@@ -166,6 +179,7 @@ class StructuredLLM:
             name=model_id(settings),
             method=settings.llm_structured_method,
             cache=cache,
+            cache_context=_cache_context(settings),
         )
 
     async def generate[T: BaseModel](
@@ -173,7 +187,7 @@ class StructuredLLM:
     ) -> StructuredResult[T]:
         cache_key = None
         if self.cache is not None:
-            cache_key = LLMCache.key(self.name, self.method, schema, messages)
+            cache_key = LLMCache.key(self.name, self.method, schema, messages, self.cache_context)
             cached = self.cache.get(cache_key, schema)
             if cached is not None:
                 self._record(TokenUsage(), datetime.now(UTC), 0.0, cache_hit=True)
