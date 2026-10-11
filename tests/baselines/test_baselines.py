@@ -46,6 +46,18 @@ def test_render_paper_shows_ids_pages_references_and_rules() -> None:
     assert "[page-limit] The main text is at most 9 pages." in text
 
 
+def test_render_paper_shows_every_author_and_identifier() -> None:
+    paper = example_paper()
+    entry = paper.bibliography[0]
+    changed = entry.model_copy(
+        update={"authors": (*entry.authors, "A Third", "B Fourth"), "doi": "10.1/x"}
+    )
+    paper = paper.model_copy(update={"bibliography": (changed, *paper.bibliography[1:])})
+    text = render_paper(paper)
+    assert "Noam Shazeer, A Third, B Fourth. Attention Is All You Need" in text
+    assert "DOI 10.1/x" in text
+
+
 def test_to_predictions_maps_every_anchor_and_target_kind() -> None:
     reported = ReportedErrors.model_validate(
         {

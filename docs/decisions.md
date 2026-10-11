@@ -20,7 +20,10 @@ separately on clean PDFs (D2).
 
 Consequences:
 - Dataset builders inject errors by editing a copy of a `ParsedPaper`: sentence text,
-  citation targets, bibliography fields, or extracted settings.
+  citation targets, bibliography fields, or extracted settings. An edit to a bibliography
+  field (authors, title, year, venue, identifiers) also edits the entry's `raw` text, so the
+  two never disagree: a mismatch between them would give the injection away.
+- B0 and B1 are shown every bibliography field the specialists can use, with all authors.
 - The CLI accepts either a PDF (parsed on the fly, cached) or a `ParsedPaper` JSON file.
 
 ## D2. Two evaluation levels — Agreed
