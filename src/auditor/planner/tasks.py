@@ -1,18 +1,21 @@
 """Turns a parsed paper into AuditTasks (decisions D3 and D6)."""
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from auditor.infra.context import RunContext
 from auditor.orchestration.graph import PlanFn
 from auditor.planner.claims import ClaimCandidate, citation_candidates, refine_candidates
 from auditor.planner.repository import find_repository
-from auditor.planner.settings import extract_settings
+from auditor.planner.table_reader import read_tables
+from auditor.planner.tables import paper_settings
 from auditor.schemas import (
     AuditTask,
     BibliographyAnchor,
     BibTarget,
     DocumentAnchor,
+    ExtractedSetting,
     MarkerTarget,
     PaperSource,
     ParsedPaper,
@@ -71,11 +74,15 @@ def citation_tasks(paper: ParsedPaper, candidates: list[ClaimCandidate]) -> list
     return tasks
 
 
-def code_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[AuditTask]:
+def code_tasks(
+    paper: ParsedPaper,
+    repository: RepositoryRef | None,
+    settings: Sequence[ExtractedSetting] | None = None,
+) -> list[AuditTask]:
     if repository is None:
         return []
     tasks = []
-    for setting in extract_settings(paper):
+    for setting in paper_settings(paper) if settings is None else settings:
         if not isinstance(setting.source, PaperSource):
             continue
         # The value's span keeps two values of one setting in one sentence apart
@@ -132,10 +139,15 @@ async def plan_paper(
         if repository is not None:
             logger.info("using repository %s found in the paper", repository.url)
 
+    settings = paper_settings(paper)
+    # Reading messy tables costs LLM calls, so only when there is code to check against.
+    if repository is not None and options.use_llm and ctx.llm is not None:
+        settings += await read_tables(paper, ctx.llm, settings)
+
     tasks = [
         *reference_tasks(paper),
         *citation_tasks(paper, candidates),
-        *code_tasks(paper, repository),
+        *code_tasks(paper, repository, settings),
         *template_tasks(paper, options.venue),
     ]
     return _unique(tasks)
