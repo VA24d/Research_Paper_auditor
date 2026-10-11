@@ -15,21 +15,18 @@ import argparse
 import asyncio
 import json
 import random
-import re
 import sys
-import unicodedata
 from pathlib import Path
-from typing import Any
 
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
+from auditor.parser.accuracy import context, identity, score
 from auditor.parser.grobid import GrobidClient
 from auditor.parser.pipeline import parse_pdf
-from auditor.schemas import BibEntry, ParsedPaper
+from auditor.schemas import ParsedPaper
 
 PER_PAPER = 10
 SEED = 20261011
-CONTEXT = 60
 
 
 async def parse_all(pdfs: list[Path]) -> dict[str, ParsedPaper]:
@@ -40,11 +37,6 @@ async def parse_all(pdfs: list[Path]) -> dict[str, ParsedPaper]:
         for pdf in pdfs:
             papers[pdf.stem] = await parse_pdf(pdf, grobid=grobid, cache_dir=settings.cache_dir)
     return papers
-
-
-def context(paper: ParsedPaper, sentence_id: str, start: int, end: int) -> str:
-    text = paper.sentence(sentence_id).text
-    return text[max(0, start - CONTEXT) : end + CONTEXT]
 
 
 def draw(papers: dict[str, ParsedPaper], output: Path) -> None:
@@ -69,15 +61,6 @@ def draw(papers: dict[str, ParsedPaper], output: Path) -> None:
             handle.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-def identity(entry: BibEntry) -> dict[str, str]:
-    """First-author surname, year as printed (with any letter) and the title's first words."""
-    surname = entry.authors[0].split()[-1] if entry.authors else ""
-    printed = re.search(r"\b((?:19|20)\d{2}[a-z]?)\b", entry.raw or "")
-    year = printed.group(1) if printed else str(entry.year or "")
-    title = " ".join((entry.title or "").split()[:4])
-    return {"surname": surname, "year": year, "title": title}
-
-
 def freeze(papers: dict[str, ParsedPaper], annotated: Path, output: Path) -> None:
     """Turn reference positions chosen by the annotator into parser-independent answers."""
     with output.open("w", encoding="utf-8", newline="\n") as handle:
@@ -96,66 +79,6 @@ def freeze(papers: dict[str, ParsedPaper], annotated: Path, output: Path) -> Non
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def _fold(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text)
-    letters = "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
-    return re.sub(r"[^a-z0-9]+", " ", letters).strip()
-
-
-def _is(entry: BibEntry, expected: dict[str, str]) -> bool:
-    haystack = _fold(" ".join([entry.raw or "", entry.title or "", " ".join(entry.authors)]))
-    return all(_fold(expected[key]) in haystack for key in ("surname", "year", "title"))
-
-
-def _find(paper: ParsedPaper, item: dict[str, Any]) -> list[str] | None:
-    """Linked entry ids of the sampled marker in the current parse, or None if not found."""
-    for mention in paper.citations:
-        if mention.marker != item["marker"]:
-            continue
-        found = context(paper, mention.sentence_id, mention.start, mention.end)
-        if _fold(found) == _fold(item["context"]) or _fold(item["context"]) in _fold(found):
-            return list(mention.bib_ids)
-    return None
-
-
-def score(papers: dict[str, ParsedPaper], gold: Path) -> dict[str, Any]:
-    items = [json.loads(line) for line in gold.read_text(encoding="utf-8").splitlines() if line]
-    linked = correct = missing = not_found = 0
-    wrong: list[str] = []
-    for item in items:
-        paper = papers[item["paper_id"]]
-        bib_ids = _find(paper, item)
-        if bib_ids is None:
-            not_found += 1
-            continue
-        expected = item["expected"]
-        if not bib_ids:
-            missing += 1
-            continue
-        linked += 1
-        entries = [paper.bib_entry(b) for b in bib_ids]
-        # Correct only when the linked entries are exactly the expected references.
-        if (
-            expected
-            and all(any(_is(e, x) for x in expected) for e in entries)
-            and all(any(_is(e, x) for e in entries) for x in expected)
-        ):
-            correct += 1
-        else:
-            wrong.append(f"{item['paper_id']} {item['marker']!r}")
-    total = len(items) - not_found
-    return {
-        "items": len(items),
-        "found_in_parse": total,
-        "linked": linked,
-        "correct_links": correct,
-        "unlinked": missing,
-        "precision": round(correct / linked, 3) if linked else None,
-        "recall": round(correct / total, 3) if total else None,
-        "wrong": wrong,
-    }
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["draw", "freeze", "score"])
@@ -171,7 +94,8 @@ def main() -> int:
             parser.error("freeze needs --out")
         freeze(papers, args.file, args.out)
     else:
-        print(json.dumps(score(papers, args.file), indent=2))
+        lines = args.file.read_text(encoding="utf-8").splitlines()
+        print(json.dumps(score(papers, [json.loads(line) for line in lines if line]), indent=2))
     return 0
 
 
