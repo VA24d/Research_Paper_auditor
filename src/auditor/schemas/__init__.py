@@ -11,6 +11,7 @@ from auditor.schemas.anchors import (
 from auditor.schemas.base import SCHEMA_VERSION, Record
 from auditor.schemas.evaluation import (
     NO_ERROR,
+    DatasetEntry,
     GoldLabel,
     Prediction,
     RunManifest,
@@ -88,6 +89,7 @@ __all__ = [
     "CallStatus",
     "CandidateFinding",
     "CitationMention",
+    "DatasetEntry",
     "DocumentAnchor",
     "ErrorClass",
     "Evidence",
