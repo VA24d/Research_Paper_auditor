@@ -248,12 +248,30 @@ def _collect_div(
         title = _text(head) or (fallback_title or "")
         section_id = builder.add_section(title, head.get("n") if head is not None else None)
     for child in div:
-        tag = _local(child.tag)
-        if tag == "p":
-            for sentence in _sentences_in_paragraph(child):
-                builder.add_sentence(sentence, kind, section_id)
-        elif tag == "div":
-            _collect_div(builder, child, kind, None)
+        _collect_child(builder, child, kind, section_id)
+
+
+def _collect_child(
+    builder: _Builder, child: ET.Element, kind: SentenceKind, section_id: str | None
+) -> None:
+    """A paragraph, nested division, figure or footnote, wherever it appears. GROBID puts
+    appendix tables and figures inside back-matter divisions, not at the top of the body."""
+    tag = _local(child.tag)
+    if tag == "p":
+        for sentence in _sentences_in_paragraph(child):
+            builder.add_sentence(sentence, kind, section_id)
+    elif tag == "div":
+        _collect_div(builder, child, kind, None)
+    elif tag == "figure":
+        description = child.find(f"{TEI}figDesc")
+        if description is not None:
+            for sentence in _sentences_in(description):
+                builder.add_sentence(sentence, SentenceKind.CAPTION, section_id)
+        if child.get("type") == "table":
+            builder.add_table(child)
+    elif tag == "note" and child.get("place") == "foot":
+        for sentence in _sentences_in(child):
+            builder.add_sentence(sentence, SentenceKind.FOOTNOTE, section_id)
 
 
 def _sentences_in_paragraph(paragraph: ET.Element) -> list[ET.Element]:
@@ -412,19 +430,7 @@ def tei_to_paper(
     body = root.find(f"{TEI}text/{TEI}body")
     if body is not None:
         for child in body:
-            tag = _local(child.tag)
-            if tag == "div":
-                _collect_div(builder, child, SentenceKind.BODY, None)
-            elif tag == "figure":
-                description = child.find(f"{TEI}figDesc")
-                if description is not None:
-                    for sentence in _sentences_in(description):
-                        builder.add_sentence(sentence, SentenceKind.CAPTION, None)
-                if child.get("type") == "table":
-                    builder.add_table(child)
-            elif tag == "note" and child.get("place") == "foot":
-                for sentence in _sentences_in(child):
-                    builder.add_sentence(sentence, SentenceKind.FOOTNOTE, None)
+            _collect_child(builder, child, SentenceKind.BODY, None)
 
     back = root.find(f"{TEI}text/{TEI}back")
     bibliography: list[BibEntry] = []
