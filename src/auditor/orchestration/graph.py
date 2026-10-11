@@ -41,6 +41,10 @@ class ThreadInUseError(RuntimeError):
     """A fresh run was started on a checkpoint thread that already holds state."""
 
 
+class NothingToResumeError(RuntimeError):
+    """A resume was requested for a checkpoint thread with no saved state."""
+
+
 class AuditState(TypedDict):
     paper: ParsedPaper
     tasks: list[AuditTask]
@@ -163,8 +167,13 @@ async def run_audit(
         max_concurrency=pipeline.max_concurrency,
     )
     initial: AuditState | None = None
+    has_state = checkpointer is not None and bool((await graph.aget_state(config)).values)
+    if resume and not has_state:
+        raise NothingToResumeError(
+            f"thread {thread_id(run_id, system, paper)} has no saved state to resume"
+        )
     if not resume:
-        if checkpointer is not None and (await graph.aget_state(config)).values:
+        if has_state:
             raise ThreadInUseError(
                 f"thread {thread_id(run_id, system, paper)} already has state; "
                 "use a new run id, or resume=True to continue it"

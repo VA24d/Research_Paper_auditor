@@ -25,7 +25,12 @@ from auditor.infra.llm import (
 from auditor.infra.log import configure_logging
 from auditor.infra.manifest import build_manifest, new_run_id, write_manifest
 from auditor.infra.usage import UsageLog
-from auditor.orchestration.graph import AuditPipeline, ThreadInUseError, run_audit
+from auditor.orchestration.graph import (
+    AuditPipeline,
+    NothingToResumeError,
+    ThreadInUseError,
+    run_audit,
+)
 from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
 from auditor.orchestration.registry import load_specialists, load_tools, load_verifier
 from auditor.parser.grobid import GrobidClient
@@ -166,7 +171,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                     checkpointer=saver,
                     resume=args.resume,
                 )
-            except ThreadInUseError as exc:
+            except (ThreadInUseError, NothingToResumeError) as exc:
                 raise UsageError(str(exc)) from exc
 
     predictions = predictions_from_verified(outcome.verified, run_id=run_id, system=SystemName.FULL)

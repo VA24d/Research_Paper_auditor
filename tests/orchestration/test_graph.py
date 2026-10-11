@@ -12,6 +12,7 @@ from auditor.infra.tools import tracked_tool
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.graph import (
     AuditPipeline,
+    NothingToResumeError,
     PlanFn,
     Specialists,
     ThreadInUseError,
@@ -285,3 +286,15 @@ async def test_interrupted_run_resumes_without_redoing_finished_tasks(tmp_path: 
     assert calls == {"citation": 3, "code": 2, "template": 1}
     assert len(outcome.results) == 5
     assert all(r.outcome is TaskOutcome.CHECKED for r in outcome.results)
+
+
+async def test_resuming_a_thread_without_state_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(NothingToResumeError):
+        await run_audit(
+            pipeline(tmp_path, [citation_task(1)]),
+            example_paper(),
+            run_id="never-ran",
+            system=SystemName.FULL,
+            checkpointer=InMemorySaver(),
+            resume=True,
+        )
