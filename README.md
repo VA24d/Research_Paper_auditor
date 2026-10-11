@@ -112,3 +112,50 @@ datasets/          dataset manifests and gold labels (no PDFs or repositories)
 scripts/           helper scripts (Python only, so they run on every OS)
 docs/              plans and design decisions
 ```
+
+## Using the Auditor
+
+Every command accepts a PDF (parsed with GROBID, so start it first) or a `ParsedPaper`
+JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
+
+| Task | Command |
+|---|---|
+| Parse a PDF | `uv run auditor parse paper.pdf -o paper.json` |
+| Full audit | `uv run auditor audit paper.pdf [--repo URL] [--venue venue.json] [--no-llm]` |
+| Resume an interrupted audit | `uv run auditor audit paper.pdf --run-id <id> --resume` |
+| Baseline B0 or B1 | `uv run auditor baseline b0 paper.pdf` (needs an LLM in `.env`) |
+| Check the LLM provider | `uv run python scripts/probe_llm.py` |
+| Parser statistics | `uv run python scripts/parser_report.py data/papers` |
+
+Each run writes to `runs/<run_id>/`: `manifest.json` (git commit, settings with secrets
+removed, package versions), `usage/*.jsonl` (every tool call, HTTP request and LLM call),
+and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.jsonl`.
+
+## Plugging In Your Part
+
+The pipeline finds each part by convention and uses a mock until it exists (the run
+manifest records which parts were mocked):
+
+| Part | Expose | Signature |
+|---|---|---|
+| Citation agent | `check` in `auditor/agents/citation/__init__.py` | `async def check(task: AuditTask, ctx: RunContext) -> TaskResult` |
+| Code agent | `check` in `auditor/agents/code/__init__.py` | same |
+| Template checker | `check` in `auditor/agents/template/__init__.py` | same |
+| Verifier | `verify` in `auditor/agents/verifier/__init__.py` | `async def verify(results: Sequence[TaskResult], ctx: RunContext) -> list[VerifiedFinding]` |
+| Tools for B1 | `make_tools` in `auditor/agents/<name>/tools.py` | `def make_tools(ctx: RunContext) -> list[BaseTool]` |
+
+Inside `check`:
+
+- `ctx.paper` is the `ParsedPaper`; `ctx.http` is the only way to reach the network
+  (allowlist, rate limits and cache included); `ctx.require_llm().generate(Schema, messages)`
+  returns a validated Pydantic object.
+- Decorate shared tool functions with `@tracked_tool()` (`auditor.infra.tools`), so calls
+  are counted for the cost metrics and the task budget.
+- Return `outcome=unverifiable` with a reason when the check cannot be done. Do not catch
+  unexpected errors; the orchestrator retries temporary ones and records the rest as
+  `failed`.
+
+For tests, `auditor.testing` provides `offline_context(tmp_path)` (example paper, no
+network), `ScriptedChatModel` with `tool_reply(...)` (a fake LLM), and `checked_result(task)`.
+Example inputs for every contract are in `tests/fixtures/schemas/` and
+`auditor.schemas.examples`.

@@ -7,6 +7,33 @@ Part 1 is on everyone's critical path, so the order below puts what the others n
 schemas, then shared infrastructure, then an orchestrator that runs on mocks. Parser and
 planner quality work comes after that.
 
+## Status
+
+M0–M6 are implemented on `feature/core-planner` (PR #2). There are 285 tests, run on
+Linux, Windows and macOS in CI, plus live GROBID tests. Parser results on ten arXiv papers
+are in [parser_evaluation.md](parser_evaluation.md).
+
+Where the build differs from the plan below, and why:
+
+- **HTTP cache.** A small file cache with an explicit TTL instead of hishel. Scholarly APIs
+  often send no-cache headers, and we want caching regardless.
+- **Parse cache.** It stores GROBID's TEI rather than the converted paper, so converter
+  and linker fixes apply without re-running GROBID.
+- **Reference tasks.** There is one reference task per bibliography entry (anchored to the
+  entry) for existence and metadata checks, separate from the per-claim citation tasks.
+- **Repository detection.** Precision first: a repository is taken only from a sentence
+  that announces code, because a wrong repository would produce false mismatches.
+- **Settings extraction.** Skips flattened table rows, takes optimizer names only from
+  first-person sentences, and needs a training context for bare "N steps".
+
+Still open:
+
+- Run `scripts/probe_llm.py` and the planner's LLM pass (P1.12) once the provider is
+  chosen (D9).
+- Table extraction for hyperparameter tables (the main gap for code tasks).
+- A hand-annotated gold sample for parser link accuracy (P1.10).
+- Failure analysis (P1.17) once real specialists are connected.
+
 ---
 
 ## Working rules

@@ -1,0 +1,78 @@
+[
+  {
+    "schema_version": 1,
+    "label_id": "example-paper-l0",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "error_class": "claim_number_mismatch",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s2",
+      "start": 19,
+      "end": 24
+    },
+    "target": {
+      "kind": "bibliography",
+      "bib_id": "b1"
+    },
+    "rationale": "The cited work never reports 92.1%; the number was injected.",
+    "evidence": [
+      {
+        "kind": "quote",
+        "source": {
+          "kind": "cited_work",
+          "id": "doi:10.18653/v1/D16-1264",
+          "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+          "url": null
+        },
+        "text": "which achieves an F1 score of 51.0%",
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "path": null,
+        "line_start": null,
+        "line_end": null
+      }
+    ],
+    "reviewed_by": [
+      "second-reviewer"
+    ]
+  },
+  {
+    "schema_version": 1,
+    "label_id": "example-paper-l1",
+    "paper_id": "example-paper",
+    "variant": "original",
+    "error_class": "none",
+    "anchor": {
+      "kind": "sentence",
+      "sentence_id": "s1",
+      "start": null,
+      "end": null
+    },
+    "target": {
+      "kind": "bibliography",
+      "bib_id": "b0"
+    },
+    "rationale": "The cited work introduces the Transformer, as the sentence says.",
+    "evidence": [
+      {
+        "kind": "quote",
+        "source": {
+          "kind": "cited_work",
+          "id": "arxiv:1706.03762",
+          "title": null,
+          "url": null
+        },
+        "text": "We propose a new simple network architecture, the Transformer",
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "path": null,
+        "line_start": null,
+        "line_end": null
+      }
+    ],
+    "reviewed_by": []
+  }
+]

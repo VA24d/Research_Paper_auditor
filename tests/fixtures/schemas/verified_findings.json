@@ -1,0 +1,107 @@
+[
+  {
+    "schema_version": 1,
+    "finding": {
+      "finding_id": "citation-ed715714d10f1af0-f0",
+      "task_id": "citation-ed715714d10f1af0",
+      "paper_id": "example-paper",
+      "variant": "original",
+      "error_class": "claim_number_mismatch",
+      "anchor": {
+        "kind": "sentence",
+        "sentence_id": "s2",
+        "start": 19,
+        "end": 24
+      },
+      "target": {
+        "kind": "bibliography",
+        "bib_id": "b1"
+      },
+      "summary": "The cited work does not report 92.1% exact match on SQuAD.",
+      "explanation": "The cited paper reports a 51.0% F1 baseline and no 92.1% figure.",
+      "evidence": [
+        {
+          "kind": "quote",
+          "source": {
+            "kind": "cited_work",
+            "id": "doi:10.18653/v1/D16-1264",
+            "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+            "url": null
+          },
+          "text": "which achieves an F1 score of 51.0%",
+          "page": 1,
+          "char_start": null,
+          "char_end": null,
+          "path": null,
+          "line_start": null,
+          "line_end": null
+        }
+      ],
+      "uncertain": false
+    },
+    "state": "verified_flag",
+    "reason": "The quoted figure is verbatim in the cited source and contradicts the claim.",
+    "accepted_evidence": [
+      {
+        "kind": "quote",
+        "source": {
+          "kind": "cited_work",
+          "id": "doi:10.18653/v1/D16-1264",
+          "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+          "url": null
+        },
+        "text": "which achieves an F1 score of 51.0%",
+        "page": 1,
+        "char_start": null,
+        "char_end": null,
+        "path": null,
+        "line_start": null,
+        "line_end": null
+      }
+    ]
+  },
+  {
+    "schema_version": 1,
+    "finding": {
+      "finding_id": "citation-ed715714d10f1af0-f1",
+      "task_id": "citation-ed715714d10f1af0",
+      "paper_id": "example-paper",
+      "variant": "original",
+      "error_class": "claim_number_mismatch",
+      "anchor": {
+        "kind": "sentence",
+        "sentence_id": "s2",
+        "start": 19,
+        "end": 24
+      },
+      "target": {
+        "kind": "bibliography",
+        "bib_id": "b1"
+      },
+      "summary": "The cited work does not report 92.1% exact match on SQuAD.",
+      "explanation": "The cited paper reports a 51.0% F1 baseline and no 92.1% figure.",
+      "evidence": [
+        {
+          "kind": "quote",
+          "source": {
+            "kind": "cited_work",
+            "id": "doi:10.18653/v1/D16-1264",
+            "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+            "url": null
+          },
+          "text": "which achieves an F1 score of 51.0%",
+          "page": 1,
+          "char_start": null,
+          "char_end": null,
+          "path": null,
+          "line_start": null,
+          "line_end": null
+        }
+      ],
+      "uncertain": false
+    },
+    "state": "needs_human_review",
+    "reason": "Only the abstract of the cited work was available.",
+    "accepted_evidence": []
+  }
+]

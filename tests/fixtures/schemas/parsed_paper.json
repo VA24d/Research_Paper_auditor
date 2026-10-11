@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "paper_id": "example-paper",
+  "variant": "original",
+  "parser": {
+    "name": "grobid",
+    "version": "0.9.1",
+    "pdf_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "metadata": {
+    "title": "An Example Paper for Auditing",
+    "authors": [
+      "Ada Example",
+      "Alan Sample"
+    ],
+    "year": 2026,
+    "venue": null,
+    "doi": null,
+    "arxiv_id": null
+  },
+  "sections": [
+    {
+      "id": "sec1",
+      "title": "Introduction",
+      "number": "1"
+    },
+    {
+      "id": "sec2",
+      "title": "Experiments",
+      "number": "4"
+    }
+  ],
+  "sentences": [
+    {
+      "id": "s0",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "We study how to audit citations and code in research papers.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 90.0,
+          "width": 468.0,
+          "height": 10.0
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Transformers [1] replaced recurrent networks for most sequence tasks.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 138.0,
+          "width": 468.0,
+          "height": 10.0
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Prior work reports 92.1% exact match on SQuAD [2, 3].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 150.0,
+          "width": 468.0,
+          "height": 10.0
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Retrieval also improves factual accuracy [7].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 162.0,
+          "width": 468.0,
+          "height": 10.0
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "We train with a learning rate of 3e-4 and a batch size of 256.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 90.0,
+          "width": 468.0,
+          "height": 10.0
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "Code is available at https://github.com/example/auditor-demo.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 102.0,
+          "width": 468.0,
+          "height": 10.0
+        }
+      ]
+    }
+  ],
+  "bibliography": [
+    {
+      "id": "b0",
+      "raw": "Vaswani et al. Attention is all you need. NeurIPS 2017.",
+      "title": "Attention Is All You Need",
+      "authors": [
+        "Ashish Vaswani",
+        "Noam Shazeer"
+      ],
+      "year": 2017,
+      "venue": "NeurIPS",
+      "doi": null,
+      "arxiv_id": "1706.03762",
+      "url": null,
+      "boxes": []
+    },
+    {
+      "id": "b1",
+      "raw": null,
+      "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+      "authors": [
+        "Pranav Rajpurkar",
+        "Jian Zhang"
+      ],
+      "year": 2016,
+      "venue": "EMNLP",
+      "doi": "10.18653/v1/D16-1264",
+      "arxiv_id": null,
+      "url": null,
+      "boxes": []
+    },
+    {
+      "id": "b2",
+      "raw": null,
+      "title": "Deep Residual Learning for Image Recognition",
+      "authors": [
+        "Kaiming He",
+        "Xiangyu Zhang"
+      ],
+      "year": 2016,
+      "venue": "CVPR",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": []
+    }
+  ],
+  "citations": [
+    {
+      "id": "c0",
+      "sentence_id": "s1",
+      "start": 13,
+      "end": 16,
+      "marker": "[1]",
+      "bib_ids": [
+        "b0"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c1",
+      "sentence_id": "s2",
+      "start": 46,
+      "end": 52,
+      "marker": "[2, 3]",
+      "bib_ids": [
+        "b1",
+        "b2"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c2",
+      "sentence_id": "s3",
+      "start": 41,
+      "end": 44,
+      "marker": "[7]",
+      "bib_ids": [],
+      "link_method": "none"
+    }
+  ],
+  "links": [
+    {
+      "url": "https://github.com/example/auditor-demo",
+      "page": 2,
+      "sentence_id": "s5",
+      "source": "annotation"
+    }
+  ],
+  "layout": {
+    "pages": [
+      {
+        "number": 1,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 72.0,
+        "text_right": 540.0,
+        "text_bottom": 720.0
+      },
+      {
+        "number": 2,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 72.0,
+        "text_right": 540.0,
+        "text_bottom": 400.0
+      }
+    ],
+    "fonts": [
+      {
+        "name": "Times-Roman",
+        "size": 10.0,
+        "chars": 2400
+      }
+    ]
+  }
+}

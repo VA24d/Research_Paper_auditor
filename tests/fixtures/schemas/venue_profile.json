@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "example-venue-2026",
+  "name": "Example Venue 2026",
+  "rules": [
+    {
+      "id": "page-limit",
+      "description": "The main text is at most 9 pages.",
+      "check": "max_pages",
+      "params": {
+        "max_pages": 9
+      },
+      "needs_visual_inspection": false
+    },
+    {
+      "id": "body-font-size",
+      "description": "Body text is at least 10 pt.",
+      "check": "min_body_font_size",
+      "params": {
+        "min_size": 10.0
+      },
+      "needs_visual_inspection": false
+    },
+    {
+      "id": "anonymous",
+      "description": "The submission does not identify its authors.",
+      "check": "anonymity",
+      "params": {},
+      "needs_visual_inspection": true
+    }
+  ]
+}

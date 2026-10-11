@@ -71,6 +71,12 @@ operating systems.
 
 ### Part 1 — Bhaskar: parsing, planning, orchestration, infrastructure, baselines
 
+Status: P1.1 is in PR #1. P1.2–P1.9, P1.11, P1.13–P1.16 are implemented and tested in PR #2,
+awaiting review. P1.10 is partly done (statistics on ten papers and hand-checked fallback
+links in [parser_evaluation.md](parser_evaluation.md); a gold sample is still to annotate).
+P1.12 is implemented and tested with a scripted model, and needs a run with the chosen
+provider. P1.17 is open.
+
 Foundation (others depend on these, so they come first):
 
 - [ ] **P1.1** Repository setup: uv project, src layout, ruff, mypy, pytest, pre-commit,

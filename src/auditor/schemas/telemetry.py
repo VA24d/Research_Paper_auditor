@@ -1,0 +1,53 @@
+"""Per-call records used for the cost metrics (decision D8)."""
+
+from enum import StrEnum
+
+from pydantic import AwareDatetime, Field
+
+from auditor.schemas.base import NonEmptyStr, Record
+
+
+class CallStatus(StrEnum):
+    OK = "ok"
+    ERROR = "error"
+
+
+class ToolCallRecord(Record):
+    run_id: NonEmptyStr
+    paper_id: str | None = None
+    task_id: str | None = None
+    tool: NonEmptyStr
+    args_hash: NonEmptyStr
+    started_at: AwareDatetime
+    duration_s: float = Field(ge=0)
+    status: CallStatus
+    error: str | None = None
+
+
+class HttpRequestRecord(Record):
+    run_id: NonEmptyStr
+    task_id: str | None = None
+    method: NonEmptyStr
+    host: NonEmptyStr
+    path: str
+    status_code: int | None = None
+    attempts: int = Field(ge=1)
+    cache_hit: bool
+    started_at: AwareDatetime
+    duration_s: float = Field(ge=0)
+    error: str | None = None
+
+
+class LLMCallRecord(Record):
+    run_id: NonEmptyStr
+    task_id: str | None = None
+    model: NonEmptyStr
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    reasoning_tokens: int = Field(default=0, ge=0)
+    cached_input_tokens: int = Field(default=0, ge=0)
+    cache_hit: bool = False
+    started_at: AwareDatetime
+    duration_s: float = Field(ge=0)
+    status: CallStatus
+    error: str | None = None
