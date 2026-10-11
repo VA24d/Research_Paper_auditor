@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Any
 
@@ -98,3 +99,23 @@ async def test_planner_reads_tables_only_when_there_is_a_repository(tmp_path: Pa
         ("learning_rate", "LoRA")
     ]
     assert CELL_SEPARATOR in paper.sentence(code[0].anchor.sentence_id).text  # type: ignore[union-attr]
+
+
+async def test_equal_values_for_different_configurations_keep_their_own_cells(
+    tmp_path: Path,
+) -> None:
+    paper = garbled_paper()
+    batch = [
+        reading(key="batch_size", row=0, value="16", context=task)
+        for task in ("SST-2", "MRPC", "CoLA")
+    ]
+    llm = scripted([], batch)
+    tasks = await plan_paper(
+        paper,
+        offline_context(tmp_path, paper=paper, llm=llm),
+        PlannerOptions(repository=RepositoryRef(url="https://github.com/a/b")),
+    )
+    code = [t for t in tasks if t.kind is TaskKind.CODE and t.setting is not None]
+    assert [t.setting.context for t in code if t.setting] == ["SST-2", "MRPC", "CoLA"]
+    starts = [t.anchor.start for t in code]  # type: ignore[union-attr]
+    assert starts == [m.start() for m in re.finditer("16", FLATTENED)]
