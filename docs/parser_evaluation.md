@@ -10,29 +10,47 @@ numeric and author-year citation styles and several venue templates.
 - Pipeline: GROBID 0.9.1 (CRF image) with sentence segmentation and coordinates,
   pdfplumber for layout, then the fallback citation linker (`auditor.parser.linking`).
 - Statistics: `uv run python scripts/parser_report.py data/papers`.
-- Hand checks: every citation link added by the fallback linker (58 links in five papers)
+- Hand checks: every citation link added by the fallback linker (64 links in five papers)
   was compared against the paper's reference list. Settings extraction and repository
   detection were inspected on all ten papers.
+- Gold sample: 100 citation markers, 10 per paper, drawn at random with a fixed seed and
+  annotated against the reference list printed in the PDF
+  (`datasets/parser_fixtures/citation_gold.jsonl`, scored with
+  `uv run python scripts/citation_sample.py score data/papers
+  datasets/parser_fixtures/citation_gold.jsonl`). Answers name the reference by first-author
+  surname, printed year and the start of the title, so the file stays valid when the
+  parser's entry ids change. A link counts as correct only when the linked entries are
+  exactly the expected ones.
 
 ## Results
 
 | Paper | Pages | Sentences | References | With title / year | Markers | Linked (parser + heuristic) | Settings | Repository |
 |---|---|---|---|---|---|---|---|---|
-| 1512.03385 (ResNet) | 12 | 454 | 50 | 96% / 100% | 118 | 98% (116 + 0) | 19 | - |
-| 1706.03762 (Transformer) | 15 | 228 | 40 | 98% / 100% | 45 | 100% (45 + 0) | 3 | tensorflow/tensor2tensor |
-| 1810.04805 (BERT) | 16 | 363 | 55 | 98% / 98% | 78 | 96% (63 + 12) | 28 | google-research/bert |
-| 2005.11401 (RAG) | 19 | 295 | 69 | 100% / 99% | 97 | 100% (97 + 0) | 1 | huggingface/transformers |
-| 2010.11929 (ViT) | 22 | 382 | 58 | 98% / 100% | 78 | 96% (65 + 10) | 24 | google-research/vision_transformer |
-| 2106.09685 (LoRA) | 26 | 474 | 63 | 100% / 94% | 97 | 88% (80 + 5) | 11 | microsoft/LoRA |
-| 2201.11903 (Chain-of-Thought) | 43 | 1148 | 84 | 99% / 90% | 112 | 88% (84 + 14) | 0 | - |
-| 2210.03629 (ReAct) | 33 | 562 | 40 | 98% / 98% | 53 | 94% (34 + 16) | 5 | - |
+| 1512.03385 (ResNet) | 12 | 525 | 50 | 96% / 100% | 118 | 98% (116 + 0) | 19 | - |
+| 1706.03762 (Transformer) | 15 | 271 | 40 | 98% / 100% | 45 | 100% (45 + 0) | 3 | tensorflow/tensor2tensor |
+| 1810.04805 (BERT) | 16 | 413 | 55 | 98% / 98% | 78 | 96% (63 + 12) | 28 | google-research/bert |
+| 2005.11401 (RAG) | 19 | 342 | 69 | 100% / 99% | 97 | 100% (97 + 0) | 1 | huggingface/transformers |
+| 2010.11929 (ViT) | 22 | 439 | 58 | 98% / 100% | 78 | 96% (65 + 10) | 24 | google-research/vision_transformer |
+| 2106.09685 (LoRA) | 26 | 574 | 63 | 100% / 94% | 97 | 88% (80 + 5) | 15 | microsoft/LoRA |
+| 2201.11903 (Chain-of-Thought) | 43 | 1263 | 84 | 99% / 90% | 112 | 92% (84 + 19) | 0 | - |
+| 2210.03629 (ReAct) | 33 | 597 | 40 | 98% / 98% | 53 | 98% (34 + 18) | 5 | - |
 | 2305.18290 (DPO) | 27 | 473 | 53 | 100% / 92% | 56 | 100% (56 + 0) | 4 | - |
-| 2310.06825 (Mistral 7B) | 9 | 132 | 29 | 100% / 100% | 27 | 100% (27 + 0) | 0 | mistralai/mistral-src |
+| 2310.06825 (Mistral 7B) | 9 | 158 | 29 | 100% / 100% | 27 | 100% (27 + 0) | 9 | mistralai/mistral-src |
 
-Overall, 724 of 761 citation markers (95.1%) are linked to a bibliography entry: 667 by
-GROBID and 57 by the fallback linker. All 58 fallback links checked by hand point at the
+Sentence counts include table rows. Settings counts include those read from hyperparameter
+tables without an LLM; the LLM table reader (see the limitations) can add more.
+
+Overall, 731 of 761 citation markers (96.1%) are linked to a bibliography entry: 667 by
+GROBID and 64 by the fallback linker. All 64 fallback links checked by hand point at the
 right entry. Parsing takes about 5 to 15 seconds per paper on CPU, and GROBID's output is
 cached, so later runs take about a second.
+
+On the gold sample, the parser as first annotated linked 99 of the 100 markers, all
+correctly (precision 1.00, recall 0.99). The one miss was "Wiegreffe and Marasovic, 2021"
+in Chain-of-Thought, which shares first author and year with "Wiegreffe et al., 2021"; it
+led to the co-author rule below, and with that rule the sample scores 100 of 100. The
+second number is measured on the sample that prompted the fix, so 0.99 is the fairer
+estimate.
 
 Repository detection found the paper's own repository for all six papers that announce one
 in the text, and returned nothing for the four that do not.
@@ -50,18 +68,33 @@ in the text, and returned nothing for the four that do not.
 | Table rows read as settings | LoRA: "Batch Size 8 8 32 4 ..." | Sentences that look like flattened table rows are skipped |
 | Other systems' settings | LoRA: "GPT-3 175B fine-tuned with Adam" | Optimizer names only from first-person sentences |
 | Non-training "steps" | ReAct: "We set 7 and 5 steps for HotpotQA" | Bare "N steps" needs a training context |
+| Same first author and year, different works | Chain-of-Thought: "(Roy and Roth, 2015)" and "(Roy et al., 2015)" | The marker's author count ("X", "X and Y", "X et al.") picks between them |
+| Settings only in tables | Mistral 7B gives its architecture only in Table 1 | Table rows kept as table sentences; settings read from rows and columns with a known key |
+| Two numbers read as one | "16 32" parsed as 1632 | Spaces join digits only before a three-digit group |
+
+## Findings in the papers themselves
+
+- **A wrong reference number in RAG.** "who train RoBERTa [35]" points at reference [35],
+  which in the published PDF is a neural machine translation paper by Liu et al., not
+  RoBERTa. The parser links the marker to what the PDF says; catching that the citation
+  does not support the claim is the citation agent's job, which makes this a useful real
+  test case for it.
+- **Reference entries split by GROBID.** In RAG and DPO, GROBID cut a few reference entries
+  in two, so the bibliography has a few extra fragment entries. The markers that cite those
+  works still linked to the right entry.
 
 ## Known limitations
 
-- **Tables.** Hyperparameter tables are not parsed into settings yet. Mistral 7B, for
-  example, gives its architecture only in a table, so no settings are extracted. Adding table
-  extraction (planned with Docling) is the main gap for the code checks.
-- **Unresolved markers.** About 5% of markers stay unlinked, mostly author-year markers
+- **Tables.** Rule-based table reading needs rows GROBID kept intact and a key from a fixed
+  list of names (`auditor.planner.tables.ALIASES`). When a repository is known and an LLM
+  is configured, tables are also given to the LLM table reader, which keeps only values that
+  appear verbatim in the row. Tables GROBID does not detect at all are still missed.
+- **Unresolved markers.** About 4% of markers stay unlinked, mostly author-year markers
   whose reference entry GROBID parsed badly. They still become citation tasks with the marker
   text (decision D6), so they are reported as unverifiable rather than silently skipped.
-- **Statistics, not a gold set.** The table counts what was extracted and linked. Apart from
-  the fallback links, link correctness was not hand-checked for every marker. A gold sample
-  per paper is still to be annotated for the final write-up.
+- **One annotation pass.** The gold sample was annotated once, with no second annotator.
+  100 markers give only a coarse estimate: a 95% interval for 99 of 100 runs from about
+  0.95 to 1.00.
 - **Repository detection** can still pick a repository the paper only mentions next to
   words like "our code". The chosen repository is written to the run manifest, and `--repo`
   overrides it.
