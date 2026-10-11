@@ -10,6 +10,7 @@ from auditor.testing import offline_context
 
 MINUS = chr(0x2212)
 TIMES = chr(0x00D7)
+BULLET = chr(0x2022)
 
 
 def found(text: str) -> list[tuple[str, str, object]]:
@@ -109,6 +110,12 @@ def test_extract_settings_reads_the_whole_paper() -> None:
         ("20 000", 20_000),
         ("", None),
         ("%", None),
+        (f"8 {BULLET} 10 -4", 8e-4),
+        ("10 -3", 1e-3),
+        ("10^-4", 1e-4),
+        ("10-20", None),
+        ("10 3", None),
+        ("100", 100),
     ],
 )
 def test_parse_number(raw: str, value: float | None) -> None:

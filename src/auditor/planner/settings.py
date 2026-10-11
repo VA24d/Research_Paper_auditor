@@ -113,13 +113,19 @@ def parse_number(raw: str) -> int | float | None:
     if text[-1] in "kKM":
         multiplier = 1_000_000 if text[-1] == "M" else 1_000
         text = text[:-1].strip()
+    # A power of ten: "3 x 10^-4" (any multiplication sign), or a bare "10 -3" whose
+    # superscript was flattened. A bare power needs a caret or a space before a minus, so
+    # "100", "10 3" and the range "10-20" are not read as powers.
     power = re.match(
-        r"^(?P<base>[\d.]+)\s*(?:[x\u00d7\u00b7]|\\times)\s*10\s*\^?\s*\{?\s*(?P<exp>-?\s*\d+)\s*\}?$",
+        r"^(?:(?P<base>[\d.]+)\s*(?:[x\u00d7\u00b7\u2022\u22c5]|\\times)\s*)?10\s*(?P<caret>\^)?\s*\{?\s*(?P<exp>-?\s*\d+)\s*\}?$",
         text,
     )
+    if power and not (power["base"] or power["caret"] or re.match(r"10\s+-", text)):
+        power = None
     try:
         if power:
-            value: float = float(power["base"]) * 10 ** int(power["exp"].replace(" ", ""))
+            base = float(power["base"]) if power["base"] else 1.0
+            value: float = base * 10 ** int(power["exp"].replace(" ", ""))
         else:
             # Spaces and commas count only as thousands separators ("20 000", "4, 000");
             # "16 32" is two numbers from merged table cells, not 1632.
