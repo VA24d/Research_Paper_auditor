@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from auditor import experiments
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
 from auditor.experiments import InputError, missing_parts, resolve_repository
@@ -181,3 +182,23 @@ def test_continuing_a_run_with_different_inputs_is_refused(
     )
     assert main(argv) == 2
     assert "different papers" in capsys.readouterr().err
+
+
+def test_b1_without_a_final_answer_is_a_failure_not_an_empty_answer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
+    model = ScriptedChatModel(replies=[tool_reply("lookup", {"q": str(i)}) for i in range(50)])
+    monkeypatch.setattr(
+        StructuredLLM,
+        "from_settings",
+        classmethod(lambda cls, settings: cls(model, name="test:scripted")),
+    )
+    monkeypatch.setattr(experiments, "create_chat_model", lambda settings: model)
+    monkeypatch.setattr(experiments, "model_id", lambda settings: "test:scripted")
+    argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "b1", "--runs", "1"]
+    assert main(argv) == 1
+    assert not predictions(tmp_path, "exp-b1-r1", "original").exists()
+    failures = (tmp_path / "runs" / "exp-b1-r1" / "failures.jsonl").read_text(encoding="utf-8")
+    assert "IncompleteAnswerError" in failures
+    assert "0 done, 0 already done, 1 failed" in capsys.readouterr().out
