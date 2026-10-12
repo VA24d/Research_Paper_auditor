@@ -10,13 +10,14 @@ from pathlib import Path
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
+from auditor.baselines.common import IncompleteAnswerError
 from auditor.config import Settings
 from auditor.experiments import (
     BATCH_SYSTEMS,
     InputError,
     load_paper,
     load_venue,
-    mocked_parts,
+    missing_parts,
     optional_llm,
     required_llm,
     resolve_repository,
@@ -73,7 +74,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
 
     async with HttpClient(settings) as http:
         paper = await load_paper(args.input, settings, http)
-        repository = resolve_repository(args.repo, paper)
+        repository = resolve_repository(args.repo, paper, args.repo_commit)
         llm = optional_llm(settings, not args.no_llm)
         manifest = build_manifest(
             run_id=run_id,
@@ -84,8 +85,9 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                 "paper_id": paper.paper_id,
                 "variant": paper.variant.value,
                 "repository": repository.url if repository else None,
+                "repository_commit": repository.commit if repository else None,
                 "venue": venue.id if venue else None,
-                "mocked_parts": list(mocked_parts()),
+                "mocked_parts": list(missing_parts(SystemName.FULL)),
             },
         )
         write_manifest(manifest, run.path)
@@ -133,27 +135,35 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
 
     async with HttpClient(settings) as http:
         paper = await load_paper(args.input, settings, http)
-        repository = resolve_repository(args.repo, paper)
+        repository = resolve_repository(args.repo, paper, args.repo_commit)
         manifest = build_manifest(
             run_id=run_id,
             system=system,
             settings=settings,
             model=llm.name,
-            extra_config={"paper_id": paper.paper_id, "variant": paper.variant.value},
+            extra_config={
+                "paper_id": paper.paper_id,
+                "variant": paper.variant.value,
+                "mocked_parts": list(missing_parts(system)),
+            },
         )
         write_manifest(manifest, run.path)
-        result, path = await run_baseline(
-            system,
-            paper,
-            settings=settings,
-            http=http,
-            llm=llm,
-            run=run,
-            run_id=run_id,
-            usage=UsageLog(run.usage_dir),
-            repository=repository,
-            venue=venue,
-        )
+        try:
+            result, path = await run_baseline(
+                system,
+                paper,
+                settings=settings,
+                http=http,
+                llm=llm,
+                run=run,
+                run_id=run_id,
+                usage=UsageLog(run.usage_dir),
+                repository=repository,
+                venue=venue,
+            )
+        except IncompleteAnswerError as exc:
+            print(f"{run_id}: {exc}; no predictions written.", file=sys.stderr)
+            return 1
     write_manifest(manifest.model_copy(update={"finished_at": datetime.now(UTC)}), run.path)
     print(
         f"{run_id}: {len(result.predictions)} predictions "
@@ -201,6 +211,9 @@ def build_parser() -> argparse.ArgumentParser:
     def add_common(command: argparse.ArgumentParser) -> None:
         command.add_argument("input", type=Path, help="A PDF, or ParsedPaper JSON")
         command.add_argument("--repo", help="Code repository URL (default: found in the paper)")
+        command.add_argument(
+            "--repo-commit", help="Commit, tag or branch of the repository to check against"
+        )
         command.add_argument("--venue", type=Path, help="Venue profile JSON")
         command.add_argument("--run-id", help="Run id (default: generated)")
 

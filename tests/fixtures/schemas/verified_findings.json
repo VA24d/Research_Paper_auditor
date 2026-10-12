@@ -2,8 +2,8 @@
   {
     "schema_version": 1,
     "finding": {
-      "finding_id": "citation-ed715714d10f1af0-f0",
-      "task_id": "citation-ed715714d10f1af0",
+      "finding_id": "citation-ff90ef73025cd80d-f0",
+      "task_id": "citation-ff90ef73025cd80d",
       "paper_id": "example-paper",
       "variant": "original",
       "error_class": "claim_number_mismatch",
@@ -63,8 +63,8 @@
   {
     "schema_version": 1,
     "finding": {
-      "finding_id": "citation-ed715714d10f1af0-f1",
-      "task_id": "citation-ed715714d10f1af0",
+      "finding_id": "citation-ff90ef73025cd80d-f1",
+      "task_id": "citation-ff90ef73025cd80d",
       "paper_id": "example-paper",
       "variant": "original",
       "error_class": "claim_number_mismatch",

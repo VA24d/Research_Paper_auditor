@@ -121,7 +121,7 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 | Task | Command |
 |---|---|
 | Parse a PDF | `uv run auditor parse paper.pdf -o paper.json` |
-| Full audit | `uv run auditor audit paper.pdf [--repo URL] [--venue venue.json] [--no-llm]` |
+| Full audit | `uv run auditor audit paper.pdf [--repo URL] [--repo-commit SHA] [--venue venue.json] [--no-llm]` |
 | Resume an interrupted audit | `uv run auditor audit paper.pdf --run-id <id> --resume` |
 | Baseline B0 or B1 | `uv run auditor baseline b0 paper.pdf` (needs an LLM in `.env`) |
 | Experiment over a dataset | `uv run auditor batch dataset.jsonl --experiment main [--systems full b0 b1] [--runs 3]` |
@@ -138,17 +138,21 @@ and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.
 A dataset file lists one paper per line as JSON:
 
 ```json
-{"paper": "papers/2106.09685.pdf", "repository": "https://github.com/microsoft/LoRA"}
+{"paper": "papers/2106.09685.pdf", "repository": "https://github.com/microsoft/LoRA", "repository_commit": "<commit sha>"}
 {"paper": "injected/2106.09685-citation.json", "venue": "venues/neurips.json"}
 ```
 
 `paper` is a PDF or a `ParsedPaper` JSON file (such as a copy with injected errors);
-`repository` and `venue` are optional. Relative paths are relative to the dataset file.
+`repository`, `repository_commit` and `venue` are optional. Give the commit the gold labels
+were checked against, so every system inspects the same snapshot. Relative paths are
+relative to the dataset file.
 
 `auditor batch` runs each system `--runs` times. Run ids are `<experiment>-<system>-r<n>`,
-so running the same command again skips papers that already have predictions and resumes
-interrupted ones. Papers that fail are listed in the run's `failures.jsonl` and the batch
-continues. LLM answers are not cached in a batch unless `--llm-cache` is given, and
+so running the same command again skips papers that already have predictions, resumes
+interrupted ones and retries failed ones. Every failure, including B1 stopping without an
+answer, is kept in the run's `failures.jsonl` and the batch continues. A run is only
+continued with the same inputs: if the model, LLM settings, code, packages or any paper,
+repository or venue changed, the batch refuses and asks for a new `--experiment` name. LLM answers are not cached in a batch unless `--llm-cache` is given, and
 `--strict` refuses to start while any part is still a mock.
 
 ### Docker
@@ -183,7 +187,8 @@ manifest records which parts were mocked):
 
 Inside `check`:
 
-- `ctx.paper` is the `ParsedPaper`; `ctx.http` is the only way to reach the network
+- `ctx.paper` is the `ParsedPaper`; `ctx.repository` is the code repository and commit to
+  inspect, when known; `ctx.http` is the only way to reach the network
   (allowlist, rate limits and cache included); `ctx.require_llm().generate(Schema, messages)`
   returns a validated Pydantic object.
 - Decorate shared tool functions with `@tracked_tool()` (`auditor.infra.tools`), so calls

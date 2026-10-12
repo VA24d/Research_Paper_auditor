@@ -4,7 +4,12 @@ dataset several times (`auditor batch`).
 A batch is resumable. Run ids are `<experiment>-<system>-r<n>`, a paper with
 `predictions.jsonl` in its run directory is skipped, and a full-system paper that was
 interrupted continues from its checkpoint. A paper that fails is recorded in
-`failures.jsonl` and the batch moves on.
+`failures.jsonl` and the batch moves on; running the batch again retries it.
+
+Each run records a fingerprint of what produced it: model and LLM settings, a hash of
+the auditor's source code, package versions, and every paper, repository and venue.
+Continuing a run with a different fingerprint is refused, so one run never mixes
+configurations.
 """
 
 import asyncio
@@ -21,6 +26,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from pydantic import JsonValue, ValidationError
 
+import auditor
 from auditor.baselines.b0 import BaselineResult, run_b0
 from auditor.baselines.b1 import run_b1
 from auditor.config import Settings
@@ -28,14 +34,19 @@ from auditor.infra.context import RunContext
 from auditor.infra.http import HttpClient
 from auditor.infra.llm import LLMNotConfiguredError, StructuredLLM, create_chat_model, model_id
 from auditor.infra.log import configure_logging
-from auditor.infra.manifest import build_manifest, write_manifest
+from auditor.infra.manifest import build_manifest, package_versions, redact, write_manifest
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.graph import AuditOutcome, AuditPipeline, ThreadInUseError, run_audit
 from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
-from auditor.orchestration.registry import load_specialists, load_tools, load_verifier
+from auditor.orchestration.registry import (
+    load_specialists,
+    load_tools,
+    load_verifier,
+    missing_tools,
+)
 from auditor.parser.grobid import GrobidClient
 from auditor.parser.pipeline import ParseError, parse_pdf
-from auditor.planner.repository import find_repository, repository_url
+from auditor.planner.repository import find_repository, repository_url, snapshot_ref
 from auditor.planner.tasks import PlannerOptions, make_planner
 from auditor.schemas import (
     ParsedPaper,
@@ -89,13 +100,25 @@ def load_venue(path: Path | None) -> VenueProfile | None:
         raise InputError(f"{path} is not a valid venue profile: {exc}") from exc
 
 
-def resolve_repository(value: str | None, paper: ParsedPaper) -> RepositoryRef | None:
+def resolve_repository(
+    value: str | None, paper: ParsedPaper, commit: str | None = None
+) -> RepositoryRef | None:
+    """The repository to check against: the given URL, or the one the paper announces.
+    The commit comes from `commit` or from a /tree/ or /commit/ part of the URL."""
     if value is None:
-        return find_repository(paper)
+        found = find_repository(paper)
+        if commit is None or found is None:
+            if commit is not None:
+                raise InputError("A repository commit was given, but no repository.")
+            return found
+        return found.model_copy(update={"commit": commit})
     url = repository_url(value)
     if url is None:
         raise InputError(f"Not a GitHub or GitLab repository URL: {value}")
-    return RepositoryRef(url=url)
+    in_url = snapshot_ref(value)
+    if commit is not None and in_url is not None and commit != in_url:
+        raise InputError(f"{value} names {in_url}, but the commit given is {commit}")
+    return RepositoryRef(url=url, commit=commit or in_url)
 
 
 def optional_llm(settings: Settings, enabled: bool = True) -> StructuredLLM | None:
@@ -137,7 +160,14 @@ async def run_full(
     max_concurrency: int = 8,
     resume: bool = False,
 ) -> FullRun:
-    ctx = RunContext(settings=settings, paper=paper, http=http, llm=llm, logger=logger)
+    ctx = RunContext(
+        settings=settings,
+        paper=paper,
+        http=http,
+        llm=llm,
+        logger=logger,
+        repository=repository,
+    )
     specialists, _ = load_specialists()
     verifier, _ = load_verifier()
     pipeline = AuditPipeline(
@@ -182,7 +212,14 @@ async def run_baseline(
             paper, llm, run_id=run_id, usage=usage, venue=venue, repository=repository
         )
     elif system is SystemName.B1:
-        ctx = RunContext(settings=settings, paper=paper, http=http, llm=llm, logger=logger)
+        ctx = RunContext(
+            settings=settings,
+            paper=paper,
+            http=http,
+            llm=llm,
+            logger=logger,
+            repository=repository,
+        )
         result = await run_b1(
             paper,
             create_chat_model(settings),
@@ -198,10 +235,16 @@ async def run_baseline(
     return result, run.save_predictions(paper, result.predictions)
 
 
-def mocked_parts() -> list[str]:
-    _, mocked = load_specialists()
-    _, verifier_mocked = load_verifier()
-    return [*mocked, *(["verifier"] if verifier_mocked else [])]
+def missing_parts(system: SystemName) -> list[str]:
+    """Parts a system needs that are still placeholders: the specialists and verifier for
+    the full system, the specialists' tools for B1 (decision D7). B0 needs none."""
+    if system is SystemName.FULL:
+        _, mocked = load_specialists()
+        _, verifier_mocked = load_verifier()
+        return [*mocked, *(["verifier"] if verifier_mocked else [])]
+    if system is SystemName.B1:
+        return [f"{name} tools" for name in missing_tools()]
+    return []
 
 
 def read_dataset(path: Path) -> list[DatasetEntry]:
@@ -256,6 +299,77 @@ def _record_failure(run: RunDirectory, paper: ParsedPaper, error: BaseException)
     return message
 
 
+def _sha256(data: str | bytes) -> str:
+    return hashlib.sha256(data.encode("utf-8") if isinstance(data, str) else data).hexdigest()
+
+
+def code_sha256() -> str:
+    """Hash of the auditor package's source files, including the specialists' code."""
+    root = Path(auditor.__file__).parent
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*.py")):
+        digest.update(path.relative_to(root).as_posix().encode("utf-8") + b"\0")
+        digest.update(path.read_bytes() + b"\0")
+    return digest.hexdigest()
+
+
+def _fingerprint(
+    system: SystemName,
+    settings: Settings,
+    llm: StructuredLLM | None,
+    prepared: Sequence[_Prepared],
+    missing: list[str],
+    code: str,
+) -> dict[str, JsonValue]:
+    """Everything that can change a run's answers, compared when a run is continued."""
+    papers: list[JsonValue] = [
+        {
+            "paper_id": item.paper.paper_id,
+            "variant": item.paper.variant.value,
+            "paper_sha256": _sha256(item.paper.model_dump_json()),
+            "repository": item.repository.model_dump(mode="json") if item.repository else None,
+            "venue_sha256": _sha256(item.venue.model_dump_json()) if item.venue else None,
+        }
+        for item in prepared
+    ]
+    fingerprint: dict[str, JsonValue] = {
+        "system": system.value,
+        "model": llm.name if llm else None,
+        "llm_settings": {
+            "base_url": settings.llm_base_url,
+            "options": redact(settings.llm_options),
+            "structured_method": settings.llm_structured_method,
+            "cache": settings.llm_cache,
+        },
+        "code_sha256": code,
+        "packages": dict(package_versions()),
+        "missing_parts": list(missing),
+        "papers": papers,
+    }
+    # Stored manifests are redacted JSON; compare in the same form.
+    stored: dict[str, JsonValue] = redact(json.loads(json.dumps(fingerprint)))
+    return stored
+
+
+def _check_same_inputs(run: RunDirectory, run_id: str, fingerprint: dict[str, JsonValue]) -> None:
+    existing = run.path / "manifest.json"
+    if not existing.is_file():
+        return
+    before = RunManifest.model_validate_json(existing.read_bytes()).config.get("inputs")
+    if before == fingerprint:
+        return
+    if isinstance(before, dict):
+        changed = sorted(
+            k for k in fingerprint.keys() | before.keys() if before.get(k) != fingerprint.get(k)
+        )
+    else:
+        changed = ["(not recorded)"]
+    raise InputError(
+        f"{run_id} was started with different {', '.join(changed)}. Use a new --experiment "
+        f"name, or delete {run.path} to start that run again."
+    )
+
+
 def _start_manifest(
     run: RunDirectory,
     run_id: str,
@@ -266,7 +380,8 @@ def _start_manifest(
 ) -> RunManifest:
     existing = run.path / "manifest.json"
     if existing.is_file():
-        # A resumed run keeps its original start time and configuration.
+        # A continued run keeps its original start time; _check_same_inputs has already
+        # confirmed that its configuration is unchanged.
         return RunManifest.model_validate_json(existing.read_bytes()).model_copy(
             update={"finished_at": None}
         )
@@ -344,9 +459,10 @@ async def run_batch(
     max_concurrency: int = 8,
 ) -> list[RunSummary]:
     entries = read_dataset(dataset)
-    mocked = mocked_parts()
-    if strict and mocked and set(systems) & {SystemName.FULL, SystemName.B1}:
-        raise InputError(f"--strict: these parts are still mocks: {', '.join(mocked)}")
+    missing = {system: missing_parts(system) for system in systems}
+    if strict and any(missing.values()):
+        problems = "; ".join(f"{s.value}: {', '.join(p)}" for s, p in missing.items() if p)
+        raise InputError(f"--strict: these parts are still mocks or missing: {problems}")
     needs_llm = bool(set(systems) & {SystemName.B0, SystemName.B1})
     llm = required_llm(settings) if needs_llm else optional_llm(settings)
     dataset_hash = hashlib.sha256(await asyncio.to_thread(dataset.read_bytes)).hexdigest()
@@ -366,10 +482,23 @@ async def run_batch(
             prepared.append(
                 _Prepared(
                     paper=paper,
-                    repository=resolve_repository(entry.repository, paper),
+                    repository=resolve_repository(entry.repository, paper, entry.repository_commit),
                     venue=load_venue(Path(entry.venue) if entry.venue else None),
                 )
             )
+
+        code = code_sha256()
+        fingerprints = {
+            system: _fingerprint(system, settings, llm, prepared, missing[system], code)
+            for system in systems
+        }
+        # Refuse before doing any work if an existing run was made differently.
+        for system in systems:
+            for index in range(1, runs + 1):
+                run_id = f"{experiment}-{system.value}-r{index}"
+                _check_same_inputs(
+                    RunDirectory(settings.runs_dir, run_id), run_id, fingerprints[system]
+                )
 
         for system in systems:
             for index in range(1, runs + 1):
@@ -389,7 +518,8 @@ async def run_batch(
                         "dataset_sha256": dataset_hash,
                         "run_index": index,
                         "papers": len(prepared),
-                        "mocked_parts": list(mocked),
+                        "mocked_parts": list(missing[system]),
+                        "inputs": fingerprints[system],
                     },
                 )
                 summary = RunSummary(run_id=run_id)

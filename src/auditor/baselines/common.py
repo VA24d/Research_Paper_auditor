@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from auditor.schemas import (
     Anchor,
+    BibEntry,
     BibliographyAnchor,
     BibTarget,
     DocumentAnchor,
@@ -50,6 +51,13 @@ ANSWER_GUIDE = """For every error, give:
 Report only errors you have specific reasons for. An empty list is a valid answer."""
 
 
+class IncompleteAnswerError(Exception):
+    """A baseline stopped without a final answer, for example at its model call limit.
+
+    Raised rather than returning no predictions, which would be indistinguishable from
+    a valid "no errors found" answer."""
+
+
 class ReportedError(BaseModel):
     error_class: ErrorClass
     anchor_kind: Literal["sentence", "bibliography", "page", "document"]
@@ -75,7 +83,8 @@ def render_paper(
     if paper.layout is not None:
         lines.append(f"Pages: {paper.layout.page_count}")
     if repository is not None:
-        lines.append(f"Code repository: {repository.url}")
+        commit = f" (commit {repository.commit})" if repository.commit else ""
+        lines.append(f"Code repository: {repository.url}{commit}")
     lines.append("")
     current = None
     for sentence in paper.sentences:
@@ -87,16 +96,26 @@ def render_paper(
         lines.append(f"[{sentence.id}]{page_note} {sentence.text}")
     if paper.bibliography:
         lines += ["", "## References"]
-        for entry in paper.bibliography:
-            parts = [", ".join(entry.authors[:3]), entry.title or "", entry.venue or ""]
-            if entry.year:
-                parts.append(str(entry.year))
-            described = ". ".join(p for p in parts if p) or (entry.raw or "")
-            lines.append(f"[{entry.id}] {described}")
+        lines += [f"[{entry.id}] {_reference(entry)}" for entry in paper.bibliography]
     if venue is not None and venue.rules:
         lines += ["", f"## Venue rules ({venue.name})"]
         lines += [f"[{rule.id}] {rule.description}" for rule in venue.rules]
     return "\n".join(lines)
+
+
+def _reference(entry: BibEntry) -> str:
+    """Every field the specialists see, so a changed author, year or identifier is visible
+    to the baselines too. The raw text is the fallback when nothing was parsed."""
+    parts = [", ".join(entry.authors), entry.title or "", entry.venue or ""]
+    if entry.year:
+        parts.append(str(entry.year))
+    if entry.doi:
+        parts.append(f"DOI {entry.doi}")
+    if entry.arxiv_id:
+        parts.append(f"arXiv {entry.arxiv_id}")
+    if entry.url:
+        parts.append(entry.url)
+    return ". ".join(p for p in parts if p) or (entry.raw or "")
 
 
 def _anchor(error: ReportedError) -> Anchor:

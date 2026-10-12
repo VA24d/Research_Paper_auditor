@@ -19,6 +19,7 @@ from auditor.baselines.b0 import BaselineResult
 from auditor.baselines.common import (
     ANSWER_GUIDE,
     ERROR_CLASS_GUIDE,
+    IncompleteAnswerError,
     ReportedErrors,
     render_paper,
     to_predictions,
@@ -64,7 +65,7 @@ async def run_b1(
         response_format=ToolStrategy(ReportedErrors),
         middleware=limits,
     )
-    scope = Scope(run_id=run_id, paper_id=paper.paper_id, usage=usage)
+    scope = Scope.for_paper(run_id, paper, usage)
     config = RunnableConfig(
         callbacks=[UsageCallback(scope, model_name)],
         recursion_limit=4 * max_model_calls + 10,
@@ -75,6 +76,8 @@ async def run_b1(
 
     answer = state.get("structured_response")
     if not isinstance(answer, ReportedErrors):
-        return BaselineResult(predictions=[], dropped=["the agent stopped without a final answer"])
+        raise IncompleteAnswerError(
+            f"B1 stopped without a final answer (limit: {max_model_calls} model calls)"
+        )
     predictions, dropped = to_predictions(answer, paper, run_id=run_id, system=SystemName.B1)
     return BaselineResult(predictions=predictions, dropped=dropped)

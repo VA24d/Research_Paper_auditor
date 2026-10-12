@@ -1,10 +1,16 @@
-"""Per-call records used for the cost metrics (decision D8)."""
+"""Per-call records used for the cost metrics (decision D8).
+
+`paper_id` and `variant` say which paper a call was for, so costs can be split per
+paper and between original and injected copies; they are empty only for calls made
+outside any paper.
+"""
 
 from enum import StrEnum
 
 from pydantic import AwareDatetime, Field
 
 from auditor.schemas.base import NonEmptyStr, Record
+from auditor.schemas.paper import PaperVariant
 
 
 class CallStatus(StrEnum):
@@ -15,6 +21,7 @@ class CallStatus(StrEnum):
 class ToolCallRecord(Record):
     run_id: NonEmptyStr
     paper_id: str | None = None
+    variant: PaperVariant | None = None
     task_id: str | None = None
     tool: NonEmptyStr
     args_hash: NonEmptyStr
@@ -26,6 +33,8 @@ class ToolCallRecord(Record):
 
 class HttpRequestRecord(Record):
     run_id: NonEmptyStr
+    paper_id: str | None = None
+    variant: PaperVariant | None = None
     task_id: str | None = None
     method: NonEmptyStr
     host: NonEmptyStr
@@ -40,6 +49,8 @@ class HttpRequestRecord(Record):
 
 class LLMCallRecord(Record):
     run_id: NonEmptyStr
+    paper_id: str | None = None
+    variant: PaperVariant | None = None
     task_id: str | None = None
     model: NonEmptyStr
     input_tokens: int = Field(ge=0)

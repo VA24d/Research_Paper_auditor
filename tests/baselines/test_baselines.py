@@ -1,10 +1,16 @@
 from typing import Any
 
+import pytest
 from langchain_core.tools import tool
 
 from auditor.baselines.b0 import run_b0
 from auditor.baselines.b1 import run_b1
-from auditor.baselines.common import ReportedErrors, render_paper, to_predictions
+from auditor.baselines.common import (
+    IncompleteAnswerError,
+    ReportedErrors,
+    render_paper,
+    to_predictions,
+)
 from auditor.infra.llm import StructuredLLM
 from auditor.infra.tools import tracked_tool
 from auditor.infra.usage import UsageLog
@@ -15,6 +21,7 @@ from auditor.schemas import (
     ErrorClass,
     MarkerTarget,
     PageAnchor,
+    PaperVariant,
     RuleTarget,
     SentenceAnchor,
     SettingTarget,
@@ -44,6 +51,18 @@ def test_render_paper_shows_ids_pages_references_and_rules() -> None:
     assert "[s2] (p. 1) Prior work reports 92.1% exact match on SQuAD [2, 3]." in text
     assert "[b0] Ashish Vaswani, Noam Shazeer. Attention Is All You Need. NeurIPS. 2017" in text
     assert "[page-limit] The main text is at most 9 pages." in text
+
+
+def test_render_paper_shows_every_author_and_identifier() -> None:
+    paper = example_paper()
+    entry = paper.bibliography[0]
+    changed = entry.model_copy(
+        update={"authors": (*entry.authors, "A Third", "B Fourth"), "doi": "10.1/x"}
+    )
+    paper = paper.model_copy(update={"bibliography": (changed, *paper.bibliography[1:])})
+    text = render_paper(paper)
+    assert "Noam Shazeer, A Third, B Fourth. Attention Is All You Need" in text
+    assert "DOI 10.1/x" in text
 
 
 def test_to_predictions_maps_every_anchor_and_target_kind() -> None:
@@ -131,7 +150,12 @@ async def test_b0_asks_once_and_records_usage() -> None:
     assert len(model.received) == 1
     assert "[s2]" in str(model.received[0][-1].content)
     assert len(usage.llm_calls) == 1
-    assert usage.llm_calls[0].task_id is None
+    (record,) = usage.llm_calls
+    assert (record.paper_id, record.variant, record.task_id) == (
+        example_paper().paper_id,
+        PaperVariant.ORIGINAL,
+        None,
+    )
 
 
 @tracked_tool("lookup_reference")
@@ -165,6 +189,9 @@ async def test_b1_uses_tools_then_answers() -> None:
     assert result.dropped == []
     assert [r.tool for r in usage.tool_calls] == ["lookup_reference"]
     assert [r.input_tokens for r in usage.llm_calls] == [100, 150]
+    expected = (example_paper().paper_id, PaperVariant.ORIGINAL)
+    assert {(r.paper_id, r.variant) for r in usage.tool_calls} == {expected}
+    assert {(r.paper_id, r.variant) for r in usage.llm_calls} == {expected}
     tool_result = model.received[1][-1]
     assert "Found: SQuAD" in str(tool_result.content)
 
@@ -173,14 +200,13 @@ async def test_b1_stops_at_its_model_call_limit() -> None:
     model = ScriptedChatModel(
         replies=[tool_reply("lookup_reference", {"title": f"t{i}"}) for i in range(5)]
     )
-    result = await run_b1(
-        example_paper(),
-        model,
-        [lookup_reference],
-        run_id="r1",
-        model_name="test:scripted",
-        max_model_calls=2,
-    )
-    assert result.predictions == []
-    assert result.dropped == ["the agent stopped without a final answer"]
+    with pytest.raises(IncompleteAnswerError, match="without a final answer"):
+        await run_b1(
+            example_paper(),
+            model,
+            [lookup_reference],
+            run_id="r1",
+            model_name="test:scripted",
+            max_model_calls=2,
+        )
     assert len(model.received) == 2

@@ -7,6 +7,7 @@ context that is not in the table, is discarded.
 """
 
 import logging
+import re
 from collections.abc import Sequence
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -81,14 +82,20 @@ def table_units(paper: ParsedPaper, already: Sequence[ExtractedSetting]) -> list
     return [unit for unit in units if relevant(unit)]
 
 
-def _accept(reading: TableSettingReading, unit: list[Sentence]) -> ExtractedSetting | None:
+def _accept(
+    reading: TableSettingReading, unit: list[Sentence], taken: set[tuple[str, int]]
+) -> ExtractedSetting | None:
+    """The reading as a setting, or None if it does not quote the table. A value that
+    occurs several times in its row ("16 | 16" for two models) takes the first occurrence
+    no earlier reading has taken, so each configuration keeps its own anchor."""
     if reading.key not in ALIASES or not 0 <= reading.row < len(unit):
         return None
     row = unit[reading.row]
     value = reading.value.strip()
-    start = row.text.find(value) if value else -1
-    if start < 0:
+    starts = [m.start() for m in re.finditer(re.escape(value), row.text)] if value else []
+    if not starts:
         return None
+    start = next((s for s in starts if (row.id, s) not in taken), starts[0])
     context = reading.context.strip() if reading.context else None
     if context and not any(context in s.text for s in unit):
         return None
@@ -109,13 +116,15 @@ def _accept(reading: TableSettingReading, unit: list[Sentence]) -> ExtractedSett
 
 
 def _identity(setting: ExtractedSetting) -> tuple[object, ...]:
+    """One value per setting, configuration and row."""
     anchor = setting.source.anchor if isinstance(setting.source, PaperSource) else None
-    return (
-        setting.key,
-        setting.context,
-        anchor.sentence_id if anchor else None,
-        anchor.start if anchor else None,
-    )
+    return (setting.key, setting.context, anchor.sentence_id if anchor else None)
+
+
+def _position(setting: ExtractedSetting) -> tuple[str, int] | None:
+    if not isinstance(setting.source, PaperSource) or setting.source.anchor.start is None:
+        return None
+    return (setting.source.anchor.sentence_id, setting.source.anchor.start)
 
 
 async def read_tables(
@@ -123,15 +132,19 @@ async def read_tables(
 ) -> list[ExtractedSetting]:
     found: list[ExtractedSetting] = []
     seen = {_identity(s) for s in already}
+    taken = {p for p in map(_position, already) if p is not None}
     system = SystemMessage(SYSTEM_PROMPT.format(keys=", ".join(ALIASES)))
     for unit in table_units(paper, already):
         rows = "\n".join(f"Row {index}: {sentence.text}" for index, sentence in enumerate(unit))
         result = await llm.generate(TableReading, [system, HumanMessage(rows)])
         for reading in result.value.settings:
-            setting = _accept(reading, unit)
+            setting = _accept(reading, unit, taken)
             if setting is None:
                 logger.warning("discarded a table reading that does not quote the table")
             elif _identity(setting) not in seen:
                 seen.add(_identity(setting))
+                position = _position(setting)
+                if position is not None:
+                    taken.add(position)
                 found.append(setting)
     return found

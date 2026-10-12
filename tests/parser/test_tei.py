@@ -227,3 +227,30 @@ def test_captions_and_footnotes_without_paragraphs_are_kept(tei: str) -> None:
     texts = {s.kind: s.text for s in paper.sentences if s.kind is not SentenceKind.BODY}
     assert texts[SentenceKind.CAPTION] == "Figure 1: Accuracy against model size."
     assert texts[SentenceKind.FOOTNOTE] == "Code: https://github.com/example/claims"
+
+
+def test_appendix_tables_captions_and_footnotes_are_kept(tei: str) -> None:
+    appendix = (
+        "<p><s>We use a learning rate of 3e-4.</s></p>"
+        '<figure type="table" xml:id="tab_9"><head>Table 9:</head>'
+        "<figDesc>Fine-tuning settings.</figDesc>"
+        "<table><row><cell>batch size</cell><cell>512</cell></row></table></figure>"
+        '<note place="foot">Run on 8 GPUs.</note>'
+    )
+    changed = tei.replace(
+        '<p><s coords="2,100.00,500.00,300.00,9.00">We use a learning rate of 3e-4.</s></p>',
+        appendix,
+    )
+    assert changed != tei
+    paper = tei_to_paper(changed, paper_id="x")
+    (table,) = paper.tables
+    assert table.label == "Table 9"
+    assert [paper.sentence(r).text for r in table.row_ids] == ["batch size | 512"]
+    caption = next(
+        s for s in paper.sentences if s.kind is SentenceKind.CAPTION and "settings" in s.text
+    )
+    appendix_section = next(s for s in paper.sections if s.title == "Hyperparameters")
+    assert caption.section_id == appendix_section.id
+    assert any(
+        s.kind is SentenceKind.FOOTNOTE and s.text == "Run on 8 GPUs." for s in paper.sentences
+    )

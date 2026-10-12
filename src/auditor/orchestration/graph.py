@@ -98,7 +98,7 @@ def build_graph(
 
     async def plan(state: AuditState) -> dict[str, Any]:
         paper = state["paper"]
-        with enter_scope(Scope(run_id=run_id, paper_id=paper.paper_id, usage=usage)):
+        with enter_scope(Scope.for_paper(run_id, paper, usage)):
             tasks = await pipeline.planner(paper, ctx)
         return {"tasks": tasks}
 
@@ -118,7 +118,7 @@ def build_graph(
 
     async def verify(state: AuditState) -> dict[str, Any]:
         paper = state["paper"]
-        with enter_scope(Scope(run_id=run_id, paper_id=paper.paper_id, usage=usage)):
+        with enter_scope(Scope.for_paper(run_id, paper, usage)):
             verified = await pipeline.verifier(state["results"], ctx)
         return {"verified": verified}
 
