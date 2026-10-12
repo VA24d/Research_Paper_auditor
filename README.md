@@ -148,9 +148,11 @@ were checked against, so every system inspects the same snapshot. Relative paths
 relative to the dataset file.
 
 `auditor batch` runs each system `--runs` times. Run ids are `<experiment>-<system>-r<n>`,
-so running the same command again skips papers that already have predictions and resumes
-interrupted ones. Papers that fail are listed in the run's `failures.jsonl` and the batch
-continues. LLM answers are not cached in a batch unless `--llm-cache` is given, and
+so running the same command again skips papers that already have predictions, resumes
+interrupted ones and retries failed ones. Every failure, including B1 stopping without an
+answer, is kept in the run's `failures.jsonl` and the batch continues. A run is only
+continued with the same inputs: if the model, LLM settings, code, packages or any paper,
+repository or venue changed, the batch refuses and asks for a new `--experiment` name. LLM answers are not cached in a batch unless `--llm-cache` is given, and
 `--strict` refuses to start while any part is still a mock.
 
 ### Docker

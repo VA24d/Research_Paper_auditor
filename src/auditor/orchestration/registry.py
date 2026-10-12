@@ -71,6 +71,15 @@ def load_verifier() -> tuple[VerifyFn, bool]:
     return cast(VerifyFn, function), False
 
 
+def missing_tools() -> list[str]:
+    """Specialist parts that do not expose B1 tools yet."""
+    return [
+        name
+        for name, package in SPECIALIST_PACKAGES.items()
+        if _entry_point(f"{package}.tools", "make_tools") is None
+    ]
+
+
 def load_tools(ctx: RunContext) -> list[BaseTool]:
     """Every tool the specialist parts expose for baseline B1 (decision D7)."""
     tools: list[BaseTool] = []

@@ -10,13 +10,14 @@ from pathlib import Path
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
+from auditor.baselines.common import IncompleteAnswerError
 from auditor.config import Settings
 from auditor.experiments import (
     BATCH_SYSTEMS,
     InputError,
     load_paper,
     load_venue,
-    mocked_parts,
+    missing_parts,
     optional_llm,
     required_llm,
     resolve_repository,
@@ -86,7 +87,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                 "repository": repository.url if repository else None,
                 "repository_commit": repository.commit if repository else None,
                 "venue": venue.id if venue else None,
-                "mocked_parts": list(mocked_parts()),
+                "mocked_parts": list(missing_parts(SystemName.FULL)),
             },
         )
         write_manifest(manifest, run.path)
@@ -140,21 +141,29 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
             system=system,
             settings=settings,
             model=llm.name,
-            extra_config={"paper_id": paper.paper_id, "variant": paper.variant.value},
+            extra_config={
+                "paper_id": paper.paper_id,
+                "variant": paper.variant.value,
+                "mocked_parts": list(missing_parts(system)),
+            },
         )
         write_manifest(manifest, run.path)
-        result, path = await run_baseline(
-            system,
-            paper,
-            settings=settings,
-            http=http,
-            llm=llm,
-            run=run,
-            run_id=run_id,
-            usage=UsageLog(run.usage_dir),
-            repository=repository,
-            venue=venue,
-        )
+        try:
+            result, path = await run_baseline(
+                system,
+                paper,
+                settings=settings,
+                http=http,
+                llm=llm,
+                run=run,
+                run_id=run_id,
+                usage=UsageLog(run.usage_dir),
+                repository=repository,
+                venue=venue,
+            )
+        except IncompleteAnswerError as exc:
+            print(f"{run_id}: {exc}; no predictions written.", file=sys.stderr)
+            return 1
     write_manifest(manifest.model_copy(update={"finished_at": datetime.now(UTC)}), run.path)
     print(
         f"{run_id}: {len(result.predictions)} predictions "

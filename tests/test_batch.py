@@ -5,9 +5,10 @@ import pytest
 
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
-from auditor.experiments import InputError, resolve_repository
+from auditor.experiments import InputError, missing_parts, resolve_repository
 from auditor.infra.llm import StructuredLLM
-from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest
+from auditor.orchestration import registry
+from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest, SystemName
 from auditor.schemas.examples import example_paper
 from auditor.testing import ScriptedChatModel, tool_reply
 
@@ -132,3 +133,51 @@ def test_repository_commit_from_the_url_or_alone() -> None:
     without_links = paper.model_copy(update={"links": ()})
     with pytest.raises(InputError, match="no repository"):
         resolve_repository(None, without_links, "0123abc")
+
+
+def only_tools_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    def entry_point(package: str, attribute: str) -> object:
+        return None if attribute == "make_tools" else (lambda *args: None)
+
+    monkeypatch.setattr(registry, "_entry_point", entry_point)
+
+
+def test_each_system_lists_the_parts_it_still_lacks(monkeypatch: pytest.MonkeyPatch) -> None:
+    only_tools_missing(monkeypatch)
+    assert missing_parts(SystemName.FULL) == []
+    assert missing_parts(SystemName.B0) == []
+    assert missing_parts(SystemName.B1) == ["citation tools", "code tools", "template tools"]
+
+
+def test_strict_refuses_b1_without_the_specialists_tools(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    only_tools_missing(monkeypatch)
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
+    argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "b1", "--strict"]
+    assert main(argv) == 2
+    assert "b1: citation tools, code tools, template tools" in capsys.readouterr().err
+
+
+def test_continuing_a_run_with_different_inputs_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
+    argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "full"]
+    assert main(argv) == 0
+    assert main(argv) == 0
+
+    monkeypatch.setenv("AUDITOR_LLM_OPTIONS", '{"max_output_tokens": 16}')
+    capsys.readouterr()
+    assert main(argv) == 2
+    assert "exp-full-r1 was started with different llm_settings" in capsys.readouterr().err
+    monkeypatch.delenv("AUDITOR_LLM_OPTIONS")
+
+    paper = example_paper()
+    changed = paper.sentences[0].model_copy(update={"text": "A changed sentence."})
+    changed_paper = paper.model_copy(update={"sentences": (changed, *paper.sentences[1:])})
+    (dataset.parent / "paper-original.json").write_text(
+        changed_paper.model_dump_json(), encoding="utf-8"
+    )
+    assert main(argv) == 2
+    assert "different papers" in capsys.readouterr().err

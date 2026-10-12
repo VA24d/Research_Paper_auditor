@@ -51,6 +51,13 @@ ANSWER_GUIDE = """For every error, give:
 Report only errors you have specific reasons for. An empty list is a valid answer."""
 
 
+class IncompleteAnswerError(Exception):
+    """A baseline stopped without a final answer, for example at its model call limit.
+
+    Raised rather than returning no predictions, which would be indistinguishable from
+    a valid "no errors found" answer."""
+
+
 class ReportedError(BaseModel):
     error_class: ErrorClass
     anchor_kind: Literal["sentence", "bibliography", "page", "document"]

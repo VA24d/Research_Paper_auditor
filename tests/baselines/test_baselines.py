@@ -1,10 +1,16 @@
 from typing import Any
 
+import pytest
 from langchain_core.tools import tool
 
 from auditor.baselines.b0 import run_b0
 from auditor.baselines.b1 import run_b1
-from auditor.baselines.common import ReportedErrors, render_paper, to_predictions
+from auditor.baselines.common import (
+    IncompleteAnswerError,
+    ReportedErrors,
+    render_paper,
+    to_predictions,
+)
 from auditor.infra.llm import StructuredLLM
 from auditor.infra.tools import tracked_tool
 from auditor.infra.usage import UsageLog
@@ -194,14 +200,13 @@ async def test_b1_stops_at_its_model_call_limit() -> None:
     model = ScriptedChatModel(
         replies=[tool_reply("lookup_reference", {"title": f"t{i}"}) for i in range(5)]
     )
-    result = await run_b1(
-        example_paper(),
-        model,
-        [lookup_reference],
-        run_id="r1",
-        model_name="test:scripted",
-        max_model_calls=2,
-    )
-    assert result.predictions == []
-    assert result.dropped == ["the agent stopped without a final answer"]
+    with pytest.raises(IncompleteAnswerError, match="without a final answer"):
+        await run_b1(
+            example_paper(),
+            model,
+            [lookup_reference],
+            run_id="r1",
+            model_name="test:scripted",
+            max_model_calls=2,
+        )
     assert len(model.received) == 2

@@ -65,7 +65,7 @@ def _git(*args: str) -> str | None:
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
-def _package_versions() -> dict[str, str]:
+def package_versions() -> dict[str, str]:
     versions = {}
     for name in TRACKED_PACKAGES:
         try:
@@ -101,7 +101,7 @@ def build_manifest(
         dataset_version=dataset_version,
         python_version=platform.python_version(),
         platform=platform.platform(),
-        packages=_package_versions(),
+        packages=package_versions(),
         config=config,
     )
 
