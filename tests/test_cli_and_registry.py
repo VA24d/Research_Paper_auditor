@@ -1,12 +1,10 @@
 import json
-import sys
 import types
 from pathlib import Path
 
 import pytest
 from langchain_core.tools import tool
 
-import auditor.agents.code
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
 from auditor.infra.context import RunContext
@@ -29,6 +27,9 @@ FIXTURES = Path(__file__).parent / "fixtures" / "schemas"
 PAPER_JSON = FIXTURES / "parsed_paper.json"
 VENUE_JSON = FIXTURES / "venue_profile.json"
 
+# These tests are about the registry and the CLI, not about whichever parts exist yet.
+pytestmark = pytest.mark.usefixtures("parts")
+
 
 def lines(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
@@ -43,27 +44,25 @@ def test_missing_entry_points_fall_back_to_mocks() -> None:
     assert is_mock
 
 
-def test_real_entry_points_are_used(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_real_entry_points_are_used(parts: dict[str, types.ModuleType]) -> None:
     async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         return checked_result(task)
 
-    monkeypatch.setattr(auditor.agents.code, "check", check, raising=False)
+    parts["auditor.agents.code"].check = check  # type: ignore[attr-defined]
     specialists, mocked = registry.load_specialists()
     assert specialists.code is check
     assert mocked == ["citation", "template"]
 
 
 def test_tools_are_collected_from_each_part(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    parts: dict[str, types.ModuleType], tmp_path: Path
 ) -> None:
     @tool
     def find_reference(title: str) -> str:
         """Find a cited work by title."""
         return title
 
-    module = types.ModuleType("auditor.agents.citation.tools")
-    module.make_tools = lambda ctx: [find_reference]  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "auditor.agents.citation.tools", module)
+    parts["auditor.agents.citation.tools"].make_tools = lambda ctx: [find_reference]  # type: ignore[attr-defined]
     assert registry.load_tools(offline_context(tmp_path)) == [find_reference]
 
 

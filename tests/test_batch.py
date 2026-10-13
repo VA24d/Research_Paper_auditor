@@ -13,6 +13,9 @@ from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest,
 from auditor.schemas.examples import example_paper
 from auditor.testing import ScriptedChatModel, tool_reply
 
+# The batch runner is tested against placeholder parts, whatever teammates have built.
+pytestmark = pytest.mark.usefixtures("parts")
+
 
 def write_dataset(tmp_path: Path, *variants: PaperVariant, **fields: str) -> Path:
     folder = tmp_path / "dataset"
