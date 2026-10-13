@@ -22,10 +22,12 @@ from auditor.schemas import (
 _MINUS = "-\u2212\u2013"
 # "4, 000" is how GROBID sometimes renders 4,000, so a comma may be followed by a space
 # when exactly three digits come next.
-# Powers of ten use any multiplication sign ("8 x 10^-4"), and a bare "10 -3" is a
-# flattened superscript. parse_number reads the same forms.
+# Powers of ten use any multiplication sign ("8 x 10^-4"), may stand alone ("10^-3",
+# "10^{-3}"), and a bare "10 -3" is a flattened superscript. parse_number reads the same
+# forms.
 _NUMBER = (
-    rf"(?:10\s+[{_MINUS}]\d+(?!\d|\.\d)|"
+    rf"(?:10\s*\^\s*\{{?\s*[{_MINUS}]?\s*\d+\s*\}}?|"
+    rf"10\s+[{_MINUS}]\d+(?!\d|\.\d)|"
     rf"\d+(?:[.,]\d+|,\s\d{{3}}(?!\d))*(?:\s*[eE]\s*[{_MINUS}+]?\s*\d+)?"
     rf"(?:\s*(?:[x\u00d7\u00b7\u2022\u22c5]|\\times)\s*10\s*\^?\s*\{{?\s*[{_MINUS}]?\s*\d+\s*\}}?)?"
     r"\s*[kKM]?)"
