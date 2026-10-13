@@ -16,6 +16,9 @@ from auditor.config import Settings
 from auditor.experiments import (
     BATCH_SYSTEMS,
     InputError,
+    PaperInput,
+    check_same_inputs,
+    code_sha256,
     load_paper,
     load_venue,
     missing_parts,
@@ -24,7 +27,9 @@ from auditor.experiments import (
     resolve_repository,
     run_baseline,
     run_batch,
+    run_fingerprint,
     run_full,
+    start_manifest,
 )
 from auditor.infra.files import atomic_write
 from auditor.infra.http import HttpClient
@@ -70,28 +75,47 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
         raise InputError("--resume needs the --run-id of the run to continue")
     run_id = args.run_id or new_run_id(SystemName.FULL)
     run = RunDirectory(settings.runs_dir, run_id)
-    configure_logging(settings.log_level, run.path / "run.log")
+    started = (run.path / "manifest.json").is_file()
+    if args.resume and not started:
+        raise InputError(f"{run_id} has no run to resume")
+    if started and not args.resume:
+        raise InputError(
+            f"{run_id} already exists. Pass --resume to continue it, or choose another --run-id."
+        )
     venue = load_venue(args.venue)
 
     async with HttpClient(settings) as http:
         paper = await load_paper(args.input, settings, http)
         repository = resolve_repository(args.repo, paper, args.repo_commit)
         llm = optional_llm(settings, not args.no_llm)
-        manifest = build_manifest(
-            run_id=run_id,
-            system=SystemName.FULL,
-            settings=settings,
-            model=llm.name if llm else None,
-            extra_config={
+        missing = missing_parts(SystemName.FULL)
+        inputs = run_fingerprint(
+            SystemName.FULL,
+            settings,
+            llm,
+            [PaperInput(paper=paper, repository=repository, venue=venue)],
+            missing,
+            code_sha256(),
+        )
+        # Checked before anything is written, so a refused resume leaves the run as it was.
+        check_same_inputs(run, run_id, inputs, "Use a new --run-id")
+        configure_logging(settings.log_level, run.path / "run.log")
+        manifest = start_manifest(
+            run,
+            run_id,
+            SystemName.FULL,
+            settings,
+            llm.name if llm else None,
+            {
                 "paper_id": paper.paper_id,
                 "variant": paper.variant.value,
                 "repository": repository.url if repository else None,
                 "repository_commit": repository.commit if repository else None,
                 "venue": venue.id if venue else None,
-                "mocked_parts": list(missing_parts(SystemName.FULL)),
+                "mocked_parts": list(missing),
+                "inputs": inputs,
             },
         )
-        write_manifest(manifest, run.path)
         async with AsyncSqliteSaver.from_conn_string(str(run.path / "checkpoints.sqlite")) as saver:
             try:
                 result = await run_full(
@@ -130,6 +154,8 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
     system = SystemName(args.system)
     run_id = args.run_id or new_run_id(system)
     run = RunDirectory(settings.runs_dir, run_id)
+    if (run.path / "manifest.json").is_file():
+        raise InputError(f"{run_id} already exists; choose another --run-id.")
     configure_logging(settings.log_level, run.path / "run.log")
     venue = load_venue(args.venue)
     llm = required_llm(settings)

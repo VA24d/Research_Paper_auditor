@@ -151,8 +151,9 @@ relative to the dataset file.
 so running the same command again skips papers that already have predictions, resumes
 interrupted ones and retries failed ones. Every failure, including B1 stopping without an
 answer, is kept in the run's `failures.jsonl` and the batch continues. A run is only
-continued with the same inputs: if the model, LLM settings, code, packages or any paper,
-repository or venue changed, the batch refuses and asks for a new `--experiment` name. LLM answers are not cached in a batch unless `--llm-cache` is given, and
+continued with the same inputs: if the model, the code, a package version, any paper,
+repository or venue, or any setting other than paths and logging changed, the batch refuses
+and asks for a new `--experiment` name. `auditor audit --resume` applies the same check. LLM answers are not cached in a batch unless `--llm-cache` is given, and
 `--strict` refuses to start while any part is still a mock.
 
 ### Docker

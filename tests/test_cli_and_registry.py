@@ -113,8 +113,23 @@ def test_audit_command_writes_a_complete_run(tmp_path: Path) -> None:
 def test_audit_refuses_to_reuse_a_run_id(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t2"]) == 0
     assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t2"]) == 2
-    assert "already has state" in capsys.readouterr().err
+    assert "already exists" in capsys.readouterr().err
     assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t2", "--resume"]) == 0
+    assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t9", "--resume"]) == 2
+    assert "no run to resume" in capsys.readouterr().err
+
+
+def test_resume_with_different_inputs_is_refused_and_keeps_the_manifest(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    argv = ["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t3"]
+    assert main([*argv, "--repo", "https://github.com/example/original"]) == 0
+    manifest = tmp_path / "runs" / "t3" / "manifest.json"
+    before = manifest.read_bytes()
+    changed = [*argv, "--resume", "--repo", "https://github.com/example/changed"]
+    assert main(changed) == 2
+    assert "t3 was started with different papers" in capsys.readouterr().err
+    assert manifest.read_bytes() == before
 
 
 @pytest.mark.parametrize(
