@@ -284,14 +284,11 @@ def _squad_evidence() -> Evidence:
 
 def example_finding() -> CandidateFinding:
     task = example_tasks()[1]
-    return CandidateFinding(
-        finding_id=f"{task.task_id}-f0",
-        task_id=task.task_id,
-        paper_id=task.paper_id,
-        variant=task.variant,
+    return CandidateFinding.for_task(
+        task,
+        0,
         error_class=ErrorClass.CLAIM_NUMBER_MISMATCH,
         anchor=_span("s2", "92.1%"),
-        target=task.target,
         summary="The cited work does not report 92.1% exact match on SQuAD.",
         explanation="The cited paper reports a 51.0% F1 baseline and no 92.1% figure.",
         evidence=(_squad_evidence(),),

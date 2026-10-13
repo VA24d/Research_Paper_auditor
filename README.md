@@ -186,12 +186,48 @@ manifest records which parts were mocked):
 | Verifier | `verify` in `auditor/agents/verifier/__init__.py` | `async def verify(results: Sequence[TaskResult], ctx: RunContext) -> list[VerifiedFinding]` |
 | Tools for B1 | `make_tools` in `auditor/agents/<name>/tools.py` | `def make_tools(ctx: RunContext) -> list[BaseTool]` |
 
+The shape of a check, in `auditor/agents/citation/__init__.py`. A real citation check also
+retrieves the cited work and quotes it as evidence; this one only shows the plumbing:
+
+```python
+from langchain_core.messages import HumanMessage
+from pydantic import BaseModel
+
+from auditor.infra.context import RunContext
+from auditor.schemas import AuditTask, CandidateFinding, ErrorClass, TaskOutcome, TaskResult
+
+
+class Support(BaseModel):
+    supported: bool
+    reason: str
+
+
+async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
+    if not task.claim:
+        return TaskResult.for_task(task, TaskOutcome.UNVERIFIABLE, reason="no claim text")
+    result = await ctx.require_llm().generate(Support, [HumanMessage(task.claim)])
+    answer = result.value  # a Support instance; result.usage has the token counts
+    findings = []
+    if not answer.supported:
+        findings.append(
+            CandidateFinding.for_task(
+                task, 0, error_class=ErrorClass.CLAIM_NOT_SUPPORTED, summary=answer.reason
+            )
+        )
+    return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
+```
+
 Inside `check`:
 
 - `ctx.paper` is the `ParsedPaper`; `ctx.repository` is the code repository and commit to
-  inspect, when known; `ctx.http` is the only way to reach the network
-  (allowlist, rate limits and cache included); `ctx.require_llm().generate(Schema, messages)`
-  returns a validated Pydantic object.
+  inspect, when known; `ctx.http` is the only way to reach the network (allowlist, rate
+  limits and cache included).
+- `await ctx.require_llm().generate(Schema, messages)` returns a `StructuredResult`:
+  `result.value` is the validated `Schema` instance, `result.usage` the token counts.
+  Invalid replies are retried with feedback before it gives up.
+- `TaskResult.for_task` and `CandidateFinding.for_task` copy the task's ids; a finding's
+  anchor defaults to the task's, so pass a narrower one when you can point at the exact
+  span.
 - Decorate shared tool functions with `@tracked_tool()` (`auditor.infra.tools`), so calls
   are counted for the cost metrics and the task budget.
 - Return `outcome=unverifiable` with a reason when the check cannot be done. Do not catch
