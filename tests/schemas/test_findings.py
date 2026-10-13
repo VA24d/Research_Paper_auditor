@@ -133,6 +133,30 @@ def test_prediction_positivity() -> None:
     assert not review.is_positive
 
 
+@pytest.mark.parametrize(
+    ("system", "state"),
+    [
+        (SystemName.FULL, None),
+        (SystemName.FULL_ABSTRACT_ONLY, None),
+        (SystemName.B0, VerificationState.VERIFIED_FLAG),
+        (SystemName.FULL_NO_VERIFIER, VerificationState.NEEDS_HUMAN_REVIEW),
+    ],
+)
+def test_state_must_match_whether_the_system_has_a_verifier(
+    system: SystemName, state: VerificationState | None
+) -> None:
+    data = example_predictions()[0].model_dump()
+    data.update(system=system, state=state)
+    with pytest.raises(ValidationError, match="state"):
+        Prediction.model_validate(data)
+
+
+def test_unverified_ablation_counts_every_flag() -> None:
+    data = example_predictions()[0].model_dump()
+    data.update(system=SystemName.FULL_NO_VERIFIER, state=None)
+    assert Prediction.model_validate(data).is_positive
+
+
 def test_prediction_matches_gold_label() -> None:
     full_prediction = example_predictions()[0]
     injected_label, clean_label = example_gold_labels()

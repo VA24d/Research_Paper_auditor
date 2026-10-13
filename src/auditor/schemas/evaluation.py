@@ -1,9 +1,9 @@
 """System outputs, gold labels and run metadata used for evaluation (decisions D3, D10, D18)."""
 
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import AwareDatetime, Field, JsonValue
+from pydantic import AwareDatetime, Field, JsonValue, model_validator
 
 from auditor.schemas.anchors import Anchor, anchors_match
 from auditor.schemas.base import SCHEMA_VERSION, NonEmptyStr, Record, SchemaVersion
@@ -22,11 +22,15 @@ class SystemName(StrEnum):
     FULL_ABSTRACT_ONLY = "full_abstract_only"
 
 
+# Systems with no verifier step; every flag they raise counts as positive (decision D3).
+UNVERIFIED_SYSTEMS = frozenset({SystemName.B0, SystemName.B1, SystemName.FULL_NO_VERIFIER})
+
+
 class Prediction(Record):
     """One error a system claims to have found.
 
-    `state` is None for systems without a verifier (B0, B1); all their predictions count
-    as positive. For the full system only VERIFIED_FLAG counts as positive.
+    `state` is None exactly for systems without a verifier (`UNVERIFIED_SYSTEMS`); all their
+    predictions count as positive. For the others only VERIFIED_FLAG counts as positive.
     """
 
     schema_version: SchemaVersion = SCHEMA_VERSION
@@ -42,9 +46,19 @@ class Prediction(Record):
     evidence: tuple[Evidence, ...] = ()
     finding_id: str | None = None
 
+    @model_validator(mode="after")
+    def _state_matches_system(self) -> Self:
+        if self.system in UNVERIFIED_SYSTEMS and self.state is not None:
+            raise ValueError(f"{self.system.value} has no verifier, so state must be empty")
+        if self.system not in UNVERIFIED_SYSTEMS and self.state is None:
+            raise ValueError(f"{self.system.value} predictions need the verifier's state")
+        return self
+
     @property
     def is_positive(self) -> bool:
-        return self.state is None or self.state is VerificationState.VERIFIED_FLAG
+        if self.system in UNVERIFIED_SYSTEMS:
+            return True
+        return self.state is VerificationState.VERIFIED_FLAG
 
 
 class GoldLabel(Record):

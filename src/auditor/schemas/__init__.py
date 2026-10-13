@@ -11,6 +11,7 @@ from auditor.schemas.anchors import (
 from auditor.schemas.base import SCHEMA_VERSION, Record
 from auditor.schemas.evaluation import (
     NO_ERROR,
+    UNVERIFIED_SYSTEMS,
     DatasetEntry,
     GoldLabel,
     Prediction,
@@ -80,6 +81,7 @@ __all__ = [
     "CELL_SEPARATOR",
     "NO_ERROR",
     "SCHEMA_VERSION",
+    "UNVERIFIED_SYSTEMS",
     "Anchor",
     "AuditTask",
     "BibEntry",
