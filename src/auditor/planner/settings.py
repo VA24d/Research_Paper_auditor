@@ -8,6 +8,7 @@ false accusation, so the patterns are narrow.
 import re
 from dataclasses import dataclass
 
+from auditor.planner.evaluation_setup import evaluation_settings
 from auditor.schemas import (
     ExtractedSetting,
     PaperSource,
@@ -208,10 +209,11 @@ def _start(setting: ExtractedSetting) -> int:
 
 
 def extract_settings(paper: ParsedPaper) -> list[ExtractedSetting]:
-    """Settings stated in sentences; table rows are read by `auditor.planner.tables`."""
+    """Settings and the evaluation setup stated in sentences; table rows are read by
+    `auditor.planner.tables`."""
     return [
         setting
         for sentence in paper.sentences
-        if sentence.kind is not SentenceKind.TABLE
-        for setting in settings_in_sentence(sentence)
+        if sentence.kind is not SentenceKind.TABLE and not looks_like_table_row(sentence.text)
+        for setting in (*settings_in_sentence(sentence), *evaluation_settings(sentence))
     ]

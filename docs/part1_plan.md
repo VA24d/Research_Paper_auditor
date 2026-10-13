@@ -267,7 +267,8 @@ Deterministic pass:
   text as its target, so it ends up checked or `unverifiable` instead of disappearing (D6).
 - Numbers with units and experimental settings are found with patterns: learning rate,
   batch size, epochs, optimiser, weight decay, dropout, warmup, seeds, splits, dataset
-  names, metrics, and the rows and columns of hyperparameter tables.
+  names, metrics (`auditor.planner.evaluation_setup`), and the rows and columns of
+  hyperparameter tables.
 - Repository links come from layout links and text.
 
 LLM pass (structured output):

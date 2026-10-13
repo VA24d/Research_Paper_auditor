@@ -154,6 +154,14 @@ Integration and baselines:
 
 ### Part 3 — Vijay: code agent and template checker
 
+Code tasks arrive with an `ExtractedSetting` whose `key` says what to look for. Hyperparameter
+and architecture keys are listed in `auditor.planner.tables.ALIASES` (`learning_rate`,
+`batch_size`, `hidden_size`, ...). The evaluation setup uses `dataset`, `data_split`
+(`"80/10/10"`), `test_fraction`, `validation_fraction` and `eval_metric` (`macro_f1`,
+`exact_match`, ...; see `auditor.planner.evaluation_setup`). Gold labels for set C should
+use the same keys. A repository's `commit` may be a branch or tag name when the dataset gives
+one; record the commit hash actually checked out.
+
 - [ ] **P3.1** Repository fetching through the shared infrastructure: pinned commit, size
   limits, no code execution.
 - [ ] **P3.2** Static extraction of settings from `.py` (including argparse and config
