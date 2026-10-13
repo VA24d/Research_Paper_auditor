@@ -49,3 +49,14 @@ def test_unlinked_marker_lowers_recall_only() -> None:
     result = score({paper.paper_id: paper}, [gold(paper, "c0", "b0"), item])
     assert (result["precision"], result["recall"]) == (1.0, 0.5)
     assert result["unlinked"] == [f"{paper.paper_id} '[7]'"]
+
+
+def test_identity_reads_the_printed_year_not_an_arxiv_id() -> None:
+    entry = (
+        example_paper()
+        .bib_entry("b0")
+        .model_copy(
+            update={"raw": "Vaswani et al. Attention is all you need. arXiv:1706.03762, June 2017."}
+        )
+    )
+    assert identity(entry)["year"] == "2017"

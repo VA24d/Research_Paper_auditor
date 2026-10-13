@@ -23,7 +23,8 @@ def context(paper: ParsedPaper, sentence_id: str, start: int, end: int) -> str:
 def identity(entry: BibEntry) -> dict[str, str]:
     """First-author surname, year as printed (with any letter) and the title's first words."""
     surname = entry.authors[0].split()[-1] if entry.authors else ""
-    printed = re.search(r"\b((?:19|20)\d{2}[a-z]?)\b", entry.raw or "")
+    # A year is not followed by ".digits", which would make it part of an arXiv id (1902.00751).
+    printed = re.search(r"\b((?:19|20)\d{2}[a-z]?)\b(?!\.\d)", entry.raw or "")
     year = printed.group(1) if printed else str(entry.year or "")
     title = " ".join((entry.title or "").split()[:4])
     return {"surname": surname, "year": year, "title": title}
