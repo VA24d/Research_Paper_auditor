@@ -40,7 +40,10 @@ class HttpRequestRecord(Record):
     host: NonEmptyStr
     path: str
     status_code: int | None = None
+    # One logical request: `attempts` counts retries; each attempt can also follow
+    # redirects, the last attempt's of which are counted in `redirects`.
     attempts: int = Field(ge=1)
+    redirects: int = Field(default=0, ge=0)
     cache_hit: bool
     started_at: AwareDatetime
     duration_s: float = Field(ge=0)
