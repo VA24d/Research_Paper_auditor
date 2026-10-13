@@ -65,6 +65,20 @@ def test_render_paper_shows_every_author_and_identifier() -> None:
     assert "DOI 10.1/x" in text
 
 
+def test_render_paper_shows_layout_measurements_and_rule_parameters() -> None:
+    paper = example_paper()
+    assert paper.layout is not None
+    page = paper.layout.pages[1].model_copy(update={"text_left": 1.0})
+    font = paper.layout.fonts[0].model_copy(update={"size": 4.0})
+    layout = paper.layout.model_copy(
+        update={"pages": (paper.layout.pages[0], page), "fonts": (font, *paper.layout.fonts[1:])}
+    )
+    text = render_paper(paper.model_copy(update={"layout": layout}), venue=example_venue())
+    assert "left 1.0 (p. 2)" in text
+    assert "4 pt" in text
+    assert "(check: max_pages; max_pages=9)" in text
+
+
 def test_to_predictions_maps_every_anchor_and_target_kind() -> None:
     reported = ReportedErrors.model_validate(
         {
