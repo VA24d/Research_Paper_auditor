@@ -5,8 +5,9 @@ numeric and author-year citation styles and several venue templates.
 
 ## Method
 
-- Papers: `datasets/parser_fixtures/arxiv_ids.txt` (fetched with `scripts/fetch_arxiv.py`;
-  PDFs are not committed, decision D13).
+- Papers: `datasets/parser_fixtures/arxiv_ids.txt`, which pins each arXiv version and the
+  PDF's SHA-256 (fetched and checked with `scripts/fetch_arxiv.py`; PDFs are not
+  committed, decision D13).
 - Pipeline: GROBID 0.9.1 (CRF image) with sentence segmentation and coordinates,
   pdfplumber for layout, then the fallback citation linker (`auditor.parser.linking`).
 - Statistics: `uv run python scripts/parser_report.py data/papers`.

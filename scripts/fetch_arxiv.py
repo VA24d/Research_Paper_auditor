@@ -1,5 +1,10 @@
 """Download arXiv PDFs listed in a manifest into data/papers/ (decision D13).
 
+Each manifest line gives a versioned arXiv id and, optionally, the SHA-256 of the PDF. A
+file is saved as `<id without version>.pdf`, the paper id the parser and the gold sample
+use. Existing files are checked against the hash rather than trusted, and a download whose
+hash differs is not saved.
+
 Requests go through the shared HTTP client, so arXiv's limit of one request every three
 seconds and the response cache apply.
 
@@ -8,34 +13,64 @@ seconds and the response cache apply.
 
 import argparse
 import asyncio
+import hashlib
+import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
 from auditor.infra.http import HttpClient
 
+_SHA256 = re.compile(r"[0-9a-f]{64}")
 
-def read_ids(manifest: Path) -> list[str]:
-    ids = []
-    for line in manifest.read_text(encoding="utf-8").splitlines():
+
+@dataclass(frozen=True)
+class Entry:
+    arxiv_id: str
+    sha256: str | None
+
+    @property
+    def paper_id(self) -> str:
+        return re.sub(r"v\d+$", "", self.arxiv_id).replace("/", "_")
+
+
+def read_manifest(manifest: Path) -> list[Entry]:
+    entries = []
+    for number, line in enumerate(manifest.read_text(encoding="utf-8").splitlines(), start=1):
         fields = line.split("#", 1)[0].split()
-        if fields:
-            ids.append(fields[0])
-    return ids
+        if not fields:
+            continue
+        sha256 = fields[1] if len(fields) > 1 and _SHA256.fullmatch(fields[1]) else None
+        if not re.search(r"v\d+$", fields[0]):
+            print(f"note: line {number}: {fields[0]} has no version, so arXiv serves the latest")
+        entries.append(Entry(fields[0], sha256))
+    return entries
 
 
-async def fetch(wanted: list[tuple[str, Path]], settings: Settings) -> int:
+def problem(entry: Entry, content: bytes) -> str | None:
+    """Why the content is not the PDF the manifest describes, or None if it is."""
+    if not content.startswith(b"%PDF"):
+        return "not a PDF"
+    if entry.sha256 is not None and hashlib.sha256(content).hexdigest() != entry.sha256:
+        return "SHA-256 differs from the manifest"
+    return None
+
+
+async def fetch(wanted: list[tuple[Entry, Path]], settings: Settings) -> int:
     failures = 0
     async with HttpClient(settings) as http:
-        for arxiv_id, target in wanted:
-            response = await http.get(f"https://arxiv.org/pdf/{arxiv_id}")
-            if not response.ok or not response.content.startswith(b"%PDF"):
-                print(f"FAILED  {arxiv_id}: HTTP {response.status_code}")
+        for entry, target in wanted:
+            response = await http.get(f"https://arxiv.org/pdf/{entry.arxiv_id}")
+            reason = f"HTTP {response.status_code}" if not response.ok else None
+            reason = reason or problem(entry, response.content)
+            if reason is not None:
+                print(f"FAILED  {entry.arxiv_id}: {reason}")
                 failures += 1
                 continue
             atomic_write(target, response.content)
-            print(f"fetched {arxiv_id} ({len(response.content) // 1024} KB)")
+            print(f"fetched {entry.arxiv_id} ({len(response.content) // 1024} KB)")
     return failures
 
 
@@ -48,13 +83,19 @@ def main() -> int:
     out = args.out or settings.data_dir / "papers"
     out.mkdir(parents=True, exist_ok=True)
     wanted = []
-    for arxiv_id in read_ids(args.manifest):
-        target = out / f"{arxiv_id.replace('/', '_')}.pdf"
-        if target.exists():
-            print(f"have    {arxiv_id}")
+    failures = 0
+    for entry in read_manifest(args.manifest):
+        target = out / f"{entry.paper_id}.pdf"
+        if not target.exists():
+            wanted.append((entry, target))
+            continue
+        reason = problem(entry, target.read_bytes())
+        if reason is None:
+            print(f"have    {entry.arxiv_id}")
         else:
-            wanted.append((arxiv_id, target))
-    failures = asyncio.run(fetch(wanted, settings))
+            print(f"BAD     {target}: {reason}; delete it to download again")
+            failures += 1
+    failures += asyncio.run(fetch(wanted, settings))
     return 1 if failures else 0
 
 
