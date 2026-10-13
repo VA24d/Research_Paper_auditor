@@ -13,6 +13,7 @@ import logging
 import random
 import time
 from collections.abc import Awaitable, Callable, Mapping
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -91,6 +92,11 @@ class HttpResponse:
     def raise_for_status(self) -> None:
         if not self.ok:
             raise HttpStatusError(self)
+
+
+# Requests sent for the logical request in progress, counted by the request hook so that
+# redirect hops of every attempt are included. Each asyncio task has its own value.
+_sent: ContextVar[list[int] | None] = ContextVar("auditor_http_sent", default=None)
 
 
 class RateLimiter:
@@ -254,6 +260,9 @@ class HttpClient:
         if not self.is_allowed(request.url.host):
             raise HostNotAllowedError(f"host {request.url.host!r} is not on the allowlist")
         await self._limiter.acquire(RATE_LIMIT_BUCKETS.get(request.url.host, request.url.host))
+        counter = _sent.get()
+        if counter is not None:
+            counter[0] += 1
 
     async def get(
         self,
@@ -319,61 +328,76 @@ class HttpClient:
                 self._record(method, request_url, cached.status_code, 1, True, started_at, started)
                 return cached
 
-        attempt = 0
-        while True:
-            attempt += 1
-            try:
-                raw = await self._client.request(
+        sent = [0]
+        token = _sent.set(sent)
+        try:
+            attempt = 0
+            while True:
+                attempt += 1
+                try:
+                    raw = await self._client.request(
+                        method,
+                        request_url,
+                        data=data,
+                        files=files,
+                        headers=headers,
+                        timeout=(
+                            request_timeout_s
+                            if request_timeout_s is not None
+                            else httpx.USE_CLIENT_DEFAULT
+                        ),
+                    )
+                except httpx.TransportError as exc:
+                    if attempt < max_attempts:
+                        await self._sleep(self._backoff(attempt))
+                        continue
+                    error = f"{type(exc).__name__}: {exc}"
+                    self._record(
+                        method,
+                        request_url,
+                        None,
+                        attempt,
+                        False,
+                        started_at,
+                        started,
+                        error,
+                        redirects=sent[0] - attempt,
+                    )
+                    raise HttpRequestError(f"{method} {request_url} failed: {error}") from exc
+
+                if raw.status_code in RETRY_STATUSES and attempt < max_attempts:
+                    wait = _retry_after_seconds(raw, datetime.now(UTC))
+                    await self._sleep(
+                        min(wait if wait is not None else self._backoff(attempt), self._max_wait_s)
+                    )
+                    continue
+
+                response = HttpResponse(
+                    url=str(raw.url),
+                    status_code=raw.status_code,
+                    headers={k.lower(): v for k, v in raw.headers.items()},
+                    content=raw.content,
+                )
+                if cache_key is not None and self._cache is not None and raw.status_code == 200:
+                    try:
+                        self._cache.put(cache_key, response)
+                    except OSError:
+                        # A cache write can lose a race with another process on Windows;
+                        # the response itself is still good.
+                        logger.warning("could not cache %s", request_url, exc_info=True)
+                self._record(
                     method,
                     request_url,
-                    data=data,
-                    files=files,
-                    headers=headers,
-                    timeout=(
-                        request_timeout_s
-                        if request_timeout_s is not None
-                        else httpx.USE_CLIENT_DEFAULT
-                    ),
+                    raw.status_code,
+                    attempt,
+                    False,
+                    started_at,
+                    started,
+                    redirects=sent[0] - attempt,
                 )
-            except httpx.TransportError as exc:
-                if attempt < max_attempts:
-                    await self._sleep(self._backoff(attempt))
-                    continue
-                error = f"{type(exc).__name__}: {exc}"
-                self._record(method, request_url, None, attempt, False, started_at, started, error)
-                raise HttpRequestError(f"{method} {request_url} failed: {error}") from exc
-
-            if raw.status_code in RETRY_STATUSES and attempt < max_attempts:
-                wait = _retry_after_seconds(raw, datetime.now(UTC))
-                await self._sleep(
-                    min(wait if wait is not None else self._backoff(attempt), self._max_wait_s)
-                )
-                continue
-
-            response = HttpResponse(
-                url=str(raw.url),
-                status_code=raw.status_code,
-                headers={k.lower(): v for k, v in raw.headers.items()},
-                content=raw.content,
-            )
-            if cache_key is not None and self._cache is not None and raw.status_code == 200:
-                try:
-                    self._cache.put(cache_key, response)
-                except OSError:
-                    # A cache write can lose a race with another process on Windows;
-                    # the response itself is still good.
-                    logger.warning("could not cache %s", request_url, exc_info=True)
-            self._record(
-                method,
-                request_url,
-                raw.status_code,
-                attempt,
-                False,
-                started_at,
-                started,
-                redirects=len(raw.history),
-            )
-            return response
+                return response
+        finally:
+            _sent.reset(token)
 
     def _backoff(self, attempt: int) -> float:
         ceiling = min(self._max_wait_s, self._backoff_base_s * 2 ** (attempt - 1))
