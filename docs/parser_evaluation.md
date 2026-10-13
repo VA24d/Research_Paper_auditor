@@ -5,12 +5,13 @@ numeric and author-year citation styles and several venue templates.
 
 ## Method
 
-- Papers: `datasets/parser_fixtures/arxiv_ids.txt` (fetched with `scripts/fetch_arxiv.py`;
-  PDFs are not committed, decision D13).
+- Papers: `datasets/parser_fixtures/arxiv_ids.txt`, which pins each arXiv version and the
+  PDF's SHA-256 (fetched and checked with `scripts/fetch_arxiv.py`; PDFs are not
+  committed, decision D13).
 - Pipeline: GROBID 0.9.1 (CRF image) with sentence segmentation and coordinates,
   pdfplumber for layout, then the fallback citation linker (`auditor.parser.linking`).
 - Statistics: `uv run python scripts/parser_report.py data/papers`.
-- Hand checks: every citation link added by the fallback linker (66 links in five papers)
+- Hand checks: every citation link added by the fallback linker (98 links in seven papers)
   was compared against the paper's reference list. Settings extraction and repository
   detection were inspected on all ten papers.
 - Gold sample: 100 citation markers, 10 per paper, drawn at random with a fixed seed and
@@ -26,22 +27,24 @@ numeric and author-year citation styles and several venue templates.
 
 | Paper | Pages | Sentences | References | With title / year | Markers | Linked (parser + heuristic) | Settings | Repository |
 |---|---|---|---|---|---|---|---|---|
-| 1512.03385 (ResNet) | 12 | 529 | 50 | 96% / 100% | 118 | 98% (116 + 0) | 19 | - |
-| 1706.03762 (Transformer) | 15 | 271 | 40 | 98% / 100% | 45 | 100% (45 + 0) | 3 | tensorflow/tensor2tensor |
-| 1810.04805 (BERT) | 16 | 413 | 55 | 98% / 100% | 78 | 96% (63 + 12) | 28 | google-research/bert |
-| 2005.11401 (RAG) | 19 | 342 | 69 | 100% / 99% | 97 | 100% (97 + 0) | 1 | huggingface/transformers |
-| 2010.11929 (ViT) | 22 | 474 | 58 | 98% / 100% | 78 | 96% (65 + 10) | 26 | google-research/vision_transformer |
-| 2106.09685 (LoRA) | 26 | 574 | 63 | 100% / 94% | 97 | 88% (80 + 5) | 15 | microsoft/LoRA |
-| 2201.11903 (Chain-of-Thought) | 43 | 1263 | 84 | 99% / 95% | 112 | 94% (84 + 21) | 0 | - |
-| 2210.03629 (ReAct) | 33 | 635 | 40 | 98% / 98% | 53 | 98% (34 + 18) | 5 | - |
-| 2305.18290 (DPO) | 27 | 539 | 53 | 100% / 92% | 56 | 100% (56 + 0) | 4 | - |
+| 1512.03385 (ResNet) | 12 | 529 | 50 | 96% / 100% | 132 | 98% (116 + 14) | 27 | - |
+| 1706.03762 (Transformer) | 15 | 271 | 40 | 98% / 100% | 63 | 100% (45 + 18) | 3 | tensorflow/tensor2tensor |
+| 1810.04805 (BERT) | 16 | 413 | 55 | 98% / 100% | 78 | 96% (63 + 12) | 36 | google-research/bert |
+| 2005.11401 (RAG) | 19 | 342 | 69 | 100% / 99% | 101 | 96% (97 + 0) | 6 | huggingface/transformers |
+| 2010.11929 (ViT) | 22 | 474 | 58 | 98% / 100% | 78 | 96% (65 + 10) | 33 | google-research/vision_transformer |
+| 2106.09685 (LoRA) | 26 | 574 | 63 | 100% / 94% | 97 | 88% (80 + 5) | 22 | microsoft/LoRA |
+| 2201.11903 (Chain-of-Thought) | 43 | 1263 | 84 | 99% / 95% | 112 | 94% (84 + 21) | 7 | - |
+| 2210.03629 (ReAct) | 33 | 635 | 40 | 98% / 98% | 53 | 98% (34 + 18) | 6 | - |
+| 2305.18290 (DPO) | 27 | 539 | 53 | 100% / 92% | 56 | 100% (56 + 0) | 6 | - |
 | 2310.06825 (Mistral 7B) | 9 | 158 | 29 | 100% / 100% | 27 | 100% (27 + 0) | 9 | mistralai/mistral-src |
 
 Sentence counts include table rows. Settings counts include those read from hyperparameter
-tables without an LLM; the LLM table reader (see the limitations) can add more.
+tables without an LLM and the evaluation setup (datasets, splits, metrics); the LLM table
+reader (see the limitations) can add more. Every dataset, split and metric extracted from
+the ten papers was checked by hand.
 
-Overall, 733 of 761 citation markers (96.3%) are linked to a bibliography entry: 667 by
-GROBID and 66 by the fallback linker. All 66 fallback links checked by hand point at the
+Overall, 765 of 797 citation markers (96.0%) are linked to a bibliography entry: 667 by
+GROBID and 98 by the fallback linker. All 98 fallback links checked by hand point at the
 right entry. Parsing takes about 5 to 15 seconds per paper on CPU, and GROBID's output is
 cached, so later runs take about a second.
 
@@ -71,6 +74,8 @@ in the text, and returned nothing for the four that do not.
 | Same first author and year, different works | Chain-of-Thought: "(Roy and Roth, 2015)" and "(Roy et al., 2015)" | The marker's author count ("X", "X and Y", "X et al.") picks between them |
 | Settings only in tables | Mistral 7B gives its architecture only in Table 1 | Table rows kept as table sentences; settings read from rows and columns with a known key |
 | Author and year label left in a title | Chain-of-Thought: "Le. 2022a. Finetuned language models are zero-shot learners" | The label is removed, and gives the entry its year when GROBID found none (five entries gained a year) |
+| Citations in tables lost | Transformer: "ConvS2S [9] \| 25.16", a score attributed to a cited model | Markers in table cells, which GROBID leaves as plain text, become citation mentions (36 in three papers) |
+| No dataset, split or metric settings | "We use an 80/20 train/test split and report macro-F1" gave no task | Patterns for split ratios, held-out fractions, metrics and dataset names, own setup only |
 | Two numbers read as one | "16 32" parsed as 1632 | Spaces join digits only before a three-digit group |
 | Appendix tables, captions and footnotes dropped | ViT kept 5 of its 8 tables, DPO 0 of 2 | Figures and notes are read inside sections and back matter too; every table GROBID detects is now kept |
 | Powers of ten not read | ViT's appendix: "8 • 10 -4", "10 -3" | Any multiplication sign, and a bare power with a flattened superscript |

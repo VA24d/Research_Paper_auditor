@@ -109,10 +109,4 @@ def offline_context(
 
 def checked_result(task: AuditTask) -> TaskResult:
     """A `checked` result with no findings for the given task."""
-    return TaskResult(
-        task_id=task.task_id,
-        paper_id=task.paper_id,
-        variant=task.variant,
-        kind=task.kind,
-        outcome=TaskOutcome.CHECKED,
-    )
+    return TaskResult.for_task(task, TaskOutcome.CHECKED)

@@ -1,12 +1,10 @@
 import json
-import sys
 import types
 from pathlib import Path
 
 import pytest
 from langchain_core.tools import tool
 
-import auditor.agents.code
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
 from auditor.infra.context import RunContext
@@ -29,6 +27,9 @@ FIXTURES = Path(__file__).parent / "fixtures" / "schemas"
 PAPER_JSON = FIXTURES / "parsed_paper.json"
 VENUE_JSON = FIXTURES / "venue_profile.json"
 
+# These tests are about the registry and the CLI, not about whichever parts exist yet.
+pytestmark = pytest.mark.usefixtures("parts")
+
 
 def lines(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
@@ -43,27 +44,25 @@ def test_missing_entry_points_fall_back_to_mocks() -> None:
     assert is_mock
 
 
-def test_real_entry_points_are_used(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_real_entry_points_are_used(parts: dict[str, types.ModuleType]) -> None:
     async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         return checked_result(task)
 
-    monkeypatch.setattr(auditor.agents.code, "check", check, raising=False)
+    parts["auditor.agents.code"].check = check  # type: ignore[attr-defined]
     specialists, mocked = registry.load_specialists()
     assert specialists.code is check
     assert mocked == ["citation", "template"]
 
 
 def test_tools_are_collected_from_each_part(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    parts: dict[str, types.ModuleType], tmp_path: Path
 ) -> None:
     @tool
     def find_reference(title: str) -> str:
         """Find a cited work by title."""
         return title
 
-    module = types.ModuleType("auditor.agents.citation.tools")
-    module.make_tools = lambda ctx: [find_reference]  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "auditor.agents.citation.tools", module)
+    parts["auditor.agents.citation.tools"].make_tools = lambda ctx: [find_reference]  # type: ignore[attr-defined]
     assert registry.load_tools(offline_context(tmp_path)) == [find_reference]
 
 
@@ -114,8 +113,23 @@ def test_audit_command_writes_a_complete_run(tmp_path: Path) -> None:
 def test_audit_refuses_to_reuse_a_run_id(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t2"]) == 0
     assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t2"]) == 2
-    assert "already has state" in capsys.readouterr().err
+    assert "already exists" in capsys.readouterr().err
     assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t2", "--resume"]) == 0
+    assert main(["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t9", "--resume"]) == 2
+    assert "no run to resume" in capsys.readouterr().err
+
+
+def test_resume_with_different_inputs_is_refused_and_keeps_the_manifest(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    argv = ["audit", str(PAPER_JSON), "--no-llm", "--run-id", "t3"]
+    assert main([*argv, "--repo", "https://github.com/example/original"]) == 0
+    manifest = tmp_path / "runs" / "t3" / "manifest.json"
+    before = manifest.read_bytes()
+    changed = [*argv, "--resume", "--repo", "https://github.com/example/changed"]
+    assert main(changed) == 2
+    assert "t3 was started with different papers" in capsys.readouterr().err
+    assert manifest.read_bytes() == before
 
 
 @pytest.mark.parametrize(
@@ -132,6 +146,24 @@ def test_command_errors_are_reported(
     argv: list[str], message: str, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert main(argv) == 2
+    assert message in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("argv", "message"),
+    [
+        (["batch", "d.jsonl", "--experiment", "e", "--runs", "0"], "at least 1"),
+        (["audit", str(PAPER_JSON), "--max-concurrency", "x"], "at least 1"),
+        (["audit", str(PAPER_JSON), "--run-id", "review:1"], "use letters, digits"),
+        (["batch", "d.jsonl", "--experiment", "../up"], "use letters, digits"),
+    ],
+)
+def test_bad_argument_values_are_refused(
+    argv: list[str], message: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(argv)
+    assert exit_info.value.code == 2
     assert message in capsys.readouterr().err
 
 

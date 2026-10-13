@@ -42,6 +42,14 @@ _TITLE_YEAR_LABEL = re.compile(
     r"^(?:(?:[^\W\d_][\w'-]*\.\s+)?(?P<year>(?:19|20)\d{2})[a-z]?|[a-z])\.\s+"
 )
 _MARKER_GAP = re.compile(r"^[\s,;]*$")
+# GROBID leaves citation markers in table cells as plain text ("ConvS2S [9]"). A whole-number
+# bracket right after a name (capitalised, with a digit, or ending in a parenthesis as in
+# "Petrov et al. (2006) [29]") is taken as a marker; the numeric linker then accepts it only
+# if it agrees with the paper's numbering. "range [1, 5]" and "[0.1, 0.5]" do not match.
+_TABLE_MARKER = re.compile(
+    r"(?:\b[A-Z][\w+'.-]*|\b[\w+'-]*\d[\w+'-]*|\))\s?"
+    r"(?P<marker>\[\d{1,3}(?:\s*[,\u2013-]\s*\d{1,3})*\])"
+)
 
 
 class TeiError(ValueError):
@@ -64,25 +72,37 @@ class _Builder:
     tables: list[Table] = field(default_factory=list)
 
     def add_table(self, figure: ET.Element) -> None:
-        """Each row becomes a TABLE sentence; empty cells are kept so columns line up."""
+        """Each row becomes a TABLE sentence; empty cells are kept so columns line up.
+        Citation markers in cells are kept, so a cited result in a table gets checked."""
         table = figure.find(f"{TEI}table")
         if table is None:
             return
         boxes = parse_coords(table.get("coords") or figure.get("coords"))
         row_ids = []
         for row in table.findall(f"{TEI}row"):
-            cells = [_text(cell) for cell in row.findall(f"{TEI}cell")]
-            if not any(cells):
+            texts: list[str] = []
+            refs: list[_Ref] = []
+            urls: list[str] = []
+            for cell in row.findall(f"{TEI}cell"):
+                offset = len(CELL_SEPARATOR.join(texts)) + (len(CELL_SEPARATOR) if texts else 0)
+                cell_text, cell_refs, cell_urls = _sentence_content(cell)
+                cell_text, cell_refs = _collapsed(cell_text, cell_refs)
+                if not cell_refs:
+                    cell_refs = [
+                        _Ref(m.start("marker"), m.end("marker"), None)
+                        for m in _TABLE_MARKER.finditer(cell_text)
+                    ]
+                texts.append(cell_text)
+                refs += [_Ref(r.start + offset, r.end + offset, r.target) for r in cell_refs]
+                urls += cell_urls
+            if not any(texts):
                 continue
             sentence_id = f"s{len(self.sentences)}"
+            row_text = CELL_SEPARATOR.join(texts)
             self.sentences.append(
-                Sentence(
-                    id=sentence_id,
-                    kind=SentenceKind.TABLE,
-                    text=CELL_SEPARATOR.join(cells),
-                    boxes=boxes,
-                )
+                Sentence(id=sentence_id, kind=SentenceKind.TABLE, text=row_text, boxes=boxes)
             )
+            self._add_mentions(sentence_id, row_text, refs, urls, boxes)
             row_ids.append(sentence_id)
         if row_ids:
             label = _text(figure.find(f"{TEI}head")).rstrip(" :") or None
@@ -104,6 +124,17 @@ class _Builder:
         self.sentences.append(
             Sentence(id=sentence_id, section_id=section_id, kind=kind, text=text, boxes=boxes)
         )
+        self._add_mentions(sentence_id, text, refs, urls, boxes)
+
+    def _add_mentions(
+        self,
+        sentence_id: str,
+        text: str,
+        refs: list[_Ref],
+        urls: list[str],
+        boxes: tuple[Box, ...],
+    ) -> None:
+        """Citation mentions and links of a sentence that was just added."""
         for ref in _merge_adjacent(refs, text):
             marker = text[ref.start : ref.end]
             targets = tuple(dict.fromkeys(t for t in (ref.target or "").split() if t))
@@ -212,6 +243,22 @@ def _sentence_content(element: ET.Element) -> tuple[str, list[_Ref], list[str]]:
         if start < end and start >= 0 and end <= len(stripped):
             kept.append(_Ref(start, end, ref.target))
     return stripped, kept, urls
+
+
+def _collapsed(text: str, refs: list[_Ref]) -> tuple[str, list[_Ref]]:
+    """The text with each run of whitespace made one space, as _text does, and the
+    marker spans moved to match."""
+    out: list[str] = []
+    position: list[int] = []
+    for char in text:
+        position.append(len(out))
+        if not char.isspace():
+            out.append(char)
+        elif out and out[-1] != " ":
+            out.append(" ")
+    position.append(len(out))
+    # The input is already stripped, so no space is left at either end.
+    return "".join(out), [_Ref(position[r.start], position[r.end], r.target) for r in refs]
 
 
 def _merge_adjacent(refs: list[_Ref], text: str) -> list[_Ref]:

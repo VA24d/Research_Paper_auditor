@@ -13,6 +13,9 @@ from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest,
 from auditor.schemas.examples import example_paper
 from auditor.testing import ScriptedChatModel, tool_reply
 
+# The batch runner is tested against placeholder parts, whatever teammates have built.
+pytestmark = pytest.mark.usefixtures("parts")
+
 
 def write_dataset(tmp_path: Path, *variants: PaperVariant, **fields: str) -> Path:
     folder = tmp_path / "dataset"
@@ -171,8 +174,18 @@ def test_continuing_a_run_with_different_inputs_is_refused(
     monkeypatch.setenv("AUDITOR_LLM_OPTIONS", '{"max_output_tokens": 16}')
     capsys.readouterr()
     assert main(argv) == 2
-    assert "exp-full-r1 was started with different llm_settings" in capsys.readouterr().err
+    assert "exp-full-r1 was started with different settings" in capsys.readouterr().err
     monkeypatch.delenv("AUDITOR_LLM_OPTIONS")
+
+    monkeypatch.setenv("AUDITOR_HTTP_CACHE_TTL_DAYS", "1")
+    assert main(argv) == 2
+    assert "different settings" in capsys.readouterr().err
+    monkeypatch.delenv("AUDITOR_HTTP_CACHE_TTL_DAYS")
+
+    monkeypatch.setenv("AUDITOR_LOG_LEVEL", "DEBUG")
+    assert main(argv) == 0
+    monkeypatch.delenv("AUDITOR_LOG_LEVEL")
+    capsys.readouterr()
 
     paper = example_paper()
     changed = paper.sentences[0].model_copy(update={"text": "A changed sentence."})

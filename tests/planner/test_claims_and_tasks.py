@@ -116,6 +116,18 @@ def test_repository_next_to_code_words_is_preferred() -> None:
     assert find_repository(paper) == RepositoryRef(url="https://github.com/example/auditor-demo")
 
 
+def test_detected_repository_keeps_the_snapshot_its_link_names() -> None:
+    paper = example_paper()
+    links = tuple(
+        link.model_copy(update={"url": link.url + "/tree/0123abc"})
+        if link.url == "https://github.com/example/auditor-demo"
+        else link
+        for link in paper.links
+    )
+    found = find_repository(paper.model_copy(update={"links": links}))
+    assert found == RepositoryRef(url="https://github.com/example/auditor-demo", commit="0123abc")
+
+
 def test_no_repository_without_repository_links() -> None:
     data = example_paper().model_dump()
     data["links"] = []

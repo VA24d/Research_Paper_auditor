@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from auditor.schemas import (
     NO_ERROR,
     BibTarget,
+    CandidateFinding,
     ErrorClass,
     Evidence,
     EvidenceKind,
@@ -133,6 +134,30 @@ def test_prediction_positivity() -> None:
     assert not review.is_positive
 
 
+@pytest.mark.parametrize(
+    ("system", "state"),
+    [
+        (SystemName.FULL, None),
+        (SystemName.FULL_ABSTRACT_ONLY, None),
+        (SystemName.B0, VerificationState.VERIFIED_FLAG),
+        (SystemName.FULL_NO_VERIFIER, VerificationState.NEEDS_HUMAN_REVIEW),
+    ],
+)
+def test_state_must_match_whether_the_system_has_a_verifier(
+    system: SystemName, state: VerificationState | None
+) -> None:
+    data = example_predictions()[0].model_dump()
+    data.update(system=system, state=state)
+    with pytest.raises(ValidationError, match="state"):
+        Prediction.model_validate(data)
+
+
+def test_unverified_ablation_counts_every_flag() -> None:
+    data = example_predictions()[0].model_dump()
+    data.update(system=SystemName.FULL_NO_VERIFIER, state=None)
+    assert Prediction.model_validate(data).is_positive
+
+
 def test_prediction_matches_gold_label() -> None:
     full_prediction = example_predictions()[0]
     injected_label, clean_label = example_gold_labels()
@@ -181,3 +206,21 @@ def test_run_manifest_needs_timezone() -> None:
             python_version="3.13",
             platform="x",
         )
+
+
+def test_results_and_findings_built_for_a_task_carry_its_ids() -> None:
+    task = example_tasks()[1]
+    finding = CandidateFinding.for_task(
+        task, 2, error_class=ErrorClass.CLAIM_NOT_SUPPORTED, summary="Not in the cited work."
+    )
+    assert finding.finding_id == f"{task.task_id}-f2"
+    assert (finding.anchor, finding.target) == (task.anchor, task.target)
+    result = TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
+    assert (result.task_id, result.paper_id, result.variant, result.kind) == (
+        task.task_id,
+        task.paper_id,
+        task.variant,
+        task.kind,
+    )
+    with pytest.raises(ValidationError, match="needs a reason"):
+        TaskResult.for_task(task, TaskOutcome.UNVERIFIABLE)

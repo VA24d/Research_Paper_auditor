@@ -180,3 +180,19 @@ def test_author_count_separates_same_year_works() -> None:
         "Wiegreffe et al. (2021)": ("b1",),
         "Wiegreffe (2021)": (),
     }
+
+
+def test_named_coauthor_must_appear_even_for_a_single_candidate() -> None:
+    entries = [
+        BibEntry(id="b0", authors=("John Smith", "Jane Brown"), year=2020, raw="Smith, Brown."),
+        BibEntry(id="b1", authors=("Ann Lee", "Bo Kim"), year=2019, raw="Ann Lee and Bo Kim."),
+    ]
+    markers = ["(Smith and Jones, 2020)", "(Smith and Brown, 2020)", "(Lee & Kim, 2019)"]
+    data = paper([(m, ()) for m in markers]).model_dump()
+    data["bibliography"] = [e.model_dump() for e in entries]
+    result = link_unresolved(ParsedPaper.model_validate(data))
+    assert {c.marker: c.bib_ids for c in result.citations} == {
+        "(Smith and Jones, 2020)": (),
+        "(Smith and Brown, 2020)": ("b0",),
+        "(Lee & Kim, 2019)": ("b1",),
+    }

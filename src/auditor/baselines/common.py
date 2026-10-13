@@ -3,9 +3,10 @@ model must answer, and how answers become Predictions (decision D3)."""
 
 import logging
 import re
+from collections import Counter
 from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from auditor.schemas import (
     Anchor,
@@ -14,8 +15,10 @@ from auditor.schemas import (
     BibTarget,
     DocumentAnchor,
     ErrorClass,
+    Layout,
     MarkerTarget,
     PageAnchor,
+    PageLayout,
     ParsedPaper,
     Prediction,
     RepositoryRef,
@@ -25,6 +28,7 @@ from auditor.schemas import (
     SystemName,
     Target,
     VenueProfile,
+    VenueRule,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,7 +72,9 @@ class ReportedError(BaseModel):
 
 
 class ReportedErrors(BaseModel):
-    errors: list[ReportedError] = Field(default_factory=list)
+    # Required, so a reply without it ("{}", or an error message) is retried instead of
+    # passing as "no errors found". An empty list is the valid way to report nothing.
+    errors: list[ReportedError]
 
 
 def render_paper(
@@ -97,10 +103,58 @@ def render_paper(
     if paper.bibliography:
         lines += ["", "## References"]
         lines += [f"[{entry.id}] {_reference(entry)}" for entry in paper.bibliography]
+    if paper.layout is not None:
+        lines += ["", "## Layout (PDF points)", *_layout(paper.layout)]
     if venue is not None and venue.rules:
         lines += ["", f"## Venue rules ({venue.name})"]
-        lines += [f"[{rule.id}] {rule.description}" for rule in venue.rules]
+        lines += [f"[{rule.id}] {rule.description}{_rule_check(rule)}" for rule in venue.rules]
     return "\n".join(lines)
+
+
+def _layout(layout: Layout) -> list[str]:
+    """The measurements the template checker reads, so B0 can judge the same rules."""
+    sizes = sorted({(round(p.width), round(p.height)) for p in layout.pages})
+    lines = ["Page sizes: " + ", ".join(f"{w} x {h}" for w, h in sizes)]
+    margins = []
+    for side in ("left", "right", "top", "bottom"):
+        measured = [
+            (margin, page.number)
+            for page in layout.pages
+            if (margin := _margin(page, side)) is not None
+        ]
+        if measured:
+            value, page = min(measured)
+            margins.append(f"{side} {value:.1f} (p. {page})")
+    if margins:
+        lines.append("Smallest margins: " + ", ".join(margins))
+    by_size: Counter[float] = Counter()
+    for font in layout.fonts:
+        by_size[round(font.size, 1)] += font.chars
+    total = sum(by_size.values())
+    if total:
+        shares = [
+            f"{size:g} pt {100 * chars / total:.0f}%" for size, chars in by_size.most_common(6)
+        ]
+        lines.append("Font sizes by share of characters: " + ", ".join(shares))
+    return lines
+
+
+def _margin(page: PageLayout, side: str) -> float | None:
+    """Distance from the page edge to the nearest text, or None for a page without text."""
+    match side:
+        case "left":
+            return page.text_left
+        case "right":
+            return None if page.text_right is None else page.width - page.text_right
+        case "top":
+            return page.text_top
+        case _:
+            return None if page.text_bottom is None else page.height - page.text_bottom
+
+
+def _rule_check(rule: VenueRule) -> str:
+    params = ", ".join(f"{key}={value}" for key, value in rule.params.items())
+    return f" (check: {rule.check}{'; ' + params if params else ''})"
 
 
 def _reference(entry: BibEntry) -> str:

@@ -1,3 +1,4 @@
+import itertools
 import json
 import random
 from collections.abc import Callable
@@ -294,3 +295,37 @@ def test_response_json() -> None:
         url="https://x", status_code=200, headers={}, content=json.dumps([1, 2]).encode()
     )
     assert response.json() == [1, 2]
+
+
+async def test_rate_limit_counts_from_a_late_wake_up() -> None:
+    now = [0.0]
+    sent: list[float] = []
+
+    async def late_sleep(seconds: float) -> None:
+        now[0] += seconds + 7.0  # the event loop wakes us 7 s late
+
+    limiter = RateLimiter({"arxiv": 3.0}, clock=lambda: now[0], sleep=late_sleep)
+    for _ in range(3):
+        await limiter.acquire("arxiv")
+        sent.append(now[0])
+    assert all(later - earlier >= 3.0 for earlier, later in itertools.pairwise(sent))
+
+
+async def test_redirect_hops_are_rate_limited_and_counted(
+    tmp_path: Path, fake_time: FakeTime
+) -> None:
+    arxiv_times: list[float] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.openalex.org":
+            return httpx.Response(302, headers={"location": "https://arxiv.org/abs/1706.03762"})
+        arxiv_times.append(fake_time.now)
+        return httpx.Response(200, text="ok")
+
+    usage = UsageLog()
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with enter_scope(Scope(run_id="r1", usage=usage)):
+            for work in ("W1", "W2"):
+                await client.get(f"https://api.openalex.org/works/{work}", use_cache=False)
+    assert arxiv_times[1] - arxiv_times[0] >= 3.0
+    assert [r.redirects for r in usage.http_requests] == [1, 1]

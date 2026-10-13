@@ -81,48 +81,49 @@ Docker image for the final runs.
 
 Foundation (others depend on these, so they come first):
 
-- [ ] **P1.1** Repository setup: uv project, src layout, ruff, mypy, pytest, pre-commit,
+- [x] **P1.1** Repository setup: uv project, src layout, ruff, mypy, pytest, pre-commit,
   CI on Linux/Windows/macOS, GROBID compose file, setup docs.
-- [ ] **P1.2** Schemas v0 for every contract in D5, with contract tests and example JSON
+- [x] **P1.2** Schemas v0 for every contract in D5, with contract tests and example JSON
   fixtures that other parts can build against.
-- [ ] **P1.3** `RunContext`, budgets, logging, `RunManifest`, and tool-call
+- [x] **P1.3** `RunContext`, budgets, logging, `RunManifest`, and tool-call
   instrumentation on the shared tool functions (counted separately from HTTP requests, D8).
-- [ ] **P1.4** Shared HTTP client and policy gate (D8): allowlist, per-host rate limits,
+- [x] **P1.4** Shared HTTP client and policy gate (D8): allowlist, per-host rate limits,
   on-disk cache, retries, request log.
-- [ ] **P1.5** LLM factory (D9): provider from config, structured-output helper with
+- [x] **P1.5** LLM factory (D9): provider from config, structured-output helper with
   validation and retries, token usage tracking, LLM cache switch.
-- [ ] **P1.6** Orchestration graph with mock specialists: fan-out per task, result
+- [x] **P1.6** Orchestration graph with mock specialists: fan-out per task, result
   collection, retries, timeouts, failure isolation, checkpointing and resume, with one
   checkpoint thread per run, system, paper and variant (D10).
 
 Parser:
 
-- [ ] **P1.7** GROBID client and TEI to `ParsedPaper` conversion: sections, sentences with
+- [x] **P1.7** GROBID client and TEI to `ParsedPaper` conversion: sections, sentences with
   page coordinates, bibliography, citation mentions linked to entries.
-- [ ] **P1.8** Layout extraction with pdfplumber: page count, page sizes, fonts, margins,
+- [x] **P1.8** Layout extraction with pdfplumber: page count, page sizes, fonts, margins,
   link annotations (GitHub URLs).
-- [ ] **P1.9** Parse cache keyed by PDF hash and parser version; `auditor parse` command.
-- [ ] **P1.10** Parser fixtures from about 10 papers, hand-checked, plus parser accuracy
+- [x] **P1.9** Parse cache keyed by PDF hash and parser version; `auditor parse` command.
+- [x] **P1.10** Parser fixtures from about 10 papers, hand-checked, plus parser accuracy
   numbers (citation linking, bibliography fields, sentence anchoring).
 
 Planner:
 
-- [ ] **P1.11** Deterministic extraction: citation contexts, numbers with units,
+- [x] **P1.11** Deterministic extraction: citation contexts, numbers with units,
   experimental settings (`ExtractedSetting`), repository links.
 - [ ] **P1.12** LLM refinement: decide which claims are worth checking and split sentences
   that cite several works. Output must quote the paper exactly; anchors come from parser
-  ids (D3).
-- [ ] **P1.13** Task generation with deterministic task ids and the right anchor kind (D3):
+  ids (D3). Implemented and tested offline; needs one run with the chosen
+  provider (D9).
+- [x] **P1.13** Task generation with deterministic task ids and the right anchor kind (D3):
   reference tasks (one per bibliography entry, for existence and metadata), citation tasks
   (one per claim), code tasks and template tasks. Every citation mention gets a task,
   including mentions the parser could not link (D6).
 
 Integration and baselines:
 
-- [ ] **P1.14** `auditor audit` command: runs the full pipeline on one paper and writes
+- [x] **P1.14** `auditor audit` command: runs the full pipeline on one paper and writes
   task results, findings, predictions and the run manifest.
-- [ ] **P1.15** B0 runner: one model call over the whole paper, no tools.
-- [ ] **P1.16** B1 runner: one tool-calling agent, one pass, no verifier, using the tools
+- [x] **P1.15** B0 runner: one model call over the whole paper, no tools.
+- [x] **P1.16** B1 runner: one tool-calling agent, one pass, no verifier, using the tools
   from P2.6 and P3.7.
 - [ ] **P1.17** Failure analysis for parsing, planning and orchestration for the write-up.
 
@@ -153,6 +154,14 @@ Integration and baselines:
   against abstract only, and tool-call accuracy of reference lookups (D8).
 
 ### Part 3 — Vijay: code agent and template checker
+
+Code tasks arrive with an `ExtractedSetting` whose `key` says what to look for. Hyperparameter
+and architecture keys are listed in `auditor.planner.tables.ALIASES` (`learning_rate`,
+`batch_size`, `hidden_size`, ...). The evaluation setup uses `dataset`, `data_split`
+(`"80/10/10"`), `test_fraction`, `validation_fraction` and `eval_metric` (`macro_f1`,
+`exact_match`, ...; see `auditor.planner.evaluation_setup`). Gold labels for set C should
+use the same keys. A repository's `commit` may be a branch or tag name when the dataset gives
+one; record the commit hash actually checked out.
 
 - [ ] **P3.1** Repository fetching through the shared infrastructure: pinned commit, size
   limits, no code execution.

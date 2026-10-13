@@ -18,6 +18,7 @@ _REPOSITORY = re.compile(
 # The part of a link after owner/name that names a snapshot: /tree/<ref>, /commit/<sha>
 # or /blob/<ref>/..., with GitLab's extra "/-".
 _SNAPSHOT = re.compile(r"^/(?:-/)?(?:tree|commit|blob)/(?P<ref>[^/#?]+)")
+_COMMIT = re.compile(r"[0-9a-f]{7,40}")
 _NOT_OWNERS = {"orgs", "features", "topics", "sponsors", "marketplace", "about", "settings"}
 _CODE_NOUN = re.compile(r"\b(codes?|implementations?|source|scripts?|software)\b", re.IGNORECASE)
 _ANNOUNCEMENT = re.compile(
@@ -63,5 +64,9 @@ def find_repository(paper: ParsedPaper) -> RepositoryRef | None:
         if url is None or link.sentence_id is None:
             continue
         if announces_code(paper.sentence(link.sentence_id).text):
-            return RepositoryRef(url=url)
+            # A link to /tree/<sha> pins the snapshot the paper describes. Branch names such as
+            # "main" move, so only commit-like refs are kept.
+            ref = snapshot_ref(link.url)
+            commit = ref if ref and _COMMIT.fullmatch(ref) else None
+            return RepositoryRef(url=url, commit=commit)
     return None

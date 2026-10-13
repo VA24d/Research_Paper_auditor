@@ -9,10 +9,9 @@ planner quality work comes after that.
 
 ## Status
 
-M0–M6 are implemented: PR #2 (`feature/core-planner`) and its follow-up
-(`feature/part1-completion`). There are 359 tests, run on Linux, Windows and macOS in CI,
-plus live GROBID tests. Parser results on ten arXiv papers
-are in [parser_evaluation.md](parser_evaluation.md).
+M0–M6 are implemented and merged into main. The tests run on Linux, Windows and macOS in
+CI, plus live GROBID tests. Parser results on ten arXiv papers are in
+[parser_evaluation.md](parser_evaluation.md).
 
 Where the build differs from the plan below, and why:
 
@@ -267,7 +266,8 @@ Deterministic pass:
   text as its target, so it ends up checked or `unverifiable` instead of disappearing (D6).
 - Numbers with units and experimental settings are found with patterns: learning rate,
   batch size, epochs, optimiser, weight decay, dropout, warmup, seeds, splits, dataset
-  names, metrics, and the rows and columns of hyperparameter tables.
+  names, metrics (`auditor.planner.evaluation_setup`), and the rows and columns of
+  hyperparameter tables.
 - Repository links come from layout links and text.
 
 LLM pass (structured output):

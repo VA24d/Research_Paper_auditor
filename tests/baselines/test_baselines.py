@@ -65,6 +65,20 @@ def test_render_paper_shows_every_author_and_identifier() -> None:
     assert "DOI 10.1/x" in text
 
 
+def test_render_paper_shows_layout_measurements_and_rule_parameters() -> None:
+    paper = example_paper()
+    assert paper.layout is not None
+    page = paper.layout.pages[1].model_copy(update={"text_left": 1.0})
+    font = paper.layout.fonts[0].model_copy(update={"size": 4.0})
+    layout = paper.layout.model_copy(
+        update={"pages": (paper.layout.pages[0], page), "fonts": (font, *paper.layout.fonts[1:])}
+    )
+    text = render_paper(paper.model_copy(update={"layout": layout}), venue=example_venue())
+    assert "left 1.0 (p. 2)" in text
+    assert "4 pt" in text
+    assert "(check: max_pages; max_pages=9)" in text
+
+
 def test_to_predictions_maps_every_anchor_and_target_kind() -> None:
     reported = ReportedErrors.model_validate(
         {
@@ -137,6 +151,27 @@ def test_to_predictions_drops_errors_that_point_outside_the_paper() -> None:
         BibTarget(bib_id="b1"),
     ]
     assert len(dropped) == 5
+
+
+@pytest.mark.parametrize("reply", [{}, {"error": "Unable to inspect the paper"}])
+async def test_b0_retries_a_reply_without_an_errors_list(reply: dict[str, Any]) -> None:
+    model = ScriptedChatModel(
+        replies=[tool_reply(ReportedErrors, reply), tool_reply(ReportedErrors, {"errors": []})]
+    )
+    result = await run_b0(example_paper(), StructuredLLM(model, name="test:scripted"), run_id="r1")
+    assert result.predictions == []
+    assert len(model.received) == 2
+
+
+async def test_b1_retries_a_reply_without_an_errors_list() -> None:
+    model = ScriptedChatModel(
+        replies=[tool_reply(ReportedErrors, {}), tool_reply(ReportedErrors, {"errors": [error()]})]
+    )
+    result = await run_b1(
+        example_paper(), model, [lookup_reference], run_id="r1", model_name="test:scripted"
+    )
+    assert [p.error_class for p in result.predictions] == [ErrorClass.CLAIM_NUMBER_MISMATCH]
+    assert len(model.received) == 2
 
 
 async def test_b0_asks_once_and_records_usage() -> None:

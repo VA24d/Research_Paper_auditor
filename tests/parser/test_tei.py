@@ -264,3 +264,33 @@ def test_appendix_tables_captions_and_footnotes_are_kept(tei: str) -> None:
     assert any(
         s.kind is SentenceKind.FOOTNOTE and s.text == "Run on 8 GPUs." for s in paper.sentences
     )
+
+
+def test_citations_in_table_cells_are_kept(tei: str) -> None:
+    table = (
+        '<figure type="table"><head>Table 2:</head><table>'
+        "<row><cell>Model</cell><cell>EM</cell></row>"
+        '<row><cell>Transformer   <ref type="bibr" target="#b0">[1]</ref></cell>'
+        "<cell>92.1</cell></row></table></figure>"
+    )
+    paper = tei_to_paper(tei.replace("</body>", table + "</body>"), paper_id="x")
+    row = paper.sentence(paper.tables[0].row_ids[1])
+    assert row.text == "Transformer [1] | 92.1"
+    (mention,) = [m for m in paper.citations if m.sentence_id == row.id]
+    assert row.text[mention.start : mention.end] == "[1]"
+    assert mention.bib_ids == ("b0",)
+
+
+def test_plain_text_markers_in_table_cells_become_mentions(tei: str) -> None:
+    table = (
+        '<figure type="table"><table>'
+        "<row><cell>ConvS2S [9]</cell><cell>25.2</cell></row>"
+        "<row><cell>search range [1, 5]</cell><cell>[0.1, 0.5]</cell></row>"
+        "</table></figure>"
+    )
+    paper = tei_to_paper(tei.replace("</body>", table + "</body>"), paper_id="x")
+    first, second = paper.tables[0].row_ids
+    mentions = [m for m in paper.citations if m.sentence_id in (first, second)]
+    assert [(m.sentence_id, m.marker, m.link_method) for m in mentions] == [
+        (first, "[9]", LinkMethod.NONE)
+    ]

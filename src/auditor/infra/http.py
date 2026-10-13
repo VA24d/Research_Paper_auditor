@@ -1,6 +1,7 @@
 """The single HTTP client every module uses (decision D8).
 
-It enforces a host allowlist (on redirects too), per-host rate limits, retries with
+It enforces a host allowlist and per-host rate limits on every request it sends,
+redirects included, retries with
 backoff on 429/5xx and connection errors, an on-disk cache for successful GET requests,
 and records each request against the current task.
 """
@@ -118,7 +119,9 @@ class RateLimiter:
             next_allowed = self._next_allowed.get(bucket, now)
             if next_allowed > now:
                 await self._sleep(next_allowed - now)
-            self._next_allowed[bucket] = max(now, next_allowed) + interval
+                # Count from when the request really goes out: a sleep can end late.
+                now = max(self._clock(), next_allowed)
+            self._next_allowed[bucket] = now + interval
 
 
 @dataclass
@@ -226,7 +229,7 @@ class HttpClient:
             timeout=settings.http_timeout_s,
             follow_redirects=True,
             headers={"User-Agent": user_agent},
-            event_hooks={"request": [self._check_request]},
+            event_hooks={"request": [self._before_request]},
         )
 
     async def __aenter__(self) -> Self:
@@ -246,9 +249,11 @@ class HttpClient:
     def is_allowed(self, host: str) -> bool:
         return host.lower() in self._allowed_hosts
 
-    async def _check_request(self, request: httpx.Request) -> None:
+    async def _before_request(self, request: httpx.Request) -> None:
+        """Runs before every request httpx sends, including each redirect hop."""
         if not self.is_allowed(request.url.host):
             raise HostNotAllowedError(f"host {request.url.host!r} is not on the allowlist")
+        await self._limiter.acquire(RATE_LIMIT_BUCKETS.get(request.url.host, request.url.host))
 
     async def get(
         self,
@@ -314,11 +319,9 @@ class HttpClient:
                 self._record(method, request_url, cached.status_code, 1, True, started_at, started)
                 return cached
 
-        bucket = RATE_LIMIT_BUCKETS.get(request_url.host, request_url.host)
         attempt = 0
         while True:
             attempt += 1
-            await self._limiter.acquire(bucket)
             try:
                 raw = await self._client.request(
                     method,
@@ -360,7 +363,16 @@ class HttpClient:
                     # A cache write can lose a race with another process on Windows;
                     # the response itself is still good.
                     logger.warning("could not cache %s", request_url, exc_info=True)
-            self._record(method, request_url, raw.status_code, attempt, False, started_at, started)
+            self._record(
+                method,
+                request_url,
+                raw.status_code,
+                attempt,
+                False,
+                started_at,
+                started,
+                redirects=len(raw.history),
+            )
             return response
 
     def _backoff(self, attempt: int) -> float:
@@ -377,6 +389,8 @@ class HttpClient:
         started_at: datetime,
         started: float,
         error: str | None = None,
+        *,
+        redirects: int = 0,
     ) -> None:
         active = current_scope()
         if active is None:
@@ -392,6 +406,7 @@ class HttpClient:
                 path=url.path,
                 status_code=status_code,
                 attempts=attempts,
+                redirects=redirects,
                 cache_hit=cache_hit,
                 started_at=started_at,
                 duration_s=time.perf_counter() - started,

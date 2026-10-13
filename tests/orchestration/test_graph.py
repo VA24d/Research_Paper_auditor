@@ -19,20 +19,23 @@ from auditor.orchestration.graph import (
     run_audit,
     thread_id,
 )
+from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
 from auditor.orchestration.runner import CheckFn, TaskPolicy
 from auditor.schemas import (
     AuditTask,
     BibTarget,
     PaperVariant,
     ParsedPaper,
+    Prediction,
     SentenceAnchor,
     SystemName,
     TaskKind,
     TaskOutcome,
     TaskResult,
+    VerificationState,
     VerifiedFinding,
 )
-from auditor.schemas.examples import example_paper, example_tasks
+from auditor.schemas.examples import example_paper, example_tasks, example_verified_findings
 from auditor.testing import checked_result, offline_context
 
 FAST = TaskPolicy(max_attempts=1, timeout_s=5.0, backoff_base_s=0.0)
@@ -298,3 +301,35 @@ async def test_resuming_a_thread_without_state_is_refused(tmp_path: Path) -> Non
             checkpointer=InMemorySaver(),
             resume=True,
         )
+
+
+async def test_verifier_decisions_reach_the_output_files(tmp_path: Path) -> None:
+    decisions = example_verified_findings()
+
+    async def verify(results: Sequence[TaskResult], ctx: RunContext) -> list[VerifiedFinding]:
+        return list(decisions)
+
+    outcome = await run_audit(
+        pipeline(tmp_path, example_tasks(), verifier=verify),
+        example_paper(),
+        run_id="r1",
+        system=SystemName.FULL,
+    )
+    assert outcome.verified == decisions
+    predictions = predictions_from_verified(outcome.verified, run_id="r1", system=SystemName.FULL)
+    folder = RunDirectory(tmp_path / "runs", "r1").save_audit(example_paper(), outcome, predictions)
+
+    def read(name: str) -> list[str]:
+        return (folder / name).read_text(encoding="utf-8").splitlines()
+
+    assert [
+        VerifiedFinding.model_validate_json(line) for line in read("verified.jsonl")
+    ] == decisions
+    written = [Prediction.model_validate_json(line) for line in read("predictions.jsonl")]
+    assert [(p.finding_id, p.state, p.evidence) for p in written] == [
+        (d.finding.finding_id, d.state, d.accepted_evidence) for d in decisions
+    ]
+    assert {d.state for d in decisions} == {
+        VerificationState.VERIFIED_FLAG,
+        VerificationState.NEEDS_HUMAN_REVIEW,
+    }

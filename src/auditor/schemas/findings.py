@@ -1,5 +1,6 @@
 """What specialists report, and what the verifier decides about it."""
 
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Self
 
@@ -8,7 +9,7 @@ from pydantic import Field, model_validator
 from auditor.schemas.anchors import Anchor
 from auditor.schemas.base import SCHEMA_VERSION, NonEmptyStr, Record, SchemaVersion
 from auditor.schemas.paper import PaperVariant
-from auditor.schemas.tasks import Target, TaskKind
+from auditor.schemas.tasks import AuditTask, Target, TaskKind
 
 
 class ErrorClass(StrEnum):
@@ -99,6 +100,35 @@ class CandidateFinding(Record):
     evidence: tuple[Evidence, ...] = ()
     uncertain: bool = False
 
+    @classmethod
+    def for_task(
+        cls,
+        task: AuditTask,
+        number: int,
+        *,
+        error_class: ErrorClass,
+        summary: str,
+        anchor: Anchor | None = None,
+        explanation: str = "",
+        evidence: Sequence[Evidence] = (),
+        uncertain: bool = False,
+    ) -> Self:
+        """Finding `number` of `task`, with id `<task_id>-f<number>`. The anchor defaults to
+        the task's; pass a narrower one, such as the span of a wrong number."""
+        return cls(
+            finding_id=f"{task.task_id}-f{number}",
+            task_id=task.task_id,
+            paper_id=task.paper_id,
+            variant=task.variant,
+            error_class=error_class,
+            anchor=anchor or task.anchor,
+            target=task.target,
+            summary=summary,
+            explanation=explanation,
+            evidence=tuple(evidence),
+            uncertain=uncertain,
+        )
+
 
 class TaskOutcome(StrEnum):
     CHECKED = "checked"
@@ -119,6 +149,26 @@ class TaskResult(Record):
     error: str | None = None
     findings: tuple[CandidateFinding, ...] = ()
     attempts: int = Field(default=1, ge=1)
+
+    @classmethod
+    def for_task(
+        cls,
+        task: AuditTask,
+        outcome: TaskOutcome,
+        *,
+        reason: str | None = None,
+        findings: Sequence[CandidateFinding] = (),
+    ) -> Self:
+        """The result of `task`, with its ids copied over. `unverifiable` needs a reason."""
+        return cls(
+            task_id=task.task_id,
+            paper_id=task.paper_id,
+            variant=task.variant,
+            kind=task.kind,
+            outcome=outcome,
+            reason=reason,
+            findings=tuple(findings),
+        )
 
     @model_validator(mode="after")
     def _check(self) -> Self:

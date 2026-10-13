@@ -280,7 +280,9 @@ class RunSummary:
 
 
 @dataclass(frozen=True)
-class _Prepared:
+class PaperInput:
+    """A paper with the repository and venue it is checked against."""
+
     paper: ParsedPaper
     repository: RepositoryRef | None
     venue: VenueProfile | None
@@ -313,15 +315,25 @@ def code_sha256() -> str:
     return digest.hexdigest()
 
 
-def _fingerprint(
+# Settings that only decide where files go and what is logged. Every other setting is
+# part of a run's fingerprint, including ones added later. The GROBID address is left
+# out because the parsed paper itself is hashed.
+_OPERATIONAL_SETTINGS = frozenset(
+    {"data_dir", "cache_dir", "runs_dir", "grobid_url", "log_level", "contact_email"}
+)
+
+
+def run_fingerprint(
     system: SystemName,
     settings: Settings,
     llm: StructuredLLM | None,
-    prepared: Sequence[_Prepared],
+    prepared: Sequence[PaperInput],
     missing: list[str],
     code: str,
 ) -> dict[str, JsonValue]:
-    """Everything that can change a run's answers, compared when a run is continued."""
+    """Everything that can change a run's answers, compared when a run is continued.
+    `missing` is missing_parts(system) and `code` is code_sha256(), passed in so a batch
+    computes them once."""
     papers: list[JsonValue] = [
         {
             "paper_id": item.paper.paper_id,
@@ -335,12 +347,7 @@ def _fingerprint(
     fingerprint: dict[str, JsonValue] = {
         "system": system.value,
         "model": llm.name if llm else None,
-        "llm_settings": {
-            "base_url": settings.llm_base_url,
-            "options": redact(settings.llm_options),
-            "structured_method": settings.llm_structured_method,
-            "cache": settings.llm_cache,
-        },
+        "settings": settings.model_dump(mode="json", exclude=set(_OPERATIONAL_SETTINGS)),
         "code_sha256": code,
         "packages": dict(package_versions()),
         "missing_parts": list(missing),
@@ -351,7 +358,10 @@ def _fingerprint(
     return stored
 
 
-def _check_same_inputs(run: RunDirectory, run_id: str, fingerprint: dict[str, JsonValue]) -> None:
+def check_same_inputs(
+    run: RunDirectory, run_id: str, fingerprint: dict[str, JsonValue], advice: str
+) -> None:
+    """Refuse to continue a run that was started with different inputs."""
     existing = run.path / "manifest.json"
     if not existing.is_file():
         return
@@ -365,12 +375,12 @@ def _check_same_inputs(run: RunDirectory, run_id: str, fingerprint: dict[str, Js
     else:
         changed = ["(not recorded)"]
     raise InputError(
-        f"{run_id} was started with different {', '.join(changed)}. Use a new --experiment "
-        f"name, or delete {run.path} to start that run again."
+        f"{run_id} was started with different {', '.join(changed)}. {advice}, or delete "
+        f"{run.path} to start that run again."
     )
 
 
-def _start_manifest(
+def start_manifest(
     run: RunDirectory,
     run_id: str,
     system: SystemName,
@@ -380,7 +390,7 @@ def _start_manifest(
 ) -> RunManifest:
     existing = run.path / "manifest.json"
     if existing.is_file():
-        # A continued run keeps its original start time; _check_same_inputs has already
+        # A continued run keeps its original start time; check_same_inputs has already
         # confirmed that its configuration is unchanged.
         return RunManifest.model_validate_json(existing.read_bytes()).model_copy(
             update={"finished_at": None}
@@ -398,7 +408,7 @@ def _start_manifest(
 
 async def _run_one(
     system: SystemName,
-    item: _Prepared,
+    item: PaperInput,
     *,
     settings: Settings,
     http: HttpClient,
@@ -480,7 +490,7 @@ async def run_batch(
                 )
             seen.add(key)
             prepared.append(
-                _Prepared(
+                PaperInput(
                     paper=paper,
                     repository=resolve_repository(entry.repository, paper, entry.repository_commit),
                     venue=load_venue(Path(entry.venue) if entry.venue else None),
@@ -489,15 +499,18 @@ async def run_batch(
 
         code = code_sha256()
         fingerprints = {
-            system: _fingerprint(system, settings, llm, prepared, missing[system], code)
+            system: run_fingerprint(system, settings, llm, prepared, missing[system], code)
             for system in systems
         }
         # Refuse before doing any work if an existing run was made differently.
         for system in systems:
             for index in range(1, runs + 1):
                 run_id = f"{experiment}-{system.value}-r{index}"
-                _check_same_inputs(
-                    RunDirectory(settings.runs_dir, run_id), run_id, fingerprints[system]
+                check_same_inputs(
+                    RunDirectory(settings.runs_dir, run_id),
+                    run_id,
+                    fingerprints[system],
+                    "Use a new --experiment name",
                 )
 
         for system in systems:
@@ -506,7 +519,7 @@ async def run_batch(
                 run = RunDirectory(settings.runs_dir, run_id)
                 configure_logging(settings.log_level, run.path / "run.log")
                 usage = UsageLog(run.usage_dir)
-                manifest = _start_manifest(
+                manifest = start_manifest(
                     run,
                     run_id,
                     system,
