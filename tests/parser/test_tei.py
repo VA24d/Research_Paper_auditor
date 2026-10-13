@@ -206,12 +206,22 @@ def test_urls_broken_at_line_ends_are_repaired_from_annotations(tei: str) -> Non
         ("b. AI chains: Transparent interaction", "AI chains: Transparent interaction"),
         ("A. Very short title", "A. Very short title"),
         ("2020 Vision benchmarks", "2020 Vision benchmarks"),
+        ("Le. 2022a. Finetuned language models", "Finetuned language models"),
+        ("Le. Finetuned language models", "Le. Finetuned language models"),
     ],
 )
 def test_year_labels_are_removed_from_titles(tei: str, title: str, expected: str) -> None:
     changed = tei.replace(">Dense retrieval at scale<", f">{title}<")
     paper = tei_to_paper(changed, paper_id="x")
     assert paper.bib_entry("b2").title == expected
+
+
+def test_year_label_in_the_title_gives_a_missing_year(tei: str) -> None:
+    changed = tei.replace(">Dense retrieval at scale<", ">Smith. 2021b. Dense retrieval<").replace(
+        '<imprint><date type="published" when="2020"/></imprint>', "<imprint/>"
+    )
+    entry = tei_to_paper(changed, paper_id="x").bib_entry("b2")
+    assert (entry.title, entry.year) == ("Dense retrieval", 2021)
 
 
 def test_captions_and_footnotes_without_paragraphs_are_kept(tei: str) -> None:
