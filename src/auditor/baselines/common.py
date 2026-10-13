@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from auditor.schemas import (
     Anchor,
@@ -68,7 +68,9 @@ class ReportedError(BaseModel):
 
 
 class ReportedErrors(BaseModel):
-    errors: list[ReportedError] = Field(default_factory=list)
+    # Required, so a reply without it ("{}", or an error message) is retried instead of
+    # passing as "no errors found". An empty list is the valid way to report nothing.
+    errors: list[ReportedError]
 
 
 def render_paper(

@@ -139,6 +139,27 @@ def test_to_predictions_drops_errors_that_point_outside_the_paper() -> None:
     assert len(dropped) == 5
 
 
+@pytest.mark.parametrize("reply", [{}, {"error": "Unable to inspect the paper"}])
+async def test_b0_retries_a_reply_without_an_errors_list(reply: dict[str, Any]) -> None:
+    model = ScriptedChatModel(
+        replies=[tool_reply(ReportedErrors, reply), tool_reply(ReportedErrors, {"errors": []})]
+    )
+    result = await run_b0(example_paper(), StructuredLLM(model, name="test:scripted"), run_id="r1")
+    assert result.predictions == []
+    assert len(model.received) == 2
+
+
+async def test_b1_retries_a_reply_without_an_errors_list() -> None:
+    model = ScriptedChatModel(
+        replies=[tool_reply(ReportedErrors, {}), tool_reply(ReportedErrors, {"errors": [error()]})]
+    )
+    result = await run_b1(
+        example_paper(), model, [lookup_reference], run_id="r1", model_name="test:scripted"
+    )
+    assert [p.error_class for p in result.predictions] == [ErrorClass.CLAIM_NUMBER_MISMATCH]
+    assert len(model.received) == 2
+
+
 async def test_b0_asks_once_and_records_usage() -> None:
     model = ScriptedChatModel(replies=[tool_reply(ReportedErrors, {"errors": [error()]})])
     usage = UsageLog()
