@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import logging
+import re
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -199,6 +200,28 @@ async def _batch(args: argparse.Namespace, settings: Settings) -> int:
     return 1 if failed else 0
 
 
+_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+
+
+def _name(value: str) -> str:
+    """A run id or experiment name, used as a folder name on every operating system."""
+    if not _NAME.fullmatch(value):
+        raise argparse.ArgumentTypeError(
+            f"{value!r}: use letters, digits, '.', '_' and '-', starting with a letter or digit"
+        )
+    return value
+
+
+def _positive(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError:
+        number = 0
+    if number < 1:
+        raise argparse.ArgumentTypeError(f"{value!r}: must be a whole number of at least 1")
+    return number
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="auditor", description="Audit research papers.")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -215,13 +238,13 @@ def build_parser() -> argparse.ArgumentParser:
             "--repo-commit", help="Commit, tag or branch of the repository to check against"
         )
         command.add_argument("--venue", type=Path, help="Venue profile JSON")
-        command.add_argument("--run-id", help="Run id (default: generated)")
+        command.add_argument("--run-id", type=_name, help="Run id (default: generated)")
 
     audit = commands.add_parser("audit", help="Run the full audit on one paper")
     add_common(audit)
     audit.add_argument("--resume", action="store_true", help="Continue an interrupted run")
     audit.add_argument("--no-llm", action="store_true", help="Skip the planner's LLM pass")
-    audit.add_argument("--max-concurrency", type=int, default=8)
+    audit.add_argument("--max-concurrency", type=_positive, default=8)
 
     baseline = commands.add_parser("baseline", help="Run baseline B0 or B1 on one paper")
     baseline.add_argument("system", choices=[SystemName.B0.value, SystemName.B1.value])
@@ -231,21 +254,21 @@ def build_parser() -> argparse.ArgumentParser:
         "batch", help="Run systems over a dataset several times (resumable)"
     )
     batch.add_argument("dataset", type=Path, help="JSON Lines file of DatasetEntry records")
-    batch.add_argument("--experiment", required=True, help="Name used in the run ids")
+    batch.add_argument("--experiment", required=True, type=_name, help="Name used in the run ids")
     batch.add_argument(
         "--systems",
         nargs="+",
         default=[s.value for s in BATCH_SYSTEMS],
         choices=[s.value for s in BATCH_SYSTEMS],
     )
-    batch.add_argument("--runs", type=int, default=3, help="Repetitions of each system")
+    batch.add_argument("--runs", type=_positive, default=3, help="Repetitions of each system")
     batch.add_argument(
         "--llm-cache", action="store_true", help="Reuse cached LLM answers (development only)"
     )
     batch.add_argument(
         "--strict", action="store_true", help="Refuse to run while any part is still a mock"
     )
-    batch.add_argument("--max-concurrency", type=int, default=8)
+    batch.add_argument("--max-concurrency", type=_positive, default=8)
     return parser
 
 

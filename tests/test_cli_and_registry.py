@@ -134,6 +134,24 @@ def test_command_errors_are_reported(
     assert message in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(
+    ("argv", "message"),
+    [
+        (["batch", "d.jsonl", "--experiment", "e", "--runs", "0"], "at least 1"),
+        (["audit", str(PAPER_JSON), "--max-concurrency", "x"], "at least 1"),
+        (["audit", str(PAPER_JSON), "--run-id", "review:1"], "use letters, digits"),
+        (["batch", "d.jsonl", "--experiment", "../up"], "use letters, digits"),
+    ],
+)
+def test_bad_argument_values_are_refused(
+    argv: list[str], message: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(argv)
+    assert exit_info.value.code == 2
+    assert message in capsys.readouterr().err
+
+
 def test_baseline_b0_command(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     answer = {
         "errors": [
