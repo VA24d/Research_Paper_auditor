@@ -102,6 +102,13 @@ def _first_author_surname(entry: BibEntry) -> str | None:
     return _fold(parts[-1]) if parts else None
 
 
+def _mentions(entry: BibEntry, surname: str) -> bool:
+    """Whether the entry's authors or raw text include the surname. The raw text counts
+    too because GROBID sometimes splits author names wrongly."""
+    words = set(re.findall(r"[^\W\d_][\w'-]*", _fold(" ".join([*entry.authors, entry.raw or ""]))))
+    return _fold(surname) in words
+
+
 def _surname_in(text: str) -> str | None:
     """The surname just before "et al." / "and", else the last capitalised word."""
     named = _SURNAME_BEFORE_ETAL.search(text)
@@ -183,6 +190,10 @@ def _match_part(cited: _Cited, bibliography: tuple[BibEntry, ...]) -> str | None
             for e in same_author
             if e.year == cited.year and not (e.raw and lettered.search(e.raw))
         ]
+    if cited.coauthor is not None:
+        # "Smith and Jones" names the second author; an entry that does not mention Jones
+        # is a different work, even when it is the only Smith of that year.
+        candidates = [e for e in candidates if _mentions(e, cited.coauthor)]
     if len(candidates) > 1:
         candidates = _by_author_count(cited, candidates)
     return candidates[0].id if len(candidates) == 1 else None
