@@ -21,10 +21,13 @@ from auditor.schemas import (
 _MINUS = "-\u2212\u2013"
 # "4, 000" is how GROBID sometimes renders 4,000, so a comma may be followed by a space
 # when exactly three digits come next.
+# Powers of ten use any multiplication sign ("8 x 10^-4"), and a bare "10 -3" is a
+# flattened superscript. parse_number reads the same forms.
 _NUMBER = (
+    rf"(?:10\s+[{_MINUS}]\d+(?!\d|\.\d)|"
     rf"\d+(?:[.,]\d+|,\s\d{{3}}(?!\d))*(?:\s*[eE]\s*[{_MINUS}+]?\s*\d+)?"
-    rf"(?:\s*(?:[x\u00d7\u00b7]|\\times)\s*10\s*\^?\s*\{{?\s*[{_MINUS}]?\s*\d+\s*\}}?)?"
-    r"\s*[kKM]?"
+    rf"(?:\s*(?:[x\u00d7\u00b7\u2022\u22c5]|\\times)\s*10\s*\^?\s*\{{?\s*[{_MINUS}]?\s*\d+\s*\}}?)?"
+    r"\s*[kKM]?)"
 )
 _LINK = r"(?:\s+(?:of|is|was|were|=|:|set\s+to|to|at|as))*\s*:?\s*"
 
@@ -114,13 +117,13 @@ def parse_number(raw: str) -> int | float | None:
         multiplier = 1_000_000 if text[-1] == "M" else 1_000
         text = text[:-1].strip()
     # A power of ten: "3 x 10^-4" (any multiplication sign), or a bare "10 -3" whose
-    # superscript was flattened. A bare power needs a caret or a space before a minus, so
-    # "100", "10 3" and the range "10-20" are not read as powers.
+    # superscript was flattened. A bare power needs a caret, or a minus with a space before it
+    # and none after; "100", "10 3", "10-20" and "10 - 20" are not read as powers.
     power = re.match(
         r"^(?:(?P<base>[\d.]+)\s*(?:[x\u00d7\u00b7\u2022\u22c5]|\\times)\s*)?10\s*(?P<caret>\^)?\s*\{?\s*(?P<exp>-?\s*\d+)\s*\}?$",
         text,
     )
-    if power and not (power["base"] or power["caret"] or re.match(r"10\s+-", text)):
+    if power and not (power["base"] or power["caret"] or re.match(r"10\s+-\d", text)):
         power = None
     try:
         if power:
