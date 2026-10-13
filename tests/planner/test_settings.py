@@ -57,6 +57,8 @@ def found(text: str) -> list[tuple[str, str, object]]:
             [("learning_rate", f"8 {BULLET} 10 -4", 8e-4)],
         ),
         ("We use a learning rate of 10 -3.", [("learning_rate", "10 -3", 1e-3)]),
+        ("We use a learning rate of 10^-3.", [("learning_rate", "10^-3", 1e-3)]),
+        ("We use a learning rate of 10^{-3}.", [("learning_rate", "10^{-3}", 1e-3)]),
         ("We use a batch size of 10 - 20.", [("batch_size", "10", 10)]),
         ("Following Adam [12], we report accuracy.", []),
         ("Compared to GPT-3 175B fine-tuned with Adam, LoRA uses less memory.", []),

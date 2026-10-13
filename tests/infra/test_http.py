@@ -329,3 +329,38 @@ async def test_redirect_hops_are_rate_limited_and_counted(
                 await client.get(f"https://api.openalex.org/works/{work}", use_cache=False)
     assert arxiv_times[1] - arxiv_times[0] >= 3.0
     assert [r.redirects for r in usage.http_requests] == [1, 1]
+
+
+async def test_redirects_of_every_attempt_are_counted(tmp_path: Path, fake_time: FakeTime) -> None:
+    sent: list[str] = []
+    final = iter([503, 200])
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(request.url.path)
+        if request.url.path == "/start":
+            return httpx.Response(302, headers={"location": "/final"})
+        return httpx.Response(next(final), text="ok")
+
+    usage = UsageLog()
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with enter_scope(Scope(run_id="r1", usage=usage)):
+            await client.get("https://api.crossref.org/start", use_cache=False)
+    (record,) = usage.http_requests
+    assert sent == ["/start", "/final", "/start", "/final"]
+    assert (record.attempts, record.redirects) == (2, 2)
+
+
+async def test_hops_before_a_connection_error_are_counted(
+    tmp_path: Path, fake_time: FakeTime
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/start":
+            return httpx.Response(302, headers={"location": "/final"})
+        raise httpx.ConnectError("connection reset", request=request)
+
+    usage = UsageLog()
+    async with make_client(handler, tmp_path, fake_time, http_max_attempts=2) as client:
+        with enter_scope(Scope(run_id="r1", usage=usage)), pytest.raises(HttpRequestError):
+            await client.get("https://api.crossref.org/start", use_cache=False)
+    (record,) = usage.http_requests
+    assert (record.attempts, record.redirects) == (2, 2)
