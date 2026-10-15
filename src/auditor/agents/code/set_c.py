@@ -14,7 +14,7 @@ import random
 import re
 import shutil
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from hashlib import sha256
@@ -53,6 +53,8 @@ from auditor.schemas import (
     RepositorySource,
     SentenceAnchor,
     SettingTarget,
+    SourceKind,
+    SourceRef,
     TaskOutcome,
 )
 from auditor.schemas.evaluation import matches
@@ -114,8 +116,11 @@ class InjectionRecord(BaseModel):
     end: int | None = None
 
 
-@dataclass(frozen=True)
-class CandidateRow:
+class CandidateRow(BaseModel):
+    """What the code agent makes of one paper setting (saved per pair while collecting)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     key: str
     sentence_id: str
     paper_value: str
@@ -130,6 +135,95 @@ class CandidateRow:
     agreeing_evidence: tuple[Evidence, ...] = ()
     # Every repository value found for the key, to check a mutation is really an error.
     repository_settings: tuple[ExtractedSetting, ...] = ()
+
+
+class Pair(BaseModel):
+    """One paper and its code, from SciCoQA (CC BY 4.0, Baumgärtner et al., ACL 2026)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    pair_id: str
+    arxiv_id: str
+    pdf_url: str
+    repository: str
+    commit: str
+    scicoqa_ids: tuple[str, ...]
+    real_issue_ids: tuple[str, ...] = ()
+    categories: tuple[str, ...] = ()
+    pdf_sha256: str | None = None
+
+
+_ARXIV_PDF = re.compile(r"arxiv\.org/pdf/(?P<id>\d{4}\.\d{4,5})(?P<version>v\d+)")
+_GITHUB_TREE = re.compile(r"^https://github\.com/(?P<repo>[^/]+/[^/]+)/tree/(?P<sha>[0-9a-f]{40})$")
+
+
+def pool_from_scicoqa(rows: Sequence[Mapping[str, object]]) -> list[Pair]:
+    """Paper and code pairs from SciCoQA rows: versioned arXiv PDFs and GitHub repositories
+    pinned to a commit, with the discrepancy ids reported for each. Pairs with a real
+    (not synthetic) discrepancy come first; the order is otherwise stable."""
+    grouped: dict[tuple[str, str], list[Mapping[str, object]]] = {}
+    for row in rows:
+        pdf = _ARXIV_PDF.search(str(row.get("paper_url_versioned") or ""))
+        code = _GITHUB_TREE.match(str(row.get("code_url_versioned") or ""))
+        if pdf is None or code is None:
+            continue
+        key = (pdf.group("id") + pdf.group("version"), code.group(0))
+        grouped.setdefault(key, []).append(row)
+    pairs = []
+    for (pair_id, tree), members in grouped.items():
+        code = _GITHUB_TREE.match(tree)
+        assert code is not None
+        real = [str(m["discrepancy_id"]) for m in members if m.get("origin_type") != "synthetic"]
+        pairs.append(
+            Pair(
+                pair_id=pair_id,
+                arxiv_id=pair_id.split("v")[0],
+                pdf_url=f"https://arxiv.org/pdf/{pair_id}",
+                repository=f"https://github.com/{code.group('repo')}",
+                commit=code.group("sha"),
+                scicoqa_ids=tuple(sorted(str(m["discrepancy_id"]) for m in members)),
+                real_issue_ids=tuple(sorted(real)),
+                categories=tuple(
+                    sorted(
+                        {
+                            str(m["discrepancy_category"])
+                            for m in members
+                            if m.get("discrepancy_category")
+                        }
+                    )
+                ),
+            )
+        )
+    return sorted(pairs, key=lambda p: (not p.real_issue_ids, p.pair_id))
+
+
+def apply_injections(paper: ParsedPaper, records: Sequence[InjectionRecord]) -> ParsedPaper:
+    """Re-apply recorded paper-side injections to a fresh parse of the original, in the
+    order they were made, checking each span still holds the original value."""
+    current = paper
+    for record in records:
+        if record.side != "paper" or record.sentence_id is None:
+            continue
+        assert record.start is not None
+        assert record.end is not None
+        anchor = SentenceAnchor(sentence_id=record.sentence_id, start=record.start, end=record.end)
+        found = current.sentence(record.sentence_id).text[record.start : record.end]
+        if found != record.original:
+            raise ValueError(
+                f"{record.label_id}: expected {record.original!r} at {record.sentence_id}"
+                f"[{record.start}:{record.end}], found {found!r}; was the paper parsed with "
+                "another GROBID version?"
+            )
+        current, _, _ = inject_paper(
+            current,
+            anchor,
+            record.injected,
+            key=record.key,
+            rationale="rebuild",
+            evidence_type=record.evidence_type,
+            evidence=[_REBUILD_EVIDENCE],
+        )
+    return current
 
 
 async def candidates(
@@ -183,6 +277,13 @@ def _agree(paper: ExtractedSetting, sentence: str, repo: ExtractedSetting) -> bo
     if paper.key in DATA_KEYS:
         return bool(data_values_agree(paper, sentence, repo))
     return paper.key == repo.key and values_agree(paper, repo)
+
+
+_REBUILD_EVIDENCE = Evidence(
+    kind=EvidenceKind.LOOKUP,
+    source=SourceRef(kind=SourceKind.REPOSITORY, id="rebuild"),
+    text="re-applied from the injection log",
+)
 
 
 def _label_id(paper_id: str, key: str, anchor: SentenceAnchor, extra: str) -> str:
@@ -635,13 +736,16 @@ __all__ = [
     "CodeScores",
     "EvidenceType",
     "InjectionRecord",
+    "Pair",
     "Proposal",
+    "apply_injections",
     "candidates",
     "clean_label",
     "error_class_for",
     "inject_code",
     "inject_paper",
     "mutate",
+    "pool_from_scicoqa",
     "propose",
     "score_code_module",
     "validate",

@@ -25,6 +25,7 @@ class ErrorClass(StrEnum):
     DATASET_SIZE_MISMATCH = "dataset_size_mismatch"
     LABEL_DISTRIBUTION_MISMATCH = "label_distribution_mismatch"
     DATA_LEAKAGE = "data_leakage"
+    METHOD_MISMATCH = "method_mismatch"
     TEMPLATE_VIOLATION = "template_violation"
 
 

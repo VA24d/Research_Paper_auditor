@@ -47,6 +47,7 @@ def test_error_classes_match_decision_d4() -> None:
         "dataset_size_mismatch",
         "label_distribution_mismatch",
         "data_leakage",
+        "method_mismatch",
         "template_violation",
     }
 

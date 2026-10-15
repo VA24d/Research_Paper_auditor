@@ -1,6 +1,7 @@
 """Turns a parsed paper into AuditTasks (decisions D3 and D6)."""
 
 import logging
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -22,6 +23,7 @@ from auditor.schemas import (
     RepositoryRef,
     RuleTarget,
     SentenceAnchor,
+    SentenceKind,
     SettingTarget,
     TaskKind,
     VenueProfile,
@@ -101,6 +103,45 @@ def code_tasks(
     return tasks
 
 
+METHOD_KEY = "method"
+_METHOD_TITLE = re.compile(
+    r"method|approach|model|algorithm|framework|architecture|propos", re.IGNORECASE
+)
+
+
+def method_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[AuditTask]:
+    """One task per paper with code: does the code implement the method the paper
+    describes (decision D4 `method_mismatch`)? Anchored on the first sentence of the method
+    section, or of the body when no section title says method."""
+    if repository is None:
+        return []
+    titles = {s.id: s.title for s in paper.sections}
+    body = [s for s in paper.sentences if s.kind is SentenceKind.BODY]
+    if not body:
+        return []
+    first = next(
+        (s for s in body if _METHOD_TITLE.search(titles.get(s.section_id or "", ""))), body[0]
+    )
+    title = titles.get(first.section_id or "", "") or "body"
+    anchor = SentenceAnchor(sentence_id=first.id)
+    return [
+        AuditTask.create(
+            paper_id=paper.paper_id,
+            variant=paper.variant,
+            kind=TaskKind.CODE,
+            anchor=anchor,
+            target=SettingTarget(key=METHOD_KEY),
+            setting=ExtractedSetting(
+                key=METHOD_KEY,
+                raw_name="method",
+                raw_value=title,
+                source=PaperSource(anchor=anchor),
+            ),
+            repository=repository,
+        )
+    ]
+
+
 def template_tasks(paper: ParsedPaper, venue: VenueProfile | None) -> list[AuditTask]:
     if venue is None:
         return []
@@ -148,6 +189,7 @@ async def plan_paper(
         *reference_tasks(paper),
         *citation_tasks(paper, candidates),
         *code_tasks(paper, repository, settings),
+        *method_tasks(paper, repository),
         *template_tasks(paper, options.venue),
     ]
     return _unique(tasks)

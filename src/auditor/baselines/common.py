@@ -47,6 +47,8 @@ ERROR_CLASS_GUIDE = """Error classes:
   from the data.
 - data_leakage: test (or validation) examples also appear in the training data, although
   the paper presents the test set as held out.
+- method_mismatch: the code implements a different method (loss, algorithm step, model
+  component, data processing, training or evaluation procedure) than the paper describes.
 - template_violation: a venue formatting rule is broken."""
 
 ANSWER_GUIDE = """For every error, give:

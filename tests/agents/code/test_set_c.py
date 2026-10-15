@@ -5,11 +5,13 @@ import pytest
 from auditor.agents.code.set_c import (
     EvidenceType,
     InjectionRecord,
+    apply_injections,
     candidates,
     clean_label,
     inject_code,
     inject_paper,
     mutate,
+    pool_from_scicoqa,
     propose,
     score_code_module,
     validate,
@@ -323,3 +325,56 @@ async def test_controls_after_a_shorter_injection_move_with_the_text(tmp_path: P
     assert sentence[control.anchor.start : control.anchor.end] in {"256", "0.001"}
     ids = [label.label_id for label in proposal.labels]
     assert len(ids) == len(set(ids))
+
+
+def test_pool_keeps_arxiv_github_pairs_with_real_issues_first() -> None:
+    sha = "a" * 40
+    rows = [
+        {
+            "discrepancy_id": "s1",
+            "paper_url_versioned": "https://arxiv.org/pdf/2401.00001v2.pdf",
+            "code_url_versioned": f"https://github.com/o/r/tree/{sha}",
+            "origin_type": "synthetic",
+            "discrepancy_category": "Training",
+        },
+        {
+            "discrepancy_id": "r1",
+            "paper_url_versioned": "https://arxiv.org/pdf/2402.00002v1.pdf",
+            "code_url_versioned": f"https://github.com/o/q/tree/{sha}",
+            "origin_type": "GitHub Issue",
+            "discrepancy_category": "Loss",
+        },
+        {
+            "discrepancy_id": "x",
+            "paper_url_versioned": "https://openreview.net/pdf?id=abc",
+            "code_url_versioned": f"https://github.com/o/z/tree/{sha}",
+            "origin_type": "GitHub Issue",
+            "discrepancy_category": "Loss",
+        },
+    ]
+    pool = pool_from_scicoqa(rows)
+    assert [p.pair_id for p in pool] == ["2402.00002v1", "2401.00001v2"]
+    first = pool[0]
+    assert (first.repository, first.commit) == ("https://github.com/o/q", sha)
+    assert first.real_issue_ids == ("r1",)
+    assert first.pdf_url == "https://arxiv.org/pdf/2402.00002v1"
+
+
+def test_injections_replay_on_a_fresh_parse() -> None:
+    original = paper()
+    injected, _, record = inject_paper(
+        original,
+        lr_anchor(original),
+        "1e-3",
+        key="learning_rate",
+        rationale="r",
+        evidence_type=EvidenceType.CODE,
+        evidence=[_code_evidence()],
+    )
+    assert apply_injections(original, [record]) == injected
+    data = original.model_dump()
+    data["sentences"][4]["text"] = "Different text entirely, long enough to hold it."
+    data["citations"] = [c for c in data["citations"] if c["sentence_id"] != "s4"]
+    moved = ParsedPaper.model_validate(data)
+    with pytest.raises(ValueError, match="GROBID"):
+        apply_injections(moved, [record])

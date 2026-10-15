@@ -586,6 +586,15 @@ def _explain(tier: Tier, candidates: Sequence[Candidate]) -> str:
     return text
 
 
+def paper_quote_text(paper_id: str, sentence: str) -> Evidence:
+    """A verbatim quote of a paper sentence as evidence."""
+    return Evidence(
+        kind=EvidenceKind.QUOTE,
+        source=SourceRef(kind=EvidenceSourceKind.SUBMISSION, id=paper_id),
+        text=sentence,
+    )
+
+
 def paper_quote(task: AuditTask, sentence: str) -> Evidence:
     return Evidence(
         kind=EvidenceKind.QUOTE,
