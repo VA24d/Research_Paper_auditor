@@ -6,7 +6,7 @@ import pytest
 from auditor import experiments
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
-from auditor.experiments import InputError, missing_parts, resolve_repository
+from auditor.experiments import InputError, missing_parts, read_dataset, resolve_repository
 from auditor.infra.llm import StructuredLLM
 from auditor.orchestration import registry
 from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest, SystemName
@@ -144,6 +144,36 @@ def only_tools_missing(monkeypatch: pytest.MonkeyPatch) -> None:
         return None if attribute == "make_tools" else (lambda *args: None)
 
     monkeypatch.setattr(registry, "_entry_point", entry_point)
+
+
+def test_repository_can_be_any_supported_code_or_data_source(tmp_path: Path) -> None:
+    paper = example_paper()
+    assert resolve_repository("https://huggingface.co/org/model/tree/v1", paper) == (
+        RepositoryRef(url="https://huggingface.co/org/model", commit="v1")
+    )
+    assert resolve_repository("https://anonymous.4open.science/r/abc", paper) == (
+        RepositoryRef(url="https://anonymous.4open.science/r/abc")
+    )
+    patched = tmp_path / "patched"
+    patched.mkdir()
+    assert resolve_repository(str(patched), paper) == RepositoryRef(url=patched.resolve().as_uri())
+    with pytest.raises(InputError, match="not a supported"):
+        resolve_repository("https://example.com/a/b", paper)
+    with pytest.raises(InputError, match="cannot be pinned"):
+        resolve_repository("https://anonymous.4open.science/r/abc", paper, "main")
+
+
+def test_dataset_repository_folders_are_relative_to_the_dataset(tmp_path: Path) -> None:
+    (tmp_path / "repos" / "lora").mkdir(parents=True)
+    dataset = tmp_path / "set_c.jsonl"
+    dataset.write_text(
+        '{"paper": "p.json", "repository": "repos/lora"}\n'
+        '{"paper": "q.json", "repository": "https://github.com/a/b"}\n',
+        encoding="utf-8",
+    )
+    first, second = read_dataset(dataset)
+    assert first.repository == str(tmp_path / "repos" / "lora")
+    assert second.repository == "https://github.com/a/b"
 
 
 def test_each_system_lists_the_parts_it_still_lacks(monkeypatch: pytest.MonkeyPatch) -> None:

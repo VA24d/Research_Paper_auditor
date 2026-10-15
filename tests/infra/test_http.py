@@ -1,7 +1,7 @@
 import itertools
 import json
 import random
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -17,6 +17,7 @@ from auditor.infra.http import (
     HttpStatusError,
     RateLimiter,
     ResponseCache,
+    ResponseTooLargeError,
 )
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
@@ -364,3 +365,34 @@ async def test_hops_before_a_connection_error_are_counted(
             await client.get("https://api.crossref.org/start", use_cache=False)
     (record,) = usage.http_requests
     assert (record.attempts, record.redirects) == (2, 2)
+
+
+async def test_body_larger_than_max_bytes_is_refused(tmp_path: Path, fake_time: FakeTime) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"x" * 100)
+
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with pytest.raises(ResponseTooLargeError):
+            await client.get("https://api.openalex.org/big", max_bytes=99)
+        small = await client.get("https://api.openalex.org/big", max_bytes=100)
+    assert small.content == b"x" * 100
+
+
+async def test_streamed_body_without_length_stops_at_max_bytes(
+    tmp_path: Path, fake_time: FakeTime
+) -> None:
+    sent: list[int] = []
+
+    async def chunks() -> AsyncIterator[bytes]:
+        for _ in range(1000):
+            sent.append(1)
+            yield b"y" * 10
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=chunks())
+
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with pytest.raises(ResponseTooLargeError):
+            await client.get("https://api.openalex.org/stream", max_bytes=55, use_cache=False)
+    # Reading stopped soon after the limit instead of draining the whole body.
+    assert len(sent) < 20

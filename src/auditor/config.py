@@ -1,7 +1,8 @@
+import tempfile
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, JsonValue
+from pydantic import Field, JsonValue, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_ALLOWED_HOSTS = (
@@ -16,6 +17,15 @@ DEFAULT_ALLOWED_HOSTS = (
     "api.github.com",
     "codeload.github.com",
     "raw.githubusercontent.com",
+    # Code and data hosts read by auditor.infra.snapshots.
+    "gitlab.com",
+    "huggingface.co",
+    "datasets-server.huggingface.co",
+    "www.kaggle.com",
+    # Kaggle answers a download with a signed redirect to Google Cloud Storage.
+    "storage.googleapis.com",
+    "anonymous.4open.science",
+    "zenodo.org",
 )
 
 
@@ -36,6 +46,8 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     cache_dir: Path = Path("data/cache")
     runs_dir: Path = Path("runs")
+    # Downloaded repository and data snapshots. Disposable: anything here is fetched again.
+    scratch_dir: Path = Path(tempfile.gettempdir()) / "auditor-scratch"
     grobid_url: str = "http://localhost:8070"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
@@ -44,6 +56,23 @@ class Settings(BaseSettings):
     http_timeout_s: float = Field(default=30.0, gt=0)
     http_max_attempts: int = Field(default=4, ge=1)
     http_cache_ttl_days: float = Field(default=30.0, ge=0)
+
+    # Limits for one repository or data snapshot (auditor.infra.snapshots). Only core files
+    # (code, configs, docs) are downloaded, and only up to these sizes.
+    snapshot_max_file_bytes: int = Field(default=1_000_000, gt=0)
+    snapshot_max_total_bytes: int = Field(default=10_000_000, gt=0)
+    snapshot_max_files: int = Field(default=500, gt=0)
+    snapshot_max_archive_bytes: int = Field(default=50_000_000, gt=0)
+    # Optional tokens: GitHub allows 60 API requests an hour without one; Hugging Face
+    # needs one for gated repositories.
+    github_token: SecretStr | None = None
+    hf_token: SecretStr | None = None
+
+    @field_validator("github_token", "hf_token", mode="before")
+    @classmethod
+    def _empty_token_is_unset(cls, value: object) -> object:
+        # `.env.example` leaves these empty; an empty token would fail every request.
+        return None if value == "" else value
 
     llm_provider: str | None = None
     llm_model: str | None = None

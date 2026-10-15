@@ -52,3 +52,12 @@ def test_complex_values_are_read_as_json(monkeypatch: pytest.MonkeyPatch) -> Non
     settings = Settings()
     assert settings.allowed_hosts == ("example.org",)
     assert settings.llm_options == {"thinking_level": "low"}
+
+
+def test_empty_host_tokens_count_as_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUDITOR_GITHUB_TOKEN", "")
+    monkeypatch.setenv("AUDITOR_HF_TOKEN", "hf_x")
+    settings = Settings(_env_file=None)
+    assert settings.github_token is None
+    assert settings.hf_token is not None
+    assert settings.hf_token.get_secret_value() == "hf_x"

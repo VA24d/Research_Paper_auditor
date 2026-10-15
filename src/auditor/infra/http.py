@@ -40,6 +40,11 @@ DEFAULT_MIN_INTERVALS = {
     "api.crossref.org": 0.2,
     "api.openalex.org": 0.1,
     "api.semanticscholar.org": 1.0,
+    # Repository and data hosts (auditor.infra.snapshots). Anonymous GitHub is a free
+    # academic service with no published limits, so it gets the widest gap.
+    "anonymous.4open.science": 0.25,
+    "www.kaggle.com": 0.2,
+    "zenodo.org": 0.2,
 }
 
 
@@ -53,6 +58,10 @@ class HostNotAllowedError(HttpError):
 
 class HttpRequestError(HttpError):
     """The request could not be completed, even after retries."""
+
+
+class ResponseTooLargeError(HttpError):
+    """The response body is larger than the `max_bytes` the caller allowed."""
 
 
 class HttpStatusError(HttpError):
@@ -195,6 +204,21 @@ def _retry_after_seconds(response: httpx.Response, now: datetime) -> float | Non
     return max(0.0, (when - now).total_seconds())
 
 
+async def _read_body(raw: httpx.Response, max_bytes: int | None) -> bytes:
+    if max_bytes is None:
+        return await raw.aread()
+    too_large = ResponseTooLargeError(f"{raw.request.url} is larger than {max_bytes} bytes")
+    length = raw.headers.get("content-length", "")
+    if length.isdigit() and int(length) > max_bytes:
+        raise too_large
+    body = bytearray()
+    async for chunk in raw.aiter_bytes():
+        body += chunk
+        if len(body) > max_bytes:
+            raise too_large
+    return bytes(body)
+
+
 class HttpClient:
     def __init__(
         self,
@@ -272,9 +296,18 @@ class HttpClient:
         headers: Mapping[str, str] | None = None,
         use_cache: bool = True,
         attempts: int | None = None,
+        max_bytes: int | None = None,
     ) -> HttpResponse:
+        """`max_bytes` stops reading a body that grows past it and raises
+        ResponseTooLargeError, so a download never holds more than that in memory."""
         return await self._send(
-            "GET", url, params=params, headers=headers, use_cache=use_cache, attempts=attempts
+            "GET",
+            url,
+            params=params,
+            headers=headers,
+            use_cache=use_cache,
+            attempts=attempts,
+            max_bytes=max_bytes,
         )
 
     async def post(
@@ -310,6 +343,7 @@ class HttpClient:
         request_timeout_s: float | None = None,
         use_cache: bool,
         attempts: int | None = None,
+        max_bytes: int | None = None,
     ) -> HttpResponse:
         max_attempts = attempts if attempts is not None else self._max_attempts
         request_url = httpx.URL(url)
@@ -324,6 +358,8 @@ class HttpClient:
         if method == "GET" and use_cache and self._cache is not None:
             cache_key = ResponseCache.key(str(request_url), headers or {})
             cached = self._cache.get(cache_key)
+            if cached is not None and max_bytes is not None and len(cached.content) > max_bytes:
+                raise ResponseTooLargeError(f"{request_url} is larger than {max_bytes} bytes")
             if cached is not None:
                 self._record(method, request_url, cached.status_code, 1, True, started_at, started)
                 return cached
@@ -335,7 +371,7 @@ class HttpClient:
             while True:
                 attempt += 1
                 try:
-                    raw = await self._client.request(
+                    request = self._client.build_request(
                         method,
                         request_url,
                         data=data,
@@ -347,6 +383,25 @@ class HttpClient:
                             else httpx.USE_CLIENT_DEFAULT
                         ),
                     )
+                    raw = await self._client.send(request, stream=True)
+                    try:
+                        retry = raw.status_code in RETRY_STATUSES and attempt < max_attempts
+                        content = b"" if retry else await _read_body(raw, max_bytes)
+                    finally:
+                        await raw.aclose()
+                except ResponseTooLargeError as exc:
+                    self._record(
+                        method,
+                        request_url,
+                        raw.status_code,
+                        attempt,
+                        False,
+                        started_at,
+                        started,
+                        str(exc),
+                        redirects=sent[0] - attempt,
+                    )
+                    raise
                 except httpx.TransportError as exc:
                     if attempt < max_attempts:
                         await self._sleep(self._backoff(attempt))
@@ -365,7 +420,7 @@ class HttpClient:
                     )
                     raise HttpRequestError(f"{method} {request_url} failed: {error}") from exc
 
-                if raw.status_code in RETRY_STATUSES and attempt < max_attempts:
+                if retry:
                     wait = _retry_after_seconds(raw, datetime.now(UTC))
                     await self._sleep(
                         min(wait if wait is not None else self._backoff(attempt), self._max_wait_s)
@@ -376,7 +431,7 @@ class HttpClient:
                     url=str(raw.url),
                     status_code=raw.status_code,
                     headers={k.lower(): v for k, v in raw.headers.items()},
-                    content=raw.content,
+                    content=content,
                 )
                 if cache_key is not None and self._cache is not None and raw.status_code == 200:
                     try:

@@ -35,6 +35,7 @@ from auditor.infra.http import HttpClient
 from auditor.infra.llm import LLMNotConfiguredError, StructuredLLM, create_chat_model, model_id
 from auditor.infra.log import configure_logging
 from auditor.infra.manifest import build_manifest, package_versions, redact, write_manifest
+from auditor.infra.snapshots import SourceError, parse_source
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.graph import AuditOutcome, AuditPipeline, ThreadInUseError, run_audit
 from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
@@ -46,7 +47,7 @@ from auditor.orchestration.registry import (
 )
 from auditor.parser.grobid import GrobidClient
 from auditor.parser.pipeline import ParseError, parse_pdf
-from auditor.planner.repository import find_repository, repository_url, snapshot_ref
+from auditor.planner.repository import find_repository
 from auditor.planner.tasks import PlannerOptions, make_planner
 from auditor.schemas import (
     ParsedPaper,
@@ -103,8 +104,9 @@ def load_venue(path: Path | None) -> VenueProfile | None:
 def resolve_repository(
     value: str | None, paper: ParsedPaper, commit: str | None = None
 ) -> RepositoryRef | None:
-    """The repository to check against: the given URL, or the one the paper announces.
-    The commit comes from `commit` or from a /tree/ or /commit/ part of the URL."""
+    """The code or data to check against: the given source (a GitHub, GitLab, Hugging Face,
+    Kaggle, Anonymous GitHub or Zenodo link, or a local folder), or the repository the paper
+    announces. The commit comes from `commit` or from a /tree/ or /commit/ part of the URL."""
     if value is None:
         found = find_repository(paper)
         if commit is None or found is None:
@@ -112,13 +114,11 @@ def resolve_repository(
                 raise InputError("A repository commit was given, but no repository.")
             return found
         return found.model_copy(update={"commit": commit})
-    url = repository_url(value)
-    if url is None:
-        raise InputError(f"Not a GitHub or GitLab repository URL: {value}")
-    in_url = snapshot_ref(value)
-    if commit is not None and in_url is not None and commit != in_url:
-        raise InputError(f"{value} names {in_url}, but the commit given is {commit}")
-    return RepositoryRef(url=url, commit=commit or in_url)
+    try:
+        spec = parse_source(value, commit)
+    except SourceError as exc:
+        raise InputError(str(exc)) from exc
+    return RepositoryRef(url=spec.url, commit=spec.ref)
 
 
 def optional_llm(settings: Settings, enabled: bool = True) -> StructuredLLM | None:
@@ -258,11 +258,16 @@ def read_dataset(path: Path) -> list[DatasetEntry]:
         except ValidationError as exc:
             raise InputError(f"{path}:{number}: {exc}") from exc
         base = path.parent
+        repository = entry.repository
+        # A local repository folder, such as a patched copy, is relative to the dataset too.
+        if repository and "://" not in repository and (base / repository).is_dir():
+            repository = str(base / repository)
         entries.append(
             entry.model_copy(
                 update={
                     "paper": str(base / entry.paper),
                     "venue": str(base / entry.venue) if entry.venue else None,
+                    "repository": repository,
                 }
             )
         )
@@ -317,9 +322,19 @@ def code_sha256() -> str:
 
 # Settings that only decide where files go and what is logged. Every other setting is
 # part of a run's fingerprint, including ones added later. The GROBID address is left
-# out because the parsed paper itself is hashed.
+# out because the parsed paper itself is hashed; host tokens only authenticate requests.
 _OPERATIONAL_SETTINGS = frozenset(
-    {"data_dir", "cache_dir", "runs_dir", "grobid_url", "log_level", "contact_email"}
+    {
+        "data_dir",
+        "cache_dir",
+        "runs_dir",
+        "scratch_dir",
+        "grobid_url",
+        "log_level",
+        "contact_email",
+        "github_token",
+        "hf_token",
+    }
 )
 
 

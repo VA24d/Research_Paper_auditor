@@ -259,9 +259,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     def add_common(command: argparse.ArgumentParser) -> None:
         command.add_argument("input", type=Path, help="A PDF, or ParsedPaper JSON")
-        command.add_argument("--repo", help="Code repository URL (default: found in the paper)")
         command.add_argument(
-            "--repo-commit", help="Commit, tag or branch of the repository to check against"
+            "--repo",
+            help=(
+                "Code or data to check against: a GitHub, GitLab, Hugging Face, Kaggle dataset, "
+                "Anonymous GitHub or Zenodo link, or a local folder (default: found in the paper)"
+            ),
+        )
+        command.add_argument(
+            "--repo-commit",
+            help="Commit, tag or branch (Kaggle: version number) to check against",
         )
         command.add_argument("--venue", type=Path, help="Venue profile JSON")
         command.add_argument("--run-id", type=_name, help="Run id (default: generated)")
