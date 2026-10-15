@@ -1,8 +1,12 @@
+import dataclasses
 from pathlib import Path
 
 import pytest
 
 from auditor.agents.code import check
+from auditor.agents.code.second_look import Applies
+from auditor.infra.context import RunContext
+from auditor.infra.llm import StructuredLLM
 from auditor.planner.tables import paper_settings
 from auditor.planner.tasks import code_tasks
 from auditor.schemas import (
@@ -15,7 +19,7 @@ from auditor.schemas import (
     TaskResult,
 )
 from auditor.schemas.examples import example_paper
-from auditor.testing import offline_context
+from auditor.testing import ScriptedChatModel, offline_context, tool_reply
 
 DEFAULT = "We train with a learning rate of 3e-4 and a batch size of 256."
 
@@ -253,3 +257,54 @@ async def test_the_config_holding_the_papers_other_settings_is_used(tmp_path: Pa
     (finding,) = (await run(tmp_path, DEFAULT, files, "learning_rate")).findings
     assert "configs/b.yaml" in finding.summary
     assert "configs/a.yaml" not in finding.summary
+
+
+# --- second look by a small model on uncertain findings --------------------------------
+
+
+def with_llm(
+    ctx: RunContext, replies: list[dict[str, str]]
+) -> tuple[RunContext, ScriptedChatModel]:
+    model = ScriptedChatModel(replies=[tool_reply(Applies, reply) for reply in replies])
+    return dataclasses.replace(ctx, llm=StructuredLLM(model, name="test:scripted")), model
+
+
+TWO_VALUES = {
+    "train.py": 'parser.add_argument("--lr", default=1e-3)\n',
+    "scripts/finetune.sh": "python train.py --lr 5e-4\n",
+}
+
+
+async def second_look(tmp_path: Path, answers: list[str]) -> tuple[TaskResult, ScriptedChatModel]:
+    paper = paper_saying(DEFAULT)
+    tasks = code_tasks(paper, RepositoryRef(url=repo(tmp_path, TWO_VALUES)), paper_settings(paper))
+    task = next(t for t in tasks if t.setting is not None and t.setting.key == "learning_rate")
+    ctx, model = with_llm(
+        offline_context(tmp_path, paper=paper), [{"answer": a, "reason": "r"} for a in answers]
+    )
+    return await check(task, ctx), model
+
+
+async def test_values_confirmed_by_the_second_look_make_a_firm_finding(tmp_path: Path) -> None:
+    result, model = await second_look(tmp_path, ["yes", "no"])
+    (finding,) = result.findings
+    assert not finding.uncertain
+    first = " ".join(str(m.content) for m in model.received[0])
+    assert "learning rate of 3e-4" in first  # the paper sentence
+    confirmed, rejected = (
+        ("scripts/finetune.sh", "train.py") if "finetune.sh" in first else ("train.py", "finetune")
+    )
+    assert confirmed in finding.summary
+    assert rejected not in finding.summary
+
+
+async def test_values_rejected_by_the_second_look_are_unverifiable(tmp_path: Path) -> None:
+    result, _ = await second_look(tmp_path, ["no", "no"])
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.findings == ()
+
+
+async def test_an_unsure_second_look_keeps_the_suspicion(tmp_path: Path) -> None:
+    result, _ = await second_look(tmp_path, ["unsure", "unsure"])
+    (finding,) = result.findings
+    assert finding.uncertain

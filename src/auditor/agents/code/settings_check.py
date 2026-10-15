@@ -20,6 +20,7 @@ from auditor.agents.code.data_checks import (
     repository_evidence,
     static_candidates,
 )
+from auditor.agents.code.second_look import second_look
 from auditor.infra.context import RunContext
 from auditor.infra.snapshots import SnapshotUnavailableError, SourceError, fetch_snapshot
 from auditor.planner.tables import paper_settings
@@ -82,6 +83,21 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     uncertain = (
         len(values) > 1 or setting.context is not None or any(c.setting.context for c in candidates)
     )
+    if uncertain and ctx.llm is not None and ctx.settings.code_second_look:
+        confirmed, kept, rejected_all = await second_look(ctx, setting, sentence, candidates)
+        if rejected_all:
+            return TaskResult.for_task(
+                task,
+                TaskOutcome.UNVERIFIABLE,
+                reason=(
+                    f"every repository value of {setting.key} was judged to belong to something "
+                    "other than the experiment the sentence describes"
+                ),
+            )
+        if confirmed:
+            candidates, uncertain = confirmed, setting.context is not None
+        else:
+            candidates = kept
     error_class = (
         ErrorClass.METRIC_MISMATCH if setting.key == "eval_metric" else ErrorClass.SETTING_MISMATCH
     )

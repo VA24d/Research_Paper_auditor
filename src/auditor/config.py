@@ -103,3 +103,6 @@ class Settings(BaseSettings):
     # "whole" sends the method text and the related files in one call.
     method_check_mode: Literal["pairs", "whole"] = "pairs"
     method_check_pairs: int = Field(default=12, gt=0)
+    # Ask the model, one code line at a time, which of several repository values a setting
+    # mismatch is about (only when an LLM is configured).
+    code_second_look: bool = True
