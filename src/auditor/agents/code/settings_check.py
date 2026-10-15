@@ -129,3 +129,8 @@ def _explanation(setting: ExtractedSetting, candidates: list[Candidate], snapsho
             " Per-device values multiply by the number of devices, which the code does not state."
         )
     return text
+
+
+def values_agree(paper: ExtractedSetting, repo: ExtractedSetting) -> bool:
+    """Whether a repository value matches the paper's under the settings check's rules."""
+    return _agrees(paper, repo)

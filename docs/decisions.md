@@ -84,6 +84,7 @@ Macro-F1 is computed over these classes (the ones present in a given evaluation 
 | Data | `dataset_size_mismatch` | Number of examples stated for a dataset or split differs from the data |
 | Data | `label_distribution_mismatch` | Number of classes or class balance stated differs from the data |
 | Data | `data_leakage` | Test or validation examples also appear in the training data |
+| Code | `method_mismatch` | The code implements a different loss, algorithm step, model component, data processing, training or evaluation procedure than the paper describes |
 | Template | `template_violation` | A venue formatting rule is broken |
 
 `none` marks clean control items and is used for the false-positive rate. Adding a class
@@ -100,6 +101,14 @@ class balance and leakage need the data files, so they are checked only in the o
 analysis mode (`AUDITOR_DATA_ANALYSIS_ENABLED`). Without it, these tasks are unverifiable,
 which counts as a miss (D6), so set C is run with data analysis on for every system, and B1
 gets the same data tool (D7). Results are reported per class.
+
+`method_mismatch` was added at the same time, so the code agent also covers the discrepancies
+real reports are about (SciCoQA, ACL 2026). The planner adds one `method` code task per paper
+with a repository, anchored on the first sentence of its method section. The code agent sends
+the method text and the most related repository files to the LLM and keeps a discrepancy only
+if it quotes the paper verbatim and points at existing code lines. Findings and gold labels
+use a `document` anchor with target `method`: a method discrepancy is about the paper as a
+whole, so matching is per paper (one to one), as in SciCoQA's own evaluation.
 
 ## D5. Shared schemas — Agreed
 

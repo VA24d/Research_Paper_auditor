@@ -586,6 +586,15 @@ def _explain(tier: Tier, candidates: Sequence[Candidate]) -> str:
     return text
 
 
+def paper_quote_text(paper_id: str, sentence: str) -> Evidence:
+    """A verbatim quote of a paper sentence as evidence."""
+    return Evidence(
+        kind=EvidenceKind.QUOTE,
+        source=SourceRef(kind=EvidenceSourceKind.SUBMISSION, id=paper_id),
+        text=sentence,
+    )
+
+
 def paper_quote(task: AuditTask, sentence: str) -> Evidence:
     return Evidence(
         kind=EvidenceKind.QUOTE,
@@ -655,3 +664,11 @@ def _why_unverifiable(paper: ExtractedSetting, snapshot: Snapshot) -> str:
     if manifest.incomplete:
         reason += f" (the snapshot is incomplete: {'; '.join(manifest.incomplete)})"
     return reason
+
+
+def data_values_agree(
+    paper: ExtractedSetting, sentence: str, repo: ExtractedSetting
+) -> bool | None:
+    """Whether a repository value about the evaluation data matches the paper's, or None
+    if it is about something else."""
+    return _agrees(paper, sentence, repo)

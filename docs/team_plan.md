@@ -193,8 +193,9 @@ one; record the commit hash actually checked out.
   editing `ParsedPaper` copies, or code side by patching a pinned copy; the unchanged
   originals are kept too), `GoldLabel`s including clean controls. Every label is validated
   against the paper and the code the experiment actually uses, and a sample is reviewed by
-  a second person before freezing (D18). Tooling done (`scripts/set_c.py` candidates,
-  inject-paper, inject-code, validate); the repositories and labels are still to be built.
+  a second person before freezing (D18). Built from SciCoQA: 40 pairs, 63 injected setting
+  errors, 36 clean controls and 94 method discrepancies (`datasets/set_c/README.md`).
+  Waiting for the 20% second review (`datasets/set_c/review.jsonl`) before freezing.
 - [ ] **P3.9** Template fixtures and evaluation; code module evaluation (precision, recall,
   F1, false positives on matching settings, tool-call accuracy of repository searches).
   Done: template fixtures (`auditor.agents.template.fixtures`, `scripts/template_eval.py`)

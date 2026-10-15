@@ -103,7 +103,7 @@ def test_audit_command_writes_a_complete_run(tmp_path: Path) -> None:
     assert manifest.config["mocked_parts"] == ["citation", "code", "template", "verifier"]
     assert manifest.config["repository"] == "https://github.com/example/auditor-demo"
     paper_dir = run / "example-paper-original"
-    assert len(lines(paper_dir / "tasks.jsonl")) == 12
+    assert len(lines(paper_dir / "tasks.jsonl")) == 13
     assert {r["outcome"] for r in lines(paper_dir / "results.jsonl")} == {"checked"}
     assert lines(paper_dir / "predictions.jsonl") == []
     assert (run / "checkpoints.sqlite").exists()

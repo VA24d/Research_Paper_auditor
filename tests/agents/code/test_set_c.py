@@ -5,15 +5,23 @@ import pytest
 from auditor.agents.code.set_c import (
     EvidenceType,
     InjectionRecord,
+    apply_code_changes,
+    apply_injections,
     candidates,
     clean_label,
     inject_code,
     inject_paper,
+    method_issue,
+    method_labels,
+    mutate,
+    pool_from_scicoqa,
+    propose,
     score_code_module,
     validate,
 )
 from auditor.planner.tables import paper_settings
 from auditor.schemas import (
+    DocumentAnchor,
     ErrorClass,
     Evidence,
     EvidenceKind,
@@ -228,3 +236,266 @@ def test_code_module_scores() -> None:
     assert scores.false_positive_rate == pytest.approx(1.0)
     assert scores.unlabelled == 1
     assert scores.macro_f1 == pytest.approx(0.5)
+
+
+# --- proposing instances ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("key", "raw", "expected"),
+    [
+        ("learning_rate", "3e-4", "3e-3"),
+        ("learning_rate", "0.001", "0.01"),
+        ("learning_rate", "1 x 10^-4", None),
+        ("weight_decay", "0.01", "0.1"),
+        ("batch_size", "256", "512"),
+        ("epochs", "3", "6"),
+        ("seed", "42", "43"),
+        ("dropout", "0.1", "0.3"),
+        ("dropout", "10%", "30%"),
+        ("data_split", "80/10/10", "70/15/15"),
+        ("data_split", "80/20", "70/30"),
+        ("data_split", "8:1:1", None),
+        ("test_fraction", "20%", "30%"),
+        ("train_examples", "25,000", "50,000"),
+        ("test_examples", "10k", "20k"),
+        ("num_classes", "10", "11"),
+        ("num_classes", "binary", None),
+        ("eval_metric", "macro-F1", "accuracy"),
+        ("eval_metric", "accuracy", "macro-F1"),
+        ("optimizer", "AdamW", "SGD"),
+        ("optimizer", "SGD", "Adam"),
+        ("dataset", "SQuAD", None),
+    ],
+)
+def test_mutations_keep_the_paper_style(key: str, raw: str, expected: str | None) -> None:
+    assert mutate(key, raw) == expected
+
+
+async def test_propose_injects_agreeing_settings_and_keeps_controls(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "train.py").write_text("lr = 3e-4\nbatch_size = 256\nseed = 42\n", encoding="utf-8")
+    text = "We train with a learning rate of 3e-4, a batch size of 256 and random seed 42."
+    data = example_paper().model_dump()
+    data["sentences"][4]["text"] = text
+    p = ParsedPaper.model_validate(data)
+    ref = RepositoryRef(url=repo.resolve().as_uri())
+    rows = await candidates(p, ref, offline_context(tmp_path, paper=p))
+    proposal = propose(p, rows, errors=2, controls=1, seed=7)
+    assert len(proposal.labels) == 2 + 2  # two errors, one control in both variants
+    errors = [label for label in proposal.labels if label.is_error]
+    assert {label.variant for label in errors} == {PaperVariant.INJECTED}
+    assert len({label.target for label in errors}) == 2
+    controls = [label for label in proposal.labels if not label.is_error]
+    assert {label.variant for label in controls} == {PaperVariant.ORIGINAL, PaperVariant.INJECTED}
+    assert all(label.evidence[0].kind is EvidenceKind.CODE for label in proposal.labels)
+    # Every injected value is found again by the planner, at the label's anchor.
+    injected_settings = paper_settings(proposal.injected)
+    for label in errors:
+        assert any(
+            s.key == label.target.key  # type: ignore[union-attr]
+            and isinstance(s.source, PaperSource)
+            and s.source.anchor == label.anchor
+            for s in injected_settings
+        )
+    assert {r.label_id for r in proposal.records} == {label.label_id for label in errors}
+    # The same seed gives the same proposal.
+    again = propose(p, rows, errors=2, controls=1, seed=7)
+    assert again.labels == proposal.labels
+
+
+async def test_controls_after_a_shorter_injection_move_with_the_text(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "train.py").write_text("lr = 0.001\nbatch_size = 256\n", encoding="utf-8")
+    text = "We use a learning rate of 0.001 and a batch size of 256."
+    data = example_paper().model_dump()
+    data["sentences"][4]["text"] = text
+    p = ParsedPaper.model_validate(data)
+    rows = await candidates(
+        p, RepositoryRef(url=repo.resolve().as_uri()), offline_context(tmp_path, paper=p)
+    )
+    lr_first = [r for r in rows if r.key == "learning_rate"] + [
+        r for r in rows if r.key != "learning_rate"
+    ]
+    proposal = propose(p, lr_first, errors=1, controls=1, seed=0)
+    labels = {(label.variant, label.error_class): label for label in proposal.labels}
+    if (PaperVariant.INJECTED, "none") not in labels:
+        pytest.skip("this seed injected the batch size")
+    control = labels[(PaperVariant.INJECTED, "none")]
+    assert isinstance(control.anchor, SentenceAnchor)
+    sentence = proposal.injected.sentence("s4").text
+    assert sentence[control.anchor.start : control.anchor.end] in {"256", "0.001"}
+    ids = [label.label_id for label in proposal.labels]
+    assert len(ids) == len(set(ids))
+
+
+def test_pool_keeps_arxiv_github_pairs_with_real_issues_first() -> None:
+    sha = "a" * 40
+    rows = [
+        {
+            "discrepancy_id": "s1",
+            "paper_url_versioned": "https://arxiv.org/pdf/2401.00001v2.pdf",
+            "code_url_versioned": f"https://github.com/o/r/tree/{sha}",
+            "origin_type": "synthetic",
+            "discrepancy_category": "Training",
+        },
+        {
+            "discrepancy_id": "r1",
+            "paper_url_versioned": "https://arxiv.org/pdf/2402.00002v1.pdf",
+            "code_url_versioned": f"https://github.com/o/q/tree/{sha}",
+            "origin_type": "GitHub Issue",
+            "discrepancy_category": "Loss",
+        },
+        {
+            "discrepancy_id": "x",
+            "paper_url_versioned": "https://openreview.net/pdf?id=abc",
+            "code_url_versioned": f"https://github.com/o/z/tree/{sha}",
+            "origin_type": "GitHub Issue",
+            "discrepancy_category": "Loss",
+        },
+    ]
+    pool = pool_from_scicoqa(rows)
+    assert [p.pair_id for p in pool] == ["2402.00002v1", "2401.00001v2"]
+    first = pool[0]
+    assert (first.repository, first.commit) == ("https://github.com/o/q", sha)
+    assert first.real_issue_ids == ("r1",)
+    assert first.pdf_url == "https://arxiv.org/pdf/2402.00002v1"
+
+
+def test_injections_replay_on_a_fresh_parse() -> None:
+    original = paper()
+    injected, _, record = inject_paper(
+        original,
+        lr_anchor(original),
+        "1e-3",
+        key="learning_rate",
+        rationale="r",
+        evidence_type=EvidenceType.CODE,
+        evidence=[_code_evidence()],
+    )
+    assert apply_injections(original, [record]) == injected
+    data = original.model_dump()
+    data["sentences"][4]["text"] = "Different text entirely, long enough to hold it."
+    data["citations"] = [c for c in data["citations"] if c["sentence_id"] != "s4"]
+    moved = ParsedPaper.model_validate(data)
+    with pytest.raises(ValueError, match="GROBID"):
+        apply_injections(moved, [record])
+
+
+# --- method discrepancies from SciCoQA -------------------------------------------------
+
+
+def scicoqa_row(**values: object) -> dict[str, object]:
+    row: dict[str, object] = {
+        "discrepancy_id": "d1",
+        "origin_type": "GitHub Issue",
+        "origin_url": "https://github.com/o/r/issues/3",
+        "discrepancy_description_gpt": "The code uses cross-entropy instead of focal loss.",
+        "discrepancy_description_gemini": None,
+        "relevant_paper_sections_gpt": ["We use the focal loss."],
+        "relevant_paper_sections_gemini": None,
+        "changed_code_snippets": None,
+        "discrepancy_category": "Loss",
+    }
+    row.update(values)
+    return row
+
+
+def test_real_issues_label_both_variants_and_synthetic_only_the_patched_one() -> None:
+    issues = [
+        method_issue("2401.00001v1", scicoqa_row()),
+        method_issue(
+            "2401.00001v1",
+            scicoqa_row(
+                discrepancy_id="s1",
+                origin_type="synthetic",
+                origin_url=None,
+                changed_code_snippets={
+                    "original_file": ["model.py"],
+                    "original_code": ["return a"],
+                    "changed_code": ["return b"],
+                },
+            ),
+        ),
+    ]
+    real, synthetic = issues
+    assert real.changes == ()
+    assert synthetic.changes[0].path == "model.py"
+    labels = method_labels("p", issues, patched={"s1"})
+    by_id = {label.label_id: label for label in labels}
+    assert set(by_id) == {"m-d1-original", "m-d1-injected", "m-s1-injected"}
+    for label in labels:
+        assert label.error_class == ErrorClass.METHOD_MISMATCH
+        assert label.anchor == DocumentAnchor()
+        assert label.target == SettingTarget(key="method")
+    assert by_id["m-d1-original"].variant is PaperVariant.ORIGINAL
+    assert "focal loss" in by_id["m-d1-original"].evidence[0].text
+
+
+def test_code_changes_patch_a_copy_or_report_failure(tmp_path: Path) -> None:
+    source = tmp_path / "snap"
+    source.mkdir()
+    (source / "model.py").write_text("def f(a, b):\n    return a\n", encoding="utf-8")
+    issue = method_issue(
+        "p",
+        scicoqa_row(
+            discrepancy_id="s1",
+            origin_type="synthetic",
+            changed_code_snippets={
+                "original_file": ["model.py"],
+                "original_code": ["    return a"],
+                "changed_code": ["    return b"],
+            },
+        ),
+    )
+    applied = apply_code_changes(source, tmp_path / "patched", [issue])
+    assert applied == {"s1"}
+    assert (tmp_path / "patched" / "model.py").read_text(encoding="utf-8").endswith("return b\n")
+    missing = method_issue(
+        "p",
+        scicoqa_row(
+            discrepancy_id="s2",
+            origin_type="synthetic",
+            changed_code_snippets={
+                "original_file": ["model.py"],
+                "original_code": ["not there"],
+                "changed_code": ["x"],
+            },
+        ),
+    )
+    assert apply_code_changes(source, tmp_path / "other", [missing]) == set()
+
+
+def test_pool_keeps_one_pair_per_paper() -> None:
+    rows = [
+        {
+            "discrepancy_id": i,
+            "paper_url_versioned": "https://arxiv.org/pdf/2401.00001v1.pdf",
+            "code_url_versioned": f"https://github.com/o/r/tree/{sha * 40}",
+            "origin_type": "GitHub Issue",
+        }
+        for i, sha in (("a", "1"), ("b", "2"))
+    ]
+    (pair,) = pool_from_scicoqa(rows)
+    assert pair.commit == "1" * 40
+    assert pair.scicoqa_ids == ("a",)
+
+
+def test_scores_before_the_verifier_count_findings_sent_to_review() -> None:
+    labels = [label("hit", ErrorClass.SETTING_MISMATCH, "learning_rate", PaperVariant.INJECTED)]
+    reviewed = prediction(ErrorClass.SETTING_MISMATCH, "learning_rate", PaperVariant.INJECTED)
+    reviewed = Prediction.model_validate(
+        {**reviewed.model_dump(), "system": "full", "state": "needs_human_review"}
+    )
+    assert (
+        score_code_module(labels, [reviewed]).per_class[ErrorClass.SETTING_MISMATCH].true_positives
+        == 0
+    )
+    assert (
+        score_code_module(labels, [reviewed], before_verifier=True)
+        .per_class[ErrorClass.SETTING_MISMATCH]
+        .true_positives
+        == 1
+    )
