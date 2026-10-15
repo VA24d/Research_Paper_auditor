@@ -41,11 +41,11 @@ from auditor.planner.tables import paper_settings
 from auditor.planner.tasks import code_tasks
 from auditor.schemas import (
     ErrorClass,
-    ExtractedSetting,
-    PaperSource,
     Evidence,
     EvidenceKind,
+    ExtractedSetting,
     GoldLabel,
+    PaperSource,
     PaperVariant,
     ParsedPaper,
     Prediction,
@@ -456,10 +456,10 @@ def mutate(key: str, raw: str) -> str | None:
         return str(int(text) + 1) if text.isdigit() else None
     if key == "dropout":
         percent = text.endswith("%")
-        number = text.rstrip("%").strip()
-        if not re.fullmatch(r"\d*\.?\d+", number):
+        digits = text.rstrip("%").strip()
+        if not re.fullmatch(r"\d*\.?\d+", digits):
             return None
-        value = float(number) + (20 if percent else 0.2)
+        value = float(digits) + (20 if percent else 0.2)
         if value >= (100 if percent else 1):
             return None
         shown = f"{value:g}"
@@ -474,8 +474,8 @@ def mutate(key: str, raw: str) -> str | None:
         rest = len(numbers) - 1
         if 10 % rest:
             return None
-        changed = [numbers[0] - 10, *(n + 10 // rest for n in numbers[1:])]
-        return "/".join(map(str, changed))
+        new_parts = [numbers[0] - 10, *(n + 10 // rest for n in numbers[1:])]
+        return "/".join(map(str, new_parts))
     if key in {"test_fraction", "validation_fraction"}:
         match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*%", text)
         if match is None or float(match.group(1)) + 10 >= 100:
@@ -547,7 +547,8 @@ def propose(
 
     def shifted(anchor: SentenceAnchor) -> SentenceAnchor:
         """`anchor` in the injected copy, after the edits made so far."""
-        assert anchor.start is not None and anchor.end is not None
+        assert anchor.start is not None
+        assert anchor.end is not None
         delta = sum(d for sid, end, d in edits if sid == anchor.sentence_id and end <= anchor.start)
         return SentenceAnchor(
             sentence_id=anchor.sentence_id, start=anchor.start + delta, end=anchor.end + delta
@@ -634,6 +635,7 @@ __all__ = [
     "CodeScores",
     "EvidenceType",
     "InjectionRecord",
+    "Proposal",
     "candidates",
     "clean_label",
     "error_class_for",
@@ -641,7 +643,6 @@ __all__ = [
     "inject_paper",
     "mutate",
     "propose",
-    "Proposal",
     "score_code_module",
     "validate",
 ]
