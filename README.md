@@ -125,6 +125,7 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 | Resume an interrupted audit | `uv run auditor audit paper.pdf --run-id <id> --resume` |
 | Baseline B0 or B1 | `uv run auditor baseline b0 paper.pdf` (needs an LLM in `.env`) |
 | Experiment over a dataset | `uv run auditor batch dataset.jsonl --experiment main [--systems full b0 b1] [--runs 3]` |
+| Data analysis mode | add `--analyse-data` to `audit`, `baseline` or `batch` (Parquet needs `uv sync --extra data`) |
 | Check the LLM provider | `uv run python scripts/probe_llm.py` |
 | Parser statistics | `uv run python scripts/parser_report.py data/papers` |
 | Citation-link accuracy | `uv run python scripts/citation_sample.py score data/papers datasets/parser_fixtures/citation_gold.jsonl` |

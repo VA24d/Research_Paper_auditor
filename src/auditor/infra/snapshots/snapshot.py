@@ -24,13 +24,15 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, JsonValue, Validation
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
 from auditor.infra.http import HttpClient, ResponseTooLargeError
-from auditor.infra.snapshots.hosts import FileUnavailableError, make_host
+from auditor.infra.snapshots.hosts import FileUnavailableError, Listing, make_host
 from auditor.infra.snapshots.policy import (
+    DATA_SUFFIXES,
     TOO_LARGE,
     TOTAL_LIMIT,
     DownloadLimits,
     RemoteFile,
     Skipped,
+    safe_relative_path,
     select_files,
 )
 from auditor.infra.snapshots.sources import SourceKind, SourceSpec, parse_source
@@ -42,6 +44,7 @@ FILES_DIR = "files"
 MANIFEST_NAME = "snapshot.json"
 # Keeps the manifest readable for hosts that list thousands of data files.
 MAX_SKIPPED_RECORDS = 1_000
+MAX_DATA_FILES = 5_000
 _DOWNLOAD_CONCURRENCY = 8
 
 
@@ -61,6 +64,15 @@ class SkippedFile(_Model):
     reason: str
 
 
+class DataFile(_Model):
+    """A data file the host lists, downloaded only in data analysis mode."""
+
+    path: str
+    size: int | None = None
+    sha256: str | None = None
+    url: str
+
+
 class SnapshotManifest(_Model):
     format_version: Literal[1] = 1
     source: SourceKind
@@ -76,6 +88,7 @@ class SnapshotManifest(_Model):
     # Why the snapshot may be missing core files; empty when nothing was cut.
     incomplete: tuple[str, ...]
     metadata: dict[str, JsonValue]
+    data_files: tuple[DataFile, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -162,6 +175,7 @@ async def fetch_snapshot(
                 skipped_count=len(all_skipped),
                 incomplete=_unique([*listing.incomplete, *selection.incomplete, *incomplete]),
                 metadata=listing.metadata,
+                data_files=_data_files(listing),
             )
             atomic_write(
                 staging / MANIFEST_NAME, manifest.model_dump_json(indent=2).encode("utf-8")
@@ -222,6 +236,19 @@ async def _load_file(file: RemoteFile, max_bytes: int) -> bytes | Skipped:
         return Skipped(file.path, file.size, TOO_LARGE)
     except FileUnavailableError as exc:
         return Skipped(file.path, file.size, str(exc))
+
+
+def _data_files(listing: Listing) -> tuple[DataFile, ...]:
+    found: dict[str, DataFile] = {}
+    candidates = [
+        *(f for f in listing.files if PurePosixPath(f.path).suffix.lower() in DATA_SUFFIXES),
+        *listing.data_files,
+    ]
+    for file in candidates:
+        path = safe_relative_path(file.path)
+        if path is not None and file.url is not None and path not in found:
+            found[path] = DataFile(path=path, size=file.size, sha256=file.sha256, url=file.url)
+    return tuple(found[path] for path in sorted(found)[:MAX_DATA_FILES])
 
 
 def _content_revision(files: Sequence[SnapshotFile]) -> str:

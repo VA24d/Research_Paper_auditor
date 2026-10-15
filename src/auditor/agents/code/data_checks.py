@@ -22,6 +22,12 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import PurePosixPath
 
+from auditor.agents.code.data.report import (
+    NO_SPLIT_FILES,
+    SnapshotData,
+    report_settings,
+    snapshot_data,
+)
 from auditor.agents.code.extract import (
     parse_card,
     scan_json,
@@ -70,8 +76,8 @@ ERROR_CLASSES = {
     "class_balance": ErrorClass.LABEL_DISTRIBUTION_MISMATCH,
     "test_overlap": ErrorClass.DATA_LEAKAGE,
 }
-# Data files that hold the rows a split is made of; they are never downloaded by default.
-DATA_SUFFIXES = frozenset(
+# Files that hold a dataset's rows; outside data analysis mode they are never downloaded.
+_DATA_LIKE_SUFFIXES = frozenset(
     {".csv", ".tsv", ".jsonl", ".parquet", ".arrow", ".feather", ".h5", ".hdf5", ".npz", ".npy"}
 )
 SIZE_SERVICE_PATH = "datasets-server.huggingface.co/size"
@@ -85,6 +91,7 @@ class Tier(StrEnum):
     CODE = "code"
     SPLIT_LIST = "split_list"
     HF_CARD = "hf_card"
+    DATA = "data_analysis"
     HF_SIZE_LATEST = "hf_size_latest"
 
 
@@ -95,11 +102,12 @@ class Candidate:
     snapshot: Snapshot
 
 
-_ORDER = (Tier.CODE, Tier.SPLIT_LIST, Tier.HF_CARD, Tier.HF_SIZE_LATEST)
+_ORDER = (Tier.CODE, Tier.SPLIT_LIST, Tier.HF_CARD, Tier.DATA, Tier.HF_SIZE_LATEST)
 _TIER_NAMES = {
     Tier.CODE: "the repository's code",
     Tier.SPLIT_LIST: "the repository's split-list files",
     Tier.HF_CARD: "the Hugging Face dataset card",
+    Tier.DATA: "the dataset's data files",
     Tier.HF_SIZE_LATEST: "the Hugging Face Hub's size service",
 }
 _cache: dict[str, list[Candidate]] = {}
@@ -111,7 +119,7 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     setting, repository = task.setting, task.repository
     if setting is None or repository is None or setting.key not in DATA_KEYS:
         raise ValueError(f"{task.task_id} is not a code task about the evaluation data")
-    if setting.key in DATA_FILE_KEYS:
+    if setting.key in DATA_FILE_KEYS and not ctx.settings.data_analysis_enabled:
         return TaskResult.for_task(
             task,
             TaskOutcome.UNVERIFIABLE,
@@ -128,8 +136,17 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
         )
     sentence = _sentence(task, ctx)
     candidates = await _static_candidates(snapshot)
-    if not _related(setting, sentence, candidates, (Tier.CODE, Tier.SPLIT_LIST, Tier.HF_CARD)):
-        candidates = [*candidates, *await _followed_candidates(snapshot, candidates, ctx)]
+    if setting.key in DATA_FILE_KEYS:
+        datas = await _data(snapshot, candidates, ctx)
+        return _check_data_files(task, setting, sentence, datas)
+    settled = (Tier.CODE, Tier.SPLIT_LIST, Tier.HF_CARD)
+    if not _related(setting, sentence, candidates, settled):
+        followed = await _followed_snapshots(candidates, ctx)
+        for followed_snapshot, config in followed:
+            candidates = [*candidates, *_dataset_candidates(followed_snapshot, config)]
+    if ctx.settings.data_analysis_enabled and not _related(setting, sentence, candidates, settled):
+        for data in await _data(snapshot, candidates, ctx):
+            candidates += [Candidate(Tier.DATA, s, data.snapshot) for s in report_settings(data)]
     return _decide(task, setting, sentence, snapshot, candidates)
 
 
@@ -230,10 +247,10 @@ def _size_settings(snapshot: Snapshot, config: str | None) -> list[ExtractedSett
     ]
 
 
-async def _followed_candidates(
-    snapshot: Snapshot, candidates: Sequence[Candidate], ctx: RunContext
-) -> list[Candidate]:
-    """Cards of the Hugging Face datasets the code loads by name."""
+async def _followed_snapshots(
+    candidates: Sequence[Candidate], ctx: RunContext
+) -> list[tuple[Snapshot, str | None]]:
+    """Snapshots of the Hugging Face datasets the code loads by name, with the config."""
     names: list[tuple[str, str | None]] = []
     for candidate in candidates:
         setting = candidate.setting
@@ -245,16 +262,142 @@ async def _followed_candidates(
             and (setting.value, setting.context) not in names
         ):
             names.append((setting.value, setting.context))
-    found: list[Candidate] = []
+    found = []
     for name, config in names[:MAX_FOLLOWED_DATASETS]:
         try:
             spec = parse_source(f"https://huggingface.co/datasets/{name}")
-            followed = await fetch_snapshot(spec, ctx.http, ctx.settings)
+            found.append((await fetch_snapshot(spec, ctx.http, ctx.settings), config))
         except (SourceError, SnapshotUnavailableError, HttpError) as exc:
             logger.info("could not follow dataset %s: %s", name, exc)
-            continue
-        found += _dataset_candidates(followed, config)
     return found
+
+
+async def _data(
+    snapshot: Snapshot, candidates: Sequence[Candidate], ctx: RunContext
+) -> list[SnapshotData]:
+    """The data report of the repository, or else of the datasets its code loads."""
+    own = await snapshot_data(snapshot, ctx)
+    if own.report is not None:
+        return [own]
+    followed = [
+        await snapshot_data(followed, ctx, config)
+        for followed, config in await _followed_snapshots(candidates, ctx)
+    ]
+    with_report = [data for data in followed if data.report is not None]
+    return with_report or [own, *followed]
+
+
+_SCOPE = (
+    ("test", re.compile(r"\btest(?:ing)?\b", re.IGNORECASE)),
+    ("validation", re.compile(r"\b(?:val(?:idation)?|dev(?:elopment)?)\b", re.IGNORECASE)),
+    ("train", re.compile(r"\btrain(?:ing)?\b", re.IGNORECASE)),
+)
+# Classes count as balanced when the rarest has at least this share of the commonest.
+BALANCE_RATIO = 0.8
+
+
+def _check_data_files(
+    task: AuditTask, paper: ExtractedSetting, sentence: str, datas: Sequence[SnapshotData]
+) -> TaskResult:
+    """`test_overlap` and `class_balance`, which only the data files can settle."""
+    data = next((d for d in datas if d.report is not None), None)
+    if data is None or data.report is None:
+        reasons = "; ".join(d.reason for d in datas if d.reason) or NO_SPLIT_FILES
+        return TaskResult.for_task(task, TaskOutcome.UNVERIFIABLE, reason=reasons)
+    report = data.report
+    ref = SourceRef(
+        kind=EvidenceSourceKind.REPOSITORY,
+        id=data.snapshot.source_id,
+        url=data.snapshot.manifest.url,
+    )
+    if paper.key == "test_overlap":
+        if not report.leakage:
+            return TaskResult.for_task(
+                task,
+                TaskOutcome.UNVERIFIABLE,
+                reason=(
+                    "leakage needs a train split and a test or validation split with input "
+                    f"columns in common; found splits {', '.join(sorted(report.splits))}"
+                ),
+            )
+        leaking = [o for o in report.leakage if o.overlapping_rows]
+        if not leaking:
+            return TaskResult.for_task(task, TaskOutcome.CHECKED)
+        parts = [
+            f"{'at least ' if o.lower_bound else ''}{o.overlapping_rows} of {o.rows_checked} "
+            f"{o.split} rows ({o.share:g}%)"
+            for o in leaking
+        ]
+        evidence = [
+            Evidence(
+                kind=EvidenceKind.LOOKUP,
+                source=ref,
+                text=(
+                    f"{o.split} rows {', '.join(map(str, o.examples))} (counted from 0) have "
+                    f"inputs ({', '.join(report.input_columns)}) that also occur in the "
+                    f"train files {', '.join(report.splits['train'].files)}"
+                ),
+                path=report.splits[o.split].files[0],
+            )
+            for o in leaking
+        ]
+        finding = CandidateFinding.for_task(
+            task,
+            0,
+            error_class=ErrorClass.DATA_LEAKAGE,
+            summary=f"{'; '.join(parts)} also appear in the training data",
+            explanation=(
+                "Rows were compared on their input columns after normalising Unicode and "
+                "whitespace; label and id columns were left out."
+            ),
+            evidence=[_paper_quote(task, sentence), *evidence],
+            uncertain=all(o.share < 1 for o in leaking),
+        )
+        return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
+
+    if report.label_column is None:
+        return TaskResult.for_task(
+            task, TaskOutcome.UNVERIFIABLE, reason=report.label_reason or "no label column"
+        )
+    scope = next((name for name, pattern in _SCOPE if pattern.search(sentence)), None)
+    splits = [scope] if scope in report.splits else sorted(report.splits)
+    counts: dict[str, int] = {}
+    for split in splits:
+        for label, count in (report.splits[split].label_counts or {}).items():
+            counts[label] = counts.get(label, 0) + count
+    if len(counts) < 2:
+        return TaskResult.for_task(
+            task,
+            TaskOutcome.UNVERIFIABLE,
+            reason=f"fewer than two classes in the {', '.join(splits)} data",
+        )
+    if min(counts.values()) >= BALANCE_RATIO * max(counts.values()):
+        return TaskResult.for_task(task, TaskOutcome.CHECKED)
+    shown = ", ".join(f"{label} {counts[label]}" for label in sorted(counts))
+    files = [f for split in splits for f in report.splits[split].files]
+    finding = CandidateFinding.for_task(
+        task,
+        0,
+        error_class=ErrorClass.LABEL_DISTRIBUTION_MISMATCH,
+        summary=(
+            f"The paper describes the {' and '.join(splits)} data as class-balanced; its "
+            f"labels are {shown}"
+        ),
+        explanation=(
+            f"Classes count as balanced when the rarest has at least {BALANCE_RATIO:.0%} of "
+            "the rows of the commonest."
+        ),
+        evidence=[
+            _paper_quote(task, sentence),
+            Evidence(
+                kind=EvidenceKind.LOOKUP,
+                source=ref,
+                text=f"{report.label_column} in {', '.join(files)}: {shown}",
+                path=files[0],
+            ),
+        ],
+    )
+    return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
 
 
 # --- comparing -------------------------------------------------------------------------
@@ -494,7 +637,7 @@ def _why_unverifiable(paper: ExtractedSetting, snapshot: Snapshot) -> str:
             "no split settings found in the repository's code, configs, split lists or dataset card"
         )
         has_data = any(
-            PurePosixPath(s.path).suffix.lower() in DATA_SUFFIXES
+            PurePosixPath(s.path).suffix.lower() in _DATA_LIKE_SUFFIXES
             or s.reason == "stored in large file storage"
             for s in manifest.skipped
         ) or bool(manifest.metadata.get("files"))

@@ -62,6 +62,9 @@ class Listing:
     skipped: list[Skipped] = field(default_factory=list)
     incomplete: list[str] = field(default_factory=list)
     metadata: dict[str, JsonValue] = field(default_factory=dict)
+    # Files only data analysis mode downloads, such as Hugging Face LFS files; data files
+    # among `files` are added to them by the snapshot.
+    data_files: list[RemoteFile] = field(default_factory=list)
     # Set by hosts whose revision is only known from the listing itself.
     revision: str | None = None
 
@@ -124,6 +127,19 @@ def _loader(
         return response.content
 
     return load
+
+
+def _remote(
+    http: HttpClient,
+    path: str,
+    size: int | None,
+    url: str,
+    headers: Mapping[str, str] | None = None,
+    sha256: str | None = None,
+) -> RemoteFile:
+    """A listed file that downloads from `url` (kept for data files, which are only
+    downloaded in data analysis mode)."""
+    return RemoteFile(path, size, _loader(http, url, headers), url=url, sha256=sha256)
 
 
 def _json_dict(response: HttpResponse) -> dict[str, Any]:
@@ -190,9 +206,7 @@ class GitHub:
             elif entry.get("type") == "blob" and entry.get("mode") == "120000":
                 listing.skipped.append(Skipped(path, size, SYMLINK))
             elif entry.get("type") == "blob":
-                listing.files.append(
-                    RemoteFile(path, size, _loader(self._http, f"{base}/{quote(path)}"))
-                )
+                listing.files.append(_remote(self._http, path, size, f"{base}/{quote(path)}"))
         return listing
 
 
@@ -239,7 +253,7 @@ class GitLab:
                 elif entry.get("type") == "blob":
                     url = f"{self._api}/repository/files/{quote(path, safe='')}/raw?ref={revision}"
                     # GitLab's tree gives no sizes; the download limit catches large files.
-                    listing.files.append(RemoteFile(path, None, _loader(self._http, url)))
+                    listing.files.append(_remote(self._http, path, None, url))
             page = response.headers.get("x-next-page", "")
             if not page:
                 return listing
@@ -289,11 +303,21 @@ class HuggingFace:
                 size = entry.get("size")
                 if "lfs" in entry:
                     listing.skipped.append(Skipped(path, size, LFS))
+                    lfs = entry["lfs"] if isinstance(entry["lfs"], dict) else {}
+                    oid = lfs.get("oid")
+                    listing.data_files.append(
+                        _remote(
+                            self._http,
+                            path,
+                            size,
+                            f"{self._files}/{revision}/{quote(path)}",
+                            self._headers,
+                            sha256=oid if isinstance(oid, str) and len(oid) == 64 else None,
+                        )
+                    )
                     continue
                 file_url = f"{self._files}/{revision}/{quote(path)}"
-                listing.files.append(
-                    RemoteFile(path, size, _loader(self._http, file_url, self._headers))
-                )
+                listing.files.append(_remote(self._http, path, size, file_url, self._headers))
             found = _NEXT_LINK.search(response.headers.get("link", ""))
             url = found.group(1) if found else None
         if url is not None:
@@ -363,7 +387,7 @@ class Kaggle:
                     f"{self._API}/download/{self._spec.identity}/{quote(name)}"
                     f"?datasetVersionNumber={revision}"
                 )
-                listing.files.append(RemoteFile(name, size, _loader(self._http, download)))
+                listing.files.append(_remote(self._http, name, size, download))
             token = str(data.get("nextPageToken") or "")
             if not token:
                 break
@@ -431,7 +455,7 @@ class AnonymousGitHub:
                 size = int(entry["size"])
                 identity.append((path, str(entry.get("sha", "")), size))
                 url = f"{self._api}/file/{quote(path)}"
-                listing.files.append(RemoteFile(path, size, _loader(self._http, url)))
+                listing.files.append(_remote(self._http, path, size, url))
         digest = hashlib.sha256(json.dumps(sorted(identity)).encode("utf-8")).hexdigest()
         listing.revision = f"listing-{digest[:16]}"
         return listing
@@ -470,7 +494,7 @@ class Zenodo:
             links = entry.get("links") or {}
             url = str(links.get("content") or links.get("self") or "")
             if entry not in archives:
-                listing.files.append(RemoteFile(key, size, _loader(self._http, url)))
+                listing.files.append(_remote(self._http, key, size, url))
                 continue
             if size is not None and size > self._limits.max_archive_bytes:
                 listing.skipped.append(Skipped(key, size, "archive larger than the limit"))
@@ -568,7 +592,9 @@ class LocalFolder:
                     listing.skipped.append(Skipped(path, None, UNSAFE_PATH))
                 else:
                     size = file.stat().st_size
-                    listing.files.append(RemoteFile(path, size, _file_loader(file)))
+                    listing.files.append(
+                        RemoteFile(path, size, _file_loader(file), url=file.resolve().as_uri())
+                    )
         return listing
 
 
