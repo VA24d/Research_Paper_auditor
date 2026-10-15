@@ -6,6 +6,7 @@ against a Pydantic model, retried with the validation error when the reply does 
 recorded against the current task, and optionally cached on disk.
 """
 
+import asyncio
 import hashlib
 import json
 import time
@@ -187,6 +188,7 @@ class StructuredLLM:
         cache_context: str = "",
         max_attempts: int = 3,
         context_tokens: int | None = None,
+        max_concurrency: int | None = None,
     ) -> None:
         self.model = model
         self.name = name
@@ -195,6 +197,7 @@ class StructuredLLM:
         self.cache = cache
         self.max_attempts = max_attempts
         self.context_tokens = context_tokens
+        self._gate = asyncio.Semaphore(max_concurrency) if max_concurrency else None
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
@@ -206,6 +209,7 @@ class StructuredLLM:
             cache=cache,
             cache_context=_cache_context(settings),
             context_tokens=settings.llm_context_tokens,
+            max_concurrency=settings.llm_max_concurrency,
         )
 
     async def generate[T: BaseModel](
@@ -242,7 +246,11 @@ class StructuredLLM:
             started_at = datetime.now(UTC)
             started = time.perf_counter()
             try:
-                output = await runnable.ainvoke(conversation)
+                if self._gate is None:
+                    output = await runnable.ainvoke(conversation)
+                else:
+                    async with self._gate:
+                        output = await runnable.ainvoke(conversation)
             except Exception as exc:
                 self._record(
                     TokenUsage(),

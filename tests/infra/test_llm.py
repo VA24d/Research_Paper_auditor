@@ -222,3 +222,26 @@ async def test_prompts_longer_than_the_context_fail_loudly() -> None:
     with pytest.raises(PromptTooLongError, match="100"):
         await llm.generate(Verdict, [HumanMessage("word " * 1000)])
     assert model.received == []
+
+
+async def test_concurrent_calls_are_capped() -> None:
+    import asyncio
+
+    active = 0
+    most = 0
+
+    class Slow(ScriptedChatModel):
+        async def _agenerate(self, *args: Any, **kwargs: Any) -> Any:
+            nonlocal active, most
+            active += 1
+            most = max(most, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            return self._generate(*args, **kwargs)
+
+    model = Slow(
+        replies=[tool_reply(Verdict, {"supported": True, "reason": "r"}) for _ in range(4)]
+    )
+    llm = StructuredLLM(model, name="test:scripted", max_concurrency=2)
+    await asyncio.gather(*(llm.generate(Verdict, MESSAGES) for _ in range(4)))
+    assert most == 2
