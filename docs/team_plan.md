@@ -164,7 +164,9 @@ use the same keys. A repository's `commit` may be a branch or tag name when the 
 one; record the commit hash actually checked out.
 
 - [ ] **P3.1** Repository fetching through the shared infrastructure: pinned commit, size
-  limits, no code execution.
+  limits, no code execution. (Vijay, branch `p3-1-repo-fetch`: `auditor.infra.snapshots`
+  fetches core files from GitHub, GitLab, Hugging Face, Kaggle datasets, Anonymous GitHub,
+  Zenodo and local folders into a scratch folder.)
 - [ ] **P3.2** Static extraction of settings from `.py` (including argparse and config
   defaults), `.yaml`, `.json` and `.toml` files, as `ExtractedSetting`s with file and line.
 - [ ] **P3.3** Normalisation and comparison: units, number formats (`3e-4` and `0.0003`),
