@@ -57,6 +57,7 @@ from auditor.schemas import (
     SourceKind,
     SourceRef,
     TaskOutcome,
+    VerificationState,
 )
 from auditor.schemas.evaluation import matches
 
@@ -198,7 +199,14 @@ def pool_from_scicoqa(rows: Sequence[Mapping[str, object]]) -> list[Pair]:
                 ),
             )
         )
-    return sorted(pairs, key=lambda p: (not p.real_issue_ids, p.pair_id))
+    # One pair per paper: when SciCoQA gives a paper at two commits or in two repositories,
+    # the first in order (real issues first, then by repository and commit) is kept.
+    kept: dict[str, Pair] = {}
+    for pair in sorted(
+        pairs, key=lambda p: (not p.real_issue_ids, p.pair_id, p.repository, p.commit)
+    ):
+        kept.setdefault(pair.pair_id, pair)
+    return list(kept.values())
 
 
 def apply_injections(paper: ParsedPaper, records: Sequence[InjectionRecord]) -> ParsedPaper:
@@ -469,11 +477,17 @@ class CodeScores:
 
     @property
     def macro_f1(self) -> float:
-        scores = list(self.per_class.values())
+        """Over the classes the labels contain (decision D4)."""
+        scores = [s for s in self.per_class.values() if s.true_positives + s.false_negatives]
         return sum(s.f1 for s in scores) / len(scores) if scores else 0.0
 
 
-def score_code_module(labels: Sequence[GoldLabel], predictions: Sequence[Prediction]) -> CodeScores:
+def score_code_module(
+    labels: Sequence[GoldLabel],
+    predictions: Sequence[Prediction],
+    *,
+    before_verifier: bool = False,
+) -> CodeScores:
     """Scores of the code and data classes (decision D3 matching, one to one; only
     positive predictions count). A positive prediction matching a clean control is a false
     positive; one matching no label is unlabelled, not a false positive."""
@@ -486,12 +500,19 @@ def score_code_module(labels: Sequence[GoldLabel], predictions: Sequence[Predict
             scores.per_class.setdefault(ErrorClass(label.error_class), ClassScore())
     unmatched = list(in_scope)
     clean_hit = 0
-    for prediction in (p for p in predictions if p.is_positive and p.error_class in CODE_CLASSES):
+
+    def positive(prediction: Prediction) -> bool:
+        # Before the verifier, every finding the specialists raised counts, except dropped.
+        if before_verifier:
+            return prediction.state is not VerificationState.DROPPED
+        return prediction.is_positive
+
+    for prediction in (p for p in predictions if positive(p) and p.error_class in CODE_CLASSES):
         matched = next((lbl for lbl in unmatched if matches(prediction, lbl)), None)
-        score = scores.per_class.setdefault(prediction.error_class, ClassScore())
         if matched is None:
             scores.unlabelled += 1
             continue
+        score = scores.per_class.setdefault(prediction.error_class, ClassScore())
         unmatched.remove(matched)
         label = matched
         if not label.is_error:

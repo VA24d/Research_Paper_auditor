@@ -187,7 +187,7 @@ def _score(args: argparse.Namespace) -> int:
         for path in sorted(args.run.rglob("predictions.jsonl"))
         for prediction in _read_jsonl(path, Prediction)
     ]
-    scores = score_code_module(labels, predictions)
+    scores = score_code_module(labels, predictions, before_verifier=args.before_verifier)
     for error_class, score in sorted(scores.per_class.items()):
         print(
             f"{error_class.value:30} P {score.precision:.3f}  R {score.recall:.3f}  "
@@ -330,6 +330,14 @@ async def _select(args: argparse.Namespace) -> int:
     out: Path = args.out
     pool = _read_jsonl(args.pool, Pair)
     issues = _issues_by_pair(args.scicoqa, pool) if args.scicoqa else {}
+
+    # Pairs whose code confirms enough settings come first, since settings are what the
+    # set mainly tests; the rest (method issues only) fill up to --pairs.
+    def confirmed(pair: Pair) -> bool:
+        path = data / "rows" / f"{pair.pair_id}.json"
+        return path.is_file() and _usable(_load_rows(path)) >= MIN_USABLE
+
+    pool = sorted(pool, key=lambda pair: not confirmed(pair))
     chosen: list[Pair] = []
     labels: list[str] = []
     records: list[str] = []
@@ -438,6 +446,80 @@ async def _build(args: argparse.Namespace) -> int:
     return 0
 
 
+REVIEW = "review.jsonl"
+
+
+def _review_sample(args: argparse.Namespace) -> int:
+    """A random sample of labels (fixed seed) for a second person to check (D18)."""
+    import random
+
+    labels = _read_jsonl(args.folder / LABELS, GoldLabel)
+    rng = random.Random(args.seed)
+    count = max(1, round(len(labels) * args.share))
+    sample = sorted(rng.sample(labels, min(count, len(labels))), key=lambda lbl: lbl.label_id)
+    rows = []
+    for label in sample:
+        papers = args.data / ("injected" if label.variant is PaperVariant.INJECTED else "papers")
+        paper = next(
+            (
+                ParsedPaper.model_validate_json(path.read_bytes())
+                for path in sorted(papers.glob("*.json"))
+                if path.stem == label.paper_id
+            ),
+            None,
+        )
+        sentence = None
+        if paper is not None and isinstance(label.anchor, SentenceAnchor):
+            sentence = paper.sentence(label.anchor.sentence_id).text
+        rows.append(
+            json.dumps(
+                {
+                    "label_id": label.label_id,
+                    "paper_id": label.paper_id,
+                    "variant": label.variant.value,
+                    "error_class": str(label.error_class),
+                    "target": label.target.model_dump(mode="json"),
+                    "sentence": sentence,
+                    "rationale": label.rationale,
+                    "evidence": [e.model_dump(mode="json") for e in label.evidence],
+                    "reviewer": None,
+                    "agree": None,
+                    "note": "",
+                }
+            )
+        )
+    _write_jsonl(args.folder / REVIEW, rows)
+    print(f"{len(rows)} of {len(labels)} labels in {args.folder / REVIEW}; fill reviewer and agree")
+    return 0
+
+
+def _apply_review(args: argparse.Namespace) -> int:
+    """Record the second reviews in the labels; report disagreements and the agreement rate."""
+    reviews = [
+        json.loads(line)
+        for line in (args.folder / REVIEW).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    done = {r["label_id"]: r for r in reviews if r.get("reviewer") and r.get("agree") is not None}
+    labels = _read_jsonl(args.folder / LABELS, GoldLabel)
+    updated = []
+    for label in labels:
+        review = done.get(label.label_id)
+        if review is not None and review["reviewer"] not in label.reviewed_by:
+            label = label.model_copy(
+                update={"reviewed_by": (*label.reviewed_by, review["reviewer"])}
+            )
+        updated.append(label.model_dump_json())
+    _write_jsonl(args.folder / LABELS, updated)
+    agreed = sum(1 for r in done.values() if r["agree"])
+    for review in done.values():
+        if not review["agree"]:
+            print(f"disagreement on {review['label_id']}: {review.get('note', '')}")
+    rate = agreed / len(done) if done else 0.0
+    print(f"{len(done)} reviews recorded, agreement {rate:.0%}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0] if __doc__ else None)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -475,6 +557,11 @@ def main() -> int:
     score = commands.add_parser("score")
     score.add_argument("labels", type=Path)
     score.add_argument("run", type=Path, help="A run folder holding predictions.jsonl files")
+    score.add_argument(
+        "--before-verifier",
+        action="store_true",
+        help="Count every finding not dropped (module-level scores without the verifier)",
+    )
 
     pool = commands.add_parser("pool")
     pool.add_argument("parquet", type=Path, nargs="+")
@@ -499,8 +586,21 @@ def main() -> int:
     build.add_argument("folder", type=Path)
     build.add_argument("--data", type=Path, required=True)
 
+    sample = commands.add_parser("review-sample")
+    sample.add_argument("folder", type=Path)
+    sample.add_argument("--data", type=Path, required=True)
+    sample.add_argument("--share", type=float, default=0.2)
+    sample.add_argument("--seed", type=int, default=20261015)
+
+    reviewed = commands.add_parser("apply-review")
+    reviewed.add_argument("folder", type=Path)
+
     args = parser.parse_args()
     match args.command:
+        case "review-sample":
+            return _review_sample(args)
+        case "apply-review":
+            return _apply_review(args)
         case "pool":
             return _pool(args)
         case "collect":

@@ -466,3 +466,36 @@ def test_code_changes_patch_a_copy_or_report_failure(tmp_path: Path) -> None:
         ),
     )
     assert apply_code_changes(source, tmp_path / "other", [missing]) == set()
+
+
+def test_pool_keeps_one_pair_per_paper() -> None:
+    rows = [
+        {
+            "discrepancy_id": i,
+            "paper_url_versioned": "https://arxiv.org/pdf/2401.00001v1.pdf",
+            "code_url_versioned": f"https://github.com/o/r/tree/{sha * 40}",
+            "origin_type": "GitHub Issue",
+        }
+        for i, sha in (("a", "1"), ("b", "2"))
+    ]
+    (pair,) = pool_from_scicoqa(rows)
+    assert pair.commit == "1" * 40
+    assert pair.scicoqa_ids == ("a",)
+
+
+def test_scores_before_the_verifier_count_findings_sent_to_review() -> None:
+    labels = [label("hit", ErrorClass.SETTING_MISMATCH, "learning_rate", PaperVariant.INJECTED)]
+    reviewed = prediction(ErrorClass.SETTING_MISMATCH, "learning_rate", PaperVariant.INJECTED)
+    reviewed = Prediction.model_validate(
+        {**reviewed.model_dump(), "system": "full", "state": "needs_human_review"}
+    )
+    assert (
+        score_code_module(labels, [reviewed]).per_class[ErrorClass.SETTING_MISMATCH].true_positives
+        == 0
+    )
+    assert (
+        score_code_module(labels, [reviewed], before_verifier=True)
+        .per_class[ErrorClass.SETTING_MISMATCH]
+        .true_positives
+        == 1
+    )
