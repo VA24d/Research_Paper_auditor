@@ -64,6 +64,15 @@ from auditor.infra.snapshots import SourceError, SourceKind, SourceSpec, parse_s
             ),
         ),
         (
+            "https://huggingface.co/datasets/imdb",
+            SourceSpec(
+                SourceKind.HUGGINGFACE,
+                "https://huggingface.co/datasets/imdb",
+                "imdb",
+                repo_type="dataset",
+            ),
+        ),
+        (
             "https://www.kaggle.com/datasets/uciml/iris/versions/2",
             SourceSpec(
                 SourceKind.KAGGLE,

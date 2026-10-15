@@ -245,3 +245,11 @@ async def test_b1_stops_at_its_model_call_limit() -> None:
             max_model_calls=2,
         )
     assert len(model.received) == 2
+
+
+def test_baselines_are_told_every_error_class() -> None:
+    from auditor.baselines.common import ERROR_CLASS_GUIDE
+    from auditor.schemas import ErrorClass
+
+    for error_class in ErrorClass:
+        assert f"- {error_class.value}:" in ERROR_CLASS_GUIDE

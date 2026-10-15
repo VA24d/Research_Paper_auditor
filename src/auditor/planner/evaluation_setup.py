@@ -3,7 +3,9 @@
 These are what `data_split_mismatch` and `metric_mismatch` errors are about (decision D4).
 Like `auditor.planner.settings`, the patterns are narrow and every match keeps its exact
 span. Keys: `dataset`, `data_split` ("80/10/10"), `test_fraction` and
-`validation_fraction` (percent), and `eval_metric` (a normalised name such as `macro_f1`).
+`validation_fraction` (percent), and `eval_metric` (a normalised name such as `macro_f1`);
+for the data itself `train_examples`, `validation_examples`, `test_examples`,
+`total_examples`, `num_classes` and `class_balance`, plus the derived `test_overlap`.
 """
 
 import re
@@ -121,6 +123,62 @@ _NOT_DATASETS = re.compile(
 _MODEL_SIZE = re.compile(r"\s*\d+(?:\.\d+)?\s*[BMK]\b")
 
 
+# Sizes of the data, its classes and their balance (decision D4: dataset_size_mismatch and
+# label_distribution_mismatch). "25,000", "10k" and "1.2M" are read by parse_number.
+_COUNT = r"\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?\s?[kKM]\b|\d+"
+_EXAMPLE_NOUN = (
+    r"(?:examples|samples|instances|images|sentences|documents|pairs|questions|utterances"
+    r"|records|items|data\s+points)\b"
+)
+_SPLIT_NAME = r"train(?:ing)?|val(?:idation)?|dev(?:elopment)?|test(?:ing)?"
+_HAS = r"(?:has|have|had|contains?|contained|consists\s+of|comprises|includes|of|with)"
+_SPLIT_SIZES = (
+    # "25,000 training examples"
+    re.compile(rf"(?P<value>{_COUNT})\s+(?P<name>{_SPLIT_NAME})\s+{_EXAMPLE_NOUN}", re.IGNORECASE),
+    # "the test set contains 10k images"
+    re.compile(
+        rf"\b(?P<name>{_SPLIT_NAME})\s+(?:set|split|data)\s+{_HAS}\s+(?P<value>{_COUNT})\s+"
+        rf"{_EXAMPLE_NOUN}",
+        re.IGNORECASE,
+    ),
+)
+_TOTAL_SIZE = re.compile(
+    rf"\b(?:dataset|corpus|benchmark)\s+{_HAS}\s+(?P<value>{_COUNT})\s+{_EXAMPLE_NOUN}",
+    re.IGNORECASE,
+)
+_SPLIT_KEYS = {"tr": "train_examples", "va": "validation_examples", "de": "validation_examples"}
+_NUMBER_WORDS = {
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+_CLASSES = (
+    re.compile(
+        r"\b(?P<value>\d+|"
+        + "|".join(_NUMBER_WORDS)
+        + r")[\s-]+(?:classes|categories|class\s+labels)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(?P<value>\d+)-way\s+classification\b", re.IGNORECASE),
+    re.compile(r"\b(?P<value>binary)\s+classification\b", re.IGNORECASE),
+)
+# "class-balanced" and "balanced", but not "imbalanced" or "balanced accuracy", and only
+# about the data.
+_BALANCED = re.compile(r"\b(?P<value>(?:class[- ])?balanced)\b(?!\s+accuracy)", re.IGNORECASE)
+_ABOUT_DATA = re.compile(
+    r"\b(?:sets?|splits?|data(?:set)?|classes|labels|samples)\b", re.IGNORECASE
+)
+# Keys whose sentence describes the paper's data, in order of preference for anchoring the
+# held-out check.
+_DATA_SETUP_KEYS = ("data_split", "test_fraction", "test_examples", "dataset")
+
+
 def _setting(
     sentence: Sentence, key: str, name: str, raw: str, start: int, value: SettingValue
 ) -> ExtractedSetting:
@@ -157,13 +215,31 @@ def evaluation_settings(sentence: Sentence) -> list[ExtractedSetting]:
         taken.append((start, start + len(raw)))
         found.append(_setting(sentence, key, name, raw, start, value))
 
+    # Sizes and classes describe the data itself, so they count unless the sentence is
+    # about other work.
+    if not _OTHER_WORK.search(text):
+        for pattern in _SPLIT_SIZES:
+            for match in pattern.finditer(text):
+                key = _SPLIT_KEYS.get(match.group("name")[:2].lower(), "test_examples")
+                add(key, match.group("name"), match, _count(match.group("value")))
+        for match in _TOTAL_SIZE.finditer(text):
+            add("total_examples", "dataset size", match, _count(match.group("value")))
+        for pattern in _CLASSES:
+            for match in pattern.finditer(text):
+                word = match.group("value").lower()
+                count = 2 if word == "binary" else _NUMBER_WORDS.get(word) or int(word)
+                add("num_classes", "classes", match, count)
+        if _ABOUT_DATA.search(text):
+            for match in _BALANCED.finditer(text):
+                add("class_balance", "class balance", match, "balanced")
+
     # Splits and metrics count when the paper states its own setup, not when it reports
     # someone else's ("Prior work reports 92.1% exact match [2]").
     own = bool(_FIRST_PERSON.search(text)) or bool(
         _PASSIVE.search(text) and not _OTHER_WORK.search(text)
     )
     if not own:
-        return []
+        return sorted(found, key=_start)
     for pattern in _SPLITS:
         for match in pattern.finditer(text):
             add("data_split", "split", match, _split_value(match.group("value")))
@@ -195,3 +271,27 @@ def evaluation_settings(sentence: Sentence) -> list[ExtractedSetting]:
 def _start(setting: ExtractedSetting) -> int:
     source = setting.source
     return (source.anchor.start or 0) if isinstance(source, PaperSource) else 0
+
+
+def _count(raw: str) -> SettingValue | None:
+    # Imported here: auditor.planner.settings imports this module.
+    from auditor.planner.settings import parse_number
+
+    return parse_number(raw)
+
+
+def held_out_setting(settings: list[ExtractedSetting]) -> ExtractedSetting | None:
+    """The implied claim that the test data is held out (`test_overlap` 0, decision D4
+    `data_leakage`), anchored where the paper first describes its data split or dataset."""
+    stated = [s for s in settings if isinstance(s.source, PaperSource)]
+    for key in _DATA_SETUP_KEYS:
+        for setting in stated:
+            if setting.key == key:
+                return ExtractedSetting(
+                    key="test_overlap",
+                    raw_name="held-out test data",
+                    raw_value=setting.raw_value,
+                    value=0,
+                    source=setting.source,
+                )
+    return None

@@ -13,6 +13,7 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 
+from auditor.planner.evaluation_setup import held_out_setting
 from auditor.planner.settings import extract_settings, parse_number
 from auditor.schemas import (
     CELL_SEPARATOR,
@@ -175,5 +176,8 @@ def table_settings(paper: ParsedPaper) -> list[ExtractedSetting]:
 
 
 def paper_settings(paper: ParsedPaper) -> list[ExtractedSetting]:
-    """Settings stated in sentences and in tables."""
-    return [*extract_settings(paper), *table_settings(paper)]
+    """Settings stated in sentences and in tables, plus the held-out check implied by a
+    stated data setup."""
+    settings = [*extract_settings(paper), *table_settings(paper)]
+    held_out = held_out_setting(settings)
+    return [*settings, held_out] if held_out is not None else settings

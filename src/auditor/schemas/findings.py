@@ -22,6 +22,9 @@ class ErrorClass(StrEnum):
     SETTING_MISMATCH = "setting_mismatch"
     DATA_SPLIT_MISMATCH = "data_split_mismatch"
     METRIC_MISMATCH = "metric_mismatch"
+    DATASET_SIZE_MISMATCH = "dataset_size_mismatch"
+    LABEL_DISTRIBUTION_MISMATCH = "label_distribution_mismatch"
+    DATA_LEAKAGE = "data_leakage"
     TEMPLATE_VIOLATION = "template_violation"
 
 

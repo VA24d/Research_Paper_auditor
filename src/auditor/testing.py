@@ -99,7 +99,7 @@ def offline_context(
     """A RunContext for unit tests: example paper, no network, optional scripted LLM."""
     cache_dir = tmp_path / "cache"
     return RunContext(
-        settings=Settings(cache_dir=cache_dir),
+        settings=Settings(cache_dir=cache_dir, scratch_dir=tmp_path / "scratch"),
         paper=paper or example_paper(),
         http=http or offline_http(cache_dir),
         llm=llm,

@@ -41,6 +41,12 @@ ERROR_CLASS_GUIDE = """Error classes:
 - setting_mismatch: a hyperparameter or configuration in the paper differs from the code.
 - data_split_mismatch: a dataset or split described in the paper differs from the code.
 - metric_mismatch: a metric or evaluation procedure differs from the code.
+- dataset_size_mismatch: the number of examples stated for a dataset or split differs from
+  the data.
+- label_distribution_mismatch: the number of classes or the class balance stated differs
+  from the data.
+- data_leakage: test (or validation) examples also appear in the training data, although
+  the paper presents the test set as held out.
 - template_violation: a venue formatting rule is broken."""
 
 ANSWER_GUIDE = """For every error, give:
