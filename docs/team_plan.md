@@ -176,22 +176,30 @@ one; record the commit hash actually checked out.
   file/line `Evidence`; settings that cannot be located are `unverifiable` with a reason.
   `auditor.agents.code.check` (settings in `settings_check`, evaluation data in
   `data_checks`, data analysis in `auditor.agents.code.data`).
-- [ ] **P3.5** Venue profiles in `configs/venues/` (start with the venues of the papers in
-  sets B and C).
-- [ ] **P3.6** Template checker `check()`: deterministic rules over `ParsedPaper.layout`
+- [x] **P3.5** Venue profiles in `configs/venues/` (start with the venues of the papers in
+  sets B and C). NeurIPS 2025, ICLR 2026, ICML 2025, ACL 2025 and EMNLP 2025, long and
+  short, for the submission version. Every limit cites its official source; what was left
+  out and why is in `configs/venues/README.md`.
+- [x] **P3.6** Template checker `check()`: deterministic rules over `ParsedPaper.layout`
   and sections. No LLM calls. Findings use page or document anchors where there is no
-  sentence (D3). Rules that need visual inspection return `unverifiable`.
-- [ ] **P3.7** Code and template tools for B1 (D7). Code tools done:
-  `auditor.agents.code.tools`.
-- [ ] **P3.8** Set C (tooling done: `scripts/set_c.py` candidates, inject-paper,
-  inject-code, validate; the 40 repositories and labels are still to be built): 40 repositories, 160 instances, injected mismatches (paper side by
+  sentence (D3). Rules that need visual inspection return `unverifiable`. Checks
+  `max_pages`, `min_body_font_size`, `paper_size`, `margins`, `required_sections`,
+  `forbidden_sections`, `references_present` and `anonymity` in
+  `auditor.agents.template.rules`.
+- [x] **P3.7** Code and template tools for B1 (D7): `auditor.agents.code.tools` (list,
+  search, read, find setting, data report) and `auditor.agents.template.tools`
+  (`check_template_rule`, `layout_summary`).
+- [ ] **P3.8** Set C: 40 repositories, 160 instances, injected mismatches (paper side by
   editing `ParsedPaper` copies, or code side by patching a pinned copy; the unchanged
   originals are kept too), `GoldLabel`s including clean controls. Every label is validated
   against the paper and the code the experiment actually uses, and a sample is reviewed by
-  a second person before freezing (D18).
+  a second person before freezing (D18). Tooling done (`scripts/set_c.py` candidates,
+  inject-paper, inject-code, validate); the repositories and labels are still to be built.
 - [ ] **P3.9** Template fixtures and evaluation; code module evaluation (precision, recall,
   F1, false positives on matching settings, tool-call accuracy of repository searches).
-  Code module scoring: `scripts/set_c.py score` (`auditor.agents.code.set_c.score_code_module`).
+  Done: template fixtures (`auditor.agents.template.fixtures`, `scripts/template_eval.py`)
+  and code module scoring (`scripts/set_c.py score`). Open: tool-call accuracy of
+  repository searches, which needs set C.
 
 ### Part 4 — Sudheera: verifier, report, evaluation
 

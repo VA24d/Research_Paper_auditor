@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "icml-2025",
+  "name": "ICML 2025 (submission)",
+  "rules": [
+    {
+      "id": "page-limit",
+      "description": "The main paper is at most 8 pages; references, the impact statement, appendices and acknowledgements do not count. Source: https://icml.cc/Conferences/2025/CallForPapers and https://media.icml.cc/Conferences/ICML2025/Styles/icml2025.zip (example_paper.tex)",
+      "check": "max_pages",
+      "params": {
+        "max_pages": 8,
+        "exclude_sections": [
+          "references",
+          "bibliography",
+          "impact statement",
+          "appendix",
+          "appendices",
+          "acknowledg"
+        ]
+      }
+    },
+    {
+      "id": "body-font-size",
+      "description": "The paper body is set in 10 point Times with 11 point spacing. Source: https://media.icml.cc/Conferences/ICML2025/Styles/icml2025.zip (example_paper.tex)",
+      "check": "min_body_font_size",
+      "params": {
+        "min_size": 10
+      }
+    },
+    {
+      "id": "paper-size",
+      "description": "Pages are US Letter (the style file sets 8.5 x 11 in; the template requires US Letter for final versions). Source: https://media.icml.cc/Conferences/ICML2025/Styles/icml2025.zip (icml2025.sty, example_paper.tex)",
+      "check": "paper_size",
+      "params": {
+        "width": 612,
+        "height": 792
+      }
+    },
+    {
+      "id": "impact-statement",
+      "description": "The paper includes an Impact Statement section at the end, before the references. Source: https://icml.cc/Conferences/2025/CallForPapers",
+      "check": "required_sections",
+      "params": {
+        "sections": [
+          "impact statement"
+        ]
+      }
+    },
+    {
+      "id": "no-acknowledgements",
+      "description": "Acknowledgements are not included in the version submitted for blind review. Source: https://media.icml.cc/Conferences/ICML2025/Styles/icml2025.zip (example_paper.tex)",
+      "check": "forbidden_sections",
+      "params": {
+        "sections": [
+          "acknowledg"
+        ]
+      }
+    },
+    {
+      "id": "anonymous",
+      "description": "Review is double-blind: the submission must not identify its authors. Source: https://icml.cc/Conferences/2025/CallForPapers",
+      "check": "anonymity",
+      "params": {},
+      "needs_visual_inspection": true
+    }
+  ]
+}

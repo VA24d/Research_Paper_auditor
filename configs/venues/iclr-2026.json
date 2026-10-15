@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "iclr-2026",
+  "name": "ICLR 2026 (submission)",
+  "rules": [
+    {
+      "id": "page-limit",
+      "description": "At submission the main text is 9 pages or fewer (10 for the camera-ready). References, appendices after the bibliography, the ethics and reproducibility statements, the LLM-usage section and acknowledgements do not count. Source: https://iclr.cc/Conferences/2026/AuthorGuide",
+      "check": "max_pages",
+      "params": {
+        "max_pages": 9,
+        "exclude_sections": [
+          "references",
+          "bibliography",
+          "appendix",
+          "appendices",
+          "ethics statement",
+          "reproducibility statement",
+          "llm usage",
+          "usage of (large )?language models",
+          "use of (large )?language models",
+          "acknowledg"
+        ]
+      }
+    },
+    {
+      "id": "body-font-size",
+      "description": "Body text uses 10 point type with 11 point spacing. Source: https://github.com/ICLR/Master-Template/raw/master/iclr2026.zip (iclr2026_conference.tex)",
+      "check": "min_body_font_size",
+      "params": {
+        "min_size": 10
+      }
+    },
+    {
+      "id": "paper-size",
+      "description": "Pages are US Letter, not A4. Source: https://github.com/ICLR/Master-Template/raw/master/iclr2026.zip (iclr2026_conference.tex)",
+      "check": "paper_size",
+      "params": {
+        "width": 612,
+        "height": 792
+      }
+    },
+    {
+      "id": "anonymous",
+      "description": "Review is double-blind: the submission must not identify its authors. Source: https://iclr.cc/Conferences/2026/AuthorGuide",
+      "check": "anonymity",
+      "params": {},
+      "needs_visual_inspection": true
+    }
+  ]
+}
