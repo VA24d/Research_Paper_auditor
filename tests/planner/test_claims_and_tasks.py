@@ -232,3 +232,28 @@ def test_only_sentences_announcing_code_give_the_repository(sentence: str, found
     paper = type(example_paper()).model_validate(data)
     expected = RepositoryRef(url="https://github.com/a/b") if found else None
     assert find_repository(paper) == expected
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        (
+            "https://anonymous.4open.science/r/paper-code-1A2B/README.md",
+            RepositoryRef(url="https://anonymous.4open.science/r/paper-code-1A2B"),
+        ),
+        (
+            "https://gitlab.com/group/sub/proj",
+            RepositoryRef(url="https://gitlab.com/group/sub/proj"),
+        ),
+        # Model and data hosts are not "our code", even in a sentence announcing code.
+        ("https://huggingface.co/org/model", None),
+        ("https://zenodo.org/records/42", None),
+    ],
+)
+def test_code_hosts_in_announcing_sentences_give_the_repository(
+    url: str, expected: RepositoryRef | None
+) -> None:
+    data = example_paper().model_dump()
+    data["sentences"][5]["text"] = f"Our code is available at {url}."
+    data["links"] = [{"url": url, "page": 2, "sentence_id": "s5", "source": "text"}]
+    assert find_repository(type(example_paper()).model_validate(data)) == expected

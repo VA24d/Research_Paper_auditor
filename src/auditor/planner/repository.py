@@ -9,6 +9,7 @@ that merely appears somewhere in the paper.
 
 import re
 
+from auditor.infra.snapshots import SourceError, SourceKind, SourceSpec, parse_source
 from auditor.schemas import ParsedPaper, RepositoryRef
 
 _REPOSITORY = re.compile(
@@ -58,15 +59,29 @@ def announces_code(sentence: str) -> bool:
     return bool(_CODE_NOUN.search(sentence) and _ANNOUNCEMENT.search(sentence))
 
 
+# Hosts of a paper's own code. Model and data hosts (Hugging Face, Kaggle, Zenodo) are
+# given with --repo or in the dataset file, never taken from an announcement.
+CODE_HOSTS = frozenset({SourceKind.GITHUB, SourceKind.GITLAB, SourceKind.ANONYMOUS_GITHUB})
+
+
+def _code_source(url: str) -> SourceSpec | None:
+    if not url.strip().lower().startswith(("http://", "https://")):
+        return None
+    try:
+        spec = parse_source(url)
+    except SourceError:
+        return None
+    return spec if spec.kind in CODE_HOSTS else None
+
+
 def find_repository(paper: ParsedPaper) -> RepositoryRef | None:
     for link in paper.links:
-        url = repository_url(link.url)
-        if url is None or link.sentence_id is None:
+        spec = _code_source(link.url)
+        if spec is None or link.sentence_id is None:
             continue
         if announces_code(paper.sentence(link.sentence_id).text):
             # A link to /tree/<sha> pins the snapshot the paper describes. Branch names such as
             # "main" move, so only commit-like refs are kept.
-            ref = snapshot_ref(link.url)
-            commit = ref if ref and _COMMIT.fullmatch(ref) else None
-            return RepositoryRef(url=url, commit=commit)
+            commit = spec.ref if spec.ref and _COMMIT.fullmatch(spec.ref) else None
+            return RepositoryRef(url=spec.url, commit=commit)
     return None

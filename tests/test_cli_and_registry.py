@@ -137,7 +137,7 @@ def test_resume_with_different_inputs_is_refused_and_keeps_the_manifest(
     [
         (["audit", str(PAPER_JSON), "--resume"], "--resume needs the --run-id"),
         (["audit", "missing.json"], "No such file"),
-        (["audit", str(PAPER_JSON), "--repo", "https://example.org/x"], "Not a GitHub"),
+        (["audit", str(PAPER_JSON), "--repo", "https://example.org/x"], "not a supported"),
         (["audit", str(PAPER_JSON), "--venue", "missing.json"], "No such venue profile"),
         (["baseline", "b0", str(PAPER_JSON)], "Baselines need an LLM"),
     ],
