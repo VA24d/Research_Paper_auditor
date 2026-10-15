@@ -81,10 +81,25 @@ Macro-F1 is computed over these classes (the ones present in a given evaluation 
 | Code | `setting_mismatch` | Hyperparameter or configuration in the paper differs from the code |
 | Code | `data_split_mismatch` | Dataset or split described differs from the code |
 | Code | `metric_mismatch` | Metric or evaluation procedure described differs from the code |
+| Data | `dataset_size_mismatch` | Number of examples stated for a dataset or split differs from the data |
+| Data | `label_distribution_mismatch` | Number of classes or class balance stated differs from the data |
+| Data | `data_leakage` | Test or validation examples also appear in the training data |
 | Template | `template_violation` | A venue formatting rule is broken |
 
 `none` marks clean control items and is used for the false-positive rate. Adding a class
 means updating this table, the enum in `auditor.schemas`, and the dataset README.
+
+The three data classes were added in October 2026. Their paper-side keys are
+`train_examples`, `validation_examples`, `test_examples` and `total_examples`
+(`dataset_size_mismatch`), `num_classes` and `class_balance`
+(`label_distribution_mismatch`), and `test_overlap` (`data_leakage`). `test_overlap` is not
+stated in the paper: the planner adds it for every paper that describes its data split or
+dataset, anchored on that sentence, because presenting a test set means presenting it as
+held out. Example and class counts can be checked against a Hugging Face dataset card;
+class balance and leakage need the data files, so they are checked only in the opt-in data
+analysis mode (`AUDITOR_DATA_ANALYSIS_ENABLED`). Without it, these tasks are unverifiable,
+which counts as a miss (D6), so set C is run with data analysis on for every system, and B1
+gets the same data tool (D7). Results are reported per class.
 
 ## D5. Shared schemas — Agreed
 
