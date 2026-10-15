@@ -55,6 +55,25 @@ def found(text: str) -> list[tuple[str, str, SettingValue | None]]:
         ("We train on Wikipedia text.", []),
         ("Prior work reports 92.1% exact match on SQuAD [2, 3].", []),
         ("The accuracy is evaluated by mAP.", [("eval_metric", "mAP", "map")]),
+        # Dataset sizes, classes and balance (decision D4: dataset_size_mismatch and
+        # label_distribution_mismatch).
+        (
+            "We use 25,000 training examples and 2,000 test examples.",
+            [("train_examples", "25,000", 25000), ("test_examples", "2,000", 2000)],
+        ),
+        ("The test set contains 10k images.", [("test_examples", "10k", 10000)]),
+        ("The validation split has 872 sentences.", [("validation_examples", "872", 872)]),
+        ("Our dataset consists of 50,000 samples.", [("total_examples", "50,000", 50000)]),
+        ("We train a classifier over 10 classes.", [("num_classes", "10", 10)]),
+        ("This is a binary classification task.", [("num_classes", "binary", 2)]),
+        (
+            "We construct a class-balanced test set.",
+            [("class_balance", "class-balanced", "balanced")],
+        ),
+        ("The data is highly imbalanced.", []),
+        ("Prior work [3] used 100 classes.", []),
+        ("Our model has 12 layers and 110M parameters.", []),
+        ("We sample 5 examples per class.", []),
     ],
 )
 def test_evaluation_setup_in_sentences(
@@ -85,3 +104,25 @@ async def test_split_and_metric_become_code_tasks(tmp_path: Path) -> None:
     )
     keys = {t.setting.key for t in tasks if t.kind is TaskKind.CODE and t.setting}
     assert {"data_split", "eval_metric"} <= keys
+
+
+async def test_a_stated_data_setup_gets_a_held_out_check(tmp_path: Path) -> None:
+    paper = example_paper()
+    text = "We split the data into 80/10/10 for training, validation and testing."
+    changed = paper.sentences[1].model_copy(update={"text": text})
+    paper = paper.model_copy(
+        update={"sentences": (paper.sentences[0], changed, *paper.sentences[2:])}
+    )
+    options = PlannerOptions(repository=RepositoryRef(url="https://github.com/a/b"), use_llm=False)
+    tasks = await plan_paper(paper, offline_context(tmp_path, paper=paper), options)
+    (overlap,) = [t for t in tasks if t.setting and t.setting.key == "test_overlap"]
+    (split,) = [t for t in tasks if t.setting and t.setting.key == "data_split"]
+    assert overlap.anchor == split.anchor
+    assert overlap.setting is not None
+    assert overlap.setting.value == 0
+
+
+async def test_no_held_out_check_without_a_stated_data_setup(tmp_path: Path) -> None:
+    options = PlannerOptions(repository=RepositoryRef(url="https://github.com/a/b"), use_llm=False)
+    tasks = await plan_paper(example_paper(), offline_context(tmp_path), options)
+    assert not [t for t in tasks if t.setting and t.setting.key == "test_overlap"]
