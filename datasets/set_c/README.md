@@ -9,13 +9,13 @@ appears twice in the experiment dataset: the original, and an injected copy whos
 | Paper and code pairs | 40 (8 with a discrepancy reported by users) |
 | Injected setting errors (`setting_mismatch`, `metric_mismatch`) | 63 |
 | Clean controls (`none`), labelled in both the original and the injected copy | 36 (72 labels) |
-| Method discrepancies (`method_mismatch`) | 94: 8 reported, 86 synthetic |
-| Gold labels in `labels.jsonl` | 237 |
+| Method discrepancies (`method_mismatch`) | 92: 8 reported, 84 synthetic |
+| Gold labels in `labels.jsonl` | 235 |
 
-Injected settings by key: batch size 16, epochs 15, learning rate 11, optimizer 9,
-dropout 6, metric 2, weight decay 2, training steps 2. Clean controls cover learning rate
-(9), optimizer (9), epochs, dataset, maximum sequence length and batch size (3 each),
-dropout and weight decay (2 each), metric and warmup steps (1 each).
+Injected settings by key: batch size 17, epochs 16, learning rate 11, optimizer 8,
+dropout 6, metric 3, weight decay 2. Clean controls cover optimizer (10), learning rate
+(9), epochs and batch size (3 each), dropout, dataset, weight decay and maximum sequence
+length (2 each), and metric, warmup steps and training steps (1 each).
 
 No item tests `data_split_mismatch`, `dataset_size_mismatch`,
 `label_distribution_mismatch` or `data_leakage`. None of the 169 candidate papers stated a
@@ -83,14 +83,37 @@ injected copies), scored before the verifier with
 
 | Class | Precision | Recall |
 |---|---|---|
-| `setting_mismatch` (61 labels) | 1.00 | 1.00 |
-| `metric_mismatch` (2) | 1.00 | 1.00 |
-| `method_mismatch` (102) | no findings | 0.00 |
+| `setting_mismatch` (60 labels) | 1.00 | 1.00 |
+| `metric_mismatch` (3) | 1.00 | 0.67 |
+| `method_mismatch` (100) | no findings | 0.00 |
 
-No clean control was flagged. 228 flags matched no label; they may be false alarms or real
-mismatches already in the papers, and a sample has to be adjudicated by hand (D14).
+No clean control was flagged. 152 flags matched no label, 74 of them distinct once the two
+copies of each paper are counted together. They may be false alarms or real mismatches
+already in the papers, and a sample has to be adjudicated by hand (D14). With the
+repository snapshots cached, the run took 21 seconds with `--paper-concurrency 4`.
+
+The missed metric is in 2004.09297, whose repository computes several metrics. The agent
+cannot tell which of them the paper reports, so it marks the task unverifiable instead of
+flagging it.
 
 Read the setting scores with care. Injections were only made where the code agent had
 already found the paper's value in the repository, so recall on them measures whether the
 agent notices a changed value, not whether it can find settings in unfamiliar code. The
 method class scores zero because no LLM was configured for the run.
+
+### Fewer flags, and what that costs
+
+An earlier version of the agent raised 111 distinct unlabelled flags on the same papers.
+Most came from files a training run writes (checkpoints, `trainer_state.json`, logs),
+from library defaults, from evaluation batch sizes, and from repositories with one config
+per experiment. The agent now skips the first three and, when a setting has several
+values in different files, compares only the files the sentence names or the file that
+holds the paper's other settings. Otherwise it reports the task as unverifiable.
+
+These rules can hide a real mismatch, so recall on the injected errors is the check on
+them. A first, broader version of the rules lowered setting recall to 46 of 61; the
+narrowed rules keep all 60. Three real mismatches found by hand before the change
+(Adam against AdamW in 2208.04654, accuracy against AUROC in 2106.01342, batch size 32
+against 64 in 2006.01592) are still flagged. Changing the file rules also changed which
+files a snapshot keeps. One pair (2309.05173, whose labels rested on a
+`trainer_state.json`) no longer had two confirmed settings and was replaced by 2406.05992.
