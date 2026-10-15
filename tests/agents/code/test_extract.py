@@ -341,3 +341,9 @@ def test_shell_command_line_options() -> None:
         ("epochs", 5, 2, None),
         ("seed", 7, 3, None),
     ]
+
+
+def test_yaml_integers_stay_integers() -> None:
+    (setting,) = scan_yaml("c.yaml", "batch_size: 32\n", REPO)
+    assert setting.value == 32
+    assert isinstance(setting.value, int)

@@ -67,8 +67,8 @@ def scan_yaml(path: str, text: str, repository: RepositoryRef) -> list[Extracted
             value: object = raw
             if value_node.tag in _YAML_NUMBER_TAGS:
                 try:
-                    value = float(raw)
-                except ValueError:
+                    value = yaml.SafeLoader("").construct_object(value_node)
+                except yaml.YAMLError:
                     continue
             line = key_node.start_mark.line + 1
             setting = _named(str(key_node.value), value, raw, path, line, repository)
