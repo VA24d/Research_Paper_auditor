@@ -1,20 +1,21 @@
-"""Split settings in Python code, read with `ast` (the code is never imported or run).
+"""Settings in Python code, read with `ast` (the code is never imported or run).
 
-Recognised: argparse options and function defaults named like `test_size` or
-`val_split`, the same names as keyword arguments or assignments, `train_test_split`,
-`random_split`, Keras `fit(validation_split=...)` and `load_dataset(name, config, split=...)`.
+Recognised: argparse options, function defaults, keyword arguments and assignments named
+like a setting (`lr`, `num_train_epochs`, `test_size`, see `names.CODE_NAMES`);
+optimizer constructors (`torch.optim.AdamW`), seeding calls, `nn.Dropout`, metric
+functions and `evaluate.load`; `train_test_split`, `random_split`, Keras
+`fit(validation_split=...)` and `load_dataset(name, config, split=...)`.
 """
 
 import ast
 import re
 from dataclasses import dataclass
 
+from auditor.agents.code.extract.names import classify, metric_key
 from auditor.agents.code.extract.normalise import (
-    DATASET_NAMES,
     as_percent,
     setting_name,
     split_from_parts,
-    split_key,
 )
 from auditor.schemas import ExtractedSetting, RepositoryRef, RepositorySource, SettingValue
 
@@ -79,18 +80,12 @@ class _Scanner:
         )
 
     def named_value(self, raw_name: str, node: ast.expr | None, context: str | None = None) -> None:
-        """A value under a name such as `test_size`, if the name is about a split."""
+        """A value under a name such as `test_size` or `lr`, if the name is a setting."""
         if node is None:
             return
-        name = setting_name(raw_name)
-        value = _constant(node)
-        key = split_key(name)
-        if key is not None:
-            percent = as_percent(value, name)
-            if percent is not None:
-                self.add(node, key, raw_name, percent, context)
-        elif name in DATASET_NAMES and isinstance(value, str) and value:
-            self.add(node, "dataset", raw_name, value)
+        found = classify(setting_name(raw_name), _constant(node))
+        if found is not None:
+            self.add(node, found.key, raw_name, found.value, context or found.context)
 
     def call(self, node: ast.Call, target: str | None) -> None:
         function = _function_name(node.func)
@@ -100,10 +95,19 @@ class _Scanner:
             default = _keyword(node, "default")
             if names and default is not None:
                 for option in names:
-                    if split_key(setting_name(option)) or setting_name(option) in DATASET_NAMES:
+                    if classify(setting_name(option), _constant(default)) is not None:
                         self.named_value(option, default)
                         break
             return
+        if function in _OPTIMIZERS and isinstance(node.func, ast.Attribute | ast.Name):
+            self.add(node.func, "optimizer", function, function.lower())
+        if function in _SEED_FUNCTIONS and node.args:
+            self.named_value("seed", node.args[0])
+        if function == "Dropout":
+            self.named_value("dropout", node.args[0] if node.args else _keyword(node, "p"))
+        metric = _metric_call(function, node)
+        if metric is not None:
+            self.add(node, "eval_metric", function or "metric", metric)
         if function == "load_dataset":
             self.load_dataset(node, target)
             return
@@ -125,8 +129,9 @@ class _Scanner:
             context = None
             if function == "fit" and setting_name(keyword.arg) == "validation_split":
                 context = "of the training data"
-            if split_key(setting_name(keyword.arg)) is not None:
-                self.named_value(keyword.arg, keyword.value, context)
+            if function == "Dropout" and keyword.arg == "p":
+                continue
+            self.named_value(keyword.arg, keyword.value, context)
 
     def load_dataset(self, node: ast.Call, target: str | None) -> None:
         name = _constant(node.args[0]) if node.args else _constant(_keyword(node, "path"))
@@ -161,6 +166,40 @@ class _Scanner:
             )
 
 
+_OPTIMIZERS = frozenset(
+    {"Adam", "AdamW", "SGD", "Adafactor", "Adagrad", "Adadelta", "RMSprop", "LAMB", "Lamb", "Lion"}
+)
+_SEED_FUNCTIONS = frozenset({"manual_seed", "set_seed", "seed", "seed_everything"})
+_METRIC_FUNCTIONS = {
+    "accuracy_score": "accuracy",
+    "matthews_corrcoef": "matthews_correlation",
+    "roc_auc_score": "auc",
+    "pearsonr": "pearson_correlation",
+    "spearmanr": "spearman_correlation",
+    "corpus_bleu": "bleu",
+}
+_F1_AVERAGES = {"macro": "macro_f1", "micro": "micro_f1"}
+
+
+def _metric_call(function: str | None, node: ast.Call) -> str | None:
+    """The metric a call computes: sklearn-style functions, or `evaluate.load("bleu")` and
+    `load_metric("bleu")`."""
+    if function in _METRIC_FUNCTIONS:
+        return _METRIC_FUNCTIONS[function]
+    if function == "f1_score":
+        average = _constant(_keyword(node, "average"))
+        return _F1_AVERAGES.get(average, "f1") if isinstance(average, str) else "f1"
+    if function in {"load", "load_metric"} and node.args:
+        name = _constant(node.args[0])
+        owner = node.func.value if isinstance(node.func, ast.Attribute) else None
+        is_metric = function == "load_metric" or (
+            isinstance(owner, ast.Name) and owner.id == "evaluate"
+        )
+        if is_metric and isinstance(name, str):
+            return metric_key(name)
+    return None
+
+
 def _function_name(func: ast.expr) -> str | None:
     if isinstance(func, ast.Name):
         return func.id
@@ -179,6 +218,14 @@ def _keyword(node: ast.Call, name: str) -> ast.expr | None:
 def _constant(node: ast.expr | None) -> object:
     if isinstance(node, ast.Constant):
         return node.value
+    # Negative numbers are a unary minus applied to a constant.
+    if (
+        isinstance(node, ast.UnaryOp)
+        and isinstance(node.op, ast.USub)
+        and isinstance(node.operand, ast.Constant)
+        and isinstance(node.operand.value, int | float)
+    ):
+        return -node.operand.value
     return None
 
 

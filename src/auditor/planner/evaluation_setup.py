@@ -70,6 +70,8 @@ _METRIC = re.compile(
     re.IGNORECASE,
 )
 _METRIC_KEYS = {re.sub(r"[\s-]+", " ", name): key for name, key in _METRICS.items()}
+# Public for the code agent, which reads metric names out of code and configs.
+METRIC_KEYS = _METRIC_KEYS
 # A metric counts only after a verb saying it is what the paper measures, in the same clause.
 _EVALUATES = re.compile(
     r"\b(?:report\w*|evaluat\w*|measur\w*|comput\w*|in\s+terms\s+of|metrics?\s+(?:is|are|of))\b",
