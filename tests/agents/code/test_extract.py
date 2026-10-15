@@ -3,6 +3,7 @@ import pytest
 from auditor.agents.code.extract import (
     parse_card,
     scan_json,
+    scan_notebook,
     scan_python,
     scan_shell,
     scan_split_lists,
@@ -364,3 +365,34 @@ def test_toml_keys_keep_their_line() -> None:
 
 def test_broken_toml_gives_nothing() -> None:
     assert scan_toml("x.toml", "a = [1,\n", REPO) == []
+
+
+def test_notebook_code_cells_point_at_their_line_in_the_file() -> None:
+    import json as _json
+
+    notebook = {
+        "cells": [
+            {"cell_type": "markdown", "metadata": {}, "source": ["# lr = 0.5 in prose\n"]},
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": 1,
+                "outputs": [],
+                "source": ["%pip install torch\n", "lr = 3e-4\n", "batch_size = 64"],
+            },
+        ],
+        "metadata": {},
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+    text = _json.dumps(notebook, indent=1)
+    settings = scan_notebook("train.ipynb", text, REPO)
+    lines = text.splitlines()
+    assert [(s.key, s.value) for s in settings] == [("learning_rate", 0.0003), ("batch_size", 64)]
+    for setting in settings:
+        assert isinstance(setting.source, RepositorySource)
+        assert setting.raw_value in lines[setting.source.line - 1]
+
+
+def test_broken_notebook_gives_nothing() -> None:
+    assert scan_notebook("x.ipynb", "{not json", REPO) == []

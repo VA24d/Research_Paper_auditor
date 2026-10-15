@@ -9,6 +9,7 @@ the repository is imported or run.
 
 from auditor.agents.code.extract.config_files import scan_json, scan_toml, scan_yaml
 from auditor.agents.code.extract.hf_card import CardConfig, CardInfo, parse_card
+from auditor.agents.code.extract.notebook import scan_notebook
 from auditor.agents.code.extract.python_ast import scan_python
 from auditor.agents.code.extract.shell import scan_shell
 from auditor.agents.code.extract.split_lists import scan_split_lists
@@ -18,6 +19,7 @@ __all__ = [
     "CardInfo",
     "parse_card",
     "scan_json",
+    "scan_notebook",
     "scan_python",
     "scan_shell",
     "scan_split_lists",
