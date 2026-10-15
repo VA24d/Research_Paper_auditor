@@ -31,6 +31,7 @@ from auditor.agents.code.data.report import (
 from auditor.agents.code.extract import (
     parse_card,
     scan_json,
+    scan_notebook,
     scan_python,
     scan_shell,
     scan_split_lists,
@@ -182,6 +183,8 @@ def _scan(snapshot: Snapshot) -> list[Candidate]:
             found = scan_yaml(file.path, text, ref)
         elif suffix == ".json":
             found = scan_json(file.path, text, ref)
+        elif suffix == ".ipynb":
+            found = scan_notebook(file.path, text, ref)
         elif suffix == ".toml":
             found = scan_toml(file.path, text, ref)
         elif suffix in {".sh", ".bash"}:
