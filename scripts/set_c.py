@@ -196,7 +196,10 @@ def _score(args: argparse.Namespace) -> int:
         )
     print(f"macro-F1 {scores.macro_f1:.3f}")
     print(f"false-positive rate on clean controls {scores.false_positive_rate:.3f}")
-    print(f"unlabelled flags {scores.unlabelled}")
+    print(
+        f"unlabelled flags {scores.unlabelled} "
+        f"({scores.unlabelled_unique} once each across the two copies of a paper)"
+    )
     return 0
 
 

@@ -238,6 +238,18 @@ def test_code_module_scores() -> None:
     assert scores.macro_f1 == pytest.approx(0.5)
 
 
+def test_unlabelled_flags_are_counted_once_across_variants() -> None:
+    seed = [
+        prediction(ErrorClass.SETTING_MISMATCH, "seed", variant)
+        for variant in (PaperVariant.ORIGINAL, PaperVariant.INJECTED)
+    ]
+    scores = score_code_module(
+        [], [*seed, prediction(ErrorClass.SETTING_MISMATCH, "epochs", PaperVariant.INJECTED)]
+    )
+    assert scores.unlabelled == 3
+    assert scores.unlabelled_unique == 2
+
+
 # --- proposing instances ---------------------------------------------------------------
 
 
