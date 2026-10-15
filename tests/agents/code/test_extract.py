@@ -4,6 +4,7 @@ from auditor.agents.code.extract import (
     parse_card,
     scan_json,
     scan_python,
+    scan_shell,
     scan_split_lists,
     scan_yaml,
 )
@@ -20,6 +21,14 @@ def found(settings: list[ExtractedSetting]) -> list[tuple[str, object, int, str 
         assert s.source.repository == REPO
         rows.append((s.key, s.value, s.source.line, s.context))
     return rows
+
+
+DATA_KEYS = {"data_split", "test_fraction", "validation_fraction", "dataset"}
+
+
+def data_only(settings: list[ExtractedSetting]) -> list[tuple[str, object, int, str | None]]:
+    """The evaluation-data settings, for tests of split extraction."""
+    return [row for row in found(settings) if row[0] in DATA_KEYS]
 
 
 # --- normalise -------------------------------------------------------------------------
@@ -72,7 +81,7 @@ def loaders(batch_size=32, val_split=0.05):
 
 
 def test_python_split_settings_keep_their_line() -> None:
-    assert found(scan_python("train.py", PYTHON, REPO)) == [
+    assert data_only(scan_python("train.py", PYTHON, REPO)) == [
         ("test_fraction", 20.0, 7, None),
         ("validation_fraction", 10.0, 8, None),
         ("dataset", "cifar10", 9, None),
@@ -117,7 +126,7 @@ model:
 
 
 def test_yaml_keys_keep_their_line() -> None:
-    assert found(scan_yaml("configs/base.yaml", YAML, REPO)) == [
+    assert data_only(scan_yaml("configs/base.yaml", YAML, REPO)) == [
         ("test_fraction", 20.0, 4, None),
         ("validation_fraction", 10.0, 5, None),
     ]
@@ -137,7 +146,7 @@ def test_json_keys_keep_their_line() -> None:
         '{\n  "train": {\n    "lr": 0.1,\n    "validation_split": 0.2\n  },\n'
         '  "test_ratio": 0.1\n}\n'
     )
-    assert found(scan_json("config.json", text, REPO)) == [
+    assert data_only(scan_json("config.json", text, REPO)) == [
         ("validation_fraction", 20.0, 4, None),
         ("test_fraction", 10.0, 6, None),
     ]
@@ -275,3 +284,60 @@ dataset_info:
 @pytest.mark.parametrize("text", ["# no front matter\n", "---\na: [1\n---\n", ""])
 def test_card_without_readable_front_matter_is_none(text: str) -> None:
     assert parse_card(text) is None
+
+
+# --- hyperparameters, optimizers, seeds and metrics ------------------------------------
+
+HYPER = """\
+parser.add_argument("--lr", type=float, default=3e-4)
+parser.add_argument("--per_device_train_batch_size", default=16)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)
+args = TrainingArguments(num_train_epochs=3, warmup_steps=500, seed=42)
+torch.manual_seed(1234)
+drop = nn.Dropout(0.1)
+score = f1_score(y, p, average="macro")
+metric = evaluate.load("sacrebleu")
+HIDDEN_SIZE = 768
+"""
+
+
+def test_python_hyperparameters_and_metrics() -> None:
+    assert found(scan_python("train.py", HYPER, REPO)) == [
+        ("learning_rate", 0.0003, 1, None),
+        ("batch_size", 16, 2, "per device"),
+        ("optimizer", "adamw", 3, None),
+        ("learning_rate", 0.001, 3, None),
+        ("weight_decay", 0.01, 3, None),
+        ("epochs", 3, 4, None),
+        ("warmup_steps", 500, 4, None),
+        ("seed", 42, 4, None),
+        ("seed", 1234, 5, None),
+        ("dropout", 0.1, 6, None),
+        ("eval_metric", "macro_f1", 7, None),
+        ("eval_metric", "sacrebleu", 8, None),
+        ("hidden_size", 768, 9, None),
+    ]
+
+
+def test_yaml_hyperparameters_are_read_from_strings_too() -> None:
+    text = (
+        "optim:\n  name: AdamW\n  lr: 3e-4\n"
+        "train:\n  batch_size: 32\n  metric_for_best_model: accuracy\n"
+    )
+    assert found(scan_yaml("c.yaml", text, REPO)) == [
+        ("learning_rate", 0.0003, 3, None),
+        ("batch_size", 32, 5, None),
+        ("eval_metric", "accuracy", 6, None),
+    ]
+
+
+def test_shell_command_line_options() -> None:
+    text = (
+        "#!/bin/bash\npython train.py --lr 3e-4 --num_train_epochs 5 \\\n"
+        "  --seed=7 --output_dir out\n"
+    )
+    assert found(scan_shell("run.sh", text, REPO)) == [
+        ("learning_rate", 0.0003, 2, None),
+        ("epochs", 5, 2, None),
+        ("seed", 7, 3, None),
+    ]

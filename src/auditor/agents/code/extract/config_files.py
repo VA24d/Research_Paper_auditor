@@ -11,12 +11,8 @@ from typing import Any
 
 import yaml
 
-from auditor.agents.code.extract.normalise import (
-    DATASET_NAMES,
-    as_percent,
-    setting_name,
-    split_key,
-)
+from auditor.agents.code.extract.names import classify
+from auditor.agents.code.extract.normalise import setting_name
 from auditor.schemas import ExtractedSetting, RepositoryRef, RepositorySource, SettingValue
 
 _YAML_NUMBER_TAGS = {"tag:yaml.org,2002:int", "tag:yaml.org,2002:float"}
@@ -44,15 +40,17 @@ def _setting(
 def _named(
     raw_name: str, value: object, raw_value: str, path: str, line: int, repository: RepositoryRef
 ) -> ExtractedSetting | None:
-    name = setting_name(raw_name)
-    key = split_key(name)
-    if key is not None:
-        percent = as_percent(value, name)
-        if percent is not None:
-            return _setting(key, raw_name, raw_value, percent, path, line, repository)
-    elif name in DATASET_NAMES and isinstance(value, str) and value.strip():
-        return _setting("dataset", raw_name, raw_value, value.strip(), path, line, repository)
-    return None
+    found = classify(setting_name(raw_name), value)
+    if found is None:
+        return None
+    return ExtractedSetting(
+        key=found.key,
+        raw_name=raw_name,
+        raw_value=raw_value,
+        value=found.value,
+        context=found.context,
+        source=RepositorySource(repository=repository, path=path, line=line),
+    )
 
 
 def scan_yaml(path: str, text: str, repository: RepositoryRef) -> list[ExtractedSetting]:
