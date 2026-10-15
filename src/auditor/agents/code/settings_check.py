@@ -10,6 +10,7 @@ several configurations, since the experiment may use another one.
 
 import math
 import re
+from collections import Counter
 
 from auditor.agents.code.data_checks import (
     Candidate,
@@ -19,8 +20,10 @@ from auditor.agents.code.data_checks import (
     repository_evidence,
     static_candidates,
 )
+from auditor.agents.code.second_look import second_look
 from auditor.infra.context import RunContext
 from auditor.infra.snapshots import SnapshotUnavailableError, SourceError, fetch_snapshot
+from auditor.planner.tables import paper_settings
 from auditor.schemas import (
     AuditTask,
     CandidateFinding,
@@ -65,10 +68,36 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     if any(_agrees(setting, c.setting) for c in candidates):
         return TaskResult.for_task(task, TaskOutcome.CHECKED)
 
+    sentence = paper_sentence(task, ctx)
+    undecided = _undecided(
+        setting,
+        sentence,
+        candidates,
+        _experiment_files(ctx, setting, await static_candidates(snapshot)),
+    )
+    if isinstance(undecided, str):
+        return TaskResult.for_task(task, TaskOutcome.UNVERIFIABLE, reason=undecided)
+    candidates = undecided
+
     values = {_shown(c.setting) for c in candidates}
     uncertain = (
         len(values) > 1 or setting.context is not None or any(c.setting.context for c in candidates)
     )
+    if uncertain and ctx.llm is not None and ctx.settings.code_second_look:
+        confirmed, kept, rejected_all = await second_look(ctx, setting, sentence, candidates)
+        if rejected_all:
+            return TaskResult.for_task(
+                task,
+                TaskOutcome.UNVERIFIABLE,
+                reason=(
+                    f"every repository value of {setting.key} was judged to belong to something "
+                    "other than the experiment the sentence describes"
+                ),
+            )
+        if confirmed:
+            candidates, uncertain = confirmed, setting.context is not None
+        else:
+            candidates = kept
     error_class = (
         ErrorClass.METRIC_MISMATCH if setting.key == "eval_metric" else ErrorClass.SETTING_MISMATCH
     )
@@ -82,16 +111,122 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
             + (f" and {len(candidates) - 4} more" if len(candidates) > 4 else "")
         ),
         explanation=_explanation(setting, candidates, snapshot_url=snapshot.source_id),
-        evidence=[paper_quote(task, paper_sentence(task, ctx)), *repository_evidence(candidates)],
+        evidence=[paper_quote(task, sentence), *repository_evidence(candidates)],
         uncertain=uncertain,
     )
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
 
 
+_PATH_TOKEN = re.compile(r"[a-z0-9]{3,}")
+_GENERIC_PATH_TOKENS = frozenset(
+    {
+        "configs",
+        "config",
+        "conf",
+        "yaml",
+        "yml",
+        "json",
+        "toml",
+        "train",
+        "base",
+        "default",
+        "scripts",
+        "script",
+        "src",
+        "run",
+        "main",
+        "experiments",
+        "exp",
+        "args",
+    }
+)
+# A repository with this many different values from different files is a set of
+# configurations; the paper's value is compared only with those it names.
+MANY_CONFIGURATIONS = 3
+
+
+def _experiment_files(
+    ctx: RunContext, setting: ExtractedSetting, found: list[Candidate]
+) -> set[str]:
+    """The repository files that hold the most of the paper's other stated settings: the
+    configuration of the experiment the paper describes, when the repository has several."""
+    counts: Counter[str] = Counter()
+    for other in paper_settings(ctx.paper):
+        if other.key == setting.key:
+            continue
+        for candidate in found:
+            if (
+                candidate.tier is Tier.CODE
+                and candidate.setting.key == other.key
+                and _agrees(other, candidate.setting)
+            ):
+                counts[_path(candidate)] += 1
+    if not counts:
+        return set()
+    best = max(counts.values())
+    return {path for path, count in counts.items() if count == best}
+
+
+def _undecided(
+    paper: ExtractedSetting,
+    sentence: str,
+    candidates: list[Candidate],
+    experiment_files: frozenset[str] | set[str] = frozenset(),
+) -> str | list[Candidate]:
+    """Why no repository value can be compared with the paper's, or the values that can.
+
+    Per-device batch sizes need the device count and accumulation, which the code does not
+    state; a metric module defining several metrics does not say which one the paper's table
+    used; and many configurations only count when the sentence names one of them."""
+    if any(c.setting.context == "per device" for c in candidates):
+        candidates = [c for c in candidates if c.setting.context != "per device"]
+        if not candidates:
+            return (
+                f"the repository gives {paper.key} only per device; the global value needs the "
+                "device count and gradient accumulation, which the code does not state"
+            )
+    distinct = {str(c.setting.value) for c in candidates}
+    if paper.key == "eval_metric" and len(distinct) > 1:
+        return (
+            "the repository computes several metrics ("
+            + ", ".join(sorted(distinct))
+            + "), and the code does not say which one the paper reports"
+        )
+    files = {_path(c) for c in candidates}
+    if len(distinct) >= MANY_CONFIGURATIONS and len(files) > 1:
+        words = set(_PATH_TOKEN.findall(sentence.lower()))
+        named = [
+            c
+            for c in candidates
+            if _path(c) in experiment_files
+            or (set(_PATH_TOKEN.findall(_path(c).lower())) - _GENERIC_PATH_TOKENS) & words
+        ]
+        if not named:
+            return (
+                f"the repository holds {len(distinct)} values of {paper.key} in "
+                f"{len(files)} files, configurations for different experiments, and the sentence "
+                "names none of them"
+            )
+        return named
+    return candidates
+
+
+def _path(candidate: Candidate) -> str:
+    source = candidate.setting.source
+    assert isinstance(source, RepositorySource)
+    return source.path
+
+
 def _agrees(paper: ExtractedSetting, repo: ExtractedSetting) -> bool:
     if paper.key == "eval_metric":
         wanted, offered = str(paper.value), str(repo.value)
-        return offered == wanted or offered in _METRIC_FAMILIES.get(wanted, ())
+        # Generic and specific names cover each other: "rouge" and "rouge_l", "f1" and
+        # "macro_f1".
+        return (
+            offered == wanted
+            or offered in _METRIC_FAMILIES.get(wanted, ())
+            or wanted in _METRIC_FAMILIES.get(offered, ())
+        )
     if isinstance(paper.value, str) or isinstance(repo.value, str):
         return _text(paper.value) == _text(repo.value)
     if paper.value is None or repo.value is None:

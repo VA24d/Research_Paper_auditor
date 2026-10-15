@@ -8,7 +8,7 @@
 {"label_id":"c-a8c016bcec60","paper_id":"2305.18803v2","key":"batch_size","side":"paper","evidence_type":"code","original":"32","injected":"64","path":null,"line":null,"sentence_id":"s403","start":118,"end":120}
 {"label_id":"c-9ca776b9c3ab","paper_id":"2305.18803v2","key":"learning_rate","side":"paper","evidence_type":"code","original":"0.001","injected":"0.01","path":null,"line":null,"sentence_id":"s403","start":90,"end":95}
 {"label_id":"c-916d73fd93f4","paper_id":"2402.04997v2","key":"epochs","side":"paper","evidence_type":"code","original":"200","injected":"400","path":null,"line":null,"sentence_id":"s321","start":14,"end":17}
-{"label_id":"c-157e598f5b89","paper_id":"2402.04997v2","key":"optimizer","side":"paper","evidence_type":"code","original":"AdamW","injected":"SGD","path":null,"line":null,"sentence_id":"s877","start":11,"end":16}
+{"label_id":"c-e3ba1569aa69","paper_id":"2402.04997v2","key":"learning_rate","side":"paper","evidence_type":"code","original":"0.0001","injected":"0.001","path":null,"line":null,"sentence_id":"s321","start":133,"end":139}
 {"label_id":"c-688e377d0418","paper_id":"1910.10261v1","key":"batch_size","side":"paper","evidence_type":"code","original":"32","injected":"64","path":null,"line":null,"sentence_id":"s61","start":123,"end":125}
 {"label_id":"c-58a07d7e9b1d","paper_id":"1910.10261v1","key":"dropout","side":"paper","evidence_type":"code","original":"0.2","injected":"0.4","path":null,"line":null,"sentence_id":"s122","start":164,"end":167}
 {"label_id":"c-4b381555be94","paper_id":"2001.07645v3","key":"batch_size","side":"paper","evidence_type":"code","original":"10","injected":"20","path":null,"line":null,"sentence_id":"s196","start":66,"end":68}
@@ -28,7 +28,7 @@
 {"label_id":"c-ff6ac535bc6f","paper_id":"2006.01592v2","key":"optimizer","side":"paper","evidence_type":"code","original":"Adam","injected":"SGD","path":null,"line":null,"sentence_id":"s252","start":11,"end":15}
 {"label_id":"c-6ec729fe9693","paper_id":"2006.01592v2","key":"learning_rate","side":"paper","evidence_type":"code","original":"0.001","injected":"0.01","path":null,"line":null,"sentence_id":"s252","start":99,"end":104}
 {"label_id":"c-15819cb1afe6","paper_id":"2006.06958v1","key":"dropout","side":"paper","evidence_type":"code","original":"0.25","injected":"0.45","path":null,"line":null,"sentence_id":"s301","start":72,"end":76}
-{"label_id":"c-7f22b2cda1ca","paper_id":"2006.06958v1","key":"batch_size","side":"paper","evidence_type":"code","original":"10","injected":"20","path":null,"line":null,"sentence_id":"s147","start":36,"end":38}
+{"label_id":"c-83e1eeeaf625","paper_id":"2006.06958v1","key":"batch_size","side":"paper","evidence_type":"code","original":"64","injected":"128","path":null,"line":null,"sentence_id":"s295","start":114,"end":116}
 {"label_id":"c-acca7878a592","paper_id":"2012.15000v1","key":"batch_size","side":"paper","evidence_type":"code","original":"64","injected":"128","path":null,"line":null,"sentence_id":"s184","start":53,"end":55}
 {"label_id":"c-a22fdec94a8a","paper_id":"2012.15000v1","key":"epochs","side":"paper","evidence_type":"code","original":"30","injected":"60","path":null,"line":null,"sentence_id":"s134","start":98,"end":100}
 {"label_id":"c-d514cfbd4323","paper_id":"2102.06514v3","key":"optimizer","side":"paper","evidence_type":"code","original":"AdamW","injected":"SGD","path":null,"line":null,"sentence_id":"s236","start":35,"end":40}
@@ -47,13 +47,11 @@
 {"label_id":"c-cd6e0ebab1b1","paper_id":"2208.04654v1","key":"epochs","side":"paper","evidence_type":"code","original":"30","injected":"60","path":null,"line":null,"sentence_id":"s94","start":136,"end":138}
 {"label_id":"c-089e7c3cc7b4","paper_id":"2211.00918v1","key":"optimizer","side":"paper","evidence_type":"code","original":"Adam","injected":"SGD","path":null,"line":null,"sentence_id":"s171","start":29,"end":33}
 {"label_id":"c-e1c28ba24444","paper_id":"2304.04740v3","key":"optimizer","side":"paper","evidence_type":"code","original":"Adam","injected":"SGD","path":null,"line":null,"sentence_id":"s430","start":14,"end":18}
+{"label_id":"c-d7c8d96e321e","paper_id":"2304.08467v3","key":"eval_metric","side":"paper","evidence_type":"code","original":"ROUGE-L","injected":"accuracy","path":null,"line":null,"sentence_id":"s95","start":93,"end":100}
 {"label_id":"c-2e70ab2ee314","paper_id":"2304.08467v3","key":"epochs","side":"paper","evidence_type":"code","original":"3","injected":"6","path":null,"line":null,"sentence_id":"s209","start":110,"end":111}
-{"label_id":"c-e8c08a3587f6","paper_id":"2304.08467v3","key":"training_steps","side":"paper","evidence_type":"code","original":"16000","injected":"32000","path":null,"line":null,"sentence_id":"s208","start":71,"end":76}
 {"label_id":"c-74922877ae28","paper_id":"2305.14387v4","key":"batch_size","side":"paper","evidence_type":"code","original":"5","injected":"10","path":null,"line":null,"sentence_id":"s377","start":59,"end":60}
 {"label_id":"c-a62d13e00c21","paper_id":"2305.14387v4","key":"epochs","side":"paper","evidence_type":"code","original":"2","injected":"4","path":null,"line":null,"sentence_id":"s340","start":84,"end":85}
 {"label_id":"c-c82e049d42d8","paper_id":"2306.12584v2","key":"epochs","side":"paper","evidence_type":"code","original":"300","injected":"600","path":null,"line":null,"sentence_id":"s272","start":118,"end":121}
-{"label_id":"c-a8d9282c02d7","paper_id":"2309.05173v5","key":"learning_rate","side":"paper","evidence_type":"code","original":"3e-1","injected":"3e0","path":null,"line":null,"sentence_id":"s164","start":190,"end":194}
-{"label_id":"c-cf1645d29d5e","paper_id":"2309.05173v5","key":"training_steps","side":"paper","evidence_type":"code","original":"300k","injected":"600k","path":null,"line":null,"sentence_id":"s199","start":33,"end":37}
 {"label_id":"c-1efbacd13040","paper_id":"2310.16834v3","key":"batch_size","side":"paper","evidence_type":"code","original":"512","injected":"1024","path":null,"line":null,"sentence_id":"s793","start":45,"end":48}
 {"label_id":"c-ca97fcb5f045","paper_id":"2312.02151v1","key":"learning_rate","side":"paper","evidence_type":"code","original":"0.01","injected":"0.1","path":null,"line":null,"sentence_id":"s319","start":16,"end":20}
 {"label_id":"c-620f299b6ec3","paper_id":"2312.02151v1","key":"epochs","side":"paper","evidence_type":"code","original":"1000","injected":"2000","path":null,"line":null,"sentence_id":"s100","start":124,"end":128}
@@ -61,3 +59,5 @@
 {"label_id":"c-7e0d4c2ea39f","paper_id":"2401.05363v5","key":"dropout","side":"paper","evidence_type":"code","original":"0.1","injected":"0.3","path":null,"line":null,"sentence_id":"s142","start":83,"end":86}
 {"label_id":"c-adcf21060fcc","paper_id":"2402.09453v1","key":"batch_size","side":"paper","evidence_type":"code","original":"32","injected":"64","path":null,"line":null,"sentence_id":"s50","start":70,"end":72}
 {"label_id":"c-d0f9ff90185d","paper_id":"2402.09453v1","key":"optimizer","side":"paper","evidence_type":"code","original":"Adam","injected":"SGD","path":null,"line":null,"sentence_id":"s56","start":178,"end":182}
+{"label_id":"c-0dadd98ca224","paper_id":"2406.05992v1","key":"batch_size","side":"paper","evidence_type":"code","original":"32","injected":"64","path":null,"line":null,"sentence_id":"s154","start":21,"end":23}
+{"label_id":"c-c408d9d738c0","paper_id":"2406.05992v1","key":"epochs","side":"paper","evidence_type":"code","original":"300","injected":"600","path":null,"line":null,"sentence_id":"s193","start":82,"end":85}

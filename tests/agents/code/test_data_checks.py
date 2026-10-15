@@ -447,3 +447,19 @@ async def test_data_mode_without_split_files_is_unverifiable(tmp_path: Path) -> 
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "train" in result.reason
+
+
+async def test_dataset_named_anywhere_in_the_repository_is_not_flagged(tmp_path: Path) -> None:
+    files = {
+        "a.py": 'data = load_dataset("imdb")\n',
+        "README.md": "We also report results on SST-2 with scripts/sst2.sh.\n",
+    }
+    result = await check(tmp_path, "We fine-tune on the SST-2 dataset.", files)
+    assert result.outcome is TaskOutcome.CHECKED
+    assert result.findings == ()
+
+
+async def test_several_other_datasets_are_unverifiable(tmp_path: Path) -> None:
+    files = {"a.py": 'a = load_dataset("imdb")\nb = load_dataset("ag_news")\n'}
+    result = await check(tmp_path, "We fine-tune on the SST-2 dataset.", files)
+    assert result.outcome is TaskOutcome.UNVERIFIABLE

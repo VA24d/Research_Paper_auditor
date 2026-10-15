@@ -62,6 +62,33 @@ EXCLUDED_DIRS = frozenset(
         "lightning_logs",
         "dist",
         "build",
+        # Run artifacts: values a run wrote, not values the experiment sets.
+        "checkpoints",
+        "checkpoint",
+        "ckpt",
+        "outputs",
+        "output",
+        "logs",
+        "runs",
+        "results",
+        # Vendored code: someone else's defaults.
+        "third_party",
+        "thirdparty",
+        "vendor",
+        "vendored",
+        "_vendor",
+        "external",
+        "extern",
+    }
+)
+# Files that training frameworks write after a run.
+EXCLUDED_FILES = frozenset(
+    {
+        "trainer_state.json",
+        "all_results.json",
+        "eval_results.json",
+        "train_results.json",
+        "predict_results.json",
     }
 )
 
@@ -73,7 +100,11 @@ DEMOTED_DIRS = frozenset({"tests", "test", "docs", "doc", "templates"})
 # in data analysis mode (auditor.infra.snapshots.data).
 DATA_SUFFIXES = frozenset({".csv", ".tsv", ".jsonl", ".json", ".parquet"})
 
+# Bump when the choice of core files changes, so cached snapshots are taken again.
+POLICY_VERSION = 2
+
 NOT_CORE = "not a core file type"
+RUN_ARTIFACT = "written by a training run"
 EXCLUDED_DIR = "excluded directory"
 TOO_LARGE = "larger than the per-file limit"
 TOTAL_LIMIT = "total download limit reached"
@@ -105,7 +136,9 @@ class DownloadLimits:
 
     def key(self) -> str:
         """Short id of these limits; snapshots taken under other limits are kept apart."""
-        payload = json.dumps(asdict(self), sort_keys=True).encode("utf-8")
+        payload = json.dumps({**asdict(self), "policy": POLICY_VERSION}, sort_keys=True).encode(
+            "utf-8"
+        )
         return hashlib.sha256(payload).hexdigest()[:8]
 
 
@@ -164,6 +197,8 @@ def core_file_reason(path: str) -> str | None:
     pure = PurePosixPath(path)
     if any(excluded_dir(part) for part in pure.parts[:-1]):
         return EXCLUDED_DIR
+    if pure.name.lower() in EXCLUDED_FILES:
+        return RUN_ARTIFACT
     if _rank(pure) is None:
         return NOT_CORE
     return None

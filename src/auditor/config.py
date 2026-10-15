@@ -92,3 +92,17 @@ class Settings(BaseSettings):
     llm_structured_method: str | None = None
     llm_options: dict[str, JsonValue] = Field(default_factory=dict)
     llm_cache: bool = True
+    # The model's context window in tokens. Prompts that do not fit fail loudly instead of
+    # being cut by the server (Ollama's default context is only a few thousand tokens).
+    llm_context_tokens: int | None = Field(default=None, gt=0)
+    # Model calls in flight at once across all papers and tasks of a run (a local server
+    # serves only a few requests in parallel).
+    llm_max_concurrency: int | None = Field(default=None, gt=0)
+    # How the code agent compares a paper's method with its code: "pairs" asks one small
+    # question per (paper sentence, code function) pair, which suits small local models;
+    # "whole" sends the method text and the related files in one call.
+    method_check_mode: Literal["pairs", "whole"] = "pairs"
+    method_check_pairs: int = Field(default=12, gt=0)
+    # Ask the model, one code line at a time, which of several repository values a setting
+    # mismatch is about (only when an LLM is configured).
+    code_second_look: bool = True

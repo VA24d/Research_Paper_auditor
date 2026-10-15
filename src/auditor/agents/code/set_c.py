@@ -474,6 +474,8 @@ class CodeScores:
     per_class: dict[ErrorClass, ClassScore] = field(default_factory=dict)
     false_positive_rate: float = 0.0
     unlabelled: int = 0
+    # The same flag raised on both copies of a paper counts once here.
+    unlabelled_unique: int = 0
 
     @property
     def macro_f1(self) -> float:
@@ -500,6 +502,7 @@ def score_code_module(
             scores.per_class.setdefault(ErrorClass(label.error_class), ClassScore())
     unmatched = list(in_scope)
     clean_hit = 0
+    unlabelled: set[tuple[str, ErrorClass, str, str]] = set()
 
     def positive(prediction: Prediction) -> bool:
         # Before the verifier, every finding the specialists raised counts, except dropped.
@@ -511,6 +514,14 @@ def score_code_module(
         matched = next((lbl for lbl in unmatched if matches(prediction, lbl)), None)
         if matched is None:
             scores.unlabelled += 1
+            unlabelled.add(
+                (
+                    prediction.paper_id,
+                    prediction.error_class,
+                    prediction.anchor.model_dump_json(include={"kind", "sentence_id"}),
+                    prediction.target.model_dump_json(),
+                )
+            )
             continue
         score = scores.per_class.setdefault(prediction.error_class, ClassScore())
         unmatched.remove(matched)
@@ -528,6 +539,7 @@ def score_code_module(
             scores.per_class[ErrorClass(label.error_class)].false_negatives += 1
     clean = sum(1 for label in in_scope if not label.is_error)
     scores.false_positive_rate = clean_hit / clean if clean else 0.0
+    scores.unlabelled_unique = len(unlabelled)
     return scores
 
 

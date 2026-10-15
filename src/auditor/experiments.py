@@ -473,6 +473,52 @@ async def _run_one(
     )
 
 
+async def _run_papers(
+    prepared: Sequence[PaperInput],
+    system: SystemName,
+    summary: RunSummary,
+    *,
+    settings: Settings,
+    http: HttpClient,
+    llm: StructuredLLM | None,
+    run: RunDirectory,
+    run_id: str,
+    usage: UsageLog,
+    checkpointer: BaseCheckpointSaver[Any] | None,
+    max_concurrency: int,
+    paper_concurrency: int,
+) -> None:
+    """Runs the papers of one run, `paper_concurrency` at a time, recording the outcome of
+    each in `summary`. A failure is kept and the others go on."""
+    gate = asyncio.Semaphore(paper_concurrency)
+
+    async def one(item: PaperInput) -> None:
+        if (run.paper_dir(item.paper) / "predictions.jsonl").is_file():
+            summary.skipped += 1
+            return
+        async with gate:
+            try:
+                await _run_one(
+                    system,
+                    item,
+                    settings=settings,
+                    http=http,
+                    llm=llm,
+                    run=run,
+                    run_id=run_id,
+                    usage=usage,
+                    checkpointer=checkpointer,
+                    max_concurrency=max_concurrency,
+                )
+            except Exception as exc:
+                logger.exception("%s failed on %s", run_id, item.paper.paper_id)
+                summary.failed.append(_record_failure(run, item.paper, exc))
+                return
+        summary.done += 1
+
+    await asyncio.gather(*(one(item) for item in prepared))
+
+
 async def run_batch(
     dataset: Path,
     *,
@@ -482,7 +528,10 @@ async def run_batch(
     settings: Settings,
     strict: bool = False,
     max_concurrency: int = 8,
+    paper_concurrency: int = 1,
 ) -> list[RunSummary]:
+    """`paper_concurrency` papers run at the same time; each paper's results are written to
+    its own folder, so the outputs do not depend on it."""
     entries = read_dataset(dataset)
     missing = {system: missing_parts(system) for system in systems}
     if strict and any(missing.values()):
@@ -554,28 +603,21 @@ async def run_batch(
                 async with AsyncSqliteSaver.from_conn_string(
                     str(run.path / "checkpoints.sqlite")
                 ) as saver:
-                    for item in prepared:
-                        if (run.paper_dir(item.paper) / "predictions.jsonl").is_file():
-                            summary.skipped += 1
-                            continue
-                        try:
-                            await _run_one(
-                                system,
-                                item,
-                                settings=settings,
-                                http=http,
-                                llm=llm,
-                                run=run,
-                                run_id=run_id,
-                                usage=usage,
-                                checkpointer=saver if system is SystemName.FULL else None,
-                                max_concurrency=max_concurrency,
-                            )
-                        except Exception as exc:
-                            logger.exception("%s failed on %s", run_id, item.paper.paper_id)
-                            summary.failed.append(_record_failure(run, item.paper, exc))
-                            continue
-                        summary.done += 1
+                    await _run_papers(
+                        prepared,
+                        system,
+                        summary,
+                        settings=settings,
+                        http=http,
+                        llm=llm,
+                        run=run,
+                        run_id=run_id,
+                        usage=usage,
+                        checkpointer=saver if system is SystemName.FULL else None,
+                        max_concurrency=max_concurrency,
+                        paper_concurrency=paper_concurrency,
+                    )
+                    summary.failed.sort()
                 write_manifest(
                     manifest.model_copy(update={"finished_at": datetime.now(UTC)}), run.path
                 )

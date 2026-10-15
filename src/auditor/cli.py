@@ -213,6 +213,7 @@ async def _batch(args: argparse.Namespace, settings: Settings) -> int:
         settings=settings,
         strict=args.strict,
         max_concurrency=args.max_concurrency,
+        paper_concurrency=args.paper_concurrency,
     )
     failed = 0
     for summary in summaries:
@@ -310,6 +311,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict", action="store_true", help="Refuse to run while any part is still a mock"
     )
     batch.add_argument("--max-concurrency", type=_positive, default=8)
+    batch.add_argument(
+        "--paper-concurrency",
+        type=_positive,
+        default=1,
+        help="Papers processed at the same time (outputs do not depend on it)",
+    )
     batch.add_argument(
         "--analyse-data",
         action="store_true",

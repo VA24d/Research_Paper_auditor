@@ -245,3 +245,22 @@ def test_b1_without_a_final_answer_is_a_failure_not_an_empty_answer(
     failures = (tmp_path / "runs" / "exp-b1-r1" / "failures.jsonl").read_text(encoding="utf-8")
     assert "IncompleteAnswerError" in failures
     assert "0 done, 0 already done, 1 failed" in capsys.readouterr().out
+
+
+def test_papers_can_run_concurrently(tmp_path: Path) -> None:
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL, PaperVariant.INJECTED)
+    argv = [
+        "batch",
+        str(dataset),
+        "--experiment",
+        "exp",
+        "--systems",
+        "full",
+        "--runs",
+        "1",
+        "--paper-concurrency",
+        "2",
+    ]
+    assert main(argv) == 0
+    for variant in ("original", "injected"):
+        assert predictions(tmp_path, "exp-full-r1", variant).is_file()

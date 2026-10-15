@@ -46,6 +46,7 @@ from auditor.infra.snapshots import (
     SnapshotUnavailableError,
     SourceError,
     SourceKind,
+    core_file_reason,
     fetch_snapshot,
     parse_source,
 )
@@ -113,6 +114,9 @@ _TIER_NAMES = {
     Tier.DATA: "the dataset's data files",
     Tier.HF_SIZE_LATEST: "the Hugging Face Hub's size service",
 }
+_SCANNED_SUFFIXES = frozenset(
+    {".py", ".yaml", ".yml", ".json", ".ipynb", ".toml", ".sh", ".bash", ".txt"}
+)
 _cache: dict[str, list[Candidate]] = {}
 _locks: dict[str, asyncio.Lock] = {}
 
@@ -142,6 +146,14 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     if setting.key in DATA_FILE_KEYS:
         datas = await _data(snapshot, candidates, ctx)
         return _check_data_files(task, setting, sentence, datas)
+    if setting.key == "dataset":
+        named = await _dataset_named(setting, sentence, snapshot, candidates)
+        if named is not None:
+            return TaskResult.for_task(
+                task,
+                TaskOutcome.CHECKED if named == "" else TaskOutcome.UNVERIFIABLE,
+                reason=named or None,
+            )
     settled = (Tier.CODE, Tier.SPLIT_LIST, Tier.HF_CARD)
     if not _related(setting, sentence, candidates, settled):
         followed = await _followed_snapshots(candidates, ctx)
@@ -151,6 +163,38 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
         for data in await _data(snapshot, candidates, ctx):
             candidates += [Candidate(Tier.DATA, s, data.snapshot) for s in report_settings(data)]
     return _decide(task, setting, sentence, snapshot, candidates)
+
+
+_words_cache: dict[str, str] = {}
+
+
+async def _dataset_named(
+    paper: ExtractedSetting, sentence: str, snapshot: Snapshot, candidates: Sequence[Candidate]
+) -> str | None:
+    """ "" when the repository mentions the paper's dataset (so it is not flagged), a reason
+    when the repository uses several other datasets (so the one the paper means is unclear),
+    or None to compare as usual."""
+    related = [c for c in candidates if _agrees(paper, sentence, c.setting) is not None]
+    if any(_agrees(paper, sentence, c.setting) for c in related):
+        return None
+    wanted = _name(paper.value)
+    key = str(snapshot.root)
+    if key not in _words_cache:
+        _words_cache[key] = await asyncio.to_thread(_repository_words, snapshot)
+    if len(wanted) >= 3 and wanted in _words_cache[key]:
+        return ""
+    names = {_name(c.setting.value) for c in related}
+    if len(names) > 1:
+        return (
+            "the repository uses several datasets ("
+            + ", ".join(sorted(str(c.setting.value) for c in related))
+            + ") and none is the one the paper names"
+        )
+    return None
+
+
+def _repository_words(snapshot: Snapshot) -> str:
+    return "".join(_name(snapshot.read_text(f.path)) for f in snapshot.manifest.files)
 
 
 def paper_sentence(task: AuditTask, ctx: RunContext) -> str:
@@ -175,6 +219,9 @@ def _scan(snapshot: Snapshot) -> list[Candidate]:
     lists = {}
     for file in manifest.files:
         suffix = PurePosixPath(file.path).suffix.lower()
+        # Snapshots taken under an older policy may hold files the policy now leaves out.
+        if suffix not in _SCANNED_SUFFIXES or core_file_reason(file.path) is not None:
+            continue
         text = snapshot.read_text(file.path)
         found: list[ExtractedSetting] = []
         if suffix == ".py":

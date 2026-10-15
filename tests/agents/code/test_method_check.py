@@ -1,8 +1,9 @@
+import dataclasses
 from pathlib import Path
 from typing import Any
 
 from auditor.agents.code import check
-from auditor.agents.code.method_check import MethodReview
+from auditor.agents.code.method_check import MethodReview, PairJudgement
 from auditor.infra.context import RunContext
 from auditor.infra.llm import StructuredLLM
 from auditor.planner.tasks import method_tasks
@@ -51,7 +52,9 @@ def context(
 ) -> tuple[RunContext, ScriptedChatModel]:
     model = ScriptedChatModel(replies=[tool_reply(MethodReview, reply) for reply in replies])
     llm = StructuredLLM(model, name="test:scripted")
-    return offline_context(tmp_path, paper=paper, llm=llm), model
+    ctx = offline_context(tmp_path, paper=paper, llm=llm)
+    settings = ctx.settings.model_copy(update={"method_check_mode": "whole"})
+    return dataclasses.replace(ctx, settings=settings), model
 
 
 DISCREPANCY = {
@@ -120,3 +123,61 @@ async def test_without_an_llm_the_method_is_unverifiable(tmp_path: Path) -> None
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "LLM" in result.reason
+
+
+async def test_short_quotes_do_not_count_as_evidence(tmp_path: Path) -> None:
+    paper = method_paper()
+    ctx, _ = context(
+        tmp_path, paper, [{"discrepancies": [{**DISCREPANCY, "paper_quote": "focal loss"}]}]
+    )
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    assert result.findings == ()
+
+
+# --- pair mode: one small judgement per paper sentence and code span -------------------
+
+
+def pairs_context(
+    tmp_path: Path, paper: ParsedPaper, replies: list[dict[str, Any]]
+) -> tuple[RunContext, ScriptedChatModel]:
+    model = ScriptedChatModel(replies=[tool_reply(PairJudgement, reply) for reply in replies])
+    llm = StructuredLLM(model, name="test:scripted")
+    ctx = offline_context(tmp_path, paper=paper, llm=llm)
+    settings = ctx.settings.model_copy(update={"method_check_mode": "pairs"})
+    return dataclasses.replace(ctx, settings=settings), model
+
+
+async def test_pairs_mode_judges_small_snippets(tmp_path: Path) -> None:
+    paper = method_paper()
+    verdict = {
+        "verdict": "inconsistent",
+        "paper_quote": "We train with the focal loss with gamma set to two",
+        "code_start_line": 4,
+        "code_end_line": 5,
+        "description": "Cross-entropy instead of focal loss.",
+        "confidence": "high",
+    }
+    ctx, model = pairs_context(tmp_path, paper, [verdict])
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.METHOD_MISMATCH
+    code = finding.evidence[1]
+    assert (code.path, code.line_start, code.line_end) == ("model.py", 4, 5)
+    (prompt,) = model.received
+    sent = " ".join(str(m.content) for m in prompt)
+    assert "def loss_fn" in sent
+    assert len(sent) < 4000  # one sentence and one function, not whole files
+
+
+async def test_pairs_mode_drops_lines_outside_the_snippet(tmp_path: Path) -> None:
+    paper = method_paper()
+    verdict = {
+        "verdict": "inconsistent",
+        "paper_quote": "We train with the focal loss with gamma set to two",
+        "code_start_line": 1,
+        "code_end_line": 1,
+        "description": "Imports torch.",
+        "confidence": "high",
+    }
+    ctx, _ = pairs_context(tmp_path, paper, [verdict])
+    assert (await check(task(paper, repo(tmp_path)), ctx)).findings == ()
