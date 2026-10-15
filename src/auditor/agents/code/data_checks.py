@@ -32,6 +32,7 @@ from auditor.agents.code.extract import (
     parse_card,
     scan_json,
     scan_python,
+    scan_shell,
     scan_split_lists,
     scan_yaml,
 )
@@ -134,8 +135,8 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
         return TaskResult.for_task(
             task, TaskOutcome.UNVERIFIABLE, reason=f"the repository could not be fetched: {exc}"
         )
-    sentence = _sentence(task, ctx)
-    candidates = await _static_candidates(snapshot)
+    sentence = paper_sentence(task, ctx)
+    candidates = await static_candidates(snapshot)
     if setting.key in DATA_FILE_KEYS:
         datas = await _data(snapshot, candidates, ctx)
         return _check_data_files(task, setting, sentence, datas)
@@ -150,13 +151,13 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     return _decide(task, setting, sentence, snapshot, candidates)
 
 
-def _sentence(task: AuditTask, ctx: RunContext) -> str:
+def paper_sentence(task: AuditTask, ctx: RunContext) -> str:
     anchor = task.anchor
     assert isinstance(anchor, SentenceAnchor)
     return ctx.paper.sentence(anchor.sentence_id).text
 
 
-async def _static_candidates(snapshot: Snapshot) -> list[Candidate]:
+async def static_candidates(snapshot: Snapshot) -> list[Candidate]:
     """Evidence inside the snapshot itself, read once per snapshot."""
     key = str(snapshot.root)
     async with _locks.setdefault(key, asyncio.Lock()):
@@ -180,6 +181,8 @@ def _scan(snapshot: Snapshot) -> list[Candidate]:
             found = scan_yaml(file.path, text, ref)
         elif suffix == ".json":
             found = scan_json(file.path, text, ref)
+        elif suffix in {".sh", ".bash"}:
+            found = scan_shell(file.path, text, ref)
         elif suffix == ".txt":
             lists[file.path] = text
         candidates += [Candidate(Tier.CODE, s, snapshot) for s in found]
@@ -350,7 +353,7 @@ def _check_data_files(
                 "Rows were compared on their input columns after normalising Unicode and "
                 "whitespace; label and id columns were left out."
             ),
-            evidence=[_paper_quote(task, sentence), *evidence],
+            evidence=[paper_quote(task, sentence), *evidence],
             uncertain=all(o.share < 1 for o in leaking),
         )
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
@@ -388,7 +391,7 @@ def _check_data_files(
             "the rows of the commonest."
         ),
         evidence=[
-            _paper_quote(task, sentence),
+            paper_quote(task, sentence),
             Evidence(
                 kind=EvidenceKind.LOOKUP,
                 source=ref,
@@ -516,7 +519,7 @@ def _decide(
                 + ", ".join(_describe(c.setting) for c in disagreeing[:3])
             ),
             explanation=_explain(tier, disagreeing),
-            evidence=[_paper_quote(task, sentence), *_repository_evidence(disagreeing)],
+            evidence=[paper_quote(task, sentence), *repository_evidence(disagreeing)],
             uncertain=latest_only or len(values) > 1 or paper.key == "dataset",
         )
         if latest_only:
@@ -577,7 +580,7 @@ def _explain(tier: Tier, candidates: Sequence[Candidate]) -> str:
     return text
 
 
-def _paper_quote(task: AuditTask, sentence: str) -> Evidence:
+def paper_quote(task: AuditTask, sentence: str) -> Evidence:
     return Evidence(
         kind=EvidenceKind.QUOTE,
         source=SourceRef(kind=EvidenceSourceKind.SUBMISSION, id=task.paper_id),
@@ -585,7 +588,7 @@ def _paper_quote(task: AuditTask, sentence: str) -> Evidence:
     )
 
 
-def _repository_evidence(candidates: Sequence[Candidate]) -> list[Evidence]:
+def repository_evidence(candidates: Sequence[Candidate]) -> list[Evidence]:
     evidence = []
     seen = set()
     for candidate in candidates:
