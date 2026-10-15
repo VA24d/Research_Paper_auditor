@@ -58,7 +58,18 @@ from auditor.schemas import SourceKind as EvidenceSourceKind
 
 logger = logging.getLogger(__name__)
 
-DATA_KEYS = frozenset({"data_split", "test_fraction", "validation_fraction", "dataset"})
+SPLIT_KEYS = frozenset({"data_split", "test_fraction", "validation_fraction", "dataset"})
+COUNT_KEYS = frozenset({"train_examples", "validation_examples", "test_examples", "total_examples"})
+# Keys only the data files can settle: they are checked in data analysis mode.
+DATA_FILE_KEYS = frozenset({"class_balance", "test_overlap"})
+DATA_KEYS = SPLIT_KEYS | COUNT_KEYS | {"num_classes"} | DATA_FILE_KEYS
+ERROR_CLASSES = {
+    **dict.fromkeys(SPLIT_KEYS, ErrorClass.DATA_SPLIT_MISMATCH),
+    **dict.fromkeys(COUNT_KEYS, ErrorClass.DATASET_SIZE_MISMATCH),
+    "num_classes": ErrorClass.LABEL_DISTRIBUTION_MISMATCH,
+    "class_balance": ErrorClass.LABEL_DISTRIBUTION_MISMATCH,
+    "test_overlap": ErrorClass.DATA_LEAKAGE,
+}
 # Data files that hold the rows a split is made of; they are never downloaded by default.
 DATA_SUFFIXES = frozenset(
     {".csv", ".tsv", ".jsonl", ".parquet", ".arrow", ".feather", ".h5", ".hdf5", ".npz", ".npy"}
@@ -100,6 +111,15 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     setting, repository = task.setting, task.repository
     if setting is None or repository is None or setting.key not in DATA_KEYS:
         raise ValueError(f"{task.task_id} is not a code task about the evaluation data")
+    if setting.key in DATA_FILE_KEYS:
+        return TaskResult.for_task(
+            task,
+            TaskOutcome.UNVERIFIABLE,
+            reason=(
+                f"{setting.key} needs the data files, which are only read in data analysis "
+                "mode (AUDITOR_DATA_ANALYSIS_ENABLED)"
+            ),
+        )
     try:
         snapshot = await fetch_snapshot(repository, ctx.http, ctx.settings)
     except (SnapshotUnavailableError, SourceError) as exc:
@@ -286,6 +306,14 @@ def _agrees(paper: ExtractedSetting, sentence: str, repo: ExtractedSetting) -> b
             or (min(len(name), len(wanted)) >= 3 and (name in wanted or wanted in name))
             for name in offered
         )
+    if paper.key in COUNT_KEYS or paper.key == "num_classes":
+        if paper.key != repo.key or not isinstance(repo.value, int | float):
+            return None
+        if not isinstance(paper.value, int | float):
+            return None
+        return abs(paper.value - repo.value) <= _count_tolerance(paper, repo.value)
+    if repo.key not in SPLIT_KEYS:
+        return None
     if _base(paper, sentence) != _base(repo, None):
         return None
     ours, theirs = _components(paper), _components(repo)
@@ -293,6 +321,19 @@ def _agrees(paper: ExtractedSetting, sentence: str, repo: ExtractedSetting) -> b
     if not shared:
         return None
     return all(percents_match(ours[k], theirs[k]) for k in shared)
+
+
+def _count_tolerance(paper: ExtractedSetting, actual: float) -> float:
+    """How far a stated count may be from the real one: the rounding its form implies
+    ("25k" is within 500, "1.2M" within 50,000), and otherwise 1% for counts."""
+    if paper.key == "num_classes":
+        return 0
+    match = re.search(r"(?:\.(\d+))?\s*([kKM])\s*$", paper.raw_value)
+    rounding = 0.0
+    if match:
+        unit = 1_000_000 if match.group(2) == "M" else 1_000
+        rounding = 0.5 * unit / 10 ** len(match.group(1) or "")
+    return max(rounding, 0.01 * actual)
 
 
 def _related(
@@ -326,7 +367,7 @@ def _decide(
         finding = CandidateFinding.for_task(
             task,
             0,
-            error_class=ErrorClass.DATA_SPLIT_MISMATCH,
+            error_class=ERROR_CLASSES[paper.key],
             summary=(
                 f"The paper states {_describe(paper)}; {_TIER_NAMES[tier]} gives "
                 + ", ".join(_describe(c.setting) for c in disagreeing[:3])
@@ -372,8 +413,16 @@ def _describe(setting: ExtractedSetting) -> str:
             )
             if setting.context:
                 text += f" {setting.context}"
-        case _:
+        case "dataset":
             text = f"dataset {value}" + (f" ({setting.context})" if setting.context else "")
+        case "total_examples":
+            text = f"{value} examples in total"
+        case "num_classes":
+            text = f"{value} classes"
+        case key if key in COUNT_KEYS:
+            text = f"{value} {key.removesuffix('_examples')} examples"
+        case _:
+            text = f"{setting.key} {value}"
     return text + where
 
 
@@ -435,6 +484,11 @@ def _why_unverifiable(paper: ExtractedSetting, snapshot: Snapshot) -> str:
     manifest = snapshot.manifest
     if paper.key == "dataset":
         reason = "no dataset is named in the repository's code, configs or dataset card"
+    elif paper.key in COUNT_KEYS or paper.key == "num_classes":
+        reason = (
+            "no example or class counts found in the repository's split lists or dataset card; "
+            "counting them needs the data files, which are not downloaded"
+        )
     else:
         reason = (
             "no split settings found in the repository's code, configs, split lists or dataset card"

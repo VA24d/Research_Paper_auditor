@@ -69,4 +69,15 @@ def scan_split_lists(files: Mapping[str, str], repository: RepositoryRef) -> lis
                     source=RepositorySource(repository=repository, path=test_path, line=1),
                 )
             )
+            # Each list's line count is the number of examples in that split.
+            found += [
+                ExtractedSetting(
+                    key=f"{split}_examples",
+                    raw_name="split list file",
+                    raw_value=f"{PurePosixPath(path).name} {count} lines",
+                    value=count,
+                    source=RepositorySource(repository=repository, path=path, line=1),
+                )
+                for split, path, count in ordered
+            ]
     return found

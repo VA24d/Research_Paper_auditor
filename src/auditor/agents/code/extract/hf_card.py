@@ -10,9 +10,10 @@ from typing import Any, Self
 import yaml
 
 from auditor.agents.code.extract.normalise import split_from_parts
-from auditor.schemas import ExtractedSetting, RepositoryRef, RepositorySource
+from auditor.schemas import ExtractedSetting, RepositoryRef, RepositorySource, SettingValue
 
 _VALIDATION = ("validation", "valid", "dev")
+_UNLABELLED = frozenset({"unsupervised", "unlabeled", "unlabelled"})
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,8 @@ class CardConfig:
     split_lines: dict[str, int] = field(default_factory=dict)
     label_column: str | None = None
     label_names: tuple[str, ...] | None = None
+    # 1-based line of the label feature's `class_label`.
+    label_line: int | None = None
     data_files: dict[str, tuple[str, ...]] = field(default_factory=dict)
     default: bool = False
 
@@ -43,28 +46,52 @@ class CardInfo:
     def settings(
         self, path: str, repository: RepositoryRef, config_name: str | None
     ) -> list[ExtractedSetting]:
-        """The card's train/validation/test sizes as a `data_split` setting."""
+        """The card's split sizes as `data_split` and `<split>_examples` settings, their sum
+        as `total_examples`, and the label classes as `num_classes`."""
         config = self.config(config_name)
-        if config is None or "train" not in config.splits or "test" not in config.splits:
+        if config is None:
             return []
-        ordered = ["train"]
-        ordered += [s for s in _VALIDATION if s in config.splits][:1]
-        ordered.append("test")
-        value = split_from_parts([float(config.splits[s]) for s in ordered])
-        if value is None:
-            return []
-        return [
-            ExtractedSetting(
-                key="data_split",
-                raw_name="dataset_info.splits",
-                raw_value=" / ".join(f"{s} {config.splits[s]}" for s in ordered),
+
+        def setting(
+            key: str, name: str, raw: str, value: SettingValue, line: int
+        ) -> ExtractedSetting:
+            return ExtractedSetting(
+                key=key,
+                raw_name=name,
+                raw_value=raw,
                 value=value,
                 context=config.name,
-                source=RepositorySource(
-                    repository=repository, path=path, line=config.split_lines.get("test", 1)
-                ),
+                source=RepositorySource(repository=repository, path=path, line=line),
             )
-        ]
+
+        splits, lines = config.splits, config.split_lines
+        ordered = ["train", *[s for s in _VALIDATION if s in splits][:1], "test"]
+        found = []
+        value = split_from_parts([float(splits[s]) for s in ordered if s in splits])
+        if "train" in splits and "test" in splits and value is not None:
+            raw = " / ".join(f"{s} {splits[s]}" for s in ordered)
+            found.append(setting("data_split", "dataset_info.splits", raw, value, lines["test"]))
+        for split in ordered:
+            if split in splits:
+                key = f"{'validation' if split in _VALIDATION else split}_examples"
+                name = f"dataset_info.splits[{split}].num_examples"
+                found.append(setting(key, name, str(splits[split]), splits[split], lines[split]))
+        # Unlabelled extras such as IMDB's "unsupervised" split are not part of the dataset
+        # a paper evaluates on.
+        labelled = {s: n for s, n in splits.items() if s not in _UNLABELLED}
+        if labelled:
+            raw = " + ".join(f"{s} {n}" for s, n in labelled.items())
+            first = min(lines[s] for s in labelled)
+            found.append(
+                setting("total_examples", "dataset_info.splits", raw, sum(labelled.values()), first)
+            )
+        if config.label_names:
+            names = config.label_names
+            raw = f"{len(names)} classes: {', '.join(names)}"
+            found.append(
+                setting("num_classes", "class_label.names", raw, len(names), config.label_line or 1)
+            )
+        return found
 
     @classmethod
     def from_front_matter(cls, root: yaml.MappingNode, offset: int) -> Self:
@@ -91,10 +118,13 @@ class CardInfo:
                 if isinstance(split_name, str) and isinstance(count, int) and count_node:
                     splits[split_name] = count
                     lines[split_name] = count_node.start_mark.line + 1 + offset
-            label_column, label_names = _class_label(_get(entry, "features"))
+            label_column, label_names, label_node = _class_label(_get(entry, "features"))
+            label_line = label_node.start_mark.line + 1 + offset if label_node else None
             files, default = data_files.get(name, ({}, False))
             configs.append(
-                CardConfig(name, splits, lines, label_column, label_names, files, default)
+                CardConfig(
+                    name, splits, lines, label_column, label_names, label_line, files, default
+                )
             )
         return cls(tuple(configs))
 
@@ -163,10 +193,14 @@ def _data_files(node: yaml.Node | None) -> dict[str, tuple[str, ...]]:
     return files
 
 
-def _class_label(features: yaml.Node | None) -> tuple[str | None, tuple[str, ...] | None]:
-    """The first feature with a `class_label` dtype, and its class names in id order."""
+def _class_label(
+    features: yaml.Node | None,
+) -> tuple[str | None, tuple[str, ...] | None, yaml.Node | None]:
+    """The first feature with a `class_label` dtype, its class names in id order, and the
+    `class_label` node."""
     for feature in _items(features):
-        names = _get(_get(_get(feature, "dtype"), "class_label"), "names")
+        class_label = _get(_get(feature, "dtype"), "class_label")
+        names = _get(class_label, "names")
         if names is None:
             continue
         column = _value(_get(feature, "name"))
@@ -180,5 +214,18 @@ def _class_label(features: yaml.Node | None) -> tuple[str | None, tuple[str, ...
             labels = tuple(label for _, label in pairs)
         else:
             continue
-        return (str(column) if column is not None else None), labels
-    return None, None
+        return (
+            (str(column) if column is not None else None),
+            labels,
+            _key_node(_get(feature, "dtype"), "class_label"),
+        )
+    return None, None, None
+
+
+def _key_node(node: yaml.Node | None, key: str) -> yaml.Node | None:
+    if isinstance(node, yaml.MappingNode):
+        for key_node, _ in node.value:
+            if isinstance(key_node, yaml.ScalarNode) and key_node.value == key:
+                found: yaml.Node = key_node
+                return found
+    return None

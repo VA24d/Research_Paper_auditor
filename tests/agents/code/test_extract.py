@@ -159,10 +159,15 @@ def test_split_lists_in_one_folder_give_the_split() -> None:
         "other/train.txt": "a\n",
     }
     settings = scan_split_lists(files, REPO)
-    assert found(settings) == [("data_split", "80/10/10", 1, None)]
+    assert found(settings) == [
+        ("data_split", "80/10/10", 1, None),
+        ("train_examples", 80, 1, None),
+        ("validation_examples", 10, 1, None),
+        ("test_examples", 10, 1, None),
+    ]
     assert settings[0].raw_value == "train.txt 80 / val.txt 10 / test.txt 10"
-    assert isinstance(settings[0].source, RepositorySource)
-    assert settings[0].source.path == "splits/test.txt"
+    paths = [s.source.path for s in settings if isinstance(s.source, RepositorySource)]
+    assert paths == ["splits/test.txt", "splits/train.txt", "splits/val.txt", "splits/test.txt"]
 
 
 def test_split_lists_stored_in_git_lfs_are_ignored() -> None:
@@ -226,8 +231,15 @@ def test_card_split_becomes_a_setting() -> None:
     card = parse_card(IMDB_CARD)
     assert card is not None
     settings = card.settings("README.md", REPO, None)
-    assert found(settings) == [("data_split", "50/50", 20, "plain_text")]
+    assert found(settings) == [
+        ("data_split", "50/50", 20, "plain_text"),
+        ("train_examples", 25000, 17, "plain_text"),
+        ("test_examples", 25000, 20, "plain_text"),
+        ("total_examples", 50000, 17, "plain_text"),
+        ("num_classes", 2, 10, "plain_text"),
+    ]
     assert settings[0].raw_value == "train 25000 / test 25000"
+    assert settings[-1].raw_value == "2 classes: neg, pos"
 
 
 def test_card_with_several_configs_picks_the_named_one() -> None:

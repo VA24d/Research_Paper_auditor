@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import pytest
 
-from auditor.agents.code.datasplit import check_data_setting
+from auditor.agents.code.data_checks import check_data_setting
 from auditor.config import Settings
 from auditor.infra.context import RunContext
 from auditor.infra.http import HttpClient
-from auditor.planner.evaluation_setup import evaluation_settings
+from auditor.planner.evaluation_setup import evaluation_settings, held_out_setting
 from auditor.schemas import (
     AuditTask,
     ErrorClass,
@@ -33,8 +34,13 @@ def paper_saying(text: str) -> ParsedPaper:
     return ParsedPaper.model_validate(data)
 
 
-def task_for(paper: ParsedPaper, repository: str) -> AuditTask:
-    (setting,) = evaluation_settings(paper.sentence("s4"))
+def task_for(paper: ParsedPaper, repository: str, key: str | None = None) -> AuditTask:
+    found = evaluation_settings(paper.sentence("s4"))
+    if key == "test_overlap":
+        held_out = held_out_setting(found)
+        assert held_out is not None
+        found = [held_out]
+    (setting,) = [s for s in found if key is None or s.key == key]
     assert isinstance(setting.source, PaperSource)
     return AuditTask.create(
         paper_id=paper.paper_id,
@@ -280,6 +286,90 @@ async def test_latest_revision_sizes_never_make_a_mismatch(tmp_path: Path) -> No
 
 
 def test_the_check_covers_the_evaluation_data_keys() -> None:
-    import auditor.agents.code.datasplit as module
+    import auditor.agents.code.data_checks as module
 
-    assert {"data_split", "test_fraction", "validation_fraction", "dataset"} == module.DATA_KEYS
+    assert {
+        "data_split",
+        "test_fraction",
+        "validation_fraction",
+        "dataset",
+        "train_examples",
+        "validation_examples",
+        "test_examples",
+        "total_examples",
+        "num_classes",
+        "class_balance",
+        "test_overlap",
+    } == module.DATA_KEYS
+
+
+# --- dataset size, classes, balance and leakage ----------------------------------------
+
+IMDB_LIKE = (
+    "---\ndataset_info:\n  features:\n  - name: text\n    dtype: string\n"
+    "  - name: label\n    dtype:\n      class_label:\n        names:\n"
+    "          '0': neg\n          '1': pos\n  splits:\n"
+    "  - name: train\n    num_examples: 25000\n  - name: test\n    num_examples: 25000\n"
+    "---\n"
+)
+
+
+async def hub_check(tmp_path: Path, text: str, key: str) -> Any:
+    transport, _ = hub(IMDB_LIKE)
+    paper = paper_saying(text)
+    ctx = hub_context(tmp_path, paper, transport)
+    task = task_for(paper, "https://huggingface.co/datasets/org/data", key)
+    return await check_data_setting(task, ctx)
+
+
+async def test_stated_split_sizes_are_checked_against_the_card(tmp_path: Path) -> None:
+    text = "We use 25,000 training examples and 2,000 test examples."
+    train = await hub_check(tmp_path, text, "train_examples")
+    assert train.outcome is TaskOutcome.CHECKED
+    assert train.findings == ()
+    test = await hub_check(tmp_path, text, "test_examples")
+    (finding,) = test.findings
+    assert finding.error_class is ErrorClass.DATASET_SIZE_MISMATCH
+    assert "2,000" in finding.summary or "2000" in finding.summary
+    assert "25000" in finding.summary
+
+
+async def test_rounded_sizes_allow_for_their_rounding(tmp_path: Path) -> None:
+    rounded = await hub_check(tmp_path, "The test set contains 25k images.", "test_examples")
+    assert rounded.findings == ()
+
+
+async def test_total_size_is_the_sum_of_the_splits(tmp_path: Path) -> None:
+    result = await hub_check(tmp_path, "Our dataset consists of 50,000 samples.", "total_examples")
+    assert result.findings == ()
+
+
+async def test_number_of_classes_comes_from_the_card_labels(tmp_path: Path) -> None:
+    result = await hub_check(tmp_path, "We train a classifier over 10 classes.", "num_classes")
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.LABEL_DISTRIBUTION_MISMATCH
+    (_, lookup) = finding.evidence
+    assert "neg" in lookup.text
+
+
+async def test_split_list_line_counts_are_example_counts(tmp_path: Path) -> None:
+    files = {"splits/train.txt": "a\n" * 70, "splits/test.txt": "c\n" * 30}
+    agree = await check(tmp_path, "The test set contains 30 images.", files)
+    assert agree.findings == ()
+
+
+@pytest.mark.parametrize(
+    ("text", "key"),
+    [
+        ("We construct a class-balanced test set.", "class_balance"),
+        (SPLIT_8_1_1, "test_overlap"),
+    ],
+)
+async def test_balance_and_leakage_need_the_data(tmp_path: Path, text: str, key: str) -> None:
+    paper = paper_saying(text)
+    files = {"train.py": "x = random_split(ds, [0.8, 0.1, 0.1])\n"}
+    task = task_for(paper, repo(tmp_path, files), key)
+    result = await check_data_setting(task, offline_context(tmp_path, paper=paper))
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "data analysis mode" in result.reason
