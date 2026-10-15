@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "id": "acl-2025",
+  "name": "ACL 2025 long paper (ARR review version)",
+  "rules": [
+    {
+      "id": "page-limit",
+      "description": "Review versions of long papers have at most 8 pages of content, figures and tables included; references, the Limitations section, an ethics section at the end, acknowledgements and appendices after the references do not count. Source: https://2025.aclweb.org/calls/main_conference_papers/, https://acl-org.github.io/ACLPUB/formatting.html and https://aclrollingreview.org/cfp",
+      "check": "max_pages",
+      "params": {
+        "max_pages": 8,
+        "exclude_sections": [
+          "references",
+          "bibliography",
+          "limitations",
+          "ethic",
+          "broader impact",
+          "acknowledg",
+          "appendix",
+          "appendices"
+        ]
+      }
+    },
+    {
+      "id": "body-font-size",
+      "description": "The text is 11 point roman, single-spaced. Source: https://acl-org.github.io/ACLPUB/formatting.html",
+      "check": "min_body_font_size",
+      "params": {
+        "min_size": 11
+      }
+    },
+    {
+      "id": "paper-size",
+      "description": "All papers use A4 paper format (21 cm x 29.7 cm). Source: https://acl-org.github.io/ACLPUB/formatting.html",
+      "check": "paper_size",
+      "params": {
+        "width": 595,
+        "height": 842
+      }
+    },
+    {
+      "id": "limitations",
+      "description": "The paper has a dedicated section titled \"Limitations\"; papers without it are desk rejected. Source: https://aclrollingreview.org/cfp and https://acl-org.github.io/ACLPUB/formatting.html",
+      "check": "required_sections",
+      "params": {
+        "sections": [
+          "limitations"
+        ]
+      }
+    },
+    {
+      "id": "no-acknowledgements",
+      "description": "Review versions do not include acknowledgements. Source: https://acl-org.github.io/ACLPUB/formatting.html",
+      "check": "forbidden_sections",
+      "params": {
+        "sections": [
+          "acknowledg"
+        ]
+      }
+    },
+    {
+      "id": "anonymous",
+      "description": "Review is double-blind: the submission must not identify its authors. Source: https://2025.aclweb.org/calls/main_conference_papers/",
+      "check": "anonymity",
+      "params": {},
+      "needs_visual_inspection": true
+    }
+  ]
+}

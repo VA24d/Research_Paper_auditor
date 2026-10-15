@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "neurips-2025",
+  "name": "NeurIPS 2025 (submission)",
+  "rules": [
+    {
+      "id": "page-limit",
+      "description": "The main text is at most nine content pages, including all figures and tables; references, the checklist and the technical appendices do not count. Source: https://neurips.cc/Conferences/2025/CallForPapers",
+      "check": "max_pages",
+      "params": {
+        "max_pages": 9,
+        "exclude_sections": [
+          "references",
+          "bibliography",
+          "checklist",
+          "appendix",
+          "appendices",
+          "acknowledg"
+        ]
+      }
+    },
+    {
+      "id": "body-font-size",
+      "description": "Body text uses 10 point type with 11 point leading. Source: https://media.neurips.cc/Conferences/NeurIPS2025/Styles.zip (neurips_2025.tex)",
+      "check": "min_body_font_size",
+      "params": {
+        "min_size": 10
+      }
+    },
+    {
+      "id": "paper-size",
+      "description": "Pages are US Letter, not A4. Source: https://media.neurips.cc/Conferences/NeurIPS2025/Styles.zip (neurips_2025.tex)",
+      "check": "paper_size",
+      "params": {
+        "width": 612,
+        "height": 792
+      }
+    },
+    {
+      "id": "checklist",
+      "description": "The paper includes the NeurIPS Paper Checklist; papers without it are desk rejected. Source: https://media.neurips.cc/Conferences/NeurIPS2025/Styles.zip (neurips_2025.tex) and https://neurips.cc/Conferences/2025/CallForPapers",
+      "check": "required_sections",
+      "params": {
+        "sections": [
+          "checklist"
+        ]
+      }
+    },
+    {
+      "id": "no-acknowledgements",
+      "description": "Acknowledgments are not included at submission time. Source: https://neurips.cc/Conferences/2025/CallForPapers",
+      "check": "forbidden_sections",
+      "params": {
+        "sections": [
+          "acknowledg"
+        ]
+      }
+    },
+    {
+      "id": "anonymous",
+      "description": "Review is double-blind: the submission must not identify its authors. Source: https://neurips.cc/Conferences/2025/CallForPapers",
+      "check": "anonymity",
+      "params": {},
+      "needs_visual_inspection": true
+    }
+  ]
+}
