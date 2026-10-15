@@ -1,4 +1,4 @@
-"""Split settings in YAML and JSON configuration files, with the line of each key.
+"""Settings in YAML, JSON and TOML configuration files, with the line of each key.
 
 YAML is only composed into nodes with the safe loader, never constructed, so tags such as
 `!!python/object` are inert.
@@ -6,6 +6,7 @@ YAML is only composed into nodes with the safe loader, never constructed, so tag
 
 import json
 import re
+import tomllib
 from collections.abc import Iterator
 from typing import Any
 
@@ -128,3 +129,31 @@ def _json_pairs(value: Any) -> Iterator[tuple[str, Any]]:
     elif isinstance(value, list):
         for item in value:
             yield from _json_pairs(item)
+
+
+def scan_toml(path: str, text: str, repository: RepositoryRef) -> list[ExtractedSetting]:
+    """Settings in a TOML file; each key's line is the next line, in order, that assigns
+    a key of that name."""
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError:
+        return []
+    assigned = [
+        (match.group(1), text.count("\n", 0, match.start()) + 1)
+        for match in re.finditer(r'(?m)(?:^|[{,])\s*"?([A-Za-z0-9_.-]+)"?\s*=', text)
+    ]
+    position = 0
+    found = []
+    for name, value in _json_pairs(data):
+        line = 1
+        for index in range(position, len(assigned)):
+            if assigned[index][0] == name:
+                line = assigned[index][1]
+                position = index + 1
+                break
+        if isinstance(value, dict | list):
+            continue
+        setting = _named(name, value, json.dumps(value), path, line, repository)
+        if setting is not None:
+            found.append(setting)
+    return found

@@ -7,7 +7,7 @@ optimizer, seeds, metrics (`eval_metric`) and the evaluation data (`data_split`,
 the repository is imported or run.
 """
 
-from auditor.agents.code.extract.config_files import scan_json, scan_yaml
+from auditor.agents.code.extract.config_files import scan_json, scan_toml, scan_yaml
 from auditor.agents.code.extract.hf_card import CardConfig, CardInfo, parse_card
 from auditor.agents.code.extract.python_ast import scan_python
 from auditor.agents.code.extract.shell import scan_shell
@@ -21,5 +21,6 @@ __all__ = [
     "scan_python",
     "scan_shell",
     "scan_split_lists",
+    "scan_toml",
     "scan_yaml",
 ]

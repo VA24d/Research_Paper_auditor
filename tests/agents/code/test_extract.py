@@ -6,6 +6,7 @@ from auditor.agents.code.extract import (
     scan_python,
     scan_shell,
     scan_split_lists,
+    scan_toml,
     scan_yaml,
 )
 from auditor.agents.code.extract.normalise import split_parts, splits_match
@@ -347,3 +348,19 @@ def test_yaml_integers_stay_integers() -> None:
     (setting,) = scan_yaml("c.yaml", "batch_size: 32\n", REPO)
     assert setting.value == 32
     assert isinstance(setting.value, int)
+
+
+def test_toml_keys_keep_their_line() -> None:
+    text = (
+        '[tool.poetry]\nname = "x"\n\n'
+        "[train]\nlr = 3e-4\nnum_epochs = 10\nsplit = { test_size = 0.2 }\n"
+    )
+    assert found(scan_toml("config.toml", text, REPO)) == [
+        ("learning_rate", 0.0003, 5, None),
+        ("epochs", 10, 6, None),
+        ("test_fraction", 20.0, 7, None),
+    ]
+
+
+def test_broken_toml_gives_nothing() -> None:
+    assert scan_toml("x.toml", "a = [1,\n", REPO) == []

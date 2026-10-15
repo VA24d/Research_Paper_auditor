@@ -163,29 +163,35 @@ and architecture keys are listed in `auditor.planner.tables.ALIASES` (`learning_
 use the same keys. A repository's `commit` may be a branch or tag name when the dataset gives
 one; record the commit hash actually checked out.
 
-- [ ] **P3.1** Repository fetching through the shared infrastructure: pinned commit, size
-  limits, no code execution. (Vijay, branch `p3-1-repo-fetch`: `auditor.infra.snapshots`
-  fetches core files from GitHub, GitLab, Hugging Face, Kaggle datasets, Anonymous GitHub,
-  Zenodo and local folders into a scratch folder.)
-- [ ] **P3.2** Static extraction of settings from `.py` (including argparse and config
+- [x] **P3.1** Repository fetching through the shared infrastructure: pinned commit, size
+  limits, no code execution. `auditor.infra.snapshots` fetches core files from GitHub,
+  GitLab, Hugging Face, Kaggle datasets, Anonymous GitHub, Zenodo and local folders into a
+  scratch folder; data files only in data analysis mode (`--analyse-data`).
+- [x] **P3.2** Static extraction of settings from `.py` (including argparse and config
   defaults), `.yaml`, `.json` and `.toml` files, as `ExtractedSetting`s with file and line.
-- [ ] **P3.3** Normalisation and comparison: units, number formats (`3e-4` and `0.0003`),
+  `auditor.agents.code.extract`, plus shell command lines, split lists and dataset cards.
+- [x] **P3.3** Normalisation and comparison: units, number formats (`3e-4` and `0.0003`),
   and name aliases (`lr` and `learning_rate`).
-- [ ] **P3.4** Code agent `check()` returning a `TaskResult` with `CandidateFinding`s and
+- [x] **P3.4** Code agent `check()` returning a `TaskResult` with `CandidateFinding`s and
   file/line `Evidence`; settings that cannot be located are `unverifiable` with a reason.
+  `auditor.agents.code.check` (settings in `settings_check`, evaluation data in
+  `data_checks`, data analysis in `auditor.agents.code.data`).
 - [ ] **P3.5** Venue profiles in `configs/venues/` (start with the venues of the papers in
   sets B and C).
 - [ ] **P3.6** Template checker `check()`: deterministic rules over `ParsedPaper.layout`
   and sections. No LLM calls. Findings use page or document anchors where there is no
   sentence (D3). Rules that need visual inspection return `unverifiable`.
-- [ ] **P3.7** Code and template tools for B1 (D7).
-- [ ] **P3.8** Set C: 40 repositories, 160 instances, injected mismatches (paper side by
+- [ ] **P3.7** Code and template tools for B1 (D7). Code tools done:
+  `auditor.agents.code.tools`.
+- [ ] **P3.8** Set C (tooling done: `scripts/set_c.py` candidates, inject-paper,
+  inject-code, validate; the 40 repositories and labels are still to be built): 40 repositories, 160 instances, injected mismatches (paper side by
   editing `ParsedPaper` copies, or code side by patching a pinned copy; the unchanged
   originals are kept too), `GoldLabel`s including clean controls. Every label is validated
   against the paper and the code the experiment actually uses, and a sample is reviewed by
   a second person before freezing (D18).
 - [ ] **P3.9** Template fixtures and evaluation; code module evaluation (precision, recall,
   F1, false positives on matching settings, tool-call accuracy of repository searches).
+  Code module scoring: `scripts/set_c.py score` (`auditor.agents.code.set_c.score_code_module`).
 
 ### Part 4 — Sudheera: verifier, report, evaluation
 

@@ -34,6 +34,7 @@ from auditor.agents.code.extract import (
     scan_python,
     scan_shell,
     scan_split_lists,
+    scan_toml,
     scan_yaml,
 )
 from auditor.agents.code.extract.normalise import percents_match, split_parts
@@ -181,6 +182,8 @@ def _scan(snapshot: Snapshot) -> list[Candidate]:
             found = scan_yaml(file.path, text, ref)
         elif suffix == ".json":
             found = scan_json(file.path, text, ref)
+        elif suffix == ".toml":
+            found = scan_toml(file.path, text, ref)
         elif suffix in {".sh", ".bash"}:
             found = scan_shell(file.path, text, ref)
         elif suffix == ".txt":
