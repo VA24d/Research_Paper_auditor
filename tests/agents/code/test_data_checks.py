@@ -1,3 +1,4 @@
+import dataclasses
 import random
 from pathlib import Path
 from typing import Any
@@ -373,3 +374,76 @@ async def test_balance_and_leakage_need_the_data(tmp_path: Path, text: str, key:
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "data analysis mode" in result.reason
+
+
+# --- data analysis mode ----------------------------------------------------------------
+
+
+def data_mode(ctx: RunContext) -> RunContext:
+    return dataclasses.replace(
+        ctx, settings=ctx.settings.model_copy(update={"data_analysis_enabled": True})
+    )
+
+
+async def data_check(tmp_path: Path, text: str, files: dict[str, str], key: str | None) -> Any:
+    paper = paper_saying(text)
+    task = task_for(paper, repo(tmp_path, files), key)
+    return await check_data_setting(task, data_mode(offline_context(tmp_path, paper=paper)))
+
+
+TRAIN_CSV = "id,text,label\n1,good,pos\n2,bad,neg\n3,fine,pos\n4,poor,neg\n"
+
+
+async def test_test_rows_found_in_training_data_are_leakage(tmp_path: Path) -> None:
+    files = {
+        "data/train.csv": TRAIN_CSV,
+        "data/test.csv": "id,text,label\n9,fine,pos\n10,new,neg\n",
+    }
+    result = await data_check(tmp_path, SPLIT_8_1_1, files, "test_overlap")
+    assert result.outcome is TaskOutcome.CHECKED
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.DATA_LEAKAGE
+    assert "1 of 2 test rows" in finding.summary
+    (_, lookup) = finding.evidence
+    assert lookup.kind is EvidenceKind.LOOKUP
+    assert lookup.path == "data/test.csv"
+    assert list((tmp_path / "scratch").rglob("data_report-*.json"))
+
+
+async def test_disjoint_splits_are_checked_without_findings(tmp_path: Path) -> None:
+    files = {"data/train.csv": TRAIN_CSV, "data/test.csv": "id,text,label\n9,new,pos\n"}
+    result = await data_check(tmp_path, SPLIT_8_1_1, files, "test_overlap")
+    assert result.outcome is TaskOutcome.CHECKED
+    assert result.findings == ()
+
+
+async def test_an_unbalanced_test_set_contradicts_a_balance_claim(tmp_path: Path) -> None:
+    test = "text,label\n" + "".join(f"t{i},pos\n" for i in range(9)) + "u,neg\n"
+    files = {"data/train.csv": TRAIN_CSV, "data/test.csv": test}
+    result = await data_check(
+        tmp_path, "We construct a class-balanced test set.", files, "class_balance"
+    )
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.LABEL_DISTRIBUTION_MISMATCH
+    assert "neg 1" in finding.summary
+    assert "pos 9" in finding.summary
+
+
+async def test_row_counts_settle_a_split_the_code_does_not_state(tmp_path: Path) -> None:
+    train = "text\n" + "".join(f"a{i}\n" for i in range(70))
+    test = "text\n" + "".join(f"b{i}\n" for i in range(30))
+    files = {"data/train.csv": train, "data/test.csv": test}
+    result = await data_check(tmp_path, "We split the dataset into 80/20.", files, None)
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.DATA_SPLIT_MISMATCH
+    assert "70/30" in finding.summary
+    (_, lookup) = finding.evidence
+    assert "train 70" in lookup.text
+
+
+async def test_data_mode_without_split_files_is_unverifiable(tmp_path: Path) -> None:
+    files = {"train.py": "print(1)\n", "data/all.csv": TRAIN_CSV}
+    result = await data_check(tmp_path, SPLIT_8_1_1, files, "test_overlap")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "train" in result.reason

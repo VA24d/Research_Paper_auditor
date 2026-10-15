@@ -10,7 +10,9 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import random
+import tempfile
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from contextvars import ContextVar
@@ -62,6 +64,10 @@ class HttpRequestError(HttpError):
 
 class ResponseTooLargeError(HttpError):
     """The response body is larger than the `max_bytes` the caller allowed."""
+
+
+class ChecksumMismatchError(HttpError):
+    """A downloaded file does not have the SHA-256 it was expected to have."""
 
 
 class HttpStatusError(HttpError):
@@ -204,6 +210,61 @@ def _retry_after_seconds(response: httpx.Response, now: datetime) -> float | Non
     return max(0.0, (when - now).total_seconds())
 
 
+@dataclass(frozen=True)
+class Download:
+    """A file written by `HttpClient.download_to`."""
+
+    path: Path
+    size: int
+    sha256: str
+
+
+# How much of an error response a download keeps in memory, for the error message.
+_ERROR_BODY_BYTES = 65_536
+
+
+@dataclass
+class _FileSink:
+    """Where a download's body goes: a temporary file next to the destination, replaced
+    by each new attempt so a retry starts from the beginning."""
+
+    destination: Path
+    temporary: Path | None = None
+    size: int = 0
+    sha256: str = ""
+
+    def discard(self) -> None:
+        if self.temporary is not None:
+            self.temporary.unlink(missing_ok=True)
+            self.temporary = None
+
+
+async def _write_body(raw: httpx.Response, max_bytes: int, sink: _FileSink) -> None:
+    too_large = ResponseTooLargeError(f"{raw.request.url} is larger than {max_bytes} bytes")
+    length = raw.headers.get("content-length", "")
+    if length.isdigit() and int(length) > max_bytes:
+        raise too_large
+    sink.discard()
+    sink.destination.parent.mkdir(parents=True, exist_ok=True)
+    handle, name = tempfile.mkstemp(dir=sink.destination.parent, prefix=".download-")
+    sink.temporary = Path(name)
+    digest = hashlib.sha256()
+    size = 0
+    try:
+        with os.fdopen(handle, "wb") as file:
+            async for chunk in raw.aiter_bytes():
+                size += len(chunk)
+                if size > max_bytes:
+                    raise too_large
+                digest.update(chunk)
+                file.write(chunk)
+    except BaseException:
+        sink.discard()
+        raise
+    sink.size = size
+    sink.sha256 = digest.hexdigest()
+
+
 async def _read_body(raw: httpx.Response, max_bytes: int | None) -> bytes:
     if max_bytes is None:
         return await raw.aread()
@@ -217,6 +278,15 @@ async def _read_body(raw: httpx.Response, max_bytes: int | None) -> bytes:
         if len(body) > max_bytes:
             raise too_large
     return bytes(body)
+
+
+async def _read_prefix(raw: httpx.Response, limit: int) -> bytes:
+    body = bytearray()
+    async for chunk in raw.aiter_bytes():
+        body += chunk
+        if len(body) >= limit:
+            break
+    return bytes(body[:limit])
 
 
 class HttpClient:
@@ -277,7 +347,12 @@ class HttpClient:
         await self._client.aclose()
 
     def is_allowed(self, host: str) -> bool:
-        return host.lower() in self._allowed_hosts
+        """Whether `host` is on the allowlist. An entry starting with "." allows every
+        subdomain of it: ".hf.co" allows "us.aws.cdn.hf.co" but not "evilhf.co"."""
+        host = host.lower()
+        return host in self._allowed_hosts or any(
+            entry.startswith(".") and host.endswith(entry) for entry in self._allowed_hosts
+        )
 
     async def _before_request(self, request: httpx.Request) -> None:
         """Runs before every request httpx sends, including each redirect hop."""
@@ -331,6 +406,48 @@ class HttpClient:
             attempts=attempts,
         )
 
+    async def download_to(
+        self,
+        url: str,
+        destination: Path,
+        *,
+        max_bytes: int,
+        headers: Mapping[str, str] | None = None,
+        sha256: str | None = None,
+        attempts: int | None = None,
+    ) -> Download:
+        """Streams a file to `destination` without holding it in memory or caching it.
+
+        The body goes to a temporary file in the destination's folder and replaces
+        `destination` only when it is complete, within `max_bytes` and, when `sha256` is
+        given, has that hash; otherwise no file is left behind. Allowlist, rate limits,
+        retries and request records are the same as for `get`. httpx drops an
+        Authorization header when a redirect leads to another host.
+        """
+        sink = _FileSink(destination)
+        try:
+            response = await self._send(
+                "GET",
+                url,
+                headers=headers,
+                use_cache=False,
+                attempts=attempts,
+                max_bytes=max_bytes,
+                sink=sink,
+            )
+            response.raise_for_status()
+            if sink.temporary is None:
+                raise HttpRequestError(f"GET {url} returned no body")
+            if sha256 is not None and sink.sha256 != sha256.lower():
+                raise ChecksumMismatchError(
+                    f"{url} has SHA-256 {sink.sha256}, expected {sha256.lower()}"
+                )
+            sink.temporary.replace(destination)
+            sink.temporary = None
+            return Download(destination, sink.size, sink.sha256)
+        finally:
+            sink.discard()
+
     async def _send(
         self,
         method: str,
@@ -344,6 +461,7 @@ class HttpClient:
         use_cache: bool,
         attempts: int | None = None,
         max_bytes: int | None = None,
+        sink: _FileSink | None = None,
     ) -> HttpResponse:
         max_attempts = attempts if attempts is not None else self._max_attempts
         request_url = httpx.URL(url)
@@ -386,7 +504,15 @@ class HttpClient:
                     raw = await self._client.send(request, stream=True)
                     try:
                         retry = raw.status_code in RETRY_STATUSES and attempt < max_attempts
-                        content = b"" if retry else await _read_body(raw, max_bytes)
+                        content = b""
+                        if retry:
+                            pass
+                        elif sink is not None and raw.status_code == 200:
+                            await _write_body(raw, max_bytes or 0, sink)
+                        elif sink is not None:
+                            content = await _read_prefix(raw, _ERROR_BODY_BYTES)
+                        else:
+                            content = await _read_body(raw, max_bytes)
                     finally:
                         await raw.aclose()
                 except ResponseTooLargeError as exc:

@@ -1,3 +1,4 @@
+import hashlib
 import itertools
 import json
 import random
@@ -10,6 +11,7 @@ import pytest
 
 from auditor.config import Settings
 from auditor.infra.http import (
+    ChecksumMismatchError,
     HostNotAllowedError,
     HttpClient,
     HttpRequestError,
@@ -396,3 +398,124 @@ async def test_streamed_body_without_length_stops_at_max_bytes(
             await client.get("https://api.openalex.org/stream", max_bytes=55, use_cache=False)
     # Reading stopped soon after the limit instead of draining the whole body.
     assert len(sent) < 20
+
+
+# --- streaming downloads to disk -------------------------------------------------------
+
+
+def files_in(folder: Path, part: str) -> list[str]:
+    """Names in `folder` containing `part` (a sync helper, so async tests stay non-blocking)."""
+    return [path.name for path in folder.iterdir() if part in path.name]
+
+
+async def test_download_streams_to_the_destination_and_hashes(
+    tmp_path: Path, fake_time: FakeTime
+) -> None:
+    body = b"a,b\n" * 1000
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=body)
+
+    usage = UsageLog()
+    destination = tmp_path / "data" / "train.csv"
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with enter_scope(Scope(run_id="r1", task_id="t1", usage=usage)):
+            result = await client.download_to(
+                "https://huggingface.co/x/train.csv", destination, max_bytes=10_000
+            )
+    assert destination.read_bytes() == body
+    assert result.size == len(body)
+    assert result.sha256 == hashlib.sha256(body).hexdigest()
+    assert usage.http_requests[-1].status_code == 200
+    assert not (tmp_path / "cache").exists() or not any((tmp_path / "cache").rglob("*.bin"))
+
+
+async def test_download_past_the_limit_leaves_no_file(tmp_path: Path, fake_time: FakeTime) -> None:
+    async def chunks() -> AsyncIterator[bytes]:
+        for _ in range(100):
+            yield b"z" * 100
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=chunks())
+
+    folder = tmp_path / "data"
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with pytest.raises(ResponseTooLargeError):
+            await client.download_to("https://huggingface.co/x/big", folder / "big", max_bytes=500)
+    assert list(folder.iterdir()) == []
+
+
+async def test_download_retries_from_the_start(tmp_path: Path, fake_time: FakeTime) -> None:
+    statuses = iter([503, 200])
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(next(statuses), content=b"complete")
+
+    destination = tmp_path / "file.txt"
+    async with make_client(handler, tmp_path, fake_time) as client:
+        await client.download_to("https://huggingface.co/x/f", destination, max_bytes=100)
+    assert destination.read_bytes() == b"complete"
+    assert files_in(tmp_path, ".download") == []
+
+
+async def test_download_with_the_wrong_checksum_is_refused(
+    tmp_path: Path, fake_time: FakeTime
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"tampered")
+
+    destination = tmp_path / "file.txt"
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with pytest.raises(ChecksumMismatchError):
+            await client.download_to(
+                "https://huggingface.co/x/f", destination, max_bytes=100, sha256="0" * 64
+            )
+    assert not destination.exists()
+
+
+async def test_download_error_status_writes_nothing(tmp_path: Path, fake_time: FakeTime) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, text="not here")
+
+    destination = tmp_path / "file.txt"
+    async with make_client(handler, tmp_path, fake_time) as client:
+        with pytest.raises(HttpStatusError):
+            await client.download_to("https://huggingface.co/x/f", destination, max_bytes=100)
+    assert files_in(tmp_path, ".txt") == []
+
+
+async def test_authorization_is_not_sent_to_another_host_after_a_redirect(
+    tmp_path: Path, fake_time: FakeTime
+) -> None:
+    seen: dict[str, str | None] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen[request.url.host] = request.headers.get("authorization")
+        if request.url.host == "huggingface.co":
+            return httpx.Response(302, headers={"location": "https://us.aws.cdn.hf.co/blob"})
+        return httpx.Response(200, content=b"data")
+
+    async with make_client(handler, tmp_path, fake_time) as client:
+        await client.download_to(
+            "https://huggingface.co/x/f",
+            tmp_path / "f",
+            max_bytes=100,
+            headers={"Authorization": "Bearer hf_secret"},
+        )
+    assert seen == {"huggingface.co": "Bearer hf_secret", "us.aws.cdn.hf.co": None}
+
+
+@pytest.mark.parametrize(
+    ("host", "allowed"),
+    [
+        ("us.aws.cdn.hf.co", True),
+        ("cas-bridge.xethub.hf.co", True),
+        ("evilhf.co", False),
+        ("hf.co.evil.com", False),
+    ],
+)
+def test_allowlist_entries_starting_with_a_dot_cover_subdomains(
+    tmp_path: Path, fake_time: FakeTime, host: str, allowed: bool
+) -> None:
+    client = make_client(lambda request: httpx.Response(200), tmp_path, fake_time)
+    assert client.is_allowed(host) is allowed

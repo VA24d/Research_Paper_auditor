@@ -197,3 +197,19 @@ def test_baseline_b0_command(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) ->
 def test_run_directory_paths(tmp_path: Path) -> None:
     run = RunDirectory(tmp_path, "r1")
     assert run.paper_dir(example_paper()) == tmp_path / "r1" / "example-paper-original"
+
+
+@pytest.mark.parametrize("command", ["audit", "baseline", "batch"])
+def test_analyse_data_flag_turns_on_data_analysis(command: str) -> None:
+    from auditor.cli import build_parser, settings_for_args
+    from auditor.config import Settings
+
+    argv = {
+        "audit": ["audit", "paper.json", "--analyse-data"],
+        "baseline": ["baseline", "b0", "paper.json", "--analyse-data"],
+        "batch": ["batch", "set.jsonl", "--experiment", "e", "--analyse-data"],
+    }[command]
+    settings = settings_for_args(build_parser().parse_args(argv), Settings())
+    assert settings.data_analysis_enabled
+    plain = settings_for_args(build_parser().parse_args(argv[:-1]), Settings())
+    assert not plain.data_analysis_enabled

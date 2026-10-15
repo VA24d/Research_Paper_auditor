@@ -21,6 +21,9 @@ DEFAULT_ALLOWED_HOSTS = (
     "gitlab.com",
     "huggingface.co",
     "datasets-server.huggingface.co",
+    # Hugging Face serves data files from regional CDN hosts such as us.aws.cdn.hf.co and
+    # cas-bridge.xethub.hf.co; an entry starting with "." allows its subdomains.
+    ".hf.co",
     "www.kaggle.com",
     # Kaggle answers a download with a signed redirect to Google Cloud Storage.
     "storage.googleapis.com",
@@ -63,6 +66,13 @@ class Settings(BaseSettings):
     snapshot_max_total_bytes: int = Field(default=10_000_000, gt=0)
     snapshot_max_files: int = Field(default=500, gt=0)
     snapshot_max_archive_bytes: int = Field(default=50_000_000, gt=0)
+    # Data analysis mode downloads a dataset's data files to count rows, read labels and
+    # find test rows that also occur in training data (decision D4). Off by default; part
+    # of the run fingerprint like every other setting.
+    data_analysis_enabled: bool = False
+    data_analysis_max_file_bytes: int = Field(default=200_000_000, gt=0)
+    data_analysis_max_total_bytes: int = Field(default=1_000_000_000, gt=0)
+    data_analysis_max_hashed_rows: int = Field(default=2_000_000, gt=0)
     # Optional tokens: GitHub allows 60 API requests an hour without one; Hugging Face
     # needs one for gated repositories.
     github_token: SecretStr | None = None

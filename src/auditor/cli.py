@@ -270,6 +270,14 @@ def build_parser() -> argparse.ArgumentParser:
             "--repo-commit",
             help="Commit, tag or branch (Kaggle: version number) to check against",
         )
+        command.add_argument(
+            "--analyse-data",
+            action="store_true",
+            help=(
+                "Download the dataset's data files to count rows, read labels and look for "
+                "test rows that also occur in training data (slow; part of the run settings)"
+            ),
+        )
         command.add_argument("--venue", type=Path, help="Venue profile JSON")
         command.add_argument("--run-id", type=_name, help="Run id (default: generated)")
 
@@ -302,12 +310,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict", action="store_true", help="Refuse to run while any part is still a mock"
     )
     batch.add_argument("--max-concurrency", type=_positive, default=8)
+    batch.add_argument(
+        "--analyse-data",
+        action="store_true",
+        help="Run data analysis mode for every system (see audit --help)",
+    )
     return parser
+
+
+def settings_for_args(args: argparse.Namespace, settings: Settings) -> Settings:
+    """Settings with the command's switches applied. Switches that change results go
+    through Settings, so the run fingerprint covers them (decision D10)."""
+    if getattr(args, "analyse_data", False):
+        settings = settings.model_copy(update={"data_analysis_enabled": True})
+    return settings
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    settings = Settings()
+    settings = settings_for_args(args, Settings())
     configure_logging(settings.log_level)
     commands = {"parse": _parse, "audit": _audit, "baseline": _baseline, "batch": _batch}
     try:

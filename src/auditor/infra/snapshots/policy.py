@@ -69,6 +69,10 @@ EXCLUDED_DIRS = frozenset(
 # budget allows after everything else.
 DEMOTED_DIRS = frozenset({"tests", "test", "docs", "doc", "templates"})
 
+# Files that hold a dataset's rows. They are listed in every snapshot and downloaded only
+# in data analysis mode (auditor.infra.snapshots.data).
+DATA_SUFFIXES = frozenset({".csv", ".tsv", ".jsonl", ".json", ".parquet"})
+
 NOT_CORE = "not a core file type"
 EXCLUDED_DIR = "excluded directory"
 TOO_LARGE = "larger than the per-file limit"
@@ -113,6 +117,9 @@ class RemoteFile:
     path: str
     size: int | None
     load: Callable[[int], Awaitable[bytes]]
+    # Where the file can be downloaded from, and its SHA-256 when the host publishes one.
+    url: str | None = None
+    sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -192,7 +199,7 @@ def select_files(files: Iterable[RemoteFile], limits: DownloadLimits) -> Selecti
             skipped.append(Skipped(file.path, file.size, reason or UNSAFE_PATH))
             continue
         seen.add(path.casefold())
-        candidates.append(RemoteFile(path, file.size, file.load))
+        candidates.append(RemoteFile(path, file.size, file.load, file.url, file.sha256))
 
     def priority(file: RemoteFile) -> tuple[int, int, str]:
         pure = PurePosixPath(file.path)
