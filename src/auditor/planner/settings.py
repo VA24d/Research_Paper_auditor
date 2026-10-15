@@ -160,10 +160,16 @@ def looks_like_table_row(text: str) -> bool:
     return numeric >= 5 and numeric / len(tokens) >= 0.3
 
 
+# A citation in the sentence: its settings may be the cited work's ("Smith et al. use ...").
+_CITED_WORK = re.compile(r"\bet al\.|\[\d")
+
+
 def settings_in_sentence(sentence: Sentence) -> list[ExtractedSetting]:
     if looks_like_table_row(sentence.text):
         return []
     first_person = bool(_FIRST_PERSON.search(sentence.text))
+    if _CITED_WORK.search(sentence.text) and not first_person:
+        return []
     found: list[ExtractedSetting] = []
     taken: list[tuple[int, int]] = []
     for pattern in PATTERNS:

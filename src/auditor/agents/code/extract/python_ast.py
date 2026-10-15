@@ -124,8 +124,12 @@ class _Scanner:
             share = as_percent(_constant(train)) if train is not None else None
             if train is not None and share is not None:
                 self.add(train, "test_fraction", "train_size", round(100 - share, 4))
+        held_out = _held_out_data(node, target)
         for keyword in node.keywords:
             if keyword.arg is None:
+                continue
+            # A batch size for test or validation data is not the training batch size.
+            if held_out and setting_name(keyword.arg) in _BATCH_NAMES:
                 continue
             context = None
             if function == "fit" and setting_name(keyword.arg) == "validation_split":
@@ -201,6 +205,35 @@ def _metric_call(function: str | None, node: ast.Call) -> str | None:
     return None
 
 
+_HELD_OUT = re.compile(r"val|test|eval|dev|infer|pred", re.IGNORECASE)
+_BATCH_NAMES = frozenset({"batch_size", "bs", "eval_batch_size", "test_batch_size"})
+_CLI_CALLS = frozenset({"ArgumentParser", "Fire", "main", "command", "option"})
+
+
+def _held_out_data(node: ast.Call, target: str | None) -> bool:
+    """Whether a call builds a loader for held-out data (its target or first argument is
+    named like test or validation data)."""
+    names = [target or ""]
+    if node.args and isinstance(node.args[0], ast.Name):
+        names.append(node.args[0].id)
+    return any(_HELD_OUT.search(name) for name in names if name)
+
+
+def _is_entry_point(tree: ast.Module) -> bool:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If):
+            test = node.test
+            if (
+                isinstance(test, ast.Compare)
+                and isinstance(test.left, ast.Name)
+                and test.left.id == "__name__"
+            ):
+                return True
+        if isinstance(node, ast.Call) and _function_name(node.func) in _CLI_CALLS:
+            return True
+    return False
+
+
 def _function_name(func: ast.expr) -> str | None:
     if isinstance(func, ast.Name):
         return func.id
@@ -258,6 +291,9 @@ def scan_python(path: str, text: str, repository: RepositoryRef) -> list[Extract
         return []
     scanner = _Scanner(path, text, repository)
     targets: dict[int, str] = {}
+    # Function defaults are the experiment's values only in a script that is run (with a
+    # __main__ guard or a command-line parser); in a library they are someone's defaults.
+    entry_point = _is_entry_point(tree)
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign | ast.AnnAssign) and node.value is not None:
             name = _target_name(node)
@@ -265,7 +301,7 @@ def scan_python(path: str, text: str, repository: RepositoryRef) -> list[Extract
                 targets[id(node.value)] = name
             elif name is not None:
                 scanner.named_value(name, node.value)
-        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and entry_point:
             arguments = node.args
             positional = [*arguments.posonlyargs, *arguments.args]
             for arg, default in zip(

@@ -120,3 +120,12 @@ async def test_without_an_llm_the_method_is_unverifiable(tmp_path: Path) -> None
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "LLM" in result.reason
+
+
+async def test_short_quotes_do_not_count_as_evidence(tmp_path: Path) -> None:
+    paper = method_paper()
+    ctx, _ = context(
+        tmp_path, paper, [{"discrepancies": [{**DISCREPANCY, "paper_quote": "focal loss"}]}]
+    )
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    assert result.findings == ()

@@ -47,6 +47,8 @@ MAX_PAPER_CHARS = 15_000
 MAX_FILES = 6
 MAX_FILE_LINES = 400
 MAX_CODE_CHARS = 60_000
+# Shorter quotes ("loss") match too many sentences to pin the claim down.
+MIN_QUOTE_CHARS = 20
 _WORD = re.compile(r"[A-Za-z][A-Za-z0-9_]{3,}")
 _STOPWORDS = frozenset(
     {
@@ -205,6 +207,8 @@ def _evidence(
     paper: ParsedPaper, snapshot: Snapshot, files: list[str], discrepancy: Discrepancy
 ) -> list[Evidence] | None:
     quote = _normalised(discrepancy.paper_quote)
+    if len(quote) < MIN_QUOTE_CHARS:
+        return None
     sentence = next((s for s in paper.sentences if quote and quote in _normalised(s.text)), None)
     if sentence is None or discrepancy.code_path not in files:
         return None

@@ -34,7 +34,10 @@ def test_core_files_are_kept(path: str) -> None:
     ("path", "reason"),
     [
         ("data/train.csv", "not a core file type"),
-        ("checkpoints/model.pt", "not a core file type"),
+        ("weights/model.pt", "not a core file type"),
+        ("checkpoints/args.yaml", "excluded directory"),
+        ("runs/exp1/trainer_state.json", "excluded directory"),
+        ("trainer_state.json", "written by a training run"),
         ("weights/model.safetensors", "not a core file type"),
         ("data/train.jsonl", "not a core file type"),
         ("assets/figure.png", "not a core file type"),

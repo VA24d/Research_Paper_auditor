@@ -143,3 +143,17 @@ async def test_two_values_of_one_setting_become_two_code_tasks(tmp_path: Path) -
         t.setting.raw_value for t in tasks if t.setting is not None and t.setting.key != "method"
     )
     assert values == ["1e-4", "2e-5"]
+
+
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        ("Grathwohl et al. use a batch size of 900.", False),
+        ("EWC [39] uses a batch size of 32.", False),
+        ("We follow [3] and use a batch size of 32.", True),
+        ("The model is trained with a batch size of 32.", True),
+    ],
+)
+def test_settings_of_cited_work_are_not_the_papers(text: str, kept: bool) -> None:
+    found = [s.key for s in settings_in_sentence(Sentence(id="s", text=text))]
+    assert ("batch_size" in found) is kept

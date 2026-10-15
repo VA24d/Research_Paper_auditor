@@ -65,6 +65,12 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
     if any(_agrees(setting, c.setting) for c in candidates):
         return TaskResult.for_task(task, TaskOutcome.CHECKED)
 
+    sentence = paper_sentence(task, ctx)
+    undecided = _undecided(setting, sentence, candidates)
+    if isinstance(undecided, str):
+        return TaskResult.for_task(task, TaskOutcome.UNVERIFIABLE, reason=undecided)
+    candidates = undecided
+
     values = {_shown(c.setting) for c in candidates}
     uncertain = (
         len(values) > 1 or setting.context is not None or any(c.setting.context for c in candidates)
@@ -82,16 +88,96 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
             + (f" and {len(candidates) - 4} more" if len(candidates) > 4 else "")
         ),
         explanation=_explanation(setting, candidates, snapshot_url=snapshot.source_id),
-        evidence=[paper_quote(task, paper_sentence(task, ctx)), *repository_evidence(candidates)],
+        evidence=[paper_quote(task, sentence), *repository_evidence(candidates)],
         uncertain=uncertain,
     )
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
 
 
+_PATH_TOKEN = re.compile(r"[a-z0-9]{3,}")
+_GENERIC_PATH_TOKENS = frozenset(
+    {
+        "configs",
+        "config",
+        "conf",
+        "yaml",
+        "yml",
+        "json",
+        "toml",
+        "train",
+        "base",
+        "default",
+        "scripts",
+        "script",
+        "src",
+        "run",
+        "main",
+        "experiments",
+        "exp",
+        "args",
+    }
+)
+# A repository with this many different values from different files is a set of
+# configurations; the paper's value is compared only with those it names.
+MANY_CONFIGURATIONS = 3
+
+
+def _undecided(
+    paper: ExtractedSetting, sentence: str, candidates: list[Candidate]
+) -> str | list[Candidate]:
+    """Why no repository value can be compared with the paper's, or the values that can.
+
+    Per-device batch sizes need the device count and accumulation, which the code does not
+    state; a metric module defining several metrics does not say which one the paper's table
+    used; and many configurations only count when the sentence names one of them."""
+    if any(c.setting.context == "per device" for c in candidates):
+        candidates = [c for c in candidates if c.setting.context != "per device"]
+        if not candidates:
+            return (
+                f"the repository gives {paper.key} only per device; the global value needs the "
+                "device count and gradient accumulation, which the code does not state"
+            )
+    distinct = {str(c.setting.value) for c in candidates}
+    if paper.key == "eval_metric" and len(distinct) > 1:
+        return (
+            "the repository computes several metrics ("
+            + ", ".join(sorted(distinct))
+            + "), and the code does not say which one the paper reports"
+        )
+    files = {_path(c) for c in candidates}
+    if len(distinct) >= MANY_CONFIGURATIONS and len(files) > 1:
+        words = set(_PATH_TOKEN.findall(sentence.lower()))
+        named = [
+            c
+            for c in candidates
+            if (set(_PATH_TOKEN.findall(_path(c).lower())) - _GENERIC_PATH_TOKENS) & words
+        ]
+        if not named:
+            return (
+                f"the repository holds {len(distinct)} values of {paper.key} in "
+                f"{len(files)} files, configurations for different experiments, and the sentence "
+                "names none of them"
+            )
+        return named
+    return candidates
+
+
+def _path(candidate: Candidate) -> str:
+    source = candidate.setting.source
+    assert isinstance(source, RepositorySource)
+    return source.path
+
+
 def _agrees(paper: ExtractedSetting, repo: ExtractedSetting) -> bool:
     if paper.key == "eval_metric":
         wanted, offered = str(paper.value), str(repo.value)
-        return offered == wanted or offered in _METRIC_FAMILIES.get(wanted, ())
+        # Generic and specific names cover each other: "rouge" and "rouge_l", "f1" and
+        # "macro_f1".
+        return (
+            offered == wanted
+            or offered in _METRIC_FAMILIES.get(wanted, ())
+            or wanted in _METRIC_FAMILIES.get(offered, ())
+        )
     if isinstance(paper.value, str) or isinstance(repo.value, str):
         return _text(paper.value) == _text(repo.value)
     if paper.value is None or repo.value is None:

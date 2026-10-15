@@ -90,12 +90,89 @@ async def test_several_other_values_make_an_uncertain_finding(tmp_path: Path) ->
     assert len(finding.evidence) == 3
 
 
-async def test_per_device_batch_size_is_only_a_suspicion(tmp_path: Path) -> None:
+async def test_per_device_batch_size_alone_is_unverifiable(tmp_path: Path) -> None:
     files = {"args.py": "args = TrainingArguments(per_device_train_batch_size=32)\n"}
     result = await run(tmp_path, DEFAULT, files, "batch_size")
-    (finding,) = result.findings
-    assert finding.uncertain
-    assert "per device" in finding.summary
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "per device" in result.reason
+
+
+async def test_eval_loader_batch_sizes_are_ignored(tmp_path: Path) -> None:
+    files = {
+        "train.py": (
+            "test_loader = DataLoader(test_set, batch_size=1)\n"
+            "val = DataLoader(val_set, batch_size=2)\n"
+        )
+    }
+    result = await run(tmp_path, DEFAULT, files, "batch_size")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+
+
+async def test_library_function_defaults_are_not_the_experiment(tmp_path: Path) -> None:
+    files = {
+        "optim/radam.py": "class RAdam:\n    def __init__(self, params, lr=1e-3):\n        pass\n"
+    }
+    result = await run(tmp_path, DEFAULT, files, "learning_rate")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+
+
+async def test_defaults_of_an_entry_point_count(tmp_path: Path) -> None:
+    files = {
+        "main.py": ("def main(lr=1e-3):\n    pass\n\n\nif __name__ == '__main__':\n    main()\n")
+    }
+    (finding,) = (await run(tmp_path, DEFAULT, files, "learning_rate")).findings
+    assert finding.error_class is ErrorClass.SETTING_MISMATCH
+
+
+async def test_vendored_and_checkpoint_files_are_not_scanned(tmp_path: Path) -> None:
+    files = {
+        "third_party/lib/opt.py": "lr = 1e-3\n",
+        "checkpoints/run1/trainer_state.json": '{"learning_rate": 0.3}',
+        "outputs/args.yaml": "lr: 0.1\n",
+    }
+    result = await run(tmp_path, DEFAULT, files, "learning_rate")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+
+
+async def test_many_configs_unrelated_to_the_sentence_are_unverifiable(tmp_path: Path) -> None:
+    files = {
+        "configs/cifar.yaml": "lr: 0.1\n",
+        "configs/imagenet.yaml": "lr: 0.01\n",
+        "configs/mnist.yaml": "lr: 0.05\n",
+    }
+    result = await run(tmp_path, DEFAULT, files, "learning_rate")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "configurations" in result.reason
+
+
+async def test_a_config_named_in_the_sentence_is_still_compared(tmp_path: Path) -> None:
+    text = "On CIFAR we train with a learning rate of 3e-4."
+    files = {
+        "configs/cifar.yaml": "lr: 0.1\n",
+        "configs/imagenet.yaml": "lr: 0.01\n",
+        "configs/mnist.yaml": "lr: 0.05\n",
+    }
+    (finding,) = (await run(tmp_path, text, files, "learning_rate")).findings
+    assert "cifar" in finding.summary
+
+
+async def test_specific_metric_matches_the_generic_one_in_code(tmp_path: Path) -> None:
+    files = {"eval.py": 'metric = evaluate.load("rouge")\n'}
+    result = await run(tmp_path, "We report ROUGE-L on the test set.", files, "eval_metric")
+    assert result.outcome is TaskOutcome.CHECKED
+    assert result.findings == ()
+
+
+async def test_metric_dispatch_tables_are_unverifiable(tmp_path: Path) -> None:
+    files = {
+        "metrics.py": (
+            "a = accuracy_score(y, p)\nb = matthews_corrcoef(y, p)\nc = roc_auc_score(y, p)\n"
+        )
+    }
+    result = await run(tmp_path, "We report macro-F1 on the test set.", files, "eval_metric")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
 
 
 async def test_setting_missing_from_the_code_is_unverifiable(tmp_path: Path) -> None:
