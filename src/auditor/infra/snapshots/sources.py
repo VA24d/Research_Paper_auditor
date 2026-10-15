@@ -152,10 +152,9 @@ def _huggingface(value: str, segments: list[str]) -> SourceSpec:
         repo_type = segments[0].removesuffix("s")
         prefix = f"{segments[0]}/"
         segments = segments[1:]
-    # Old models have a single-part name ("gpt2"); everything else is owner/name.
+    # Old models and datasets have a single-part name ("gpt2", "imdb"); the rest are
+    # owner/name.
     size = 1 if len(segments) == 1 or (len(segments) > 1 and segments[1] in _SNAPSHOT_WORDS) else 2
-    if repo_type != "model":
-        size = 2
     name, rest = segments[:size], segments[size:]
     if len(name) != size or not all(_is_name(s) for s in name):
         raise _unsupported(value)
