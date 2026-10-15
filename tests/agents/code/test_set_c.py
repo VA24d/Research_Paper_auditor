@@ -5,11 +5,14 @@ import pytest
 from auditor.agents.code.set_c import (
     EvidenceType,
     InjectionRecord,
+    apply_code_changes,
     apply_injections,
     candidates,
     clean_label,
     inject_code,
     inject_paper,
+    method_issue,
+    method_labels,
     mutate,
     pool_from_scicoqa,
     propose,
@@ -18,6 +21,7 @@ from auditor.agents.code.set_c import (
 )
 from auditor.planner.tables import paper_settings
 from auditor.schemas import (
+    DocumentAnchor,
     ErrorClass,
     Evidence,
     EvidenceKind,
@@ -378,3 +382,87 @@ def test_injections_replay_on_a_fresh_parse() -> None:
     moved = ParsedPaper.model_validate(data)
     with pytest.raises(ValueError, match="GROBID"):
         apply_injections(moved, [record])
+
+
+# --- method discrepancies from SciCoQA -------------------------------------------------
+
+
+def scicoqa_row(**values: object) -> dict[str, object]:
+    row: dict[str, object] = {
+        "discrepancy_id": "d1",
+        "origin_type": "GitHub Issue",
+        "origin_url": "https://github.com/o/r/issues/3",
+        "discrepancy_description_gpt": "The code uses cross-entropy instead of focal loss.",
+        "discrepancy_description_gemini": None,
+        "relevant_paper_sections_gpt": ["We use the focal loss."],
+        "relevant_paper_sections_gemini": None,
+        "changed_code_snippets": None,
+        "discrepancy_category": "Loss",
+    }
+    row.update(values)
+    return row
+
+
+def test_real_issues_label_both_variants_and_synthetic_only_the_patched_one() -> None:
+    issues = [
+        method_issue("2401.00001v1", scicoqa_row()),
+        method_issue(
+            "2401.00001v1",
+            scicoqa_row(
+                discrepancy_id="s1",
+                origin_type="synthetic",
+                origin_url=None,
+                changed_code_snippets={
+                    "original_file": ["model.py"],
+                    "original_code": ["return a"],
+                    "changed_code": ["return b"],
+                },
+            ),
+        ),
+    ]
+    real, synthetic = issues
+    assert real.changes == ()
+    assert synthetic.changes[0].path == "model.py"
+    labels = method_labels("p", issues, patched={"s1"})
+    by_id = {label.label_id: label for label in labels}
+    assert set(by_id) == {"m-d1-original", "m-d1-injected", "m-s1-injected"}
+    for label in labels:
+        assert label.error_class == ErrorClass.METHOD_MISMATCH
+        assert label.anchor == DocumentAnchor()
+        assert label.target == SettingTarget(key="method")
+    assert by_id["m-d1-original"].variant is PaperVariant.ORIGINAL
+    assert "focal loss" in by_id["m-d1-original"].evidence[0].text
+
+
+def test_code_changes_patch_a_copy_or_report_failure(tmp_path: Path) -> None:
+    source = tmp_path / "snap"
+    source.mkdir()
+    (source / "model.py").write_text("def f(a, b):\n    return a\n", encoding="utf-8")
+    issue = method_issue(
+        "p",
+        scicoqa_row(
+            discrepancy_id="s1",
+            origin_type="synthetic",
+            changed_code_snippets={
+                "original_file": ["model.py"],
+                "original_code": ["    return a"],
+                "changed_code": ["    return b"],
+            },
+        ),
+    )
+    applied = apply_code_changes(source, tmp_path / "patched", [issue])
+    assert applied == {"s1"}
+    assert (tmp_path / "patched" / "model.py").read_text(encoding="utf-8").endswith("return b\n")
+    missing = method_issue(
+        "p",
+        scicoqa_row(
+            discrepancy_id="s2",
+            origin_type="synthetic",
+            changed_code_snippets={
+                "original_file": ["model.py"],
+                "original_code": ["not there"],
+                "changed_code": ["x"],
+            },
+        ),
+    )
+    assert apply_code_changes(source, tmp_path / "other", [missing]) == set()

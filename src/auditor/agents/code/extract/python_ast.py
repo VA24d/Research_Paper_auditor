@@ -9,6 +9,7 @@ functions and `evaluate.load`; `train_test_split`, `random_split`, Keras
 
 import ast
 import re
+import warnings
 from dataclasses import dataclass
 
 from auditor.agents.code.extract.names import classify, metric_key
@@ -249,7 +250,10 @@ def scan_python(path: str, text: str, repository: RepositoryRef) -> list[Extract
     """Split settings in one Python file, in source order. A file that does not parse
     gives nothing."""
     try:
-        tree = ast.parse(text, filename=path)
+        # Repository code often has invalid escape sequences; that is not ours to report.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(text, filename=path)
     except (SyntaxError, ValueError, RecursionError):
         return []
     scanner = _Scanner(path, text, repository)

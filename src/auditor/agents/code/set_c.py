@@ -40,6 +40,7 @@ from auditor.infra.snapshots import SnapshotUnavailableError, SourceError, fetch
 from auditor.planner.tables import paper_settings
 from auditor.planner.tasks import code_tasks
 from auditor.schemas import (
+    DocumentAnchor,
     ErrorClass,
     Evidence,
     EvidenceKind,
@@ -69,6 +70,7 @@ CODE_CLASSES = frozenset(
         ErrorClass.DATASET_SIZE_MISMATCH,
         ErrorClass.LABEL_DISTRIBUTION_MISMATCH,
         ErrorClass.DATA_LEAKAGE,
+        ErrorClass.METHOD_MISMATCH,
     }
 )
 
@@ -93,6 +95,8 @@ _TIER_EVIDENCE = {
 def error_class_for(key: str) -> ErrorClass:
     if key == "eval_metric":
         return ErrorClass.METRIC_MISMATCH
+    if key == "method":
+        return ErrorClass.METHOD_MISMATCH
     return ERROR_CLASSES.get(key, ErrorClass.SETTING_MISMATCH)
 
 
@@ -386,7 +390,11 @@ def clean_label(
 
 
 def validate(
-    labels: Sequence[GoldLabel], records: Sequence[InjectionRecord], *, data_mode: bool
+    labels: Sequence[GoldLabel],
+    records: Sequence[InjectionRecord],
+    *,
+    data_mode: bool,
+    method_ids: frozenset[str] = frozenset(),
 ) -> list[str]:
     """Problems that stop set C from being frozen (decision D18). `data_mode` says whether
     the experiments run with --analyse-data."""
@@ -405,6 +413,11 @@ def validate(
                 problems.append(
                     f"{label.label_id}: {key} errors are {expected.value}, not {label.error_class}"
                 )
+            if key == "method":
+                source_id = label.label_id.removeprefix("m-").rsplit("-", 1)[0]
+                if source_id not in method_ids:
+                    problems.append(f"{label.label_id}: no method issue record")
+                continue
             record = by_id.get(label.label_id)
             if record is None:
                 problems.append(f"{label.label_id}: no injection record")
@@ -730,20 +743,153 @@ def _rationale(row: CandidateRow, new_value: str) -> str:
     )
 
 
+# --- method discrepancies from SciCoQA -------------------------------------------------
+
+
+class CodeChange(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    path: str
+    original: str
+    changed: str
+
+
+class MethodIssue(BaseModel):
+    """A SciCoQA discrepancy for one pair: real (reported in an issue or reproducibility
+    paper, present in the original code) or synthetic (made by changing the code)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    discrepancy_id: str
+    pair_id: str
+    real: bool
+    origin_url: str | None
+    category: str | None
+    description: str
+    paper_quotes: tuple[str, ...]
+    changes: tuple[CodeChange, ...] = ()
+
+
+def method_issue(pair_id: str, row: Mapping[str, object]) -> MethodIssue:
+    real = row.get("origin_type") != "synthetic"
+    description = str(
+        row.get("discrepancy_description_gpt") or row.get("discrepancy_description_gemini") or ""
+    )
+    quotes = row.get("relevant_paper_sections_gpt") or row.get("relevant_paper_sections_gemini")
+    changes: list[CodeChange] = []
+    snippets = row.get("changed_code_snippets")
+    if not real and isinstance(snippets, Mapping):
+        changes = [
+            CodeChange(path=str(path), original=str(old), changed=str(new))
+            for path, old, new in zip(
+                snippets.get("original_file") or [],
+                snippets.get("original_code") or [],
+                snippets.get("changed_code") or [],
+                strict=False,
+            )
+        ]
+    return MethodIssue(
+        discrepancy_id=str(row["discrepancy_id"]),
+        pair_id=pair_id,
+        real=real,
+        origin_url=str(row["origin_url"]) if row.get("origin_url") else None,
+        category=str(row["discrepancy_category"]) if row.get("discrepancy_category") else None,
+        description=description,
+        paper_quotes=tuple(str(q) for q in quotes) if isinstance(quotes, list | tuple) else (),
+        changes=tuple(changes),
+    )
+
+
+def apply_code_changes(source: Path, destination: Path, issues: Sequence[MethodIssue]) -> set[str]:
+    """Copy a snapshot's files and apply the synthetic issues' code changes. An issue is
+    applied only if each of its original snippets occurs exactly once in its file; the ids
+    of the applied issues are returned."""
+    shutil.copytree(source, destination, dirs_exist_ok=True)
+    applied = set()
+    for issue in issues:
+        if issue.real or not issue.changes:
+            continue
+        texts: dict[Path, str] = {}
+        ok = True
+        for change in issue.changes:
+            target = destination / change.path
+            if not target.is_file():
+                ok = False
+                break
+            text = texts.get(target, target.read_text(encoding="utf-8"))
+            if text.count(change.original) != 1:
+                ok = False
+                break
+            texts[target] = text.replace(change.original, change.changed)
+        if ok:
+            for target, text in texts.items():
+                target.write_text(text, encoding="utf-8", newline="")
+            applied.add(issue.discrepancy_id)
+    return applied
+
+
+def method_labels(
+    paper_id: str, issues: Sequence[MethodIssue], *, patched: set[str]
+) -> list[GoldLabel]:
+    """Gold labels for method discrepancies (document anchor, target `method`). A real
+    issue is in both the original and the injected copy; a synthetic one only in the
+    injected copy, whose repository carries the change."""
+    labels = []
+    for issue in issues:
+        variants = (
+            [PaperVariant.ORIGINAL, PaperVariant.INJECTED]
+            if issue.real
+            else [PaperVariant.INJECTED]
+            if issue.discrepancy_id in patched
+            else []
+        )
+        source = SourceRef(
+            kind=SourceKind.SUBMISSION,
+            id=paper_id,
+            title="SciCoQA (CC BY 4.0)",
+            url=issue.origin_url,
+        )
+        evidence = [
+            Evidence(kind=EvidenceKind.QUOTE, source=source, text=quote)
+            for quote in issue.paper_quotes[:3]
+            if quote.strip()
+        ] or [Evidence(kind=EvidenceKind.LOOKUP, source=source, text=issue.description)]
+        for variant in variants:
+            labels.append(
+                GoldLabel(
+                    label_id=f"m-{issue.discrepancy_id}-{variant.value}",
+                    paper_id=paper_id,
+                    variant=variant,
+                    error_class=ErrorClass.METHOD_MISMATCH,
+                    anchor=DocumentAnchor(),
+                    target=SettingTarget(key="method"),
+                    rationale=f"SciCoQA {issue.discrepancy_id} "
+                    f"({'reported' if issue.real else 'synthetic'}): {issue.description}",
+                    evidence=tuple(evidence),
+                )
+            )
+    return labels
+
+
 __all__ = [
     "CandidateRow",
     "ClassScore",
+    "CodeChange",
     "CodeScores",
     "EvidenceType",
     "InjectionRecord",
+    "MethodIssue",
     "Pair",
     "Proposal",
+    "apply_code_changes",
     "apply_injections",
     "candidates",
     "clean_label",
     "error_class_for",
     "inject_code",
     "inject_paper",
+    "method_issue",
+    "method_labels",
     "mutate",
     "pool_from_scicoqa",
     "propose",
