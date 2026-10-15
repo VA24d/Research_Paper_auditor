@@ -172,15 +172,19 @@ No module calls `httpx`, `requests` or `urllib` directly. Everything goes throug
 `auditor.infra.http`, which provides:
 
 - a host allowlist (arXiv, OpenAlex, Crossref, Semantic Scholar, GitHub and the LLM
-  provider; others must be added explicitly);
+  provider; others must be added explicitly). An entry starting with "." allows the
+  subdomains of a host, for CDNs that change by region (`.hf.co`);
 - per-host rate limits (arXiv: 1 request every 3 seconds; Crossref: within polite-pool limits);
 - an on-disk HTTP cache, always on;
 - retries with backoff on 429 and 5xx only;
 - a request log (host, status, retries, cache hits, duration, task id);
 - per-task budgets (maximum tool calls and LLM calls), enforced through `RunContext`.
 
-Cloning GitHub repositories also goes through an `infra` helper, which pins the commit and
-never executes repository code.
+Repositories and data hosts are read through `auditor.infra.snapshots`, which pins the
+revision, downloads only core files (code, configs, docs) within size limits, and never
+executes repository code. Data files are downloaded only in data analysis mode, through
+`HttpClient.download_to`, which streams to disk within a size limit, checks the expected
+SHA-256 and never uses the HTTP cache.
 
 HTTP requests are not tool calls: one tool can make several requests, and local tools (for
 example reading a cloned repository) make none. Tool calls are counted separately by

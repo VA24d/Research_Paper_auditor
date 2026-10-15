@@ -21,6 +21,9 @@ DEFAULT_ALLOWED_HOSTS = (
     "gitlab.com",
     "huggingface.co",
     "datasets-server.huggingface.co",
+    # Hugging Face serves data files from regional CDN hosts such as us.aws.cdn.hf.co and
+    # cas-bridge.xethub.hf.co; an entry starting with "." allows its subdomains.
+    ".hf.co",
     "www.kaggle.com",
     # Kaggle answers a download with a signed redirect to Google Cloud Storage.
     "storage.googleapis.com",
