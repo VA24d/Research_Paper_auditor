@@ -100,6 +100,9 @@ DEMOTED_DIRS = frozenset({"tests", "test", "docs", "doc", "templates"})
 # in data analysis mode (auditor.infra.snapshots.data).
 DATA_SUFFIXES = frozenset({".csv", ".tsv", ".jsonl", ".json", ".parquet"})
 
+# Bump when the choice of core files changes, so cached snapshots are taken again.
+POLICY_VERSION = 2
+
 NOT_CORE = "not a core file type"
 RUN_ARTIFACT = "written by a training run"
 EXCLUDED_DIR = "excluded directory"
@@ -133,7 +136,9 @@ class DownloadLimits:
 
     def key(self) -> str:
         """Short id of these limits; snapshots taken under other limits are kept apart."""
-        payload = json.dumps(asdict(self), sort_keys=True).encode("utf-8")
+        payload = json.dumps({**asdict(self), "policy": POLICY_VERSION}, sort_keys=True).encode(
+            "utf-8"
+        )
         return hashlib.sha256(payload).hexdigest()[:8]
 
 

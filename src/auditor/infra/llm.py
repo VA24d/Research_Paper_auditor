@@ -19,7 +19,7 @@ from uuid import UUID
 from langchain.chat_models import init_chat_model
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from pydantic import BaseModel, ValidationError
 
@@ -151,6 +151,29 @@ class LLMCache:
         atomic_write(path, json.dumps(payload).encode("utf-8"))
 
 
+def _text_of(message: AIMessage) -> str:
+    """The text of a reply whose content may be a list of parts (Gemini, Anthropic)."""
+    content = message.content
+    if isinstance(content, str):
+        return content
+    return "".join(
+        part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+    )
+
+
+class PromptTooLongError(StructuredOutputError):
+    """The prompt does not fit the model's context window; local servers would otherwise
+    cut it silently."""
+
+
+# Rough characters per token for English text and code, used before sending a prompt.
+CHARS_PER_TOKEN = 3.5
+
+
+def estimated_tokens(messages: Sequence[BaseMessage]) -> int:
+    return int(sum(len(str(m.content)) for m in messages) / CHARS_PER_TOKEN)
+
+
 class StructuredLLM:
     """Calls a chat model and returns a validated instance of a Pydantic schema."""
 
@@ -163,6 +186,7 @@ class StructuredLLM:
         cache: LLMCache | None = None,
         cache_context: str = "",
         max_attempts: int = 3,
+        context_tokens: int | None = None,
     ) -> None:
         self.model = model
         self.name = name
@@ -170,6 +194,7 @@ class StructuredLLM:
         self.method = method
         self.cache = cache
         self.max_attempts = max_attempts
+        self.context_tokens = context_tokens
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
@@ -180,6 +205,7 @@ class StructuredLLM:
             method=settings.llm_structured_method,
             cache=cache,
             cache_context=_cache_context(settings),
+            context_tokens=settings.llm_context_tokens,
         )
 
     async def generate[T: BaseModel](
@@ -192,6 +218,14 @@ class StructuredLLM:
             if cached is not None:
                 self._record(TokenUsage(), datetime.now(UTC), 0.0, cache_hit=True)
                 return StructuredResult(cached, attempts=0, usage=TokenUsage(), from_cache=True)
+
+        if self.context_tokens is not None:
+            needed = estimated_tokens(messages)
+            if needed > self.context_tokens:
+                raise PromptTooLongError(
+                    f"{schema.__name__}: the prompt needs about {needed} tokens, more than the "
+                    f"model's context of {self.context_tokens} (AUDITOR_LLM_CONTEXT_TOKENS)"
+                )
 
         kwargs: dict[str, Any] = {"include_raw": True}
         if self.method is not None:
@@ -234,16 +268,30 @@ class StructuredLLM:
             problem = str(error) if error is not None else "no structured output was returned"
             # Feed the problem back as plain text. Replaying the raw reply would break
             # providers that require every tool call to be followed by a tool result.
-            reply = raw.content if isinstance(raw, AIMessage) else ""
-            conversation = [
-                *messages,
-                HumanMessage(
-                    "Your previous reply could not be used.\n"
-                    f"Reply: {str(reply)[:2000]}\n"
-                    f"Problem: {problem[:2000]}\n"
-                    "Answer again and follow the required output format exactly."
-                ),
-            ]
+            reply = _text_of(raw) if isinstance(raw, AIMessage) else ""
+            if reply.strip():
+                # The model answered in prose: ask it to restate that answer in the required
+                # format, without resending the (possibly long) prompt.
+                conversation = [
+                    SystemMessage(
+                        "Rewrite the answer below in the required output format. Keep its "
+                        "content; do not add anything. Fields: "
+                        + json.dumps(schema.model_json_schema().get("properties", {}))
+                    ),
+                    HumanMessage(
+                        "Your previous reply could not be used.\n"
+                        f"Answer: {reply[:4000]}\nProblem: {problem[:1000]}"
+                    ),
+                ]
+            else:
+                conversation = [
+                    *messages,
+                    HumanMessage(
+                        "Your previous reply could not be used.\n"
+                        f"Problem: {problem[:2000]}\n"
+                        "Answer again and follow the required output format exactly."
+                    ),
+                ]
         raise StructuredOutputError(
             f"{schema.__name__}: no valid output after {self.max_attempts} attempts: {problem}"
         )

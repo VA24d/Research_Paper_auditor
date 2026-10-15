@@ -92,3 +92,11 @@ class Settings(BaseSettings):
     llm_structured_method: str | None = None
     llm_options: dict[str, JsonValue] = Field(default_factory=dict)
     llm_cache: bool = True
+    # The model's context window in tokens. Prompts that do not fit fail loudly instead of
+    # being cut by the server (Ollama's default context is only a few thousand tokens).
+    llm_context_tokens: int | None = Field(default=None, gt=0)
+    # How the code agent compares a paper's method with its code: "pairs" asks one small
+    # question per (paper sentence, code function) pair, which suits small local models;
+    # "whole" sends the method text and the related files in one call.
+    method_check_mode: Literal["pairs", "whole"] = "pairs"
+    method_check_pairs: int = Field(default=12, gt=0)

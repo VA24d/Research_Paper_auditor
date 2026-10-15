@@ -10,6 +10,7 @@ from auditor.infra import llm as llm_module
 from auditor.infra.llm import (
     LLMCache,
     LLMNotConfiguredError,
+    PromptTooLongError,
     StructuredLLM,
     StructuredOutputError,
     TokenUsage,
@@ -194,3 +195,30 @@ def test_cache_key_changes_with_model_options() -> None:
         "m", None, Verdict, MESSAGES, high
     )
     assert low == rotated_key
+
+
+async def test_a_prose_reply_is_repaired_without_resending_the_prompt() -> None:
+    model = ScriptedChatModel(
+        replies=[
+            AIMessage(content="Not supported: the source never mentions it."),
+            tool_reply(Verdict, {"supported": False, "reason": "not in source"}),
+        ]
+    )
+    long_prompt = [SystemMessage("You check claims."), HumanMessage("paper text " * 2000)]
+    result = await structured(model).generate(Verdict, long_prompt)
+    assert result.value.reason == "not in source"
+    repair = model.received[1]
+    sent = " ".join(str(m.content) for m in repair)
+    assert "paper text paper text" not in sent
+    assert "Not supported: the source never mentions it." in sent
+    # The schema's fields are named.
+    assert "supported" in sent
+    assert "reason" in sent
+
+
+async def test_prompts_longer_than_the_context_fail_loudly() -> None:
+    model = ScriptedChatModel(replies=[])
+    llm = StructuredLLM(model, name="test:scripted", context_tokens=100)
+    with pytest.raises(PromptTooLongError, match="100"):
+        await llm.generate(Verdict, [HumanMessage("word " * 1000)])
+    assert model.received == []

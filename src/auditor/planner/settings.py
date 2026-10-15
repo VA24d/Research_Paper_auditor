@@ -161,9 +161,11 @@ def looks_like_table_row(text: str) -> bool:
 
 
 # A cited work as the subject of the sentence ("Smith et al. use ...", "EWC [39] uses ..."):
-# its settings are the cited work's, not the paper's.
+# its settings are the cited work's, not the paper's. A passive "SGD [61] is used" is the
+# paper's own setup.
 _CITED_SUBJECT = re.compile(
-    r"(?:\bet al\.(?:\s*\(\d{4}\))?|\[\d+(?:\s*[,\u2013-]\s*\d+)*\])\s+(?:\w+\s+){0,2}?"
+    r"(?:\bet al\.(?:\s*\(\d{4}\))?|\[\d+(?:\s*[,\u2013-]\s*\d+)*\])\s+"
+    r"(?:(?!is\b|are\b|was\b|were\b|be\b|been\b)\w+\s+){0,2}?"
     r"(?:use|uses|used|train|trains|trained|set|sets|adopt|adopts|adopted|employ|employs|employed)\b",
     re.IGNORECASE,
 )

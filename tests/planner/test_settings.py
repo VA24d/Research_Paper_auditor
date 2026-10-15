@@ -153,6 +153,8 @@ async def test_two_values_of_one_setting_become_two_code_tasks(tmp_path: Path) -
         ("We follow [3] and use a batch size of 32.", True),
         ("The model is trained with a batch size of 32.", True),
         ("The model is trained following [12] with a batch size of 32.", True),
+        ("SGD [61] is used as the optimizer with a batch size of 32.", True),
+        ("OGD [13] uses a small batch size of 20.", False),
         ("Models are trained as in Smith et al. (2020) with a batch size of 32.", True),
     ],
 )

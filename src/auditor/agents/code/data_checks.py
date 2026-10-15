@@ -46,6 +46,7 @@ from auditor.infra.snapshots import (
     SnapshotUnavailableError,
     SourceError,
     SourceKind,
+    core_file_reason,
     fetch_snapshot,
     parse_source,
 )
@@ -218,7 +219,8 @@ def _scan(snapshot: Snapshot) -> list[Candidate]:
     lists = {}
     for file in manifest.files:
         suffix = PurePosixPath(file.path).suffix.lower()
-        if suffix not in _SCANNED_SUFFIXES:
+        # Snapshots taken under an older policy may hold files the policy now leaves out.
+        if suffix not in _SCANNED_SUFFIXES or core_file_reason(file.path) is not None:
             continue
         text = snapshot.read_text(file.path)
         found: list[ExtractedSetting] = []

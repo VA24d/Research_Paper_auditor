@@ -8,8 +8,12 @@ dropped before it becomes a finding (evidence gating, as the verifier requires).
 are anchored on the document: a method discrepancy is about the paper as a whole.
 """
 
+import ast
+import asyncio
 import re
+import warnings
 from collections import Counter
+from dataclasses import dataclass
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -31,6 +35,7 @@ from auditor.schemas import (
     Evidence,
     EvidenceKind,
     ParsedPaper,
+    Sentence,
     SentenceKind,
     SourceKind,
     SourceRef,
@@ -132,6 +137,8 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
         return TaskResult.for_task(
             task, TaskOutcome.UNVERIFIABLE, reason="the repository has no Python files to compare"
         )
+    if ctx.settings.method_check_mode == "pairs":
+        return await _check_pairs(task, ctx, snapshot, files)
     prompt = (
         f"Paper method text:\n{method_text}\n\nRepository {snapshot.source_id}, related files:\n"
         + "\n\n".join(_numbered(snapshot, path) for path in files)
@@ -157,6 +164,165 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
                 ),
                 evidence=evidence,
                 uncertain=discrepancy.confidence != "high",
+            )
+        )
+    return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
+
+
+# --- pair mode ---------------------------------------------------------------------------
+
+PAIR_PROMPT = """You compare one passage of a research paper with one piece of its code.
+Answer "inconsistent" only if the code clearly does something different from what the
+passage says (a different loss, formula, algorithm step, model component or data
+processing). Answer "unrelated" if they are about different things, and "consistent"
+otherwise. For "inconsistent", copy a quote of at least five words from the passage and give
+the line numbers of the code that differs. Differences in hyperparameter values do not count."""
+MAX_CHUNK_LINES = 80
+_CONCURRENCY = 4
+_IDENTIFIER_PART = re.compile(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])|\d+")
+
+
+class PairJudgement(BaseModel):
+    verdict: Literal["consistent", "inconsistent", "unrelated"]
+    paper_quote: str = ""
+    code_start_line: int = Field(default=1, ge=1)
+    code_end_line: int = Field(default=1, ge=1)
+    description: str = ""
+    confidence: Literal["low", "medium", "high"] = "low"
+
+
+@dataclass(frozen=True)
+class _Chunk:
+    path: str
+    start: int
+    end: int
+    terms: frozenset[str]
+
+
+@dataclass(frozen=True)
+class _Pair:
+    sentence: Sentence
+    passage: str
+    chunk: _Chunk
+    score: int
+
+
+def _terms(text: str) -> set[str]:
+    words = set()
+    for word in _WORD.findall(text):
+        words.add(word.lower())
+        words |= {part.lower() for part in _IDENTIFIER_PART.findall(word) if len(part) > 3}
+    return words - _STOPWORDS
+
+
+def code_chunks(snapshot: Snapshot, files: list[str]) -> list[_Chunk]:
+    """Functions and methods of the related files (or slices of files without any)."""
+    chunks = []
+    for path in files:
+        text = snapshot.read_text(path)
+        lines = text.splitlines()
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                tree = ast.parse(text)
+        except (SyntaxError, ValueError, RecursionError):
+            tree = None
+        spans = []
+        if tree is not None:
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                    end = node.end_lineno or node.lineno
+                    spans.append((node.lineno, min(end, node.lineno + MAX_CHUNK_LINES - 1)))
+        if not spans:
+            spans = [
+                (start, min(start + MAX_CHUNK_LINES - 1, len(lines)))
+                for start in range(1, len(lines) + 1, MAX_CHUNK_LINES)
+            ]
+        for start, end in spans:
+            body = "\n".join(lines[start - 1 : end])
+            chunks.append(_Chunk(path, start, end, frozenset(_terms(body))))
+    return chunks
+
+
+def method_pairs(paper: ParsedPaper, chunks: list[_Chunk], limit: int) -> list[_Pair]:
+    """The best-matching (paper sentence, code chunk) pairs, at most one per chunk."""
+    titles = {s.id: s.title for s in paper.sections}
+    body = [s for s in paper.sentences if s.kind is SentenceKind.BODY]
+    method = [s for s in body if METHOD_SECTION.search(titles.get(s.section_id or "", ""))] or body
+    sentences = [s for s in method if len(s.text.split()) >= 8]
+    index = {s.id: i for i, s in enumerate(body)}
+    scored = [(s, frozenset(_terms(s.text))) for s in sentences]
+    pairs = []
+    for chunk in chunks:
+        best = max(scored, key=lambda item: len(item[1] & chunk.terms), default=None)
+        if best is None or not best[1] & chunk.terms:
+            continue
+        sentence, terms = best
+        position = index[sentence.id]
+        passage = " ".join(s.text for s in body[max(0, position - 1) : position + 2])
+        pairs.append(_Pair(sentence, passage, chunk, len(terms & chunk.terms)))
+    pairs.sort(key=lambda p: (-p.score, p.chunk.path, p.chunk.start))
+    return pairs[:limit]
+
+
+async def _check_pairs(
+    task: AuditTask, ctx: RunContext, snapshot: Snapshot, files: list[str]
+) -> TaskResult:
+    pairs = method_pairs(ctx.paper, code_chunks(snapshot, files), ctx.settings.method_check_pairs)
+    if not pairs:
+        return TaskResult.for_task(
+            task, TaskOutcome.UNVERIFIABLE, reason="no code shares terms with the method text"
+        )
+    gate = asyncio.Semaphore(_CONCURRENCY)
+    llm = ctx.require_llm()
+
+    async def judge(pair: _Pair) -> PairJudgement:
+        lines = snapshot.read_text(pair.chunk.path).splitlines()
+        code = "\n".join(
+            f"{n:5}| {lines[n - 1]}" for n in range(pair.chunk.start, pair.chunk.end + 1)
+        )
+        prompt = f"Paper passage:\n{pair.passage}\n\nCode ({pair.chunk.path}):\n{code}"
+        async with gate:
+            result = await llm.generate(
+                PairJudgement, [SystemMessage(PAIR_PROMPT), HumanMessage(prompt)]
+            )
+        return result.value
+
+    judgements = await asyncio.gather(*(judge(pair) for pair in pairs))
+    findings: list[CandidateFinding] = []
+    taken: list[tuple[str, int, int]] = []
+    for pair, judgement in zip(pairs, judgements, strict=True):
+        if judgement.verdict != "inconsistent":
+            continue
+        chunk = pair.chunk
+        start, end = judgement.code_start_line, judgement.code_end_line
+        if not chunk.start <= start <= end <= chunk.end:
+            continue
+        if any(p == chunk.path and s <= end and start <= e for p, s, e in taken):
+            continue
+        discrepancy = Discrepancy(
+            paper_quote=judgement.paper_quote,
+            code_path=chunk.path,
+            code_start_line=start,
+            code_end_line=end,
+            description=judgement.description or "The code differs from the paper.",
+            category="Algorithm",
+            confidence=judgement.confidence,
+        )
+        evidence = _evidence(ctx.paper, snapshot, [chunk.path], discrepancy)
+        if evidence is None:
+            continue
+        taken.append((chunk.path, start, end))
+        findings.append(
+            CandidateFinding.for_task(
+                task,
+                len(findings),
+                error_class=ErrorClass.METHOD_MISMATCH,
+                summary=discrepancy.description,
+                anchor=DocumentAnchor(),
+                explanation=f"{judgement.confidence} confidence.",
+                evidence=evidence,
+                uncertain=judgement.confidence != "high",
             )
         )
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
