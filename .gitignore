@@ -57,3 +57,7 @@ htmlcov/
 Thumbs.db
 .vscode/
 .idea/
+.copilot-specs-cache/
+# Claude Code: personal settings and agent worktrees
+.claude/settings.local.json
+.claude/worktrees/
