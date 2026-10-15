@@ -9,6 +9,8 @@ from auditor.agents.code.set_c import (
     clean_label,
     inject_code,
     inject_paper,
+    mutate,
+    propose,
     score_code_module,
     validate,
 )
@@ -228,3 +230,96 @@ def test_code_module_scores() -> None:
     assert scores.false_positive_rate == pytest.approx(1.0)
     assert scores.unlabelled == 1
     assert scores.macro_f1 == pytest.approx(0.5)
+
+
+# --- proposing instances ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("key", "raw", "expected"),
+    [
+        ("learning_rate", "3e-4", "3e-3"),
+        ("learning_rate", "0.001", "0.01"),
+        ("learning_rate", "1 x 10^-4", None),
+        ("weight_decay", "0.01", "0.1"),
+        ("batch_size", "256", "512"),
+        ("epochs", "3", "6"),
+        ("seed", "42", "43"),
+        ("dropout", "0.1", "0.3"),
+        ("dropout", "10%", "30%"),
+        ("data_split", "80/10/10", "70/15/15"),
+        ("data_split", "80/20", "70/30"),
+        ("data_split", "8:1:1", None),
+        ("test_fraction", "20%", "30%"),
+        ("train_examples", "25,000", "50,000"),
+        ("test_examples", "10k", "20k"),
+        ("num_classes", "10", "11"),
+        ("num_classes", "binary", None),
+        ("eval_metric", "macro-F1", "accuracy"),
+        ("eval_metric", "accuracy", "macro-F1"),
+        ("optimizer", "AdamW", "SGD"),
+        ("optimizer", "SGD", "Adam"),
+        ("dataset", "SQuAD", None),
+    ],
+)
+def test_mutations_keep_the_paper_style(key: str, raw: str, expected: str | None) -> None:
+    assert mutate(key, raw) == expected
+
+
+async def test_propose_injects_agreeing_settings_and_keeps_controls(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "train.py").write_text("lr = 3e-4\nbatch_size = 256\nseed = 42\n", encoding="utf-8")
+    text = "We train with a learning rate of 3e-4, a batch size of 256 and random seed 42."
+    data = example_paper().model_dump()
+    data["sentences"][4]["text"] = text
+    p = ParsedPaper.model_validate(data)
+    ref = RepositoryRef(url=repo.resolve().as_uri())
+    rows = await candidates(p, ref, offline_context(tmp_path, paper=p))
+    proposal = propose(p, rows, errors=2, controls=1, seed=7)
+    assert len(proposal.labels) == 2 + 2  # two errors, one control in both variants
+    errors = [label for label in proposal.labels if label.is_error]
+    assert {label.variant for label in errors} == {PaperVariant.INJECTED}
+    assert len({label.target for label in errors}) == 2
+    controls = [label for label in proposal.labels if not label.is_error]
+    assert {label.variant for label in controls} == {PaperVariant.ORIGINAL, PaperVariant.INJECTED}
+    assert all(label.evidence[0].kind is EvidenceKind.CODE for label in proposal.labels)
+    # Every injected value is found again by the planner, at the label's anchor.
+    injected_settings = paper_settings(proposal.injected)
+    for label in errors:
+        assert any(
+            s.key == label.target.key  # type: ignore[union-attr]
+            and isinstance(s.source, PaperSource)
+            and s.source.anchor == label.anchor
+            for s in injected_settings
+        )
+    assert {r.label_id for r in proposal.records} == {label.label_id for label in errors}
+    # The same seed gives the same proposal.
+    again = propose(p, rows, errors=2, controls=1, seed=7)
+    assert again.labels == proposal.labels
+
+
+async def test_controls_after_a_shorter_injection_move_with_the_text(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "train.py").write_text("lr = 0.001\nbatch_size = 256\n", encoding="utf-8")
+    text = "We use a learning rate of 0.001 and a batch size of 256."
+    data = example_paper().model_dump()
+    data["sentences"][4]["text"] = text
+    p = ParsedPaper.model_validate(data)
+    rows = await candidates(
+        p, RepositoryRef(url=repo.resolve().as_uri()), offline_context(tmp_path, paper=p)
+    )
+    lr_first = [r for r in rows if r.key == "learning_rate"] + [
+        r for r in rows if r.key != "learning_rate"
+    ]
+    proposal = propose(p, lr_first, errors=1, controls=1, seed=0)
+    labels = {(label.variant, label.error_class): label for label in proposal.labels}
+    if (PaperVariant.INJECTED, "none") not in labels:
+        pytest.skip("this seed injected the batch size")
+    control = labels[(PaperVariant.INJECTED, "none")]
+    assert isinstance(control.anchor, SentenceAnchor)
+    sentence = proposal.injected.sentence("s4").text
+    assert sentence[control.anchor.start : control.anchor.end] in {"256", "0.001"}
+    ids = [label.label_id for label in proposal.labels]
+    assert len(ids) == len(set(ids))
