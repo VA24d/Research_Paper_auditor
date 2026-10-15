@@ -219,6 +219,28 @@ def _held_out_data(node: ast.Call, target: str | None) -> bool:
     return any(_HELD_OUT.search(name) for name in names if name)
 
 
+_LIBRARY_PATH = re.compile(r"optim|util|helper|common|(?:^|/)lib(?:/|$)|(?:^|/)tools?(?:/|$)")
+_LIBRARY_BASE = re.compile(r"Optimizer|Scheduler|LRScheduler")
+
+
+def _library_functions(tree: ast.Module, path: str) -> set[int]:
+    """Ids of the function definitions whose defaults are library defaults."""
+    functions = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)]
+    if _LIBRARY_PATH.search(path.lower()) and not _is_entry_point(tree):
+        return {id(f) for f in functions}
+    library: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and any(
+            _LIBRARY_BASE.search(_function_name(base) or "") for base in node.bases
+        ):
+            library |= {
+                id(n)
+                for n in ast.walk(node)
+                if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)
+            }
+    return library
+
+
 def _is_entry_point(tree: ast.Module) -> bool:
     for node in ast.walk(tree):
         if isinstance(node, ast.If):
@@ -291,9 +313,10 @@ def scan_python(path: str, text: str, repository: RepositoryRef) -> list[Extract
         return []
     scanner = _Scanner(path, text, repository)
     targets: dict[int, str] = {}
-    # Function defaults are the experiment's values only in a script that is run (with a
-    # __main__ guard or a command-line parser); in a library they are someone's defaults.
-    entry_point = _is_entry_point(tree)
+    # Function defaults count in the repository's own code (scripts, models), but not in
+    # library-like code: optimizer and scheduler classes, or utility modules that are not
+    # run themselves, whose defaults the experiment usually overrides.
+    library = _library_functions(tree, path)
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign | ast.AnnAssign) and node.value is not None:
             name = _target_name(node)
@@ -301,7 +324,7 @@ def scan_python(path: str, text: str, repository: RepositoryRef) -> list[Extract
                 targets[id(node.value)] = name
             elif name is not None:
                 scanner.named_value(name, node.value)
-        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and entry_point:
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and id(node) not in library:
             arguments = node.args
             positional = [*arguments.posonlyargs, *arguments.args]
             for arg, default in zip(

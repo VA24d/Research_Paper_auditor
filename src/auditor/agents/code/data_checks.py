@@ -113,6 +113,9 @@ _TIER_NAMES = {
     Tier.DATA: "the dataset's data files",
     Tier.HF_SIZE_LATEST: "the Hugging Face Hub's size service",
 }
+_SCANNED_SUFFIXES = frozenset(
+    {".py", ".yaml", ".yml", ".json", ".ipynb", ".toml", ".sh", ".bash", ".txt"}
+)
 _cache: dict[str, list[Candidate]] = {}
 _locks: dict[str, asyncio.Lock] = {}
 
@@ -215,6 +218,8 @@ def _scan(snapshot: Snapshot) -> list[Candidate]:
     lists = {}
     for file in manifest.files:
         suffix = PurePosixPath(file.path).suffix.lower()
+        if suffix not in _SCANNED_SUFFIXES:
+            continue
         text = snapshot.read_text(file.path)
         found: list[ExtractedSetting] = []
         if suffix == ".py":

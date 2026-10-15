@@ -247,11 +247,16 @@ async def _collect(args: argparse.Namespace) -> int:
             rows_path = data / "rows" / f"{pair.pair_id}.json"
             if rows_path.is_file():
                 return
+            # The download waits on arXiv's rate limit, so it does not hold a parsing slot.
+            pdf = data / "pdfs" / f"{pair.pair_id}.pdf"
+            try:
+                if not pdf.is_file():
+                    await http.download_to(pair.pdf_url, pdf, max_bytes=60_000_000)
+            except Exception as exc:
+                print(f"{pair.pair_id}: download failed, {type(exc).__name__}: {exc}", flush=True)
+                return
             async with gate:
-                pdf = data / "pdfs" / f"{pair.pair_id}.pdf"
                 try:
-                    if not pdf.is_file():
-                        await http.download_to(pair.pdf_url, pdf, max_bytes=60_000_000)
                     paper = await parse_pdf(pdf, grobid=grobid, cache_dir=settings.cache_dir)
                     paper_path = data / "papers" / f"{pair.pair_id}.json"
                     paper_path.parent.mkdir(parents=True, exist_ok=True)

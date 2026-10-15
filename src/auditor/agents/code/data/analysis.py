@@ -93,8 +93,14 @@ def analyse(
     counts: dict[str, Counter[int]] = {}
     capped: set[str] = set()
     stats: dict[str, SplitStats] = {}
-    for split in sorted(files):
+    # Held-out splits are hashed first, so the training split is matched while it is
+    # counted, in a single pass.
+    matched: dict[str, set[int]] = {}
+    for split in sorted(files, key=lambda name: (name == "train", name)):
         hashing = bool(split in _HELD_OUT and inputs and "train" in files)
+        matching = split == "train" and bool(first)
+        if matching:
+            matched = {name: set() for name in first}
         rows, bad, labels, unreadable = 0, [0], Counter[str](), {}
         seen: dict[int, int] = {}
         repeats: Counter[int] = Counter()
@@ -106,6 +112,12 @@ def analyse(
             rows = index + 1
             if label is not None and label in row:
                 labels[row[label]] += 1
+            if matching:
+                train_key = _input_hash(row, inputs)
+                if train_key is not None:
+                    for name, table in first.items():
+                        if train_key in table:
+                            matched[name].add(train_key)
             key = _input_hash(row, inputs) if hashing else None
             if key is None:
                 continue
@@ -127,15 +139,6 @@ def analyse(
             unreadable=unreadable,
         )
 
-    matched: dict[str, set[int]] = {split: set() for split in first}
-    if first:
-        for _, row, _, _ in _rows(files["train"]):
-            key = _input_hash(row, inputs) if row is not None else None
-            if key is None:
-                continue
-            for split, table in first.items():
-                if key in table:
-                    matched[split].add(key)
     leakage = []
     for split in sorted(first):
         overlapping = sum(counts[split][key] for key in matched[split])
@@ -152,7 +155,7 @@ def analyse(
             )
         )
     return DataReport(
-        splits=stats,
+        splits=dict(sorted(stats.items())),
         label_column=label,
         label_reason=label_reason,
         input_columns=inputs,

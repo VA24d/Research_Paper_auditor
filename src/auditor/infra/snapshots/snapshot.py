@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import re
 import secrets
 import shutil
@@ -138,6 +139,15 @@ async def fetch_snapshot(
     base = settings.scratch_dir / "snapshots" / spec.kind.value / _name(spec.identity)
     key = (spec.kind.value, spec.identity, spec.ref or "", limits.key(), str(base))
     async with _locks.setdefault(key, asyncio.Lock()):
+        # A local folder's revision is the hash of its files, known only after copying
+        # them; an index from the folder's file sizes and times to that revision avoids
+        # copying an unchanged folder again.
+        signature = None
+        if spec.kind is SourceKind.LOCAL and spec.local_path is not None:
+            signature = await asyncio.to_thread(_local_signature, spec.local_path)
+            known = _local_index(base).get(signature)
+            if known is not None and (found := _existing(base, known, limits)):
+                return found
         revision = await host.resolve()
         if revision is not None and (found := _existing(base, revision, limits)):
             return found
@@ -182,6 +192,8 @@ async def fetch_snapshot(
             )
             target = base / _folder(revision, limits)
             _publish(staging, target)
+            if signature is not None:
+                _remember_local(base, signature, revision)
             logger.info(
                 "snapshot of %s at %s: %d files, %d skipped",
                 spec.url,
@@ -197,21 +209,28 @@ async def fetch_snapshot(
 async def _download(
     chosen: Sequence[RemoteFile], folder: Path, limits: DownloadLimits
 ) -> tuple[list[SnapshotFile], list[Skipped], list[str]]:
-    """Downloads `chosen` a window at a time, in parallel within a window, and spends the
+    """Downloads `chosen` with up to _DOWNLOAD_CONCURRENCY files in flight and spends the
     total budget in priority order, so the result does not depend on which download
-    finishes first. At most one window is downloaded past the budget."""
+    finishes first. Once the budget is spent, downloads still pending are cancelled."""
     files: list[SnapshotFile] = []
     skipped: list[Skipped] = []
     incomplete: list[str] = []
+    gate = asyncio.Semaphore(_DOWNLOAD_CONCURRENCY)
+
+    async def fetch(file: RemoteFile) -> bytes | Skipped:
+        async with gate:
+            return await _load_file(file, limits.max_file_bytes)
+
+    pending = [asyncio.ensure_future(fetch(file)) for file in chosen]
     used = 0
-    for start in range(0, len(chosen), _DOWNLOAD_CONCURRENCY):
-        window = chosen[start : start + _DOWNLOAD_CONCURRENCY]
-        if used >= limits.max_total_bytes:
-            skipped += [Skipped(f.path, f.size, TOTAL_LIMIT) for f in window]
-            incomplete.append(TOTAL_LIMIT)
-            continue
-        loaded = await asyncio.gather(*(_load_file(f, limits.max_file_bytes) for f in window))
-        for file, data in zip(window, loaded, strict=True):
+    try:
+        for file, task in zip(chosen, pending, strict=True):
+            if used >= limits.max_total_bytes:
+                task.cancel()
+                skipped.append(Skipped(file.path, file.size, TOTAL_LIMIT))
+                incomplete.append(TOTAL_LIMIT)
+                continue
+            data = await task
             if isinstance(data, Skipped):
                 skipped.append(data)
             elif used + len(data) > limits.max_total_bytes:
@@ -226,6 +245,10 @@ async def _download(
                         path=file.path, size=len(data), sha256=hashlib.sha256(data).hexdigest()
                     )
                 )
+    finally:
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
     return files, skipped, list(_unique(incomplete))
 
 
@@ -249,6 +272,40 @@ def _data_files(listing: Listing) -> tuple[DataFile, ...]:
         if path is not None and file.url is not None and path not in found:
             found[path] = DataFile(path=path, size=file.size, sha256=file.sha256, url=file.url)
     return tuple(found[path] for path in sorted(found)[:MAX_DATA_FILES])
+
+
+_LOCAL_INDEX = "local-index.json"
+
+
+def _local_signature(root: Path) -> str:
+    """Paths, sizes and modification and change times of a folder's files. ctime cannot be
+    set by tools that preserve mtime, so an edited file changes the signature."""
+    entries = []
+    for folder, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = sorted(d for d in dirnames if d != ".git")
+        for name in sorted(filenames):
+            path = Path(folder) / name
+            try:
+                stat = path.lstat()
+            except OSError:
+                continue
+            relative = path.relative_to(root).as_posix()
+            entries.append([relative, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns])
+    return hashlib.sha256(json.dumps(entries).encode("utf-8")).hexdigest()
+
+
+def _local_index(base: Path) -> dict[str, str]:
+    try:
+        data = json.loads((base / _LOCAL_INDEX).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _remember_local(base: Path, signature: str, revision: str) -> None:
+    index = _local_index(base)
+    index[signature] = revision
+    atomic_write(base / _LOCAL_INDEX, json.dumps(index, sort_keys=True).encode("utf-8"))
 
 
 def _content_revision(files: Sequence[SnapshotFile]) -> str:

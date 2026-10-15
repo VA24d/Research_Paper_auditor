@@ -10,6 +10,7 @@ several configurations, since the experiment may use another one.
 
 import math
 import re
+from collections import Counter
 
 from auditor.agents.code.data_checks import (
     Candidate,
@@ -21,6 +22,7 @@ from auditor.agents.code.data_checks import (
 )
 from auditor.infra.context import RunContext
 from auditor.infra.snapshots import SnapshotUnavailableError, SourceError, fetch_snapshot
+from auditor.planner.tables import paper_settings
 from auditor.schemas import (
     AuditTask,
     CandidateFinding,
@@ -66,7 +68,12 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
         return TaskResult.for_task(task, TaskOutcome.CHECKED)
 
     sentence = paper_sentence(task, ctx)
-    undecided = _undecided(setting, sentence, candidates)
+    undecided = _undecided(
+        setting,
+        sentence,
+        candidates,
+        _experiment_files(ctx, setting, await static_candidates(snapshot)),
+    )
     if isinstance(undecided, str):
         return TaskResult.for_task(task, TaskOutcome.UNVERIFIABLE, reason=undecided)
     candidates = undecided
@@ -122,8 +129,33 @@ _GENERIC_PATH_TOKENS = frozenset(
 MANY_CONFIGURATIONS = 3
 
 
+def _experiment_files(
+    ctx: RunContext, setting: ExtractedSetting, found: list[Candidate]
+) -> set[str]:
+    """The repository files that hold the most of the paper's other stated settings: the
+    configuration of the experiment the paper describes, when the repository has several."""
+    counts: Counter[str] = Counter()
+    for other in paper_settings(ctx.paper):
+        if other.key == setting.key:
+            continue
+        for candidate in found:
+            if (
+                candidate.tier is Tier.CODE
+                and candidate.setting.key == other.key
+                and _agrees(other, candidate.setting)
+            ):
+                counts[_path(candidate)] += 1
+    if not counts:
+        return set()
+    best = max(counts.values())
+    return {path for path, count in counts.items() if count == best}
+
+
 def _undecided(
-    paper: ExtractedSetting, sentence: str, candidates: list[Candidate]
+    paper: ExtractedSetting,
+    sentence: str,
+    candidates: list[Candidate],
+    experiment_files: frozenset[str] | set[str] = frozenset(),
 ) -> str | list[Candidate]:
     """Why no repository value can be compared with the paper's, or the values that can.
 
@@ -150,7 +182,8 @@ def _undecided(
         named = [
             c
             for c in candidates
-            if (set(_PATH_TOKEN.findall(_path(c).lower())) - _GENERIC_PATH_TOKENS) & words
+            if _path(c) in experiment_files
+            or (set(_PATH_TOKEN.findall(_path(c).lower())) - _GENERIC_PATH_TOKENS) & words
         ]
         if not named:
             return (

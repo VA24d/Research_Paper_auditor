@@ -188,3 +188,21 @@ def test_parquet_files_are_read_in_batches(tmp_path: Path) -> None:
     table = read_rows(path)
     assert table.columns == ("text", "label")
     assert list(table.rows) == [{"text": "a", "label": "0"}, {"text": "b", "label": "1"}]
+
+
+def test_train_data_is_read_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from auditor.agents.code.data import analysis
+
+    train = write_csv(tmp_path / "train.csv", "text,label", ["a,0", "b,1"])
+    test = write_csv(tmp_path / "test.csv", "text,label", ["a,0"])
+    opened: list[str] = []
+    from auditor.agents.code.data.readers import read_rows as original
+
+    def counting(path: Path) -> object:
+        opened.append(path.name)
+        return original(path)
+
+    monkeypatch.setattr(analysis, "read_rows", counting)
+    report = analysis.analyse({"train": [train], "test": [test]}, AnalysisLimits())
+    assert report.leakage[0].overlapping_rows == 1
+    assert opened.count("train.csv") <= 2  # columns once, rows once

@@ -111,7 +111,10 @@ async def test_eval_loader_batch_sizes_are_ignored(tmp_path: Path) -> None:
 
 async def test_library_function_defaults_are_not_the_experiment(tmp_path: Path) -> None:
     files = {
-        "optim/radam.py": "class RAdam:\n    def __init__(self, params, lr=1e-3):\n        pass\n"
+        "optim/radam.py": (
+            "class RAdam(Optimizer):\n    def __init__(self, params, lr=1e-3):\n        pass\n"
+        ),
+        "utils/helpers.py": "def make_optimizer(model, lr=5e-4):\n    pass\n",
     }
     result = await run(tmp_path, DEFAULT, files, "learning_rate")
     assert result.outcome is TaskOutcome.UNVERIFIABLE
@@ -227,3 +230,26 @@ async def test_unreachable_repository_is_unverifiable(tmp_path: Path) -> None:
     (task, *_) = code_tasks(paper, missing, paper_settings(paper))
     result = await check(task, offline_context(tmp_path, paper=paper))
     assert result.outcome is TaskOutcome.UNVERIFIABLE
+
+
+async def test_model_constructor_defaults_count(tmp_path: Path) -> None:
+    files = {
+        "model.py": (
+            "class Net(nn.Module):\n"
+            "    def __init__(self, dropout=0.3):\n"
+            "        super().__init__()\n"
+        )
+    }
+    (finding,) = (await run(tmp_path, "We use a dropout rate of 10%.", files, "dropout")).findings
+    assert finding.error_class is ErrorClass.SETTING_MISMATCH
+
+
+async def test_the_config_holding_the_papers_other_settings_is_used(tmp_path: Path) -> None:
+    files = {
+        "configs/a.yaml": "lr: 0.1\nbatch_size: 64\n",
+        "configs/b.yaml": "lr: 0.01\nbatch_size: 256\n",
+        "configs/c.yaml": "lr: 0.05\nbatch_size: 16\n",
+    }
+    (finding,) = (await run(tmp_path, DEFAULT, files, "learning_rate")).findings
+    assert "configs/b.yaml" in finding.summary
+    assert "configs/a.yaml" not in finding.summary

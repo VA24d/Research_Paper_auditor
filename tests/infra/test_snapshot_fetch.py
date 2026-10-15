@@ -573,3 +573,31 @@ async def test_files_of_unknown_size_download_in_parallel_within_the_budget(
     # The budget is spent in priority order, whatever order the downloads finish in.
     assert [f.path for f in snapshot.manifest.files] == ["f0.py", "f1.py"]
     assert snapshot.manifest.incomplete == ("total download limit reached",)
+
+
+async def test_an_unchanged_local_folder_is_not_copied_again(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from auditor.infra.snapshots import hosts
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "train.py").write_text("lr = 3e-4\n", encoding="utf-8")
+    calls = []
+    original = hosts.LocalFolder.listing
+
+    async def counted(self: hosts.LocalFolder, revision: str | None) -> hosts.Listing:
+        calls.append(revision)
+        return await original(self, revision)
+
+    monkeypatch.setattr(hosts.LocalFolder, "listing", counted)
+    settings = settings_for(tmp_path)
+    ref = RepositoryRef(url=repo.resolve().as_uri())
+    async with client(FakeHosts(), settings) as http:
+        first = await fetch_snapshot(ref, http, settings)
+        second = await fetch_snapshot(ref, http, settings)
+        (repo / "train.py").write_text("lr = 1e-3\n", encoding="utf-8")
+        third = await fetch_snapshot(ref, http, settings)
+    assert second.manifest == first.manifest
+    assert len(calls) == 2
+    assert third.manifest.revision != first.manifest.revision

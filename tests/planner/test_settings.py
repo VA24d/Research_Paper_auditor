@@ -152,6 +152,8 @@ async def test_two_values_of_one_setting_become_two_code_tasks(tmp_path: Path) -
         ("EWC [39] uses a batch size of 32.", False),
         ("We follow [3] and use a batch size of 32.", True),
         ("The model is trained with a batch size of 32.", True),
+        ("The model is trained following [12] with a batch size of 32.", True),
+        ("Models are trained as in Smith et al. (2020) with a batch size of 32.", True),
     ],
 )
 def test_settings_of_cited_work_are_not_the_papers(text: str, kept: bool) -> None:
