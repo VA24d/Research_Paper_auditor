@@ -48,6 +48,9 @@ class _Pattern:
     key: str
     regex: re.Pattern[str]
     numeric: bool = True
+    # Optimizer names also appear when describing other people's systems, so most
+    # optimizer patterns count only in first-person sentences.
+    first_person_only: bool = False
 
 
 def _compile(pattern: str) -> re.Pattern[str]:
@@ -102,6 +105,17 @@ PATTERNS = (
         _compile(
             r"(?:\b(?:use|used|using|with|train\w*|optimi[sz]\w*)\b[^.]{0,40}?)"
             r"\b(?P<value>AdamW|Adam|SGD|Adafactor|LAMB|RMSprop|Lion)\b(?P<name>)"
+        ),
+        numeric=False,
+        first_person_only=True,
+    ),
+    # A passive "Adam (...) optimizer [11] has been used" states the paper's own setup.
+    _Pattern(
+        "optimizer",
+        _compile(
+            r"\b(?P<value>AdamW|Adam|SGD|Adafactor|LAMB|RMSprop|Lion)\b(?:\s*\([^)]{0,60}\))?"
+            r"\s+(?P<name>optimi[sz]er)(?:\s*\[\d+(?:\s*[,\u2013-]\s*\d+)*\])?\s+"
+            r"(?:has\s+been|have\s+been|is|was|were|are)\s+(?:used|employed|adopted|applied)\b"
         ),
         numeric=False,
     ),
@@ -180,9 +194,7 @@ def settings_in_sentence(sentence: Sentence) -> list[ExtractedSetting]:
     found: list[ExtractedSetting] = []
     taken: list[tuple[int, int]] = []
     for pattern in PATTERNS:
-        # Optimizer names also appear when describing other people's systems
-        # ("GPT-3 fine-tuned with Adam"), so only first-person sentences count.
-        if pattern.key == "optimizer" and not first_person:
+        if pattern.first_person_only and not first_person:
             continue
         for match in pattern.regex.finditer(sentence.text):
             # A bare "7 steps" can be reasoning or environment steps; it only counts as

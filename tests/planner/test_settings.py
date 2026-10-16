@@ -161,3 +161,23 @@ async def test_two_values_of_one_setting_become_two_code_tasks(tmp_path: Path) -
 def test_settings_of_cited_work_are_not_the_papers(text: str, kept: bool) -> None:
     found = [s.key for s in settings_in_sentence(Sentence(id="s", text=text))]
     assert ("batch_size" in found) is kept
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        (
+            "Categorical Cross Entropy has been used as the loss function, while Adam "
+            "(Adaptive Moment Estimation) optimizer [11] has been used for weight update.",
+            "adam",
+        ),
+        ("The SGD optimizer is used for all runs.", "sgd"),
+        ("GPT-3 was fine-tuned with Adam.", None),
+        ("The Adam optimizer proposed by Kingma and Ba is popular.", None),
+    ],
+)
+def test_passive_optimizer_sentences_state_the_papers_setup(text: str, value: str | None) -> None:
+    found = [
+        s.value for s in settings_in_sentence(Sentence(id="s", text=text)) if s.key == "optimizer"
+    ]
+    assert found == ([value] if value else [])
