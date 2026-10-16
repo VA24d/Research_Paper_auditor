@@ -298,6 +298,13 @@ def _target_name(node: ast.Assign | ast.AnnAssign) -> str | None:
     targets = node.targets if isinstance(node, ast.Assign) else [node.target]
     if len(targets) == 1 and isinstance(targets[0], ast.Name):
         return targets[0].id
+    # `self.dropout = 0.2` in a constructor, or `args.epochs = 5` overriding a default.
+    if (
+        len(targets) == 1
+        and isinstance(targets[0], ast.Attribute)
+        and isinstance(targets[0].value, ast.Name)
+    ):
+        return targets[0].attr
     return None
 
 

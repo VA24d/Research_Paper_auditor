@@ -159,10 +159,13 @@ async def check_data_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
         followed = await _followed_snapshots(candidates, ctx)
         for followed_snapshot, config in followed:
             candidates = [*candidates, *_dataset_candidates(followed_snapshot, config)]
+    data_reason: str | None = None
     if ctx.settings.data_analysis_enabled and not _related(setting, sentence, candidates, settled):
-        for data in await _data(snapshot, candidates, ctx):
+        datas = await _data(snapshot, candidates, ctx)
+        for data in datas:
             candidates += [Candidate(Tier.DATA, s, data.snapshot) for s in report_settings(data)]
-    return _decide(task, setting, sentence, snapshot, candidates)
+        data_reason = "; ".join(d.reason for d in datas if d.reason) or "they give no value for it"
+    return _decide(task, setting, sentence, snapshot, candidates, data_reason)
 
 
 _words_cache: dict[str, str] = {}
@@ -549,6 +552,7 @@ def _decide(
     sentence: str,
     snapshot: Snapshot,
     candidates: Sequence[Candidate],
+    data_reason: str | None = None,
 ) -> TaskResult:
     for tier in _ORDER:
         related = [
@@ -588,7 +592,7 @@ def _decide(
             )
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[finding])
     return TaskResult.for_task(
-        task, TaskOutcome.UNVERIFIABLE, reason=_why_unverifiable(paper, snapshot)
+        task, TaskOutcome.UNVERIFIABLE, reason=_why_unverifiable(paper, snapshot, data_reason)
     )
 
 
@@ -688,10 +692,19 @@ def repository_evidence(candidates: Sequence[Candidate]) -> list[Evidence]:
     return evidence
 
 
-def _why_unverifiable(paper: ExtractedSetting, snapshot: Snapshot) -> str:
+def _why_unverifiable(
+    paper: ExtractedSetting, snapshot: Snapshot, data_reason: str | None = None
+) -> str:
+    """Why nothing settled the paper's value; `data_reason` is why the data files did not
+    settle it either, in data analysis mode."""
     manifest = snapshot.manifest
     if paper.key == "dataset":
         reason = "no dataset is named in the repository's code, configs or dataset card"
+    elif data_reason is not None:
+        reason = (
+            "nothing in the repository's code, configs, split lists or dataset card settles "
+            f"it, and the data files did not either: {data_reason}"
+        )
     elif paper.key in COUNT_KEYS or paper.key == "num_classes":
         reason = (
             "no example or class counts found in the repository's split lists or dataset card; "
