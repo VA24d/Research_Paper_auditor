@@ -50,8 +50,8 @@ merged, and put your name next to a task when you start it.
 | 3. Code agent and template checker | Vijay | `auditor.agents.code`, `auditor.agents.template`, `configs/venues/` | Set C (paper–code instances), template fixtures |
 | 4. Verifier, report, evaluation | Sudheera | `auditor.agents.verifier`, `auditor.reporting`, `auditor.evaluation` | Verifier decision fixtures |
 
-The owner is accountable for a part: they review every PR that touches it and keep its
-tests green. Ownership does not mean only the owner writes the code.
+The owner is the person to ask about a part and keeps its tests green. Ownership does not
+mean only the owner writes the code, and nobody needs the owner's approval to change it.
 
 ## 3. Working on someone else's part
 
@@ -62,7 +62,8 @@ Anyone can pick up any open task.
 2. Work on a branch named after the task, for example `p2-5-number-check`.
 3. Follow the interfaces in `auditor.schemas` and the decisions in `decisions.md`. If the
    task needs a schema change, raise it first (decision D5).
-4. The part owner reviews the PR.
+4. Merge it yourself once CI passes. Ask the owner to look first only if you want a second
+   opinion.
 
 ## 4. Tasks
 

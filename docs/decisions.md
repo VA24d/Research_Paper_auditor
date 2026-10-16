@@ -114,8 +114,8 @@ whole, so matching is per paper (one to one), as in SciCoQA's own evaluation.
 
 - All contracts live in `src/auditor/schemas/` as Pydantic v2 models, owned by Bhaskar.
 - Models are immutable (`frozen=True`), reject unknown fields, and carry a `schema_version`.
-- Changes go through a small dedicated PR reviewed by the schema owner and by the owner of
-  every module that consumes the changed model. Contract tests must pass before merge.
+- Every part depends on these models, so tell the team when you change one, and keep the
+  contract tests passing.
 
 Contracts:
 
@@ -312,11 +312,13 @@ Cross-platform rules, since the team uses all three systems:
 
 ## D17. Branches and reviews — Agreed
 
-- Feature branches per part, merged into `main` through PRs.
-- CI must pass, and at least one other member reviews.
-- Schema changes go in their own small PRs (D5).
-- Anyone may pick up a task from another part. Claim it on the task list in
-  `docs/team_plan.md` first, and ask the part owner to review the PR.
+- Everyone decides how they work. Nobody's approval or review is required, and none is
+  requested automatically.
+- PRs into `main` are the usual route because CI then runs on all three operating systems;
+  merge your own once it passes. Ask someone to look at a PR only when you want a second
+  opinion.
+- Anyone may pick up a task from another part. Put your name on it in `docs/team_plan.md`
+  first, so two people don't do the same work.
 
 ## D18. Gold labels are validated before they are frozen — Agreed
 
