@@ -321,6 +321,24 @@ def test_python_hyperparameters_and_metrics() -> None:
     ]
 
 
+ATTRIBUTES = """\
+class Model:
+    def __init__(self):
+        self.dropout = 0.2
+        self.optimizer = "adam"
+        self.batch_size = 64
+        self.model.epochs = 5
+"""
+
+
+def test_attributes_set_on_self_are_settings() -> None:
+    assert found(scan_python("model.py", ATTRIBUTES, REPO)) == [
+        ("dropout", 0.2, 3, None),
+        ("optimizer", "adam", 4, None),
+        ("batch_size", 64, 5, None),
+    ]
+
+
 def test_yaml_hyperparameters_are_read_from_strings_too() -> None:
     text = (
         "optim:\n  name: AdamW\n  lr: 3e-4\n"
