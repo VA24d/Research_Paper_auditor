@@ -449,6 +449,16 @@ async def test_data_mode_without_split_files_is_unverifiable(tmp_path: Path) -> 
     assert "train" in result.reason
 
 
+async def test_data_mode_says_why_the_data_did_not_settle_a_count(tmp_path: Path) -> None:
+    files = {"train.py": "print(1)\n", "data/all.csv": TRAIN_CSV}
+    text = "We frame it as a binary classification task."
+    result = await data_check(tmp_path, text, files, "num_classes")
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "not downloaded" not in result.reason
+    assert "train" in result.reason
+
+
 async def test_dataset_named_anywhere_in_the_repository_is_not_flagged(tmp_path: Path) -> None:
     files = {
         "a.py": 'data = load_dataset("imdb")\n',
