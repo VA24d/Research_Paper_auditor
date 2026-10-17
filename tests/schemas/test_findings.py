@@ -49,6 +49,7 @@ def test_error_classes_match_decision_d4() -> None:
         "data_leakage",
         "method_mismatch",
         "math_error",
+        "unfinished_or_placeholder_content",
         "template_violation",
     }
 

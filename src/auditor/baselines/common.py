@@ -51,6 +51,9 @@ ERROR_CLASS_GUIDE = """Error classes:
   component, data processing, training or evaluation procedure) than the paper describes.
 - math_error: an equation, derivation or proof is wrong: a stated result does not follow,
   a proof step fails, or a formula is incorrect.
+- unfinished_or_placeholder_content: the paper says its own results are placeholders,
+  simulated or to be replaced, or it contains unfinished text, author notes or unresolved
+  references.
 - template_violation: a venue formatting rule is broken."""
 
 ANSWER_GUIDE = """For every error, give:

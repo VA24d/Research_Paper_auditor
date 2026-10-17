@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from auditor.infra.context import RunContext
 from auditor.orchestration.graph import PlanFn
 from auditor.planner.claims import ClaimCandidate, citation_candidates, refine_candidates
+from auditor.planner.integrity import integrity_tasks
 from auditor.planner.repository import find_repository
 from auditor.planner.table_reader import read_tables
 from auditor.planner.tables import paper_settings
@@ -192,6 +193,7 @@ async def plan_paper(
         *code_tasks(paper, repository, settings),
         *method_tasks(paper, repository),
         *template_tasks(paper, options.venue),
+        *integrity_tasks(paper),
     ]
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
         tasks += await theory_tasks(

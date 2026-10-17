@@ -66,6 +66,8 @@ class TaskKind(StrEnum):
     TEMPLATE = "template"
     # The mathematics of one segment of the paper: equations, derivations, proofs (D21).
     THEORY = "theory"
+    # Problems in the paper's own text that need no outside source (D22).
+    INTEGRITY = "integrity"
 
 
 def compute_task_id(
@@ -177,6 +179,8 @@ class AuditTask(Record):
                     raise ValueError("template task rule must match its target")
             case TaskKind.THEORY:
                 _expect(self, SentenceAnchor, (SettingTarget,), {"claims"})
+            case TaskKind.INTEGRITY:
+                _expect(self, DocumentAnchor, (RuleTarget,), set())
         return self
 
 
