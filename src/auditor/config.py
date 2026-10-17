@@ -92,6 +92,10 @@ class Settings(BaseSettings):
     llm_structured_method: str | None = None
     llm_options: dict[str, JsonValue] = Field(default_factory=dict)
     llm_cache: bool = True
+    # A stronger model for the review steps that judge other checks' findings (the merge of
+    # the theory findings), from the same provider; its options default to llm_options.
+    llm_review_model: str | None = None
+    llm_review_options: dict[str, JsonValue] | None = None
     # The model's context window in tokens. Prompts that do not fit fail loudly instead of
     # being cut by the server (Ollama's default context is only a few thousand tokens).
     llm_context_tokens: int | None = Field(default=None, gt=0)

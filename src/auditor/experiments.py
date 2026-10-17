@@ -27,6 +27,7 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from pydantic import JsonValue, ValidationError
 
 import auditor
+from auditor.agents.theory.review import review_math
 from auditor.baselines.b0 import BaselineResult, run_b0
 from auditor.baselines.b1 import run_b1
 from auditor.config import Settings
@@ -174,9 +175,11 @@ async def run_full(
         llm=llm,
         logger=logger,
         repository=repository,
+        review_llm=llm.review if llm is not None else None,
     )
     specialists, _ = load_specialists()
     verifier, _ = load_verifier()
+    reviews = (review_math,) if settings.theory_check_enabled else ()
     pipeline = AuditPipeline(
         ctx=ctx,
         planner=make_planner(
@@ -184,6 +187,7 @@ async def run_full(
         ),
         specialists=specialists,
         verifier=verifier,
+        reviews=reviews,
         max_concurrency=max_concurrency,
     )
     outcome = await run_audit(

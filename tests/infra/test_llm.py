@@ -256,3 +256,24 @@ async def test_concurrent_calls_are_capped() -> None:
     llm = StructuredLLM(model, name="test:scripted", max_concurrency=2)
     await asyncio.gather(*(llm.generate(Verdict, MESSAGES) for _ in range(4)))
     assert most == 2
+
+
+def test_a_review_model_is_built_next_to_the_main_one(tmp_path: Path) -> None:
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="openai",
+        llm_model="small",
+        llm_options={"api_key": "x", "temperature": 0},
+        llm_review_model="large",
+        llm_review_options={"api_key": "x", "reasoning_effort": "high"},
+        llm_max_calls=5,
+    )
+    main = StructuredLLM.from_settings(settings)
+    assert main.name == "openai:small"
+    assert main.review is not None
+    assert main.review.name == "openai:large"
+    assert main.review.max_calls == 5
+    assert main.review.cache_context != main.cache_context
+    alone = StructuredLLM.from_settings(settings.model_copy(update={"llm_review_model": None}))
+    assert alone.review is None

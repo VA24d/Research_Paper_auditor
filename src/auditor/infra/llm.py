@@ -206,6 +206,8 @@ class StructuredLLM:
         # Model calls this instance may make in total (one per run); cache hits are free.
         self.max_calls = max_calls
         self.calls = 0
+        # The stronger model for review steps (AUDITOR_LLM_REVIEW_MODEL), if any.
+        self.review: StructuredLLM | None = None
 
     @property
     def limit_reached(self) -> bool:
@@ -213,6 +215,23 @@ class StructuredLLM:
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
+        """The main model, with the review model attached when one is configured; it has
+        its own call limit of the same size."""
+        llm = cls._one(settings)
+        if settings.llm_review_model:
+            options = settings.llm_review_options
+            llm.review = cls._one(
+                settings.model_copy(
+                    update={
+                        "llm_model": settings.llm_review_model,
+                        "llm_options": settings.llm_options if options is None else options,
+                    }
+                )
+            )
+        return llm
+
+    @classmethod
+    def _one(cls, settings: Settings) -> "StructuredLLM":
         cache = LLMCache(settings.cache_dir / "llm") if settings.llm_cache else None
         return cls(
             create_chat_model(settings),

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from auditor.agents.theory import MathReview, check
+from auditor.agents.theory import MathReview, check, locate
 from auditor.infra.llm import StructuredLLM
 from auditor.planner.theory import theory_tasks
 from auditor.schemas import (
@@ -102,3 +102,16 @@ async def test_without_an_llm_the_task_is_unverifiable(tmp_path: Path) -> None:
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "LLM" in result.reason
+
+
+def test_quotes_match_across_latex_delimiters_and_spacing() -> None:
+    text = (
+        "let \\( A \\to 0 \\) in (3.3) we get\n\\[\ne^{-2T} \\geq e^{-BT},\n\\]\na contradiction."
+    )
+    quote = "let \\(A \\to 0\\) in (3.3) we get \\( e^{-2T} \\geq e^{-BT} \\)"
+    span = locate(quote, text)
+    assert span is not None
+    start, end = span
+    assert text[start:end].startswith("let \\( A")
+    assert text[start:end].endswith("e^{-BT}")
+    assert locate("we get e^{-3T}", text) is None

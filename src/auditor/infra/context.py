@@ -18,8 +18,14 @@ class RunContext:
     logger: logging.Logger
     # The code repository of this run, when one is known; B1's code tools inspect it.
     repository: RepositoryRef | None = None
+    # A stronger model for the review steps that judge other checks' findings, such as the
+    # merge of the theory findings (AUDITOR_LLM_REVIEW_MODEL); None means the main model.
+    review_llm: StructuredLLM | None = None
 
     def require_llm(self) -> StructuredLLM:
         if self.llm is None:
             raise LLMNotConfiguredError("this run has no LLM configured")
         return self.llm
+
+    def require_review_llm(self) -> StructuredLLM:
+        return self.review_llm or self.require_llm()

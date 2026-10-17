@@ -29,6 +29,8 @@ from auditor.schemas import (
 
 PlanFn = Callable[[ParsedPaper, RunContext], Awaitable[list[AuditTask]]]
 VerifyFn = Callable[[Sequence[TaskResult], RunContext], Awaitable[list[VerifiedFinding]]]
+# A review step after the verifier, such as the merge of the theory findings (D21).
+ReviewFn = Callable[[Sequence[VerifiedFinding], RunContext], Awaitable[list[VerifiedFinding]]]
 
 NODE_FOR_KIND = {
     TaskKind.REFERENCE: "citation",
@@ -79,6 +81,7 @@ class AuditPipeline:
     planner: PlanFn
     specialists: Specialists = field(default_factory=Specialists)
     verifier: VerifyFn = send_all_to_review
+    reviews: tuple[ReviewFn, ...] = ()
     policy: TaskPolicy = field(default_factory=TaskPolicy)
     max_concurrency: int = 8
 
@@ -124,6 +127,8 @@ def build_graph(
         paper = state["paper"]
         with enter_scope(Scope.for_paper(run_id, paper, usage)):
             verified = await pipeline.verifier(state["results"], ctx)
+            for review in pipeline.reviews:
+                verified = await review(verified, ctx)
         return {"verified": synthesise(verified)}
 
     graph = StateGraph(AuditState)

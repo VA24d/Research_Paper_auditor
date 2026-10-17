@@ -63,7 +63,7 @@ def _body(paper: ParsedPaper) -> list[Sentence]:
     return [s for s in paper.sentences if s.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY)]
 
 
-def _paper_text(paper: ParsedPaper) -> str:
+def paper_text(paper: ParsedPaper) -> str:
     titles = {s.id: s.title for s in paper.sections}
     lines: list[str] = []
     current: str | None = None
@@ -83,13 +83,38 @@ def _segment(paper: ParsedPaper, sections: tuple[str, ...]) -> list[Sentence]:
     ]
 
 
+# Math delimiters that a model often swaps (\[ for \(, $ for \() when it copies a formula.
+_DELIMITER = re.compile(r"\\[()\[\]]|\$+")
+
+
+def _comparable(text: str) -> tuple[str, list[int]]:
+    """The text without spaces and math delimiters, and where each kept character was."""
+    kept: list[str] = []
+    where: list[int] = []
+    position = 0
+    for match in _DELIMITER.finditer(text):
+        for i in range(position, match.start()):
+            if not text[i].isspace():
+                kept.append(text[i])
+                where.append(i)
+        position = match.end()
+    for i in range(position, len(text)):
+        if not text[i].isspace():
+            kept.append(text[i])
+            where.append(i)
+    return "".join(kept), where
+
+
 def locate(quote: str, text: str) -> tuple[int, int] | None:
-    """Where `quote` occurs in `text`, allowing for different spacing."""
-    words = quote.split()
-    if not words:
+    """Where `quote` occurs in `text`, allowing for different spacing and math delimiters."""
+    wanted, _ = _comparable(quote)
+    if not wanted:
         return None
-    match = re.search(r"\s+".join(re.escape(word) for word in words), text)
-    return (match.start(), match.end()) if match else None
+    flat, where = _comparable(text)
+    found = flat.find(wanted)
+    if found < 0:
+        return None
+    return where[found], where[found + len(wanted) - 1] + 1
 
 
 def _finding(
@@ -142,7 +167,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         )
     focus = "\n".join(f"[{s.id}] {s.text}" for s in segment)
     prompt = (
-        f"The paper:\n{_paper_text(paper)}\n\n"
+        f"The paper:\n{paper_text(paper)}\n\n"
         f"The segment to check, one sentence per line with its id:\n{focus}"
     )
     result = await ctx.llm.generate(
