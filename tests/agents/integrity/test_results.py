@@ -138,3 +138,67 @@ async def test_without_a_model_only_the_table_rules_run(tmp_path: Path) -> None:
     result = await check(results_task(p), offline_context(tmp_path, paper=p))
     assert result.outcome is TaskOutcome.CHECKED
     assert result.findings == ()
+
+
+def text_paper(sentence: str) -> ParsedPaper:
+    return ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sentences=(Sentence(id="s1", text=sentence),),
+    )
+
+
+COMPARISON = "PlaNet-S reached an IoU of 0.73, significantly higher than U-Net with 0.78."
+
+
+async def test_a_comparison_in_the_text_alone_is_checked(tmp_path: Path) -> None:
+    # A real case (arXiv 2312.11580v1): no table is needed to see that 0.73 < 0.78.
+    found = claim(
+        "s1",
+        "significantly higher than U-Net with 0.78",
+        "comparison",
+        table_id="",
+        relation="higher",
+        subject={"row_label": "PlaNet-S", "value": "0.73"},
+        others=[{"row_label": "U-Net", "value": "0.78"}],
+    )
+    result, _ = await run(tmp_path, [found], text_paper(COMPARISON))
+    (finding,) = result.findings
+    assert isinstance(finding.anchor, SentenceAnchor)
+    assert finding.anchor.sentence_id == "s1"
+    assert "0.73" in finding.summary
+    assert "0.78" in finding.summary
+
+
+async def test_a_correct_comparison_and_numbers_not_in_the_sentence_pass(tmp_path: Path) -> None:
+    right = claim(
+        "s1",
+        "significantly higher than U-Net with 0.78",
+        "comparison",
+        table_id="",
+        relation="lower",
+        subject={"row_label": "PlaNet-S", "value": "0.73"},
+        others=[{"row_label": "U-Net", "value": "0.78"}],
+    )
+    # 0.70 is not in the sentence, so this claim is not judged.
+    invented = {
+        **right,
+        "relation": "higher",
+        "others": [{"row_label": "U-Net", "value": "0.70"}],
+    }
+    result, _ = await run(tmp_path, [right, invented], text_paper(COMPARISON))
+    assert result.findings == ()
+
+
+async def test_a_gain_in_percent_may_mean_percentage_points(tmp_path: Path) -> None:
+    # Seen on a real paper: "improves by 4.8%" for 71.5 against 66.7, a 4.8-point gain.
+    points = claim(
+        "s1",
+        "Ours improves over Contrastive-SSL by 2.7 points",
+        "relative_percent",
+        stated="1.7",
+        subject={"row_label": "Ours", "value": "90.5"},
+        others=[{"row_label": "Contrastive-SSL", "value": "88.8"}],
+    )
+    result, _ = await run(tmp_path, [points])
+    assert result.findings == ()

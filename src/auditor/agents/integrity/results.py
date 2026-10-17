@@ -53,14 +53,21 @@ list the claims that state or compare numbers in a table:
   units (points);
 - "relative_percent": the text states a relative improvement in percent;
 - "best": the text says one result is the best (or the worst, with higher_is_better set
-  to false for metrics where lower is better) among the table's results it compares with.
+  to false for metrics where lower is better) among the table's results it compares with;
+- "comparison": the text says one number is higher (relation "higher") or lower (relation
+  "lower") than another, for example "0.73, significantly higher than 0.78". The numbers
+  may be in a table or in the sentence itself; for numbers in the sentence, leave table_id
+  empty.
 For each claim give the sentence id, a quote of at least four words copied exactly from the
 sentence, the table id, the number the text states (for value, difference and
 relative_percent), and the table numbers it rests on: the subject (the row label as written
 in the table and the number exactly as written in that row), and for difference and
 relative_percent the compared result, for best every result it is compared with in the same
-column. Copy numbers from the table exactly; never compute them. For a claim about several
-columns, give one claim per column. Leave out claims you cannot tie to specific table
+column. Copy numbers from the table or sentence exactly; never compute them. For a claim about
+several columns, give one claim per column. Include every sentence, in the abstract too,
+that says one stated number is higher, lower, better or worse than another stated number:
+these are "comparison" claims even without a table, and a comparison can use numbers from
+the one or two sentences just before it. Leave out claims you cannot tie to specific
 numbers. List at most 20 claims, the ones the paper's conclusions rest on first."""
 
 
@@ -72,12 +79,15 @@ class Operand(BaseModel):
 class DataClaim(BaseModel):
     sentence_id: str
     quote: str
-    kind: Literal["value", "difference", "relative_percent", "best"]
-    table_id: str
+    kind: Literal["value", "difference", "relative_percent", "best", "comparison"]
+    # Empty when the claim's numbers are in the sentence itself, not in a table.
+    table_id: str = ""
     stated: str = ""
     subject: Operand
     others: list[Operand] = []
     higher_is_better: bool = True
+    # For "comparison": what the text says about the subject's number against the other's.
+    relation: Literal["higher", "lower"] = "higher"
 
 
 class DataClaims(BaseModel):
@@ -197,14 +207,17 @@ def _listing(paper: ParsedPaper) -> str:
     return "\n".join(lines)[:MAX_LISTING_CHARS]
 
 
-def _value_in_row(rows: Sequence[Sentence], operand: Operand) -> _Number | None:
-    """The operand's number, if a row naming its label holds it exactly as written."""
+def _value_in_row(
+    rows: Sequence[Sentence], operand: Operand, need_label: bool = True
+) -> _Number | None:
+    """The operand's number, if a row naming its label (when `need_label`) holds it exactly
+    as written."""
     label = operand.row_label.strip().casefold()
     wanted = _Number.parse(operand.value)
-    if not label or wanted is None:
+    if wanted is None or (need_label and not label):
         return None
     for row in rows:
-        if label not in row.text.casefold():
+        if need_label and label not in row.text.casefold():
             continue
         written = {m.group().replace(_MINUS, "-") for m in _NUMBER.finditer(row.text)}
         if operand.value.strip().replace(_MINUS, "-") in written:
@@ -212,14 +225,30 @@ def _value_in_row(rows: Sequence[Sentence], operand: Operand) -> _Number | None:
     return None
 
 
-def _verdict(claim: DataClaim, rows: Sequence[Sentence], label: str) -> tuple[str, str] | None:
-    """(summary, lookup) when the claim disagrees with the table, else None. A claim whose
-    numbers are not in the table as given is not judged."""
-    subject = _value_in_row(rows, claim.subject)
-    others = [_value_in_row(rows, o) for o in claim.others]
+def _verdict(
+    claim: DataClaim, rows: Sequence[Sentence], label: str, need_label: bool = True
+) -> tuple[str, str] | None:
+    """(summary, lookup) when the claim disagrees with its numbers, else None. A claim
+    whose numbers are not where the model says (the table row, or the sentence) is not
+    judged."""
+    subject = _value_in_row(rows, claim.subject, need_label)
+    others = [_value_in_row(rows, o, need_label) for o in claim.others]
     if subject is None or any(o is None for o in others):
         return None
     compared = [o for o in others if o is not None]
+    if claim.kind == "comparison":
+        if len(compared) != 1:
+            return None
+        other = compared[0]
+        wrong = subject.high < other.low if claim.relation == "higher" else subject.low > other.high
+        if not wrong:
+            return None
+        summary = (
+            f"The text says {claim.subject.row_label} ({claim.subject.value}) is "
+            f"{claim.relation} than {claim.others[0].row_label} ({claim.others[0].value}), "
+            "but the numbers say the opposite."
+        )
+        return summary, f"{claim.subject.value} against {claim.others[0].value}"
     if claim.kind == "best":
         better = [
             (operand, number)
@@ -273,6 +302,11 @@ def _verdict(claim: DataClaim, rows: Sequence[Sentence], label: str) -> tuple[st
         low, high = min(corners), max(corners)
         computed = (subject.value - other.value) / other.value * 100 if other.value else 0.0
         unit = "%"
+        # "Improves by 4.8%" often means 4.8 percentage points; either reading is accepted.
+        points = abs(subject.value - other.value)
+        spread = subject.half_unit + other.half_unit
+        if points - spread <= stated.high and stated.low <= points + spread:
+            return None
     if low <= stated.high and stated.low <= high:
         return None
     decimals = max(len(claim.stated.split(".")[1]) if "." in claim.stated else 0, 1)
@@ -291,7 +325,7 @@ def _verdict(claim: DataClaim, rows: Sequence[Sentence], label: str) -> tuple[st
 async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     paper = ctx.paper
     findings = table_findings(task, paper)
-    if ctx.llm is None or not paper.tables:
+    if ctx.llm is None:
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
     result = await ctx.llm.generate(
         DataClaims,
@@ -303,11 +337,21 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     tables = {t.id: t for t in paper.tables}
     body = [s for s in paper.sentences if s.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY)]
     flagged: set[str] = set()
+    by_id = {s.id: s for s in body}
+    order = {s.id: i for i, s in enumerate(body)}
     for claim in result.value.claims:
-        table = tables.get(claim.table_id)
-        if table is None or claim.sentence_id in flagged:
+        if claim.sentence_id in flagged:
             continue
-        verdict = _verdict(claim, _rows(paper, table), table.label or table.id)
+        table = tables.get(claim.table_id)
+        if table is not None:
+            verdict = _verdict(claim, _rows(paper, table), table.label or table.id)
+        elif claim.sentence_id in by_id:
+            # Numbers in the text: they must be in the sentence or the two before it.
+            at = order[claim.sentence_id]
+            nearby = body[max(0, at - 2) : at + 1]
+            verdict = _verdict(claim, nearby, "the text", need_label=False)
+        else:
+            continue
         if verdict is None:
             continue
         found = anchor_quote(claim.quote, claim.sentence_id, body)
