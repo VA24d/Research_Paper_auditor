@@ -1,20 +1,32 @@
-"""The theory checker: is the mathematics of one segment of the paper right (decision D21)?
+"""The theory checker: are a paper's formal claims right (decision D21)?
 
-Each task names a segment, a run of formal sections the planner picked
-(`auditor.planner.theory`). The LLM sees the whole paper for context and the segment with
-its sentence ids, and reports objective errors: a false statement, a proof step that does
-not follow, a wrong formula, a result used outside its assumptions. As everywhere in the
-auditor, a claim needs evidence: an error is kept only if it quotes the paper verbatim, at
-least six words long, and the quote fixes the sentence it is anchored on.
+The later stages of the theory cascade, after the planner listed the claims
+(`auditor.planner.theory`). Thinking is spent only where it is needed:
+
+1. Screen. One cheap call with low thinking reads every claim of the task with its own
+   sentences and the definitions it uses, and calls each "fine", "suspicious" or "needs
+   reasoning". A fine claim costs nothing more.
+2. Deep check. Suspicious claims, and risky ones that need reasoning, are checked one at a
+   time with high thinking, at most `AUDITOR_THEORY_DEEP_CHECKS` per task, with the whole
+   paper as context. The default answer is "no error"; an error has to come with a witness
+   (the step that fails, a counterexample or the correct value).
+
+As everywhere in the auditor, a claim needs evidence: an error is kept only if it quotes
+the paper verbatim, at least six words long, and the quote fixes the sentence it is
+anchored on. The review step (`auditor.agents.theory.review`) then challenges what is
+left with the stronger model.
 """
 
+import asyncio
 import re
+from collections.abc import Sequence
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from auditor.infra.context import RunContext
+from auditor.planner.theory import paper_listing
 from auditor.schemas import (
     AuditTask,
     CandidateFinding,
@@ -24,63 +36,73 @@ from auditor.schemas import (
     ParsedPaper,
     Sentence,
     SentenceAnchor,
-    SentenceKind,
     SourceKind,
     SourceRef,
     TaskKind,
     TaskOutcome,
     TaskResult,
+    TheoryClaim,
 )
 
-# The whole paper is context; longer papers are cut here (about 40k tokens).
-MAX_CONTEXT_CHARS = 160_000
 MIN_QUOTE_WORDS = 6
 MAX_SUMMARY_CHARS = 400
 
-SYSTEM_PROMPT = """You check the mathematics of a research paper as a careful referee. You
-get the whole paper for context and one segment to check. Report only objective errors in
-that segment: a theorem, lemma or claim that is false as stated, a proof step that does not
-follow, a wrong formula or derivation, or a result used outside its assumptions. Work
-through each step yourself, and where you can, give a counterexample or the correct value.
-Do not report typos that leave the mathematics intact, notation, style, missing references,
-or doubts you cannot point to. For each error, copy a quote of at least six words from the
-segment exactly as it is written, give its location (such as "Lemma 3.2" or "Eq. (5)"),
-explain why it is wrong, and rate your confidence. An empty list is a valid answer."""
+SCREEN_PROMPT = """You screen the formal claims of a research paper before a careful check.
+For each claim you get the sentences that state and argue it, and the definitions and
+results it uses. Answer for every claim:
+- "fine": reading the argument shows it holds;
+- "suspicious": you see a likely error (a false statement, a step that does not follow, a
+  wrong formula, a result used outside its assumptions);
+- "needs_reasoning": it cannot be settled without working through the details.
+For anything but "fine", add a note of at most 20 words on what to look at."""
+
+DEEP_PROMPT = """You check one formal claim of a research paper as a careful referee, with
+the whole paper for context. Work through the argument yourself. The default answer is that
+there is no error. Report an error only if you can show it: give the step that fails and
+why, a counterexample, or the correct value as the witness. Typos that leave the
+mathematics intact, notation and style are not errors. For an error, copy a quote of at
+least six words from the claim's sentences exactly as written, give its location (such as
+"Lemma 3.2" or "Eq. (5)") and rate your confidence."""
 
 
-class MathIssue(BaseModel):
-    quote: str
-    location: str
-    explanation: str
-    confidence: Literal["low", "medium", "high"]
+class ScreenVerdict(BaseModel):
+    claim_id: str
+    verdict: Literal["fine", "suspicious", "needs_reasoning"]
+    note: str = ""
 
 
-class MathReview(BaseModel):
-    errors: list[MathIssue]
+class Screen(BaseModel):
+    verdicts: list[ScreenVerdict]
 
 
-def _body(paper: ParsedPaper) -> list[Sentence]:
-    return [s for s in paper.sentences if s.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY)]
+class DeepCheck(BaseModel):
+    has_error: bool
+    quote: str = ""
+    location: str = ""
+    explanation: str = ""
+    witness: str = ""
+    confidence: Literal["low", "medium", "high"] = "low"
 
 
 def paper_text(paper: ParsedPaper) -> str:
-    titles = {s.id: s.title for s in paper.sections}
-    lines: list[str] = []
-    current: str | None = None
-    for sentence in _body(paper):
-        if sentence.section_id != current:
-            current = sentence.section_id
-            if titles.get(current or ""):
-                lines.append(f"\n## {titles[current or '']}")
-        lines.append(sentence.text)
-    return "\n".join(lines)[:MAX_CONTEXT_CHARS]
+    """The paper as the checks see it (one `[id] sentence` line each)."""
+    return paper_listing(paper)
 
 
-def _segment(paper: ParsedPaper, sections: tuple[str, ...]) -> list[Sentence]:
-    wanted = set(sections)
-    return [
-        s for s in paper.sentences if s.kind is SentenceKind.BODY and (s.section_id or "") in wanted
-    ]
+def _lines(paper: ParsedPaper, ids: Sequence[str]) -> str:
+    texts = {s.id: s.text for s in paper.sentences}
+    return "\n".join(f"[{i}] {texts[i]}" for i in ids if i in texts)
+
+
+def _pack(paper: ParsedPaper, claim: TheoryClaim, note: str = "") -> str:
+    head = f"Claim {claim.claim_id}"
+    if claim.kind:
+        head += f" ({claim.kind})"
+    if claim.statement:
+        head += f": {claim.statement}"
+    if note:
+        head += f"\nScreening note: {note}"
+    return f"{head}\n{_lines(paper, claim.sentence_ids)}"
 
 
 # Math delimiters that a model often swaps (\[ for \(, $ for \() when it copies a formula.
@@ -118,40 +140,66 @@ def locate(quote: str, text: str) -> tuple[int, int] | None:
 
 
 def _finding(
-    task: AuditTask, number: int, issue: MathIssue, sentences: list[Sentence]
+    task: AuditTask, number: int, deep: DeepCheck, sentences: list[Sentence]
 ) -> CandidateFinding | None:
-    if len(issue.quote.split()) < MIN_QUOTE_WORDS:
+    if not deep.has_error or not deep.witness.strip():
+        return None
+    if len(deep.quote.split()) < MIN_QUOTE_WORDS:
         return None
     for sentence in sentences:
-        span = locate(issue.quote, sentence.text)
+        span = locate(deep.quote, sentence.text)
         if span is None:
             continue
         start, end = span
-        exact = sentence.text[start:end]
-        summary = f"{issue.location.strip() or 'Segment'}: {issue.explanation.strip()}"
+        summary = f"{deep.location.strip() or 'Claim'}: {deep.explanation.strip()}"
         return CandidateFinding.for_task(
             task,
             number,
             error_class=ErrorClass.MATH_ERROR,
             anchor=SentenceAnchor(sentence_id=sentence.id, start=start, end=end),
             summary=summary[:MAX_SUMMARY_CHARS],
-            explanation=f"{issue.confidence} confidence. {issue.explanation.strip()}",
+            explanation=(
+                f"{deep.confidence} confidence. {deep.explanation.strip()} "
+                f"Witness: {deep.witness.strip()}"
+            ),
             evidence=[
                 Evidence(
                     kind=EvidenceKind.QUOTE,
                     source=SourceRef(kind=SourceKind.SUBMISSION, id=task.paper_id),
-                    text=exact,
+                    text=sentence.text[start:end],
                     char_start=start,
                     char_end=end,
                 )
             ],
-            uncertain=issue.confidence != "high",
+            uncertain=deep.confidence != "high",
         )
     return None
 
 
+_RISK = {"high": 0, "medium": 1, "low": 2}
+
+
+def _escalated(
+    claims: Sequence[TheoryClaim], verdicts: dict[str, ScreenVerdict], limit: int
+) -> list[tuple[TheoryClaim, str]]:
+    """The claims that earn a deep check: suspicious ones first, then risky claims that
+    need reasoning, at most `limit`."""
+    picked = []
+    for claim in claims:
+        verdict = verdicts.get(claim.claim_id)
+        if verdict is None or verdict.verdict == "fine":
+            continue
+        if verdict.verdict == "needs_reasoning" and not (
+            claim.needs_reasoning and claim.risk != "low"
+        ):
+            continue
+        picked.append((verdict.verdict != "suspicious", _RISK[claim.risk], claim, verdict.note))
+    picked.sort(key=lambda item: (item[0], item[1]))
+    return [(claim, note) for _, _, claim, note in picked[:limit]]
+
+
 async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
-    if task.kind is not TaskKind.THEORY or task.sections is None:
+    if task.kind is not TaskKind.THEORY or task.claims is None:
         raise ValueError(f"{task.task_id} is not a theory task")
     if ctx.llm is None:
         return TaskResult.for_task(
@@ -160,24 +208,42 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
             reason="checking the mathematics needs an LLM, and none is configured",
         )
     paper = ctx.paper
-    segment = _segment(paper, task.sections)
-    if not segment:
-        return TaskResult.for_task(
-            task, TaskOutcome.UNVERIFIABLE, reason="the segment has no body text"
-        )
-    focus = "\n".join(f"[{s.id}] {s.text}" for s in segment)
+    claims = task.claims
+    used = list(dict.fromkeys(i for c in claims for i in c.depends_on))
     prompt = (
-        f"The paper:\n{paper_text(paper)}\n\n"
-        f"The segment to check, one sentence per line with its id:\n{focus}"
+        f"Definitions and results the claims use:\n{_lines(paper, used) or '(none)'}\n\n"
+        "Claims:\n" + "\n\n".join(_pack(paper, c) for c in claims)
     )
-    result = await ctx.llm.generate(
-        MathReview, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)]
+    screened = await ctx.llm.generate(
+        Screen,
+        [SystemMessage(SCREEN_PROMPT), HumanMessage(prompt)],
+        effort="low",
+        purpose="theory-screen",
     )
-    # A quote is looked for in the segment first, then anywhere in the paper.
-    sentences = segment + [s for s in _body(paper) if s not in segment]
+    verdicts = {v.claim_id: v for v in screened.value.verdicts}
+    escalated = _escalated(claims, verdicts, ctx.settings.theory_deep_checks)
+    # The paper comes first and is the same in every deep check, so a provider's prompt
+    # cache can reuse it.
+    listing = paper_text(paper)
+    llm = ctx.llm
+
+    async def deep(claim: TheoryClaim, note: str) -> DeepCheck:
+        message = f"The paper:\n{listing}\n\nClaim to check:\n{_pack(paper, claim, note)}"
+        result = await llm.generate(
+            DeepCheck,
+            [SystemMessage(DEEP_PROMPT), HumanMessage(message)],
+            effort="high",
+            purpose="theory-deep",
+        )
+        return result.value
+
+    results = await asyncio.gather(*(deep(claim, note) for claim, note in escalated))
+    by_id = {s.id: s for s in paper.sentences}
     findings: list[CandidateFinding] = []
-    for issue in result.value.errors:
-        finding = _finding(task, len(findings), issue, sentences)
+    for (claim, _), outcome in zip(escalated, results, strict=True):
+        # A quote is looked for in the claim's sentences, then in what it uses.
+        own = [by_id[i] for i in (*claim.sentence_ids, *claim.depends_on) if i in by_id]
+        finding = _finding(task, len(findings), outcome, own)
         if finding is not None and finding.anchor not in [f.anchor for f in findings]:
             findings.append(finding)
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)

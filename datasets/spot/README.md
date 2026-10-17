@@ -23,16 +23,17 @@ subset. The paper text stays under `data/spot/` and is not committed (D13).
 
 ```
 uv run python scripts/spot.py fetch --data data/spot --out datasets/spot
-AUDITOR_THEORY_CHECK_ENABLED=true AUDITOR_THEORY_MAX_SEGMENTS=12 \
+AUDITOR_THEORY_CHECK_ENABLED=true \
   uv run auditor batch data/spot/dataset.jsonl --experiment spot --systems full b0 --runs 1
 uv run python scripts/spot.py score runs/spot-full-r1 --errors datasets/spot/errors.jsonl \
   --data data/spot --before-verifier
 ```
 
-`fetch` turns each text page into a section and each paragraph into a sentence, so the
-planner's segments are runs of formal pages, as in PAT. With 12 segments allowed, every
-formal page of every paper is checked once: 107 theory calls, about 1.5 million input
-tokens. B0 adds one call per paper.
+`fetch` turns each text page into a section and each paragraph into a sentence. The
+theory check then runs as the cascade of D21: one planning call per paper, one screening
+call per batch of claims, a deep check only for claims that earn one, and one review call
+per paper. B0 adds one call per paper. Set `AUDITOR_LLM_REVIEW_MODEL` to review with a
+stronger model than the one that screens.
 
 `score` asks an LLM judge, once per annotated error, which of the run's `math_error`
 reports for that paper describe it. `--any-class` also shows the judge reports of other

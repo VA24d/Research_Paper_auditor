@@ -113,7 +113,11 @@ class Settings(BaseSettings):
     # Ask the model, one code line at a time, which of several repository values a setting
     # mismatch is about (only when an LLM is configured).
     code_second_look: bool = True
-    # Check the mathematics of the paper's formal segments with the LLM (decision D21): at
-    # most `theory_max_segments` model calls per paper.
+    # Check the mathematics of the paper's formal claims with the LLM (decision D21). The
+    # planner lists the claims in one call and groups them into at most `theory_max_tasks`
+    # tasks of `theory_batch_size` claims; each task screens its claims in one cheap call,
+    # and at most `theory_deep_checks` of them get a deep check with high thinking.
     theory_check_enabled: bool = False
-    theory_max_segments: int = Field(default=3, gt=0)
+    theory_batch_size: int = Field(default=8, gt=0)
+    theory_max_tasks: int = Field(default=6, gt=0)
+    theory_deep_checks: int = Field(default=2, ge=0)

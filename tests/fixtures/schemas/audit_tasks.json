@@ -17,7 +17,7 @@
     "setting": null,
     "repository": null,
     "rule": null,
-    "sections": null
+    "claims": null
   },
   {
     "schema_version": 1,
@@ -39,7 +39,7 @@
     "setting": null,
     "repository": null,
     "rule": null,
-    "sections": null
+    "claims": null
   },
   {
     "schema_version": 1,
@@ -61,7 +61,7 @@
     "setting": null,
     "repository": null,
     "rule": null,
-    "sections": null
+    "claims": null
   },
   {
     "schema_version": 1,
@@ -102,7 +102,7 @@
       "commit": "0123abcd"
     },
     "rule": null,
-    "sections": null
+    "claims": null
   },
   {
     "schema_version": 1,
@@ -129,6 +129,6 @@
       },
       "needs_visual_inspection": false
     },
-    "sections": null
+    "claims": null
   }
 ]

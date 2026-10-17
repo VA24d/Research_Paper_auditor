@@ -20,7 +20,7 @@ from auditor.infra.context import RunContext
 from auditor.schemas import ErrorClass, SentenceAnchor, VerificationState, VerifiedFinding
 
 SYSTEM_PROMPT = """You are the senior referee who checks the mathematics of a research
-paper. Junior referees each read one part of the paper and listed candidate errors. Judge
+paper. Junior referees each checked some of its claims and listed candidate errors. Judge
 every candidate with the whole paper in view, working through the mathematics yourself:
 - "error": the paper is wrong at that point (a false statement, a step that does not
   follow, a wrong formula, a result used outside its assumptions);
@@ -67,7 +67,10 @@ async def review_math(
     listing = "\n".join(_candidate(n, out[i], texts) for n, i in enumerate(positions, start=1))
     prompt = f"The paper:\n{paper_text(ctx.paper)}\n\nCandidate errors:\n{listing}"
     result = await ctx.require_review_llm().generate(
-        MathVerdicts, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)]
+        MathVerdicts,
+        [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)],
+        effort="medium",
+        purpose="theory-challenge",
     )
     by_number = dict(enumerate(positions, start=1))
     for verdict in result.value.verdicts:
