@@ -30,6 +30,9 @@ DEFAULT_ALLOWED_HOSTS = (
     "storage.googleapis.com",
     "anonymous.4open.science",
     "zenodo.org",
+    # OpenReview serves public submissions, reviews and decisions (scripts/real_cases.py).
+    "api2.openreview.net",
+    "openreview.net",
 )
 
 
