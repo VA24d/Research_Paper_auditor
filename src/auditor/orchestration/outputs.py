@@ -35,6 +35,8 @@ def predictions_from_verified(
             summary=decision.finding.summary,
             evidence=decision.accepted_evidence,
             finding_id=decision.finding.finding_id,
+            severity=decision.severity,
+            duplicate_of=decision.duplicate_of,
         )
         for decision in verified
     ]

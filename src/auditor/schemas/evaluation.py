@@ -7,7 +7,7 @@ from pydantic import AwareDatetime, Field, JsonValue, model_validator
 
 from auditor.schemas.anchors import Anchor, anchors_match
 from auditor.schemas.base import SCHEMA_VERSION, NonEmptyStr, Record, SchemaVersion
-from auditor.schemas.findings import ErrorClass, Evidence, VerificationState
+from auditor.schemas.findings import ErrorClass, Evidence, Severity, VerificationState
 from auditor.schemas.paper import PaperVariant
 from auditor.schemas.tasks import Target
 
@@ -45,6 +45,9 @@ class Prediction(Record):
     summary: NonEmptyStr
     evidence: tuple[Evidence, ...] = ()
     finding_id: str | None = None
+    # From the full system's synthesis step (decision D20); scoring ignores them.
+    severity: Severity | None = None
+    duplicate_of: str | None = None
 
     @model_validator(mode="after")
     def _state_matches_system(self) -> Self:

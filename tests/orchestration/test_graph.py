@@ -21,6 +21,7 @@ from auditor.orchestration.graph import (
 )
 from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
 from auditor.orchestration.runner import CheckFn, TaskPolicy
+from auditor.orchestration.synthesis import synthesise
 from auditor.schemas import (
     AuditTask,
     BibTarget,
@@ -315,6 +316,9 @@ async def test_verifier_decisions_reach_the_output_files(tmp_path: Path) -> None
         run_id="r1",
         system=SystemName.FULL,
     )
+    # The synthesis step rates every decision; the second repeats the first.
+    decisions = synthesise(decisions)
+    assert [d.duplicate_of for d in decisions] == [None, decisions[0].finding.finding_id]
     assert outcome.verified == decisions
     predictions = predictions_from_verified(outcome.verified, run_id="r1", system=SystemName.FULL)
     folder = RunDirectory(tmp_path / "runs", "r1").save_audit(example_paper(), outcome, predictions)
@@ -326,8 +330,8 @@ async def test_verifier_decisions_reach_the_output_files(tmp_path: Path) -> None
         VerifiedFinding.model_validate_json(line) for line in read("verified.jsonl")
     ] == decisions
     written = [Prediction.model_validate_json(line) for line in read("predictions.jsonl")]
-    assert [(p.finding_id, p.state, p.evidence) for p in written] == [
-        (d.finding.finding_id, d.state, d.accepted_evidence) for d in decisions
+    assert [(p.finding_id, p.state, p.evidence, p.duplicate_of) for p in written] == [
+        (d.finding.finding_id, d.state, d.accepted_evidence, d.duplicate_of) for d in decisions
     ]
     assert {d.state for d in decisions} == {
         VerificationState.VERIFIED_FLAG,

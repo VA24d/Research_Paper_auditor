@@ -36,7 +36,9 @@
         "line_end": null
       }
     ],
-    "finding_id": "citation-ff90ef73025cd80d-f0"
+    "finding_id": "citation-ff90ef73025cd80d-f0",
+    "severity": null,
+    "duplicate_of": null
   },
   {
     "schema_version": 1,
@@ -58,6 +60,8 @@
     "state": null,
     "summary": "The learning rate may differ from the released code.",
     "evidence": [],
-    "finding_id": null
+    "finding_id": null,
+    "severity": null,
+    "duplicate_of": null
   }
 ]

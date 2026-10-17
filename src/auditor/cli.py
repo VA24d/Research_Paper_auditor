@@ -139,13 +139,16 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
     outcome = result.outcome
     outcomes = {o: sum(1 for r in outcome.results if r.outcome is o) for o in TaskOutcome}
     states = {s: sum(1 for v in outcome.verified if v.state is s) for s in VerificationState}
+    duplicates = sum(1 for v in outcome.verified if v.duplicate_of is not None)
     print(
         f"{run_id}: {len(outcome.tasks)} tasks "
         f"({outcomes[TaskOutcome.CHECKED]} checked, {outcomes[TaskOutcome.UNVERIFIABLE]} "
         f"unverifiable, {outcomes[TaskOutcome.FAILED]} failed); "
         f"{states[VerificationState.VERIFIED_FLAG]} verified flags, "
         f"{states[VerificationState.NEEDS_HUMAN_REVIEW]} for human review, "
-        f"{states[VerificationState.DROPPED]} dropped. Output: {result.folder}"
+        f"{states[VerificationState.DROPPED]} dropped"
+        + (f" ({duplicates} repeat an earlier finding)" if duplicates else "")
+        + f". Output: {result.folder}"
     )
     return 0
 

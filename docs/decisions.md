@@ -354,3 +354,29 @@ Until an entry point exists, a mock runs in its place (specialists check nothing
 verifier sends every finding to human review). Every run manifest lists which parts were
 mocked, so the evaluation runner can refuse runs that used a mock. An entry point that
 exists but fails to import stops the run instead of falling back.
+
+## D20. Duplicate findings are merged and findings are ranked after the verifier — Agreed
+
+Specialists check one task at a time, so one problem can come back as several findings. A
+paper that names its metric in two sentences gets two metric mismatches with the same
+repository evidence. Running more checks also raises recall at the cost of precision, as
+Google's Paper Assistant Tool reports (arXiv 2606.28277). PAT ends with a synthesis step
+that removes repeats and checks severity. Ours runs after the verifier
+(`auditor.orchestration.synthesis`):
+
+- Two findings report the same problem when the paper, variant, error class, target and
+  summary are equal and all evidence that does not come from the paper itself is equal.
+  The first one stays. The others get `duplicate_of` set to its finding id. A finding whose
+  only evidence is from the paper itself is never merged.
+- Nothing is deleted, so matching against gold labels (D3) is unchanged. The report and
+  the human review load count each group once.
+- Every finding gets a `severity`:
+  - `high`: the results or the submission are in doubt. This covers `reference_not_found`,
+    `claim_not_supported`, `claim_number_mismatch`, `metric_mismatch`, `data_leakage`,
+    `method_mismatch`, and the desk-reject template rules `max_pages` and `anonymity`.
+  - `medium`: the work is harder to reproduce or trust. This covers `setting_mismatch`,
+    `data_split_mismatch`, `dataset_size_mismatch` and `label_distribution_mismatch`.
+  - `low`: a detail to correct. This covers `reference_metadata_mismatch` and the other
+    template rules.
+- Findings are ordered for the reader by verifier state (verified flags, then human
+  review, then dropped), then by severity, with certain findings before uncertain ones.

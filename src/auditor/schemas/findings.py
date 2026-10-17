@@ -201,14 +201,31 @@ class VerificationState(StrEnum):
     DROPPED = "dropped"
 
 
+class Severity(StrEnum):
+    """How much a finding matters if it is real (decision D20): HIGH puts the results or the
+    submission itself in doubt, MEDIUM makes them harder to reproduce or trust, LOW is a
+    detail to correct."""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
 class VerifiedFinding(Record):
-    """The verifier's decision on one candidate finding."""
+    """The verifier's decision on one candidate finding.
+
+    `severity` and `duplicate_of` are set by the synthesis step after the verifier
+    (decision D20): `duplicate_of` names the finding that reports the same problem, which
+    the report shows instead.
+    """
 
     schema_version: SchemaVersion = SCHEMA_VERSION
     finding: CandidateFinding
     state: VerificationState
     reason: NonEmptyStr
     accepted_evidence: tuple[Evidence, ...] = ()
+    severity: Severity | None = None
+    duplicate_of: str | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
