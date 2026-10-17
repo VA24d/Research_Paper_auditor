@@ -298,7 +298,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     # The paper comes first and is the same in every deep check, so a provider's prompt
     # cache can reuse it.
     listing = paper_text(paper)
-    llm = ctx.llm
+    llm = ctx.require_review_llm() if ctx.settings.theory_deep_model == "review" else ctx.llm
 
     sandbox = make_sandbox() if ctx.settings.theory_sandbox_enabled else None
     if sandbox is not None and not await sandbox.available():

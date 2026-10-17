@@ -304,3 +304,16 @@ async def test_without_the_sandbox_the_deep_check_answers_at_once(tmp_path: Path
     assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
     deep_prompt = " ".join(str(m.content) for m in model.received[1])
     assert "test_code" not in deep_prompt
+
+
+async def test_deep_checks_can_use_the_review_model(tmp_path: Path) -> None:
+    cheap = [
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"})
+    ]
+    ctx, model = context(tmp_path, cheap, theory_deep_model="review")
+    strong = ScriptedChatModel(replies=[tool_reply(DeepCheck, ERROR)])
+    ctx = dataclasses.replace(ctx, review_llm=StructuredLLM(strong, name="strong"))
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert len(model.received) == 1
+    assert len(strong.received) == 1

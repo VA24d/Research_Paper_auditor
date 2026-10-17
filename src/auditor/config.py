@@ -187,3 +187,6 @@ class Settings(BaseSettings):
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.
     theory_sandbox_enabled: bool = True
+    # Which model does the deep checks: the main (cheap) one, or the review model. On SPOT,
+    # Flash-Lite deep checks mostly answered "no error"; the stronger model costs more.
+    theory_deep_model: Literal["main", "review"] = "main"
