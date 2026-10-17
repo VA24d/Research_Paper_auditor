@@ -241,20 +241,30 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     listing = paper_text(paper)
     llm = ctx.llm
 
-    async def deep(claim: TheoryClaim, note: str) -> DeepCheck:
+    async def deep(claim: TheoryClaim, note: str, sample: int) -> DeepCheck:
         message = f"The paper:\n{listing}\n\nClaim to check:\n{_pack(paper, claim, note)}"
         result = await llm.generate(
             DeepCheck,
             [SystemMessage(DEEP_PROMPT), HumanMessage(message)],
             effort="high",
             purpose="theory-deep",
+            sample=sample,
         )
         return result.value
 
-    results = await asyncio.gather(*(deep(claim, note) for claim, note in escalated))
+    # High-risk claims get several tries, since one try can miss what another finds.
+    tries = [
+        (claim, note, sample)
+        for claim, note in escalated
+        for sample in range(ctx.settings.theory_deep_samples if claim.risk == "high" else 1)
+    ]
+    results = await asyncio.gather(*(deep(*one) for one in tries))
     by_id = {s.id: s for s in paper.sentences}
     findings: list[CandidateFinding] = []
-    for (claim, _), outcome in zip(escalated, results, strict=True):
+    done: set[str] = set()
+    for (claim, _, _), outcome in zip(tries, results, strict=True):
+        if claim.claim_id in done:
+            continue
         # A quote is looked for in the claim's sentences, then in what it uses, then
         # anywhere in the paper (an argument can lean on a step stated elsewhere).
         first = [by_id[i] for i in (*claim.sentence_ids, *claim.depends_on) if i in by_id]
@@ -262,4 +272,5 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         finding = _finding(task, len(findings), outcome, own)
         if finding is not None and finding.anchor not in [f.anchor for f in findings]:
             findings.append(finding)
+            done.add(claim.claim_id)
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)

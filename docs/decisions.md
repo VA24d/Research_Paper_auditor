@@ -412,7 +412,10 @@ call sets its own thinking level, and the usage log records the level and the st
    screen could not settle are checked one at a time with high thinking, at most `AUDITOR_THEORY_DEEP_CHECKS` (2) per task, with the
    whole paper as context. The paper comes first in these prompts, so a provider's prompt
    cache can reuse it. "No error" is the default answer. An error needs a witness: the step
-   that fails, a counterexample, or the correct value.
+   that fails, a counterexample, or the correct value. A
+   high-risk claim gets `AUDITOR_THEORY_DEEP_SAMPLES` (2) independent tries, since one try
+   can miss what another finds; an error from any try goes on to the challenge.
+
 4. **Challenge.** One call per paper to the review model (`AUDITOR_LLM_REVIEW_MODEL`, or the
    main model when none is set), with medium thinking. It judges every candidate with the
    whole paper in view: real errors stay, repeats point at the first one, and the rest are

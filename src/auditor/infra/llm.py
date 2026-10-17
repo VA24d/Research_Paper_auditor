@@ -297,14 +297,18 @@ class StructuredLLM:
         *,
         effort: Effort | None = None,
         purpose: str | None = None,
+        sample: int = 0,
     ) -> StructuredResult[T]:
         """A validated `schema` value. `effort` sets how hard the model thinks on this call
-        (None keeps the configured setting); `purpose` names the step in the usage log."""
+        (None keeps the configured setting); `purpose` names the step in the usage log;
+        `sample` numbers independent tries of the same question, which are cached apart."""
         record = functools.partial(self._record, effort=effort, purpose=purpose)
         context = self.cache_context if effort is None else f"{self.cache_context}|{effort}"
         active = current_scope()
         if self.cache_scope == "run" and active is not None:
             context += f"|run={active.run_id}"
+        if sample:
+            context += f"|sample={sample}"
         cache_key = None
         if self.cache is not None:
             cache_key = LLMCache.key(self.name, self.method, schema, messages, context)

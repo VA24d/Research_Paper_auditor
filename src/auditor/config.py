@@ -163,3 +163,6 @@ class Settings(BaseSettings):
     theory_batch_size: int = Field(default=8, gt=0)
     theory_max_tasks: int = Field(default=6, gt=0)
     theory_deep_checks: int = Field(default=2, ge=0)
+    # Tries of a high-risk claim's deep check; an error any try shows counts, and the
+    # challenge step filters what is not real. Answers vary from one try to the next.
+    theory_deep_samples: int = Field(default=2, ge=1)

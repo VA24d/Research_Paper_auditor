@@ -74,7 +74,9 @@ def task() -> AuditTask:
 def context(tmp_path: Path, replies: list[Any], **settings: Any) -> tuple[Any, ScriptedChatModel]:
     model = ScriptedChatModel(replies=replies)
     ctx = offline_context(tmp_path, paper=paper(), llm=StructuredLLM(model, name="test:s"))
-    ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
+    # One try per deep check unless a test asks for more.
+    update = {"theory_deep_samples": 1, **settings}
+    ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=update))
     return ctx, model
 
 
@@ -227,3 +229,17 @@ async def test_a_quote_from_elsewhere_in_the_paper_still_counts(tmp_path: Path) 
     ctx, _ = context(tmp_path, replies)
     (finding,) = (await check(task(), ctx)).findings
     assert finding.anchor.sentence_id == "s3"  # type: ignore[union-attr]
+
+
+async def test_a_high_risk_claim_gets_two_tries_and_either_can_find_the_error(
+    tmp_path: Path,
+) -> None:
+    replies = [
+        screen({"claim_id": "c1", "verdict": "fine"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, {"has_error": False}),
+        tool_reply(DeepCheck, ERROR),
+    ]
+    ctx, model = context(tmp_path, replies, theory_deep_samples=2)
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert len(model.received) == 3
