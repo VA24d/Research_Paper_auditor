@@ -109,3 +109,7 @@ class Settings(BaseSettings):
     # Ask the model, one code line at a time, which of several repository values a setting
     # mismatch is about (only when an LLM is configured).
     code_second_look: bool = True
+    # Check the mathematics of the paper's formal segments with the LLM (decision D21): at
+    # most `theory_max_segments` model calls per paper.
+    theory_check_enabled: bool = False
+    theory_max_segments: int = Field(default=3, gt=0)

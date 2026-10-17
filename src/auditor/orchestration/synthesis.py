@@ -35,6 +35,7 @@ SEVERITY = {
     ErrorClass.LABEL_DISTRIBUTION_MISMATCH: Severity.MEDIUM,
     ErrorClass.DATA_LEAKAGE: Severity.HIGH,
     ErrorClass.METHOD_MISMATCH: Severity.HIGH,
+    ErrorClass.MATH_ERROR: Severity.HIGH,
     ErrorClass.TEMPLATE_VIOLATION: Severity.LOW,
 }
 # Template rules whose violation gets a submission rejected without review.

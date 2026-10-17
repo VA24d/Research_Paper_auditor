@@ -26,6 +26,7 @@ class ErrorClass(StrEnum):
     LABEL_DISTRIBUTION_MISMATCH = "label_distribution_mismatch"
     DATA_LEAKAGE = "data_leakage"
     METHOD_MISMATCH = "method_mismatch"
+    MATH_ERROR = "math_error"
     TEMPLATE_VIOLATION = "template_violation"
 
 

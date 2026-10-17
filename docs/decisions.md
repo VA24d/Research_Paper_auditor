@@ -85,6 +85,7 @@ Macro-F1 is computed over these classes (the ones present in a given evaluation 
 | Data | `label_distribution_mismatch` | Number of classes or class balance stated differs from the data |
 | Data | `data_leakage` | Test or validation examples also appear in the training data |
 | Code | `method_mismatch` | The code implements a different loss, algorithm step, model component, data processing, training or evaluation procedure than the paper describes |
+| Theory | `math_error` | An equation, derivation or proof is wrong: a stated result does not follow, a proof step fails, or a formula is incorrect |
 | Template | `template_violation` | A venue formatting rule is broken |
 
 `none` marks clean control items and is used for the false-positive rate. Adding a class
@@ -380,3 +381,31 @@ that removes repeats and checks severity. Ours runs after the verifier
     template rules.
 - Findings are ordered for the reader by verifier state (verified flags, then human
   review, then dropped), then by severity, with certain findings before uncertain ones.
+
+## D21. The theory checker and the `math_error` class — Agreed
+
+Google's Paper Assistant Tool shows that a model can find many of the proof and equation
+errors behind real retractions. On the math and CS proof subset of SPOT (arXiv 2505.11855),
+it reaches a recall of 89.7%, against 55.2% for a single model call (arXiv 2606.28277). The
+auditor gains a fourth specialist, `auditor.agents.theory`, for the class `math_error` (D4).
+
+- **Planning.** The planner (`auditor.planner.theory`) splits the paper into segments.
+  - A segment is a run of neighbouring sections with formal content: formulas, symbols,
+    identifiers, or a theorem, lemma or proof statement.
+  - A segment holds at most 12,000 characters.
+  - The densest `AUDITOR_THEORY_MAX_SEGMENTS` (3) segments become `theory` tasks. Each one
+    is anchored on its first sentence, has target `math` and lists its section ids.
+- **Checking.** Each task costs one model call. It sends the whole paper as context and the
+  segment with its sentence ids.
+- **Evidence gate.** An error is kept only if it quotes the paper verbatim, at least six
+  words long, ignoring spacing. The finding is anchored on the quoted sentence and span,
+  so D3 sentence matching works for injected math errors. Confidence below high makes it
+  uncertain.
+- **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
+  `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
+  class from the class guide. B1 gets no extra tools, since the paper is already in its
+  prompt.
+- **Evaluation.** SPOT's labels describe an error in words and give a rough location, with
+  no sentence id. SPOT runs are therefore scored as the SPOT and PAT papers do it: an LLM
+  judge decides whether a reported issue is the same error as the annotation. A person
+  checks every judgement before the numbers are reported (`scripts/spot.py`).
