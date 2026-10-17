@@ -3,6 +3,8 @@
 from auditor.schemas import AuditTask, DocumentAnchor, ParsedPaper, RuleTarget, TaskKind
 
 RULE_ID = "unfinished_content"
+# Statements about the paper's own results checked against its tables.
+RESULTS_RULE_ID = "result_consistency"
 
 
 def integrity_tasks(paper: ParsedPaper) -> list[AuditTask]:
@@ -12,6 +14,7 @@ def integrity_tasks(paper: ParsedPaper) -> list[AuditTask]:
             variant=paper.variant,
             kind=TaskKind.INTEGRITY,
             anchor=DocumentAnchor(),
-            target=RuleTarget(rule_id=RULE_ID),
+            target=RuleTarget(rule_id=rule),
         )
+        for rule in (RULE_ID, RESULTS_RULE_ID)
     ]

@@ -38,6 +38,7 @@ SEVERITY = {
     ErrorClass.MATH_ERROR: Severity.HIGH,
     ErrorClass.UNFINISHED_CONTENT: Severity.HIGH,
     ErrorClass.CODE_DEFECT: Severity.MEDIUM,
+    ErrorClass.RESULT_INCONSISTENCY: Severity.HIGH,
     ErrorClass.TEMPLATE_VIOLATION: Severity.LOW,
 }
 # Template rules whose violation gets a submission rejected without review.
