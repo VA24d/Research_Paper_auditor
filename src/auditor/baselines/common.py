@@ -56,6 +56,8 @@ ERROR_CLASS_GUIDE = """Error classes:
   references.
 - code_defect: the released code would fail as published: a file the experiment uses does
   not compile, uses a name defined nowhere, or imports a local module that is missing.
+- result_inconsistency: what the paper says about its own results disagrees with its
+  tables or with arithmetic (a number not in the table, a wrong difference, a wrong "best").
 - template_violation: a venue formatting rule is broken."""
 
 ANSWER_GUIDE = """For every error, give:

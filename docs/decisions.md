@@ -88,6 +88,7 @@ Macro-F1 is computed over these classes (the ones present in a given evaluation 
 | Theory | `math_error` | An equation, derivation or proof is wrong: a stated result does not follow, a proof step fails, or a formula is incorrect |
 | Integrity | `unfinished_or_placeholder_content` | The paper says its own results are placeholders, simulated or to be replaced, or it contains unfinished text, author notes or unresolved references |
 | Code | `code_defect` | The released code would fail as published: a file the experiment uses does not compile, uses a name defined nowhere, or imports a local module the repository lacks |
+| Integrity | `result_inconsistency` | What the paper says about its own results disagrees with its tables or with arithmetic: a number not in the table, a wrong difference or relative gain, a wrong claim of the best result, an impossible value |
 | Template | `template_violation` | A venue formatting rule is broken |
 
 `none` marks clean control items and is used for the false-positive rate. Adding a class
@@ -485,3 +486,21 @@ rule `unfinished_content`). It checks in two ways:
 
 Findings have severity `high` (D20). B0 and B1 learn the class from the class guide, and B1
 gets no extra tools.
+
+The integrity specialist also has a second task per paper (rule `result_consistency`,
+class `result_inconsistency`). It checks the paper's statements about its own results
+against its tables:
+
+- **Extraction.** One Flash-Lite call with low thinking lists each claim with the numbers
+  it rests on, copied from the table as written: a stated value, a difference in points, a
+  relative gain in percent, or "best".
+- **Computation.** The arithmetic is done in code, taking each number's rounding into
+  account.
+- **Gate.** A number the model gives counts only if it really is in the table row it names,
+  so a misread number never becomes a finding.
+- **Without a model,** tables are checked only for negative standard deviations. Values
+  over 100% are left alone: on 195 real papers, every one was a relative measure or a
+  number the parser had merged into a cell, never an error.
+- **Field test.** On 12 set C papers with tables, the two integrity checks raised no
+  findings, at $0.10 for 24 calls.
+

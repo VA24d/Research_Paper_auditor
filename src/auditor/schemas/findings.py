@@ -29,6 +29,7 @@ class ErrorClass(StrEnum):
     MATH_ERROR = "math_error"
     UNFINISHED_CONTENT = "unfinished_or_placeholder_content"
     CODE_DEFECT = "code_defect"
+    RESULT_INCONSISTENCY = "result_inconsistency"
     TEMPLATE_VIOLATION = "template_violation"
 
 

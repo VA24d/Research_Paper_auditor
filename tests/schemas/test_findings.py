@@ -51,6 +51,7 @@ def test_error_classes_match_decision_d4() -> None:
         "math_error",
         "unfinished_or_placeholder_content",
         "code_defect",
+        "result_inconsistency",
         "template_violation",
     }
 

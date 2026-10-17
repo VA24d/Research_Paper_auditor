@@ -4,6 +4,7 @@ from typing import Any
 from auditor.agents.integrity import RULE_ID, ScreenFindings, check, integrity_tasks
 from auditor.infra.llm import StructuredLLM
 from auditor.schemas import (
+    AuditTask,
     DocumentAnchor,
     ErrorClass,
     EvidenceKind,
@@ -49,11 +50,16 @@ def run(tmp_path: Path, found: list[dict[str, Any]], p: ParsedPaper) -> Any:
     return ctx, model
 
 
-def test_every_paper_gets_one_integrity_task() -> None:
-    (task,) = integrity_tasks(paper())
-    assert task.kind is TaskKind.INTEGRITY
-    assert task.anchor == DocumentAnchor()
-    assert task.target == RuleTarget(rule_id=RULE_ID)
+def screen_task(p: ParsedPaper) -> AuditTask:
+    (task,) = [t for t in integrity_tasks(p) if t.target == RuleTarget(rule_id=RULE_ID)]
+    return task
+
+
+def test_every_paper_gets_the_integrity_tasks() -> None:
+    tasks = integrity_tasks(paper())
+    assert {t.kind for t in tasks} == {TaskKind.INTEGRITY}
+    assert {t.anchor for t in tasks} == {DocumentAnchor()}
+    assert RuleTarget(rule_id=RULE_ID) in {t.target for t in tasks}
 
 
 async def test_a_caption_saying_the_results_are_simulated_is_flagged(tmp_path: Path) -> None:
@@ -66,8 +72,7 @@ async def test_a_caption_saying_the_results_are_simulated_is_flagged(tmp_path: P
         }
     ]
     ctx, model = run(tmp_path, found, paper())
-    (task,) = integrity_tasks(ctx.paper)
-    result = await check(task, ctx)
+    result = await check(screen_task(ctx.paper), ctx)
     assert result.outcome is TaskOutcome.CHECKED
     (finding,) = result.findings
     assert finding.error_class is ErrorClass.UNFINISHED_CONTENT
@@ -86,7 +91,7 @@ async def test_quotes_that_are_not_verbatim_are_dropped(tmp_path: Path) -> None:
         {"sentence_id": "s1", "quote": "results are placeholders", "kind": "placeholder_results"}
     ]
     ctx, _ = run(tmp_path, found, paper())
-    assert (await check(integrity_tasks(ctx.paper)[0], ctx)).findings == ()
+    assert (await check(screen_task(ctx.paper), ctx)).findings == ()
 
 
 async def test_leftover_notes_and_unresolved_references_need_no_model(tmp_path: Path) -> None:
@@ -95,7 +100,7 @@ async def test_leftover_notes_and_unresolved_references_need_no_model(tmp_path: 
         Sentence(id="s4", section_id="exp", text=UNRESOLVED),
     )
     p = paper(*extra)
-    result = await check(integrity_tasks(p)[0], offline_context(tmp_path, paper=p))
+    result = await check(screen_task(p), offline_context(tmp_path, paper=p))
     assert result.outcome is TaskOutcome.CHECKED
     by_sentence = {f.anchor.sentence_id: f for f in result.findings}  # type: ignore[union-attr]
     assert set(by_sentence) == {"s3", "s4"}
@@ -104,7 +109,7 @@ async def test_leftover_notes_and_unresolved_references_need_no_model(tmp_path: 
 
 
 async def test_without_a_model_the_screen_says_what_it_skipped(tmp_path: Path) -> None:
-    result = await check(integrity_tasks(paper())[0], offline_context(tmp_path, paper=paper()))
+    result = await check(screen_task(paper()), offline_context(tmp_path, paper=paper()))
     assert result.outcome is TaskOutcome.CHECKED
     assert result.findings == ()
 
@@ -117,5 +122,5 @@ async def test_variable_names_and_pseudocode_are_not_leftover_markers(tmp_path: 
         Sentence(id="s5", section_id="exp", text="2: Initialize: history C = [] 3: repeat"),
     )
     p = paper(*extra)
-    result = await check(integrity_tasks(p)[0], offline_context(tmp_path, paper=p))
+    result = await check(screen_task(p), offline_context(tmp_path, paper=p))
     assert result.findings == ()
