@@ -2,8 +2,11 @@ import dataclasses
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from auditor.agents.theory import DeepCheck, Screen, anchor_quote, check, locate
 from auditor.infra.llm import StructuredLLM
+from auditor.infra.sandbox import SandboxResult
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
 from auditor.schemas import (
@@ -75,7 +78,7 @@ def context(tmp_path: Path, replies: list[Any], **settings: Any) -> tuple[Any, S
     model = ScriptedChatModel(replies=replies)
     ctx = offline_context(tmp_path, paper=paper(), llm=StructuredLLM(model, name="test:s"))
     # One try per deep check unless a test asks for more.
-    update = {"theory_deep_samples": 1, **settings}
+    update = {"theory_deep_samples": 1, "theory_sandbox_enabled": False, **settings}
     ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=update))
     return ctx, model
 
@@ -257,3 +260,60 @@ def test_a_quote_the_model_rendered_differently_counts_on_the_sentence_it_names(
     assert exact is not None
     assert exact.sentence.id == "s1"
     assert exact.span is not None
+
+
+class FakeSandbox:
+    def __init__(self, output: str) -> None:
+        self.output = output
+        self.ran: list[str] = []
+
+    async def available(self) -> bool:
+        return True
+
+    async def run(self, code: str, timeout_s: float | None = None) -> Any:
+        self.ran.append(code)
+        return SandboxResult(self.output, "", 0)
+
+
+async def test_a_deep_check_can_test_a_claim_with_code_before_answering(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    box = FakeSandbox("S(1) = 1, formula gives 0.5\n")
+    monkeypatch.setattr("auditor.agents.theory.make_sandbox", lambda: box)
+    test = {"has_error": False, "test_code": "print('S(1) =', 1, 'formula gives', 1/2)"}
+    replies = [
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, test),
+        tool_reply(DeepCheck, ERROR),
+    ]
+    ctx, model = context(tmp_path, replies, theory_sandbox_enabled=True)
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert box.ran == [test["test_code"]]
+    final = " ".join(str(m.content) for m in model.received[2])
+    assert "S(1) = 1, formula gives 0.5" in final
+
+
+async def test_without_the_sandbox_the_deep_check_answers_at_once(tmp_path: Path) -> None:
+    replies = [
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, ERROR),
+    ]
+    ctx, model = context(tmp_path, replies, theory_sandbox_enabled=False)
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    deep_prompt = " ".join(str(m.content) for m in model.received[1])
+    assert "test_code" not in deep_prompt
+
+
+async def test_deep_checks_can_use_the_review_model(tmp_path: Path) -> None:
+    cheap = [
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"})
+    ]
+    ctx, model = context(tmp_path, cheap, theory_deep_model="review")
+    strong = ScriptedChatModel(replies=[tool_reply(DeepCheck, ERROR)])
+    ctx = dataclasses.replace(ctx, review_llm=StructuredLLM(strong, name="strong"))
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert len(model.received) == 1
+    assert len(strong.received) == 1

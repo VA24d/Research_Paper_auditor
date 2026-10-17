@@ -267,6 +267,17 @@ kinds of defect:
 - names that are used but defined nowhere;
 - imports of a local package's module that the repository lacks.
 
+Model-written code is different: it is the model's own computation, not the paper's. The
+theory checker's deep checks may run one piece of Python in the math sandbox
+(`auditor.infra.sandbox`, image built from `docker/math/Dockerfile`). The sandbox runs:
+
+- with no network;
+- with a read-only file system, except a 64 MB `/tmp`;
+- as an unprivileged user with no capabilities;
+- with limits of 1 GB memory, 1 CPU, 64 processes, 20 s and 20 KB of output.
+
+Without Docker, the deep checks answer without it.
+
 Undefined names are marked uncertain, because the code that uses them may never run. Code
 written for Python 2 is reported as unverifiable. On the 40 set C repositories, the check
 found 40 defects in 14 repositories. One is certain: a file left with git merge-conflict

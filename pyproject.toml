@@ -99,7 +99,7 @@ addopts = [
     "--strict-config",
     "--import-mode=importlib",
     "-m",
-    "not grobid and not network and not llm",
+    "not grobid and not network and not llm and not docker",
 ]
 xfail_strict = true
 asyncio_mode = "auto"
@@ -108,4 +108,5 @@ markers = [
     "grobid: needs a running GROBID service (see compose.yaml)",
     "network: makes real requests to external APIs",
     "llm: calls a real LLM provider and costs tokens",
+    "docker: needs a running Docker daemon (the math sandbox)",
 ]
