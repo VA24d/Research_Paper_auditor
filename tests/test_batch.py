@@ -264,3 +264,16 @@ def test_papers_can_run_concurrently(tmp_path: Path) -> None:
     assert main(argv) == 0
     for variant in ("original", "injected"):
         assert predictions(tmp_path, "exp-full-r1", variant).is_file()
+
+
+def test_model_call_limits_do_not_change_the_fingerprint() -> None:
+    from auditor.config import Settings
+    from auditor.experiments import run_fingerprint
+    from auditor.schemas import SystemName
+
+    def fingerprint(**update: object) -> object:
+        settings = Settings(_env_file=None).model_copy(update=update)
+        return run_fingerprint(SystemName.FULL, settings, None, [], [], "code")
+
+    assert fingerprint() == fingerprint(llm_max_calls=10, llm_max_concurrency=2)
+    assert fingerprint() != fingerprint(method_check_pairs=3)

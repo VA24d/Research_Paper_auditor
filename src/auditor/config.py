@@ -98,6 +98,9 @@ class Settings(BaseSettings):
     # Model calls in flight at once across all papers and tasks of a run (a local server
     # serves only a few requests in parallel).
     llm_max_concurrency: int | None = Field(default=None, gt=0)
+    # Model calls one run may make in total; a hard stop for metered or shared credits.
+    # Cache hits do not count.
+    llm_max_calls: int | None = Field(default=None, ge=0)
     # How the code agent compares a paper's method with its code: "pairs" asks one small
     # question per (paper sentence, code function) pair, which suits small local models;
     # "whole" sends the method text and the related files in one call.

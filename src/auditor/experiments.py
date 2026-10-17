@@ -334,6 +334,10 @@ _OPERATIONAL_SETTINGS = frozenset(
         "contact_email",
         "github_token",
         "hf_token",
+        # Limits on how fast or how much a run calls the model; raising them to resume a
+        # run that hit them does not change any result.
+        "llm_max_concurrency",
+        "llm_max_calls",
     }
 )
 

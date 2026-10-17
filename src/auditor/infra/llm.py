@@ -27,7 +27,7 @@ from pydantic import BaseModel, ValidationError
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
 from auditor.infra.manifest import redact
-from auditor.infra.scope import Scope, current_scope
+from auditor.infra.scope import BudgetExceededError, Scope, current_scope
 from auditor.schemas import CallStatus, LLMCallRecord
 
 
@@ -189,6 +189,7 @@ class StructuredLLM:
         max_attempts: int = 3,
         context_tokens: int | None = None,
         max_concurrency: int | None = None,
+        max_calls: int | None = None,
     ) -> None:
         self.model = model
         self.name = name
@@ -198,6 +199,9 @@ class StructuredLLM:
         self.max_attempts = max_attempts
         self.context_tokens = context_tokens
         self._gate = asyncio.Semaphore(max_concurrency) if max_concurrency else None
+        # Model calls this instance may make in total (one per run); cache hits are free.
+        self.max_calls = max_calls
+        self.calls = 0
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
@@ -210,6 +214,7 @@ class StructuredLLM:
             cache_context=_cache_context(settings),
             context_tokens=settings.llm_context_tokens,
             max_concurrency=settings.llm_max_concurrency,
+            max_calls=settings.llm_max_calls,
         )
 
     async def generate[T: BaseModel](
@@ -243,6 +248,11 @@ class StructuredLLM:
             active = current_scope()
             if active is not None:
                 active.budget.charge_llm_call()
+            if self.max_calls is not None and self.calls >= self.max_calls:
+                raise BudgetExceededError(
+                    f"the run's {self.max_calls} model calls are used up (AUDITOR_LLM_MAX_CALLS)"
+                )
+            self.calls += 1
             started_at = datetime.now(UTC)
             started = time.perf_counter()
             try:
