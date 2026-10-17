@@ -42,7 +42,12 @@ Works on Windows, macOS and Linux. Run every command from the repository root.
   the right Python version (3.13) by itself.
   - Windows (PowerShell): `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
   - macOS / Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS)
-- Docker Desktop (Docker Engine on Linux), only if you work on PDF parsing. It runs GROBID.
+- Docker Desktop (Docker Engine on Linux), only if you work on PDF parsing. It runs GROBID
+  and the math sandbox.
+- Poppler, optional: its `pdftotext` lets the parser read table columns from the PDF
+  (`brew install poppler`, `sudo apt install poppler-utils`, or `choco install poppler` on
+  Windows). Without it, pages with tables are read from page images, at a few model calls
+  per paper.
 
 ### First-time setup
 
@@ -81,6 +86,16 @@ GROBID is ready when <http://localhost:8070/api/isalive> returns `true`, which t
 Stop it with `docker compose down`. Give Docker at least 4 GB of memory. The image has an
 arm64 build, so it runs natively on Apple Silicon.
 
+### Math sandbox
+
+```bash
+docker build -t auditor-math:1 docker/math
+```
+
+The theory checker's deep checks can run one piece of model-written Python in this image,
+with no network and tight limits (D11). Without the image they run without it. Its tests
+run with `uv run pytest -m docker`.
+
 ### Test markers
 
 Tests that need external services are skipped unless selected explicitly:
@@ -88,6 +103,7 @@ Tests that need external services are skipped unless selected explicitly:
 | Marker | Needs | Run with |
 |---|---|---|
 | `grobid` | GROBID running locally | `uv run pytest -m grobid` |
+| `docker` | Docker and the `auditor-math:1` image | `uv run pytest -m docker` |
 | `network` | Internet access to external APIs | `uv run pytest -m network` |
 | `llm` | An LLM API key; costs tokens | `uv run pytest -m llm` |
 

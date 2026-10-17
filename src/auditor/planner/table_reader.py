@@ -61,7 +61,9 @@ _HINT_WORDS = ("hyperparam", "learning rate", "batch", "epoch", "optimizer", "wa
 def table_units(paper: ParsedPaper, already: Sequence[ExtractedSetting]) -> list[list[Sentence]]:
     """Tables, and runs of table-like body sentences, that look like hyperparameters."""
     units: list[list[Sentence]] = [
-        [paper.sentence(row_id) for row_id in table.row_ids] for table in paper.tables
+        [paper.sentence(row_id) for row_id in table.row_ids]
+        for table in paper.tables
+        if table.page is None
     ]
     run: list[Sentence] = []
     for sentence in paper.sentences:

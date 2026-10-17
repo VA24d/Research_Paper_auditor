@@ -25,6 +25,14 @@ Consequences:
   two never disagree: a mismatch between them would give the injection away.
 - B0 and B1 are shown every bibliography field the specialists can use, with all authors.
 - The CLI accepts either a PDF (parsed on the fly, cached) or a `ParsedPaper` JSON file.
+- Amended October 2026: GROBID scrambles many table columns, so the parser also reads
+  tables from Poppler's `pdftotext -layout` text (`auditor.parser.layout_tables`). These
+  tables carry their page number. A page whose tables cannot be read that way stays in
+  the `ParsedPaper` as a table with no rows, and so does every captioned page when
+  `pdftotext` is not installed. A run started from a PDF keeps the PDF's path in the run
+  context (`RunContext.source_pdf`), and the results check (D22) reads such pages from an
+  image of the page. Injected `ParsedPaper` files are unchanged: they hold their tables
+  as rows, and with no PDF there is nothing to look at.
 
 ## D2. Two evaluation levels — Agreed
 
@@ -527,5 +535,41 @@ Rules added in October 2026 after running on real cases from ICLR reviews:
   reported in two places, such as a baseline in the main table and the matching row of an
   ablation table. Its findings are uncertain, since which results are "the same" is the
   model's reading.
-- **Stated drops.** A drop written as "-8.6 points" is compared by size.
+- **Stated drops.** A drop written as "-8.6 points" is compared by size, and so is a
+  relative change in percent.
+
+Changes from the table-reading work (October 2026):
+
+- **Tables.**
+  - The check reads the tables the parser took from the PDF's layout text (D1).
+  - Pages whose tables could not be read that way are shown to the model as images, at
+    most 6 per paper. A transcription that runs a spread into its number ("60.50.39") is
+    not used.
+  - A table read from the layout or an image replaces the parser's table of the same
+    label.
+- **One extraction call per section.** Each call sees a section's sentences with digits
+  and the tables the section names or quotes, for at most 10 sections. One more call
+  checks the remaining sections against every table. With one call for the whole paper,
+  Flash-Lite listed four claims for a 20-page paper and missed the real error.
+- **Gates.**
+  - A claim with no table id is matched to the table that holds all its numbers.
+  - A number the text gives for a row is checked against that row when the row holds a
+    single number; the model sometimes copies the text's number instead of the table's.
+  - A row named only by a number ("128") is not used for a stated value.
+- **Reversed comparisons, no model.** A sentence that calls one stated number higher or
+  lower than another when it is the other way round is found by a rule ("higher IoU
+  (0.73) than U-Net (0.78)"). On 252 real papers, the rule fired on one real error, which
+  appears in three versions of one paper.
+- **Challenge step.** Every candidate goes to one call to the review model (medium
+  thinking). The call sees the sentence with two before and after, the table and its
+  caption, and decides whether the text really disagrees with the table. It drops
+  readings of the wrong column or a different quantity
+  (`AUDITOR_RESULTS_CHALLENGE_ENABLED`).
+- **Measured on real cases.** With Flash-Lite extraction and 3.8 Flash challenges:
+  - 2 real errors were found: the reversed comparison in arXiv 2312.11580, and the mean
+    rating of 8.93 against Table 6's 6.30 in arXiv 2512.21706.
+  - Before the fixes, 8 set C papers gave 2 false alarms. Those 2 papers gave none after
+    the fixes.
+  - The ICLR review cases mostly cannot be tested: the reviewers' errors are fixed in the
+    arXiv versions or are not stated numbers.
 

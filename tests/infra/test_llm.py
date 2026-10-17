@@ -405,3 +405,15 @@ def test_a_budget_needs_the_price_of_every_model(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="AUDITOR_LLM_PRICES"):
         StructuredLLM.from_settings(settings)
+
+
+def test_an_image_counts_as_a_few_hundred_tokens_not_its_base64_length() -> None:
+    from langchain_core.messages import HumanMessage
+
+    from auditor.infra.llm import IMAGE_CHARS, estimated_tokens
+
+    image = {"type": "image_url", "image_url": {"url": "data:image/png;base64," + "A" * 400_000}}
+    message = HumanMessage(content=[{"type": "text", "text": "x" * 400}, image])
+    assert estimated_tokens([message]) == estimated_tokens(
+        [HumanMessage("x" * (400 + IMAGE_CHARS))]
+    )

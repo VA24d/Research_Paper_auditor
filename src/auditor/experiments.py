@@ -167,6 +167,7 @@ async def run_full(
     venue: VenueProfile | None,
     max_concurrency: int = 8,
     resume: bool = False,
+    source_pdf: Path | None = None,
 ) -> FullRun:
     ctx = RunContext(
         settings=settings,
@@ -176,6 +177,7 @@ async def run_full(
         logger=logger,
         repository=repository,
         review_llm=llm.review if llm is not None else None,
+        source_pdf=source_pdf,
     )
     specialists, _ = load_specialists()
     verifier, _ = load_verifier()
@@ -302,6 +304,12 @@ class PaperInput:
     paper: ParsedPaper
     repository: RepositoryRef | None
     venue: VenueProfile | None
+    # The file the paper came from (a PDF or ParsedPaper JSON).
+    source: Path | None = None
+
+    @property
+    def source_pdf(self) -> Path | None:
+        return self.source if self.source and self.source.suffix.lower() == ".pdf" else None
 
 
 def _record_failure(run: RunDirectory, paper: ParsedPaper, error: BaseException) -> str:
@@ -468,6 +476,7 @@ async def _run_one(
                     venue=item.venue,
                     max_concurrency=max_concurrency,
                     resume=resume,
+                    source_pdf=item.source_pdf,
                 )
             except ThreadInUseError:
                 if resume:
@@ -602,6 +611,7 @@ async def run_batch(
                     paper=paper,
                     repository=resolve_repository(entry.repository, paper, entry.repository_commit),
                     venue=load_venue(Path(entry.venue) if entry.venue else None),
+                    source=Path(entry.paper),
                 )
             )
 

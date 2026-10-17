@@ -224,8 +224,23 @@ class PromptTooLongError(StructuredOutputError):
 CHARS_PER_TOKEN = 3.5
 
 
+# What an image in a message costs, in characters' worth of tokens (Gemini counts a few
+# hundred tokens per image, not the length of its base64 text).
+IMAGE_CHARS = 1_500
+
+
 def estimated_tokens(messages: Sequence[BaseMessage]) -> int:
-    return int(sum(len(str(m.content)) for m in messages) / CHARS_PER_TOKEN)
+    chars = 0
+    for message in messages:
+        if isinstance(message.content, list):
+            for part in message.content:
+                if isinstance(part, dict) and part.get("type") == "image_url":
+                    chars += IMAGE_CHARS
+                else:
+                    chars += len(str(part.get("text", "")) if isinstance(part, dict) else part)
+        else:
+            chars += len(str(message.content))
+    return int(chars / CHARS_PER_TOKEN)
 
 
 class StructuredLLM:

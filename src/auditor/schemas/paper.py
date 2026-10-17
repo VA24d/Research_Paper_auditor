@@ -110,11 +110,15 @@ class CitationMention(Record):
 
 
 class Table(Record):
-    """A table whose rows are sentences of kind TABLE, cells joined by `CELL_SEPARATOR`."""
+    """A table whose rows are sentences of kind TABLE, cells joined by `CELL_SEPARATOR`.
+
+    `page` is set for tables read from the PDF's layout text; such a table with no rows is
+    one whose page has a table caption but whose rows could not be read from the text."""
 
     id: NonEmptyStr
     label: str | None = None
     row_ids: tuple[str, ...] = ()
+    page: int | None = Field(default=None, ge=1)
 
 
 CELL_SEPARATOR = " | "

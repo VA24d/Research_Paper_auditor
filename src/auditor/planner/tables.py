@@ -163,6 +163,10 @@ def _column_settings(
 def table_settings(paper: ParsedPaper) -> list[ExtractedSetting]:
     found: list[ExtractedSetting] = []
     for table in paper.tables:
+        # Layout tables repeat GROBID's tables page by page; reading both would make every
+        # setting twice.
+        if table.page is not None:
+            continue
         rows = [(row_id, split_cells(paper.sentence(row_id).text)) for row_id in table.row_ids]
         if not rows:
             continue
