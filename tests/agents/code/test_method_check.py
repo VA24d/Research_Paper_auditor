@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from auditor.agents.code import check
-from auditor.agents.code.method_check import MethodReview, PairJudgement
+from auditor.agents.code.method_check import MethodReview, PairJudgement, _Chunk, method_pairs
 from auditor.infra.context import RunContext
 from auditor.infra.llm import StructuredLLM
 from auditor.planner.tasks import method_tasks
@@ -181,3 +181,71 @@ async def test_pairs_mode_drops_lines_outside_the_snippet(tmp_path: Path) -> Non
     }
     ctx, _ = pairs_context(tmp_path, paper, [verdict])
     assert (await check(task(paper, repo(tmp_path)), ctx)).findings == ()
+
+
+# --- compute budget per section ---------------------------------------------------------
+
+
+def two_section_paper() -> ParsedPaper:
+    data = example_paper().model_dump()
+    data["sections"] = [
+        {"id": "m", "title": "Model", "number": "3"},
+        {"id": "t", "title": "Training details", "number": "4"},
+    ]
+    model = [
+        f"The encoder layer {i} computes h_{i} = softmax(W_{i} x + b_{i}) over attention scores."
+        for i in range(6)
+    ]
+    training = [
+        "The optimizer schedule warms up slowly and then decays the learning rate steadily.",
+        "The trainer saves a checkpoint after every epoch of training on the corpus.",
+    ]
+    data["sentences"] = [
+        {"id": f"m{i}", "section_id": "m", "text": text} for i, text in enumerate(model)
+    ] + [{"id": f"t{i}", "section_id": "t", "text": text} for i, text in enumerate(training)]
+    data["citations"] = []
+    data["links"] = []
+    data["tables"] = []
+    return ParsedPaper.model_validate(data)
+
+
+def chunk(name: str, line: int, words: str) -> _Chunk:
+    return _Chunk(name, line, line + 5, frozenset(words.split()))
+
+
+def test_the_pair_budget_is_shared_by_section_density() -> None:
+    paper = two_section_paper()
+    chunks = [
+        # Training chunks share more words with their sentences than the model chunks, so
+        # a budget by overlap alone would spend every call on the training section.
+        chunk("train.py", 1, "optimizer schedule warms slowly decays learning rate steadily"),
+        chunk("train.py", 20, "trainer saves checkpoint every epoch training corpus"),
+        chunk("model.py", 1, "encoder layer computes softmax"),
+        chunk("model.py", 20, "encoder attention scores"),
+        chunk("model.py", 40, "layer softmax attention"),
+    ]
+    pairs = method_pairs(paper, chunks, 3)
+    sections = sorted(p.sentence.section_id or "" for p in pairs)
+    assert sections == ["m", "m", "t"]
+
+
+def test_every_section_with_matching_code_gets_a_pair_when_the_budget_allows() -> None:
+    paper = two_section_paper()
+    chunks = [
+        chunk("model.py", 1, "encoder layer computes softmax"),
+        chunk("model.py", 20, "encoder attention scores"),
+        chunk("train.py", 1, "trainer saves checkpoint"),
+    ]
+    pairs = method_pairs(paper, chunks, 2)
+    assert {p.sentence.section_id for p in pairs} == {"m", "t"}
+
+
+def test_an_unused_share_goes_to_the_next_best_pairs() -> None:
+    paper = two_section_paper()
+    chunks = [
+        chunk("model.py", 1, "encoder layer computes softmax"),
+        chunk("model.py", 20, "encoder attention scores"),
+        chunk("model.py", 40, "layer softmax attention"),
+        chunk("train.py", 1, "trainer saves checkpoint"),
+    ]
+    assert len(method_pairs(paper, chunks, 4)) == 4

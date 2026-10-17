@@ -1,4 +1,5 @@
-"""The audit workflow: plan, run one branch per task in parallel, collect, verify."""
+"""The audit workflow: plan, run one branch per task in parallel, collect, verify, then
+merge duplicates and rank the findings (decision D20)."""
 
 import operator
 from collections.abc import Awaitable, Callable, Sequence
@@ -16,6 +17,7 @@ from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.mocks import check_nothing, send_all_to_review
 from auditor.orchestration.runner import CheckFn, TaskPolicy, run_task
+from auditor.orchestration.synthesis import synthesise
 from auditor.schemas import (
     AuditTask,
     ParsedPaper,
@@ -120,7 +122,7 @@ def build_graph(
         paper = state["paper"]
         with enter_scope(Scope.for_paper(run_id, paper, usage)):
             verified = await pipeline.verifier(state["results"], ctx)
-        return {"verified": verified}
+        return {"verified": synthesise(verified)}
 
     graph = StateGraph(AuditState)
     graph.add_node("plan", plan)

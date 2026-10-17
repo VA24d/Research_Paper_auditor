@@ -58,7 +58,9 @@
         "line_start": null,
         "line_end": null
       }
-    ]
+    ],
+    "severity": null,
+    "duplicate_of": null
   },
   {
     "schema_version": 1,
@@ -102,6 +104,8 @@
     },
     "state": "needs_human_review",
     "reason": "Only the abstract of the cited work was available.",
-    "accepted_evidence": []
+    "accepted_evidence": [],
+    "severity": null,
+    "duplicate_of": null
   }
 ]

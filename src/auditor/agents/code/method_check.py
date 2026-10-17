@@ -13,6 +13,7 @@ import asyncio
 import re
 import warnings
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -261,8 +262,60 @@ def method_pairs(paper: ParsedPaper, chunks: list[_Chunk], limit: int) -> list[_
         position = index[sentence.id]
         passage = " ".join(s.text for s in body[max(0, position - 1) : position + 2])
         pairs.append(_Pair(sentence, passage, chunk, len(terms & chunk.terms)))
-    pairs.sort(key=lambda p: (-p.score, p.chunk.path, p.chunk.start))
-    return pairs[:limit]
+    pairs.sort(key=_pair_order)
+    return _within_budget(pairs, method, limit)
+
+
+def _pair_order(pair: _Pair) -> tuple[int, str, int]:
+    return (-pair.score, pair.chunk.path, pair.chunk.start)
+
+
+# Tokens that mark formal content: formulas, symbols, numbers and identifiers.
+_TECHNICAL = re.compile(
+    # Operators, sums, integrals, partial derivatives, inequalities, arrows, Greek letters.
+    r"[=+^\\\u2211\u220f\u222b\u2202\u2207\u00d7\u00b7\u2264\u2265\u2248\u2192\u0370-\u03ff]"
+    r"|\d|[a-z][A-Z]|\w_\w"
+)
+
+
+def _density(sentences: Sequence[Sentence]) -> float:
+    """How formal a section is: 1 for plain prose, up to 5 when every token is formal."""
+    tokens = [t for s in sentences for t in s.text.split()]
+    if not tokens:
+        return 1.0
+    return 1.0 + 4.0 * sum(1 for t in tokens if _TECHNICAL.search(t)) / len(tokens)
+
+
+def _within_budget(pairs: list[_Pair], method: Sequence[Sentence], limit: int) -> list[_Pair]:
+    """At most `limit` pairs, shared out by section (as Google's Paper Assistant Tool gives
+    dense sections more compute; arXiv 2606.28277). A section's share grows with its
+    candidate pairs and with how formal its text is; every section with a candidate gets
+    one pair first while the budget lasts, and a share a section cannot use goes to the
+    next best pairs."""
+    groups: dict[str, list[_Pair]] = {}
+    for pair in pairs:
+        groups.setdefault(pair.sentence.section_id or "", []).append(pair)
+    by_section: dict[str, list[Sentence]] = {}
+    for sentence in method:
+        by_section.setdefault(sentence.section_id or "", []).append(sentence)
+    weights = {key: len(group) * _density(by_section.get(key, [])) for key, group in groups.items()}
+    order = sorted(groups, key=lambda key: (-weights[key], key))
+    quota = dict.fromkeys(order, 0)
+    for key in order[:limit]:
+        quota[key] = 1
+    spare = limit - sum(quota.values())
+    if spare > 0:
+        total = sum(weights.values())
+        shares = {key: spare * weights[key] / total for key in order}
+        for key in order:
+            quota[key] += int(shares[key])
+        left = limit - sum(quota.values())
+        for key in sorted(order, key=lambda k: (int(shares[k]) - shares[k], k))[:left]:
+            quota[key] += 1
+    chosen = [pair for key in order for pair in groups[key][: quota[key]]]
+    rest = sorted((p for key in order for p in groups[key][quota[key] :]), key=_pair_order)
+    chosen += rest[: limit - len(chosen)]
+    return sorted(chosen, key=_pair_order)
 
 
 async def _check_pairs(

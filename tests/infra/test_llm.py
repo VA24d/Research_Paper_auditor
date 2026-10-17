@@ -171,6 +171,17 @@ async def test_llm_budget_is_enforced_before_calling() -> None:
     assert model.received == []
 
 
+async def test_calls_of_one_llm_are_capped_but_cache_hits_are_free(tmp_path: Path) -> None:
+    model = ScriptedChatModel(replies=[tool_reply(Verdict, {"supported": True, "reason": "x"})] * 3)
+    llm = StructuredLLM(model, name="test:scripted", cache=LLMCache(tmp_path / "llm"), max_calls=1)
+    await llm.generate(Verdict, MESSAGES)
+    again = await llm.generate(Verdict, MESSAGES)
+    assert again.from_cache
+    with pytest.raises(BudgetExceededError, match="AUDITOR_LLM_MAX_CALLS"):
+        await llm.generate(Verdict, [HumanMessage("Different?")])
+    assert len(model.received) == 1
+
+
 def test_token_usage_reads_reasoning_and_cache_details() -> None:
     message = AIMessage(
         content="",
