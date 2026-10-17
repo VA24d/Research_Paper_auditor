@@ -9,6 +9,7 @@ from auditor.agents.theory.spot import (
     judge_paper,
     paper_from_pages,
     score_grades,
+    split_of,
     spot_subset,
 )
 from auditor.infra.llm import StructuredLLM
@@ -134,3 +135,21 @@ def test_scores_use_the_human_check_when_it_disagrees() -> None:
     assert scores.recall == pytest.approx(1 / 3)
     assert scores.precision == pytest.approx(1 / 4)
     assert scores.unchecked == 2
+
+
+def test_papers_found_counts_a_paper_once_whatever_its_errors() -> None:
+    grades = [
+        Grade(error_id="a-e0", paper_id="a", matched=("f1",)),
+        Grade(error_id="a-e1", paper_id="a", matched=()),
+        Grade(error_id="b-e0", paper_id="b", matched=()),
+    ]
+    scores = score_grades(grades, predictions=2)
+    assert (scores.papers, scores.papers_found) == (2, 1)
+    assert scores.paper_recall == pytest.approx(0.5)
+
+
+def test_the_split_is_fixed_and_half_and_half() -> None:
+    ids = [f"2401.{n:05d}v1" for n in range(26)]
+    dev = [i for i in ids if split_of(i, ids) == "dev"]
+    assert len(dev) == 13
+    assert dev == [i for i in reversed(ids) if split_of(i, list(reversed(ids))) == "dev"][::-1]
