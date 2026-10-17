@@ -54,6 +54,8 @@ ERROR_CLASS_GUIDE = """Error classes:
 - unfinished_or_placeholder_content: the paper says its own results are placeholders,
   simulated or to be replaced, or it contains unfinished text, author notes or unresolved
   references.
+- code_defect: the released code would fail as published: a file the experiment uses does
+  not compile, uses a name defined nowhere, or imports a local module that is missing.
 - template_violation: a venue formatting rule is broken."""
 
 ANSWER_GUIDE = """For every error, give:

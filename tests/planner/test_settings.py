@@ -140,7 +140,9 @@ async def test_two_values_of_one_setting_become_two_code_tasks(tmp_path: Path) -
     paper = ParsedPaper.model_validate(data)
     tasks = await plan_paper(paper, offline_context(tmp_path, paper=paper))
     values = sorted(
-        t.setting.raw_value for t in tasks if t.setting is not None and t.setting.key != "method"
+        t.setting.raw_value
+        for t in tasks
+        if t.setting is not None and t.setting.key not in ("method", "code_defects")
     )
     assert values == ["1e-4", "2e-5"]
 

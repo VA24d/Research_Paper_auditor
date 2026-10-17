@@ -50,6 +50,7 @@ def test_error_classes_match_decision_d4() -> None:
         "method_mismatch",
         "math_error",
         "unfinished_or_placeholder_content",
+        "code_defect",
         "template_violation",
     }
 

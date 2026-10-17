@@ -111,6 +111,35 @@ _METHOD_TITLE = re.compile(
 )
 
 
+DEFECTS_KEY = "code_defects"
+
+
+def defect_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[AuditTask]:
+    """One task per paper with code: does the released code compile and define what it uses
+    (decision D4 `code_defect`)? Anchored like the method task."""
+    method = method_tasks(paper, repository)
+    if not method:
+        return []
+    anchor = method[0].anchor
+    assert isinstance(anchor, SentenceAnchor)
+    return [
+        AuditTask.create(
+            paper_id=paper.paper_id,
+            variant=paper.variant,
+            kind=TaskKind.CODE,
+            anchor=anchor,
+            target=SettingTarget(key=DEFECTS_KEY),
+            setting=ExtractedSetting(
+                key=DEFECTS_KEY,
+                raw_name="code",
+                raw_value="released code",
+                source=PaperSource(anchor=anchor),
+            ),
+            repository=repository,
+        )
+    ]
+
+
 def method_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[AuditTask]:
     """One task per paper with code: does the code implement the method the paper
     describes (decision D4 `method_mismatch`)? Anchored on the first sentence of the method
@@ -192,6 +221,7 @@ async def plan_paper(
         *citation_tasks(paper, candidates),
         *code_tasks(paper, repository, settings),
         *method_tasks(paper, repository),
+        *defect_tasks(paper, repository),
         *template_tasks(paper, options.venue),
         *integrity_tasks(paper),
     ]

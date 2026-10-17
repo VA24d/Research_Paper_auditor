@@ -143,7 +143,7 @@ async def test_plan_without_llm_covers_every_kind(tmp_path: Path) -> None:
     assert kinds == {
         TaskKind.REFERENCE: 3,
         TaskKind.CITATION: 4,
-        TaskKind.CODE: 3,  # two settings and the method check
+        TaskKind.CODE: 4,  # two settings, the method check and the code-defect check
         TaskKind.TEMPLATE: 3,
         TaskKind.INTEGRITY: 1,
     }
@@ -202,8 +202,8 @@ async def test_planner_runs_inside_the_audit_graph(tmp_path: Path) -> None:
         planner=make_planner(PlannerOptions(venue=example_venue())),
     )
     outcome = await run_audit(pipeline, example_paper(), run_id="r1", system=SystemName.FULL)
-    assert len(outcome.tasks) == 14
-    assert len(outcome.results) == 14
+    assert len(outcome.tasks) == 15
+    assert len(outcome.results) == 15
     assert all(r.outcome is TaskOutcome.CHECKED for r in outcome.results)
 
 

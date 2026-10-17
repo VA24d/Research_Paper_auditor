@@ -7,10 +7,11 @@ it is ever run. Settings about the evaluation data go to `data_checks`, everythi
 """
 
 from auditor.agents.code.data_checks import DATA_KEYS, check_data_setting
+from auditor.agents.code.defects import check_defects
 from auditor.agents.code.method_check import check_method
 from auditor.agents.code.settings_check import check_setting
 from auditor.infra.context import RunContext
-from auditor.planner.tasks import METHOD_KEY
+from auditor.planner.tasks import DEFECTS_KEY, METHOD_KEY
 from auditor.schemas import AuditTask, SettingTarget, TaskKind, TaskResult
 
 
@@ -22,4 +23,6 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         return await check_data_setting(task, ctx)
     if task.target.key == METHOD_KEY:
         return await check_method(task, ctx)
+    if task.target.key == DEFECTS_KEY:
+        return await check_defects(task, ctx)
     return await check_setting(task, ctx)
