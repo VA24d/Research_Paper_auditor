@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
@@ -21,6 +22,9 @@ class RunContext:
     # A stronger model for the review steps that judge other checks' findings, such as the
     # merge of the theory findings (AUDITOR_LLM_REVIEW_MODEL); None means the main model.
     review_llm: StructuredLLM | None = None
+    # The PDF the paper was parsed from, when the input was a PDF; checks that need to look
+    # at a page (a table the parser could not read) use it.
+    source_pdf: Path | None = None
 
     def require_llm(self) -> StructuredLLM:
         if self.llm is None:

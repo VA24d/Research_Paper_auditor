@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from auditor.infra.files import atomic_write
 from auditor.parser.grobid import GrobidClient, GrobidError
 from auditor.parser.layout import LayoutError, extract_layout
+from auditor.parser.layout_tables import add_layout_tables, layout_pages
 from auditor.parser.linking import link_unresolved
 from auditor.parser.tei import TeiError, tei_to_paper
 from auditor.schemas import Layout, Link, ParsedPaper
@@ -105,4 +106,8 @@ async def parse_pdf(
             paper = convert(tei)
         except (TeiError, ValidationError) as retry_exc:
             raise ParseError(f"{path.name}: {retry_exc}") from retry_exc
-    return link_unresolved(paper)
+    paper = link_unresolved(paper)
+    pages = await asyncio.to_thread(layout_pages, path)
+    if pages is None:
+        logger.info("pdftotext is not installed; table pages are left for a later read")
+    return add_layout_tables(paper, pages)

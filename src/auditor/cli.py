@@ -132,6 +132,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                     venue=venue,
                     max_concurrency=args.max_concurrency,
                     resume=args.resume,
+                    source_pdf=args.input if args.input.suffix.lower() == ".pdf" else None,
                 )
             except (ThreadInUseError, NothingToResumeError) as exc:
                 raise InputError(str(exc)) from exc
