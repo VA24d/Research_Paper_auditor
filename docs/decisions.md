@@ -407,14 +407,18 @@ call sets its own thinking level, and the usage log records the level and the st
    reading are left out first.
 2. **Screen.** One call per task with low thinking. It sees each claim's own sentences and
    the definitions it uses, and calls each claim fine, suspicious or needs reasoning.
-3. **Deep check.** Suspicious claims, high-risk claims that need reasoning (a quick read
-   cannot clear a delicate argument, so whatever the screen said), and medium-risk ones the
-   screen could not settle are checked one at a time with high thinking, at most `AUDITOR_THEORY_DEEP_CHECKS` (2) per task, with the
-   whole paper as context. The paper comes first in these prompts, so a provider's prompt
-   cache can reuse it. "No error" is the default answer. An error needs a witness: the step
-   that fails, a counterexample, or the correct value. A
-   high-risk claim gets `AUDITOR_THEORY_DEEP_SAMPLES` (2) independent tries, since one try
-   can miss what another finds; an error from any try goes on to the challenge.
+3. **Deep check.** These claims are checked one at a time with high thinking:
+   - suspicious claims;
+   - high-risk claims that need reasoning, whatever the screen said, since a quick read
+     cannot clear a delicate argument;
+   - medium-risk claims the screen could not settle.
+
+   At most `AUDITOR_THEORY_DEEP_CHECKS` (2) claims per task get one, with the whole paper as
+   context. The paper comes first in these prompts, so a provider's prompt cache can reuse
+   it. "No error" is the default answer. An error needs a witness: the step that fails, a
+   counterexample, or the correct value. A high-risk claim gets
+   `AUDITOR_THEORY_DEEP_SAMPLES` (2) independent tries, since one try can miss what another
+   finds. An error from any try goes on to the challenge.
 
 4. **Challenge.** One call per paper to the review model (`AUDITOR_LLM_REVIEW_MODEL`, or the
    main model when none is set), with medium thinking. It judges every candidate with the
