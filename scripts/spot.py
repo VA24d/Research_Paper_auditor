@@ -31,6 +31,7 @@ from auditor.agents.theory.spot import (
     judge_paper,
     paper_from_pages,
     score_grades,
+    split_of,
     spot_subset,
 )
 from auditor.config import Settings
@@ -114,7 +115,14 @@ def _reports(
 async def _score(args: argparse.Namespace) -> int:
     # Only the papers the run audited; a paper folder is <paper_id>-<variant>.
     audited = {path.parent.name.rsplit("-", 1)[0] for path in args.run.rglob("predictions.jsonl")}
-    errors = [e for e in _read_jsonl(args.errors, SpotError) if e.paper_id in audited]
+    every = _read_jsonl(args.errors, SpotError)
+    papers = [e.paper_id for e in every]
+    errors = [
+        e
+        for e in every
+        if e.paper_id in audited
+        and (args.split is None or split_of(e.paper_id, papers) == args.split)
+    ]
     reports, total = _reports(args.run, args.before_verifier, args.any_class)
     grades_path: Path = args.grades or args.run / GRADES
     kept = {g.error_id: g for g in _read_jsonl(grades_path, Grade)}
@@ -143,7 +151,11 @@ async def _score(args: argparse.Namespace) -> int:
         for grade in new:
             kept[grade.error_id] = grade
     grades = [kept[e.error_id] for e in errors if e.error_id in kept]
-    _write_jsonl(grades_path, list(grades))
+    # Every grade is kept on disk, also those outside the split asked for.
+    _write_jsonl(grades_path, [kept[k] for k in sorted(kept)])
+    # Reports count only for the papers being scored.
+    scored = {e.paper_id for e in errors}
+    total = sum(len(r) for paper_id, r in reports.items() if paper_id in scored)
     scores = score_grades(grades, predictions=total)
     print(
         json.dumps(
@@ -154,6 +166,9 @@ async def _score(args: argparse.Namespace) -> int:
                 "reports": scores.predictions,
                 "matched_reports": scores.matched,
                 "precision": round(scores.precision, 3),
+                "papers": scores.papers,
+                "papers_found": scores.papers_found,
+                "paper_recall": round(scores.paper_recall, 3),
                 "grades_not_checked_by_a_person": scores.unchecked,
             }
         )
@@ -205,6 +220,7 @@ def main() -> int:
     score.add_argument("--before-verifier", action="store_true")
     score.add_argument("--any-class", action="store_true")
     score.add_argument("--max-calls", type=int, default=50)
+    score.add_argument("--split", choices=["dev", "test"])
 
     single = commands.add_parser("single")
     single.add_argument("run", type=Path)

@@ -12,9 +12,10 @@ the run's reports for that paper and names the ones describing the same error. E
 keeps a field for the person who checks it; a grade they reject counts as not found.
 """
 
+import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
@@ -181,6 +182,9 @@ class SpotScores:
     matched: int
     # Grades nobody has checked yet; numbers are reported only when this is 0.
     unchecked: int
+    # Papers with an annotated error, and those with at least one of them found.
+    papers: int = 0
+    papers_found: int = 0
 
     @property
     def recall(self) -> float:
@@ -189,6 +193,25 @@ class SpotScores:
     @property
     def precision(self) -> float:
         return self.matched / self.predictions if self.predictions else 0.0
+
+    @property
+    def paper_recall(self) -> float:
+        """The screening view: a paper counts as caught when any of its errors is found."""
+        return self.papers_found / self.papers if self.papers else 0.0
+
+
+def split_of(paper_id: str, paper_ids: Sequence[str]) -> Literal["dev", "test"]:
+    """A fixed half of the papers for tuning ("dev") and the other half for reporting
+    ("test"): the papers are ordered by a hash of their id, and the first half is dev. The
+    split never depends on the order of the list or on any result."""
+
+    def key(pid: str) -> str:
+        return hashlib.sha256(pid.encode("utf-8")).hexdigest()
+
+    ranked = sorted(set(paper_ids), key=key)
+    if paper_id not in ranked:
+        raise ValueError(f"{paper_id} is not one of the papers")
+    return "dev" if ranked.index(paper_id) < (len(ranked) + 1) // 2 else "test"
 
 
 def score_grades(grades: Sequence[Grade], *, predictions: int) -> SpotScores:
@@ -202,4 +225,6 @@ def score_grades(grades: Sequence[Grade], *, predictions: int) -> SpotScores:
         predictions=predictions,
         matched=len(matched),
         unchecked=sum(1 for g in grades if g.human_agrees is None),
+        papers=len({g.paper_id for g in grades}),
+        papers_found=len({g.paper_id for g in accepted}),
     )
