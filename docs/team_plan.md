@@ -203,6 +203,12 @@ one; record the commit hash actually checked out.
   and code module scoring (`scripts/set_c.py score`). Open: tool-call accuracy of
   repository searches, which needs set C.
 
+- [ ] **P3.10** Theory checker (D21): `auditor.agents.theory` checks the mathematics of a
+  paper's formal segments for `math_error`, opt-in with `AUDITOR_THEORY_CHECK_ENABLED`.
+  Outside benchmark: SPOT's math and CS proof subset (`datasets/spot`, 26 papers, 29
+  errors), scored by an LLM judge whose grades a person checks. Open: the first run, which
+  needs the team's Vertex credentials.
+
 ### Part 4 — Sudheera: verifier, report, evaluation
 
 - [ ] **P4.1** Quote validation: a quote counts only if it appears verbatim in the source
