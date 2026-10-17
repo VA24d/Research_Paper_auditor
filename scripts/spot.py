@@ -2,7 +2,7 @@
 
     uv run python scripts/spot.py fetch --data data/spot --out datasets/spot
     AUDITOR_THEORY_CHECK_ENABLED=true uv run auditor batch data/spot/dataset.jsonl \
-        --experiment spot --systems full,b0 --runs 1
+        --experiment spot --systems full b0 --runs 1
     uv run python scripts/spot.py score runs/spot-full-r1 --errors datasets/spot/errors.jsonl \
         --data data/spot [--before-verifier] [--any-class]
 
