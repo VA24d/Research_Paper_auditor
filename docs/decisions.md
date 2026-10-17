@@ -402,8 +402,9 @@ call sets its own thinking level, and the usage log records the level and the st
    reading are left out first.
 2. **Screen.** One call per task with low thinking. It sees each claim's own sentences and
    the definitions it uses, and calls each claim fine, suspicious or needs reasoning.
-3. **Deep check.** Suspicious claims, and risky ones that need reasoning, are checked one at
-   a time with high thinking, at most `AUDITOR_THEORY_DEEP_CHECKS` (2) per task, with the
+3. **Deep check.** Suspicious claims, high-risk claims that need reasoning (a quick read
+   cannot clear a delicate argument, so whatever the screen said), and medium-risk ones the
+   screen could not settle are checked one at a time with high thinking, at most `AUDITOR_THEORY_DEEP_CHECKS` (2) per task, with the
    whole paper as context. The paper comes first in these prompts, so a provider's prompt
    cache can reuse it. "No error" is the default answer. An error needs a witness: the step
    that fails, a counterexample, or the correct value.

@@ -129,12 +129,27 @@ async def test_a_suspicious_claim_gets_a_deep_check_and_becomes_a_finding(
     assert ROUTINE not in deep_prompt.split("Claim to check")[-1]
 
 
-async def test_fine_claims_cost_no_deep_check(tmp_path: Path) -> None:
+async def test_fine_low_risk_claims_cost_no_deep_check(tmp_path: Path) -> None:
     replies = [screen({"claim_id": "c1", "verdict": "fine"}, {"claim_id": "c2", "verdict": "fine"})]
     ctx, model = context(tmp_path, replies)
-    result = await check(task(), ctx)
+    low = task().model_copy(update={"claims": (task().claims or ())[1:]})
+    result = await check(low, ctx)
     assert result.findings == ()
     assert len(model.received) == 1
+
+
+async def test_a_high_risk_claim_is_checked_deeply_even_when_screened_fine(
+    tmp_path: Path,
+) -> None:
+    # A quick read with little thinking cannot clear a delicate argument.
+    replies = [
+        screen({"claim_id": "c1", "verdict": "fine"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, ERROR),
+    ]
+    ctx, model = context(tmp_path, replies)
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert len(model.received) == 2
 
 
 async def test_risky_claims_that_need_reasoning_are_checked_deeply_too(tmp_path: Path) -> None:
@@ -196,3 +211,19 @@ def test_quotes_match_across_latex_delimiters_and_spacing() -> None:
     assert text[start:end].startswith("let \\( A")
     assert text[start:end].endswith("e^{-BT}")
     assert locate("we get e^{-3T}", text) is None
+
+
+def test_quotes_match_across_unicode_minus_signs_and_dashes() -> None:
+    text = "Let f be a join-irreducible torsionfree class in \u039b\u2212mod."
+    assert locate("Let f be a join-irreducible torsionfree class in \u039b-mod.", text) is not None
+
+
+async def test_a_quote_from_elsewhere_in_the_paper_still_counts(tmp_path: Path) -> None:
+    elsewhere = {**ERROR, "quote": "Hence S(2) - S(1) = 2, which is"}
+    replies = [
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, elsewhere),
+    ]
+    ctx, _ = context(tmp_path, replies)
+    (finding,) = (await check(task(), ctx)).findings
+    assert finding.anchor.sentence_id == "s3"  # type: ignore[union-attr]

@@ -6,7 +6,8 @@ The later stages of the theory cascade, after the planner listed the claims
 1. Screen. One cheap call with low thinking reads every claim of the task with its own
    sentences and the definitions it uses, and calls each "fine", "suspicious" or "needs
    reasoning". A fine claim costs nothing more.
-2. Deep check. Suspicious claims, and risky ones that need reasoning, are checked one at a
+2. Deep check. Suspicious claims, high-risk claims that need reasoning (whatever the
+   screen said) and medium-risk ones the screen could not settle are checked one at a
    time with high thinking, at most `AUDITOR_THEORY_DEEP_CHECKS` per task, with the whole
    paper as context. The default answer is "no error"; an error has to come with a witness
    (the step that fails, a counterexample or the correct value).
@@ -19,6 +20,7 @@ left with the stronger model.
 
 import asyncio
 import re
+import unicodedata
 from collections.abc import Sequence
 from typing import Literal
 
@@ -109,22 +111,34 @@ def _pack(paper: ParsedPaper, claim: TheoryClaim, note: str = "") -> str:
 _DELIMITER = re.compile(r"\\[()\[\]]|\$+")
 
 
+# Minus signs and dashes a model often writes as a plain hyphen.
+_DASHES = str.maketrans(dict.fromkeys("\u2010\u2011\u2012\u2013\u2014\u2212", "-"))
+
+
 def _comparable(text: str) -> tuple[str, list[int]]:
-    """The text without spaces and math delimiters, and where each kept character was."""
+    """The text without spaces and math delimiters, with dashes and compatibility characters
+    folded, and where each kept character was."""
     kept: list[str] = []
     where: list[int] = []
+
+    def keep(start: int, end: int) -> None:
+        for i in range(start, end):
+            if not text[i].isspace():
+                kept.append(unicodedata.normalize("NFKC", text[i]).translate(_DASHES))
+                where.append(i)
+
     position = 0
     for match in _DELIMITER.finditer(text):
-        for i in range(position, match.start()):
-            if not text[i].isspace():
-                kept.append(text[i])
-                where.append(i)
+        keep(position, match.start())
         position = match.end()
-    for i in range(position, len(text)):
-        if not text[i].isspace():
-            kept.append(text[i])
-            where.append(i)
-    return "".join(kept), where
+    keep(position, len(text))
+    # NFKC can turn one character into several; keep the positions in step.
+    flat: list[str] = []
+    places: list[int] = []
+    for piece, place in zip(kept, where, strict=True):
+        flat.extend(piece)
+        places.extend([place] * len(piece))
+    return "".join(flat), places
 
 
 def locate(quote: str, text: str) -> tuple[int, int] | None:
@@ -182,18 +196,18 @@ _RISK = {"high": 0, "medium": 1, "low": 2}
 def _escalated(
     claims: Sequence[TheoryClaim], verdicts: dict[str, ScreenVerdict], limit: int
 ) -> list[tuple[TheoryClaim, str]]:
-    """The claims that earn a deep check: suspicious ones first, then risky claims that
-    need reasoning, at most `limit`."""
+    """The claims that earn a deep check, at most `limit`: suspicious ones first, then
+    high-risk claims that need reasoning (a quick read with little thinking cannot clear a
+    delicate argument), then medium-risk ones the screen could not settle."""
     picked = []
     for claim in claims:
         verdict = verdicts.get(claim.claim_id)
-        if verdict is None or verdict.verdict == "fine":
-            continue
-        if verdict.verdict == "needs_reasoning" and not (
-            claim.needs_reasoning and claim.risk != "low"
-        ):
-            continue
-        picked.append((verdict.verdict != "suspicious", _RISK[claim.risk], claim, verdict.note))
+        said = verdict.verdict if verdict is not None else "needs_reasoning"
+        note = verdict.note if verdict is not None else ""
+        hard = claim.needs_reasoning and claim.risk == "high"
+        unsettled = said == "needs_reasoning" and claim.needs_reasoning and claim.risk != "low"
+        if said == "suspicious" or hard or unsettled:
+            picked.append((said != "suspicious", _RISK[claim.risk], claim, note))
     picked.sort(key=lambda item: (item[0], item[1]))
     return [(claim, note) for _, _, claim, note in picked[:limit]]
 
@@ -241,8 +255,10 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     by_id = {s.id: s for s in paper.sentences}
     findings: list[CandidateFinding] = []
     for (claim, _), outcome in zip(escalated, results, strict=True):
-        # A quote is looked for in the claim's sentences, then in what it uses.
-        own = [by_id[i] for i in (*claim.sentence_ids, *claim.depends_on) if i in by_id]
+        # A quote is looked for in the claim's sentences, then in what it uses, then
+        # anywhere in the paper (an argument can lean on a step stated elsewhere).
+        first = [by_id[i] for i in (*claim.sentence_ids, *claim.depends_on) if i in by_id]
+        own = first + [s for s in paper.sentences if s not in first]
         finding = _finding(task, len(findings), outcome, own)
         if finding is not None and finding.anchor not in [f.anchor for f in findings]:
             findings.append(finding)
