@@ -232,9 +232,14 @@ Facts that affect the choice (checked October 2026):
 ## D10. Caching and repeated runs — Agreed
 
 - The HTTP cache is always on.
-- The LLM response cache is on during development and **off** for reported runs, otherwise
-  repeated runs would be identical and the variance estimate would be meaningless.
-  `auditor batch` turns it off unless given `--llm-cache`.
+- The LLM response cache is shared during development. In reported runs an answer is
+  reused **only within the run that made it** (`AUDITOR_LLM_CACHE_SCOPE=run`, the default of
+  `auditor batch`; `--llm-cache` shares answers across runs for development). Within a run,
+  the original and injected copies of a paper ask many identical questions, and a resumed
+  run asks the same questions again; answering each once does not change the result. Across
+  the repeated runs nothing is shared, so the spread between them still measures the
+  model's own variation, which is what this rule protects. (Changed in October 2026; the
+  cache used to be off for reported runs.)
 - Every run writes a `RunManifest`: git commit, config, model ID, package versions, dataset
   version and seed (where the provider supports one).
 - Reported numbers are the mean and range over three runs, as in the proposal.
@@ -389,14 +394,37 @@ errors behind real retractions. On the math and CS proof subset of SPOT (arXiv 2
 it reaches a recall of 89.7%, against 55.2% for a single model call (arXiv 2606.28277). The
 auditor gains a fourth specialist, `auditor.agents.theory`, for the class `math_error` (D4).
 
-- **Planning.** The planner (`auditor.planner.theory`) splits the paper into segments.
-  - A segment is a run of neighbouring sections with formal content: formulas, symbols,
-    identifiers, or a theorem, lemma or proof statement.
-  - A segment holds at most 12,000 characters.
-  - The densest `AUDITOR_THEORY_MAX_SEGMENTS` (3) segments become `theory` tasks. Each one
-    is anchored on its first sentence, has target `math` and lists its section ids.
-- **Checking.** Each task costs one model call. It sends the whole paper as context and the
-  segment with its sentence ids.
+The check is a cascade, so that deep thinking is spent only on claims that earn it. Each
+call sets its own thinking level, and the usage log records the level and the stage.
+
+1. **Plan** (`auditor.planner.theory`). One call to the main model with minimal thinking
+   reads the paper and lists its formal claims. Each claim has a kind, a short statement,
+   the sentences that state and argue it, the sentences it builds on, a risk level, and
+   whether checking it takes real reasoning. Which claims count, and how risky they are,
+   is the model's reading of the paper, not a list of keywords, so this works in any field.
+   The claims become `theory` tasks of `AUDITOR_THEORY_BATCH_SIZE` (8) claims each, at most
+   `AUDITOR_THEORY_MAX_TASKS` (6) of them. Over that budget, low-risk claims that only need
+   reading are left out first.
+2. **Screen.** One call per task with low thinking. It sees each claim's own sentences and
+   the definitions it uses, and calls each claim fine, suspicious or needs reasoning.
+3. **Deep check.** These claims are checked one at a time with high thinking:
+   - suspicious claims;
+   - high-risk claims that need reasoning, whatever the screen said, since a quick read
+     cannot clear a delicate argument;
+   - medium-risk claims the screen could not settle.
+
+   At most `AUDITOR_THEORY_DEEP_CHECKS` (2) claims per task get one, with the whole paper as
+   context. The paper comes first in these prompts, so a provider's prompt cache can reuse
+   it. "No error" is the default answer. An error needs a witness: the step that fails, a
+   counterexample, or the correct value. A high-risk claim gets
+   `AUDITOR_THEORY_DEEP_SAMPLES` (2) independent tries, since one try can miss what another
+   finds. An error from any try goes on to the challenge.
+
+4. **Challenge.** One call per paper to the review model (`AUDITOR_LLM_REVIEW_MODEL`, or the
+   main model when none is set), with medium thinking. It judges every candidate with the
+   whole paper in view: real errors stay, repeats point at the first one, and the rest are
+   dropped with its reason.
+
 - **Evidence gate.** An error is kept only if it quotes the paper verbatim, at least six
   words long, ignoring spacing. The finding is anchored on the quoted sentence and span,
   so D3 sentence matching works for injected math errors. Confidence below high makes it

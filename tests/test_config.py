@@ -61,3 +61,17 @@ def test_empty_host_tokens_count_as_unset(monkeypatch: pytest.MonkeyPatch) -> No
     assert settings.github_token is None
     assert settings.hf_token is not None
     assert settings.hf_token.get_secret_value() == "hf_x"
+
+
+def test_an_environment_value_replaces_the_dotenv_value_instead_of_merging(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / ".env").write_text(
+        'AUDITOR_LLM_OPTIONS={"temperature": 0, "thinking_budget": 1024}\n'
+        'AUDITOR_LLM_REVIEW_OPTIONS={"temperature": 0}\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AUDITOR_LLM_OPTIONS", '{"max_output_tokens": 64}')
+    settings = Settings()
+    assert settings.llm_options == {"max_output_tokens": 64}
+    assert settings.llm_review_options == {"temperature": 0}

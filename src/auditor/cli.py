@@ -215,8 +215,8 @@ async def _batch(args: argparse.Namespace, settings: Settings) -> int:
     if not args.dataset.is_file():
         raise InputError(f"No such dataset file: {args.dataset}")
     if not args.llm_cache:
-        # Reported runs must not reuse cached answers (decision D10).
-        settings = settings.model_copy(update={"llm_cache": False})
+        # Reported runs reuse an answer only within the run that made it (decision D10).
+        settings = settings.model_copy(update={"llm_cache": True, "llm_cache_scope": "run"})
     if args.no_llm:
         if set(args.systems) - {SystemName.FULL.value}:
             raise InputError("--no-llm: baselines need an LLM; run them separately")
@@ -326,7 +326,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     batch.add_argument("--runs", type=_positive, default=3, help="Repetitions of each system")
     batch.add_argument(
-        "--llm-cache", action="store_true", help="Reuse cached LLM answers (development only)"
+        "--llm-cache",
+        action="store_true",
+        help="Reuse cached LLM answers across runs (development only; by default an answer "
+        "is reused only within the run that made it)",
     )
     batch.add_argument(
         "--strict", action="store_true", help="Refuse to run while any part is still a mock"

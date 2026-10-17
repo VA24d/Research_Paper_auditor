@@ -193,8 +193,13 @@ async def plan_paper(
         *method_tasks(paper, repository),
         *template_tasks(paper, options.venue),
     ]
-    if ctx.settings.theory_check_enabled:
-        tasks += theory_tasks(paper, ctx.settings.theory_max_segments)
+    if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
+        tasks += await theory_tasks(
+            paper,
+            ctx.llm,
+            batch_size=ctx.settings.theory_batch_size,
+            max_tasks=ctx.settings.theory_max_tasks,
+        )
     return _unique(tasks)
 
 

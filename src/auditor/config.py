@@ -1,9 +1,10 @@
 import tempfile
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, JsonValue, SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 DEFAULT_ALLOWED_HOSTS = (
     "localhost",
@@ -32,6 +33,28 @@ DEFAULT_ALLOWED_HOSTS = (
 )
 
 
+class _Unless(PydanticBaseSettingsSource):
+    """A settings source minus the fields a higher-priority source already sets.
+
+    pydantic-settings merges dict values across sources, so `AUDITOR_LLM_OPTIONS` given for
+    one run would otherwise keep every option from `.env` it does not mention (such as a
+    temperature or a thinking budget). A value set at a higher level replaces it whole."""
+
+    def __init__(
+        self, source: PydanticBaseSettingsSource, *higher: PydanticBaseSettingsSource
+    ) -> None:
+        super().__init__(source.settings_cls)
+        self.source = source
+        self.higher = higher
+
+    def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
+        return None, field_name, False
+
+    def __call__(self) -> dict[str, Any]:
+        taken = {key for higher in self.higher for key in higher()}
+        return {key: value for key, value in self.source().items() if key not in taken}
+
+
 class Settings(BaseSettings):
     """Runtime settings, read from AUDITOR_* environment variables and `.env`.
 
@@ -45,6 +68,22 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            _Unless(env_settings, init_settings),
+            _Unless(dotenv_settings, init_settings, env_settings),
+            file_secret_settings,
+        )
 
     data_dir: Path = Path("data")
     cache_dir: Path = Path("data/cache")
@@ -92,6 +131,13 @@ class Settings(BaseSettings):
     llm_structured_method: str | None = None
     llm_options: dict[str, JsonValue] = Field(default_factory=dict)
     llm_cache: bool = True
+    # "run" reuses a cached answer only within the run that made it, so repeated runs stay
+    # independent while the copies of a paper and a resumed run share answers (D10).
+    llm_cache_scope: Literal["shared", "run"] = "shared"
+    # A stronger model for the review steps that judge other checks' findings (the merge of
+    # the theory findings), from the same provider; its options default to llm_options.
+    llm_review_model: str | None = None
+    llm_review_options: dict[str, JsonValue] | None = None
     # The model's context window in tokens. Prompts that do not fit fail loudly instead of
     # being cut by the server (Ollama's default context is only a few thousand tokens).
     llm_context_tokens: int | None = Field(default=None, gt=0)
@@ -109,7 +155,14 @@ class Settings(BaseSettings):
     # Ask the model, one code line at a time, which of several repository values a setting
     # mismatch is about (only when an LLM is configured).
     code_second_look: bool = True
-    # Check the mathematics of the paper's formal segments with the LLM (decision D21): at
-    # most `theory_max_segments` model calls per paper.
+    # Check the mathematics of the paper's formal claims with the LLM (decision D21). The
+    # planner lists the claims in one call and groups them into at most `theory_max_tasks`
+    # tasks of `theory_batch_size` claims; each task screens its claims in one cheap call,
+    # and at most `theory_deep_checks` of them get a deep check with high thinking.
     theory_check_enabled: bool = False
-    theory_max_segments: int = Field(default=3, gt=0)
+    theory_batch_size: int = Field(default=8, gt=0)
+    theory_max_tasks: int = Field(default=6, gt=0)
+    theory_deep_checks: int = Field(default=2, ge=0)
+    # Tries of a high-risk claim's deep check; an error any try shows counts, and the
+    # challenge step filters what is not real. Answers vary from one try to the next.
+    theory_deep_samples: int = Field(default=2, ge=1)

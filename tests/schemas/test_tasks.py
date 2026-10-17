@@ -16,6 +16,7 @@ from auditor.schemas import (
     SentenceAnchor,
     SettingTarget,
     TaskKind,
+    TheoryClaim,
     compute_task_id,
 )
 from auditor.schemas.examples import REPOSITORY, example_tasks, example_venue
@@ -139,22 +140,23 @@ def test_kind_specific_rules(fields: dict[str, Any], message: str) -> None:
         make(**fields)
 
 
-def test_a_theory_task_names_the_sections_it_checks() -> None:
+def test_a_theory_task_names_the_claims_it_checks() -> None:
     fields: dict[str, Any] = {
         "kind": TaskKind.THEORY,
         "anchor": SentenceAnchor(sentence_id="s4"),
         "target": SettingTarget(key="math"),
     }
-    with pytest.raises(ValidationError, match="need 'sections'"):
+    with pytest.raises(ValidationError, match="need 'claims'"):
         make(**fields)
-    task = make(**fields, sections=("sec2", "sec3"))
-    assert task.sections == ("sec2", "sec3")
-    with pytest.raises(ValidationError, match="do not take 'sections'"):
+    claim = TheoryClaim(claim_id="c1", kind="lemma", sentence_ids=("s4", "s5"))
+    task = make(**fields, claims=[claim])
+    assert task.claims == (claim,)
+    with pytest.raises(ValidationError, match="do not take 'claims'"):
         make(
             kind=TaskKind.REFERENCE,
             anchor=BibliographyAnchor(bib_id="b0"),
             target=BibTarget(bib_id="b0"),
-            sections=("sec2",),
+            claims=[claim],
         )
 
 

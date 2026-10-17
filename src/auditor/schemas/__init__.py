@@ -68,6 +68,7 @@ from auditor.schemas.tasks import (
     SettingTarget,
     Target,
     TaskKind,
+    TheoryClaim,
     compute_task_id,
 )
 from auditor.schemas.telemetry import (
@@ -136,6 +137,7 @@ __all__ = [
     "TaskKind",
     "TaskOutcome",
     "TaskResult",
+    "TheoryClaim",
     "ToolCallRecord",
     "VenueProfile",
     "VenueRule",

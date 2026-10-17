@@ -337,3 +337,29 @@ async def test_verifier_decisions_reach_the_output_files(tmp_path: Path) -> None
         VerificationState.VERIFIED_FLAG,
         VerificationState.NEEDS_HUMAN_REVIEW,
     }
+
+
+async def test_review_steps_run_after_the_verifier_in_order(tmp_path: Path) -> None:
+    decisions = example_verified_findings()
+
+    async def verify(results: Sequence[TaskResult], ctx: RunContext) -> list[VerifiedFinding]:
+        return list(decisions)
+
+    seen: list[str] = []
+
+    async def first(found: Sequence[VerifiedFinding], ctx: RunContext) -> list[VerifiedFinding]:
+        seen.append("first")
+        return list(found[:1])
+
+    async def second(found: Sequence[VerifiedFinding], ctx: RunContext) -> list[VerifiedFinding]:
+        seen.append(f"second saw {len(found)}")
+        return list(found)
+
+    outcome = await run_audit(
+        pipeline(tmp_path, example_tasks(), verifier=verify, reviews=(first, second)),
+        example_paper(),
+        run_id="r1",
+        system=SystemName.FULL,
+    )
+    assert seen == ["first", "second saw 1"]
+    assert [d.finding.finding_id for d in outcome.verified] == [decisions[0].finding.finding_id]

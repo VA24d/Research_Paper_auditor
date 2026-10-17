@@ -43,6 +43,22 @@ Target = Annotated[
 ]
 
 
+class TheoryClaim(Record):
+    """One formal claim the planner found for the theory checker (decision D21): what it
+    says, where it is stated and argued, what it builds on, and how risky it looks."""
+
+    claim_id: NonEmptyStr
+    # The model's own word for it (theorem, lemma, estimate, identity, ...), not a fixed list.
+    kind: str = ""
+    statement: str = ""
+    # The sentences that state and argue the claim, then those it depends on.
+    sentence_ids: tuple[NonEmptyStr, ...] = Field(min_length=1)
+    depends_on: tuple[NonEmptyStr, ...] = ()
+    risk: Literal["low", "medium", "high"] = "medium"
+    # Whether checking it takes real reasoning (a derivation), not just reading.
+    needs_reasoning: bool = True
+
+
 class TaskKind(StrEnum):
     REFERENCE = "reference"
     CITATION = "citation"
@@ -98,8 +114,8 @@ class AuditTask(Record):
     setting: ExtractedSetting | None = None
     repository: RepositoryRef | None = None
     rule: VenueRule | None = None
-    # Theory tasks: the ids of the sections the task checks, in reading order.
-    sections: tuple[str, ...] | None = None
+    # Theory tasks: the claims the task checks, in reading order.
+    claims: tuple[TheoryClaim, ...] | None = None
 
     @classmethod
     def create(
@@ -114,7 +130,7 @@ class AuditTask(Record):
         setting: ExtractedSetting | None = None,
         repository: RepositoryRef | None = None,
         rule: VenueRule | None = None,
-        sections: Sequence[str] | None = None,
+        claims: Sequence[TheoryClaim] | None = None,
     ) -> Self:
         return cls(
             task_id=compute_task_id(paper_id, variant, kind, anchor, target, claim),
@@ -127,7 +143,7 @@ class AuditTask(Record):
             setting=setting,
             repository=repository,
             rule=rule,
-            sections=tuple(sections) if sections is not None else None,
+            claims=tuple(claims) if claims is not None else None,
         )
 
     @model_validator(mode="after")
@@ -160,11 +176,11 @@ class AuditTask(Record):
                 ):
                     raise ValueError("template task rule must match its target")
             case TaskKind.THEORY:
-                _expect(self, SentenceAnchor, (SettingTarget,), {"sections"})
+                _expect(self, SentenceAnchor, (SettingTarget,), {"claims"})
         return self
 
 
-_DETAIL_FIELDS = ("claim", "setting", "repository", "rule", "sections")
+_DETAIL_FIELDS = ("claim", "setting", "repository", "rule", "claims")
 
 
 def _expect(

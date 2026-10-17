@@ -65,3 +65,6 @@ class LLMCallRecord(Record):
     duration_s: float = Field(ge=0)
     status: CallStatus
     error: str | None = None
+    # How hard the model was asked to think, and which step made the call.
+    effort: str | None = None
+    purpose: str | None = None
