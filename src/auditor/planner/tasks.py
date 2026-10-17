@@ -202,7 +202,7 @@ async def plan_paper(
 ) -> list[AuditTask]:
     options = options or PlannerOptions()
     candidates = citation_candidates(paper)
-    if options.use_llm and ctx.llm is not None and candidates:
+    if options.use_llm and ctx.llm is not None and candidates and ctx.settings.citation_llm_enabled:
         candidates = await refine_candidates(paper, candidates, ctx.llm)
 
     repository = options.repository

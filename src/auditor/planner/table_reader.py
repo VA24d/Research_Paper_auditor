@@ -136,7 +136,9 @@ async def read_tables(
     system = SystemMessage(SYSTEM_PROMPT.format(keys=", ".join(ALIASES)))
     for unit in table_units(paper, already):
         rows = "\n".join(f"Row {index}: {sentence.text}" for index, sentence in enumerate(unit))
-        result = await llm.generate(TableReading, [system, HumanMessage(rows)])
+        result = await llm.generate(
+            TableReading, [system, HumanMessage(rows)], purpose="table-read"
+        )
         for reading in result.value.settings:
             setting = _accept(reading, unit, taken)
             if setting is None:

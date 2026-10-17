@@ -156,7 +156,11 @@ async def judge_paper(
             f"{error.annotation}\n\nReported issues:\n{listing}"
         )
         verdict = (
-            await llm.generate(MatchVerdict, [SystemMessage(JUDGE_PROMPT), HumanMessage(prompt)])
+            await llm.generate(
+                MatchVerdict,
+                [SystemMessage(JUDGE_PROMPT), HumanMessage(prompt)],
+                purpose="spot-judge",
+            )
         ).value
         matched = tuple(
             reports[n - 1].finding_id or str(n)

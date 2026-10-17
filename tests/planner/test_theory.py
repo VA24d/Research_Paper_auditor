@@ -2,6 +2,8 @@ import dataclasses
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from auditor.infra.llm import StructuredLLM
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
@@ -172,3 +174,24 @@ async def test_prose_without_claims_needs_no_fallback() -> None:
     )
     model, _ = llm({"claims": []})
     assert await theory_tasks(prose, model, batch_size=8, max_tasks=5) == []
+
+
+async def test_the_citation_pass_can_be_left_out(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    called: list[object] = []
+
+    async def refine(paper: object, candidates: object, llm: object) -> object:
+        called.append(paper)
+        return candidates
+
+    monkeypatch.setattr("auditor.planner.tasks.refine_candidates", refine)
+    model, _ = llm({"claims": []})
+    ctx = offline_context(tmp_path, llm=model)
+    off = dataclasses.replace(
+        ctx, settings=ctx.settings.model_copy(update={"citation_llm_enabled": False})
+    )
+    await plan_paper(ctx.paper, off)
+    assert called == []
+    await plan_paper(ctx.paper, ctx)
+    assert len(called) == 1

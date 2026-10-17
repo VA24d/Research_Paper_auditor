@@ -124,3 +124,29 @@ async def test_variable_names_and_pseudocode_are_not_leftover_markers(tmp_path: 
     p = paper(*extra)
     result = await check(screen_task(p), offline_context(tmp_path, paper=p))
     assert result.findings == ()
+
+
+async def test_more_placeholder_spellings_seen_in_real_reviews(tmp_path: Path) -> None:
+    # From ICLR reviews: "TODOXXX" in the abstract, "Section X" and "Figure X",
+    # "[insert performance difference]".
+    extra = (
+        Sentence(id="s3", section_id="exp", text="Our method reaches TODOXXX accuracy."),
+        Sentence(id="s4", section_id="exp", text="As discussed in Section X, the loss is convex."),
+        Sentence(id="s5", section_id="exp", text="It improves by [insert performance difference]."),
+        Sentence(id="s6", section_id="exp", text="Let X be a random variable in Section 2."),
+    )
+    p = paper(*extra)
+    result = await check(screen_task(p), offline_context(tmp_path, paper=p))
+    found = {f.anchor.sentence_id for f in result.findings}  # type: ignore[union-attr]
+    assert found == {"s3", "s4", "s5"}
+
+
+async def test_table_x_is_table_ten_in_papers_with_roman_numerals(tmp_path: Path) -> None:
+    # IEEE-style papers number tables I, II, ..., X; "Table X" there is the tenth table.
+    extra = (
+        Sentence(id="s3", section_id="exp", text="TABLE IX: Ablation results."),
+        Sentence(id="s4", section_id="exp", text="Table X lists the range of the learned values."),
+    )
+    p = paper(*extra)
+    result = await check(screen_task(p), offline_context(tmp_path, paper=p))
+    assert result.findings == ()

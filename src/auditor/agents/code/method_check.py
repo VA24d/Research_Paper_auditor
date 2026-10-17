@@ -146,7 +146,7 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
         + "\n\n".join(_numbered(snapshot, path) for path in files)
     )
     result = await ctx.require_llm().generate(
-        MethodReview, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)]
+        MethodReview, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)], purpose="method-whole"
     )
     findings: list[CandidateFinding] = []
     for discrepancy in result.value.discrepancies:
@@ -325,7 +325,9 @@ async def _check_pairs(
         prompt = f"Paper passage:\n{pair.passage}\n\nCode ({pair.chunk.path}):\n{code}"
         async with gate:
             result = await llm.generate(
-                PairJudgement, [SystemMessage(PAIR_PROMPT), HumanMessage(prompt)]
+                PairJudgement,
+                [SystemMessage(PAIR_PROMPT), HumanMessage(prompt)],
+                purpose="method-pair",
             )
         return result.value
 

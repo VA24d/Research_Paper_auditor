@@ -57,7 +57,11 @@ list the claims that state or compare numbers in a table:
 - "comparison": the text says one number is higher (relation "higher") or lower (relation
   "lower") than another, for example "0.73, significantly higher than 0.78". The numbers
   may be in a table or in the sentence itself; for numbers in the sentence, leave table_id
-  empty.
+  empty;
+- "same_value": the paper reports one result (the same method or configuration, on the same
+  data and metric) in two places, such as a baseline in the main table and the matching
+  variant of an ablation table, or a number in the text and in a table. Give both numbers,
+  each with the table_id of the table it is in.
 For each claim give the sentence id, a quote of at least four words copied exactly from the
 sentence, the table id, the number the text states (for value, difference and
 relative_percent), and the table numbers it rests on: the subject (the row label as written
@@ -74,12 +78,14 @@ numbers. List at most 20 claims, the ones the paper's conclusions rest on first.
 class Operand(BaseModel):
     row_label: str
     value: str
+    # The table this number is in, when it differs from the claim's table.
+    table_id: str = ""
 
 
 class DataClaim(BaseModel):
     sentence_id: str
     quote: str
-    kind: Literal["value", "difference", "relative_percent", "best", "comparison"]
+    kind: Literal["value", "difference", "relative_percent", "best", "comparison", "same_value"]
     # Empty when the claim's numbers are in the sentence itself, not in a table.
     table_id: str = ""
     stated: str = ""
@@ -141,6 +147,7 @@ def _finding(
     span: tuple[int, int] | None,
     summary: str,
     lookup: str,
+    uncertain: bool = False,
 ) -> CandidateFinding:
     start, end = span if span is not None else (0, len(sentence.text))
     source = SourceRef(kind=SourceKind.SUBMISSION, id=task.paper_id)
@@ -166,6 +173,7 @@ def _finding(
         ),
         summary=summary,
         evidence=evidence,
+        uncertain=uncertain,
     )
 
 
@@ -274,6 +282,9 @@ def _verdict(
     stated = _Number.parse(claim.stated)
     if stated is None:
         return None
+    if claim.kind == "difference":
+        # "-8.6 points" states a drop of 8.6: the size is what is compared.
+        stated = _Number(abs(stated.value), stated.half_unit)
     if claim.kind == "value":
         if subject.low <= stated.high and stated.low <= subject.high:
             return None
@@ -322,6 +333,34 @@ def _verdict(
     return summary, lookup
 
 
+def _same_value(
+    claim: DataClaim, paper: ParsedPaper, tables: dict[str, Table]
+) -> tuple[str, str] | None:
+    """A disagreement between two places that report the same result, each number read
+    from its own table."""
+    if len(claim.others) != 1:
+        return None
+
+    def read(operand: Operand) -> tuple[_Number | None, str]:
+        table = tables.get(operand.table_id or claim.table_id)
+        if table is None:
+            return None, ""
+        return _value_in_row(_rows(paper, table), operand), table.label or table.id
+
+    subject, first = read(claim.subject)
+    other, second = read(claim.others[0])
+    if subject is None or other is None:
+        return None
+    if subject.low <= other.high and other.low <= subject.high:
+        return None
+    a, b = claim.subject, claim.others[0]
+    summary = (
+        f"{first} gives {a.value} for {a.row_label}, but {second} gives {b.value} for "
+        f"{b.row_label}, which the paper presents as the same result."
+    )
+    return summary, f"{first}: {a.row_label} {a.value}; {second}: {b.row_label} {b.value}"
+
+
 async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     paper = ctx.paper
     findings = table_findings(task, paper)
@@ -343,7 +382,12 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
         if claim.sentence_id in flagged:
             continue
         table = tables.get(claim.table_id)
-        if table is not None:
+        uncertain = False
+        if claim.kind == "same_value":
+            verdict = _same_value(claim, paper, tables)
+            # Which two results are the same one is the model's reading of the paper.
+            uncertain = True
+        elif table is not None:
             verdict = _verdict(claim, _rows(paper, table), table.label or table.id)
         elif claim.sentence_id in by_id:
             # Numbers in the text: they must be in the sentence or the two before it.
@@ -358,6 +402,8 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
         if found is None:
             continue
         summary, lookup = verdict
-        findings.append(_finding(task, len(findings), found.sentence, found.span, summary, lookup))
+        findings.append(
+            _finding(task, len(findings), found.sentence, found.span, summary, lookup, uncertain)
+        )
         flagged.add(found.sentence.id)
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)

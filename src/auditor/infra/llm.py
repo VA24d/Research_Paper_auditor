@@ -11,7 +11,7 @@ import functools
 import hashlib
 import json
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -187,7 +187,32 @@ def _text_of(message: AIMessage) -> str:
 
 
 class CallLimitReachedError(BudgetExceededError):
-    """The run has made all the model calls AUDITOR_LLM_MAX_CALLS allows."""
+    """The run has made all the model calls AUDITOR_LLM_MAX_CALLS allows, or spent the
+    money AUDITOR_LLM_MAX_COST_USD allows."""
+
+
+@dataclass
+class Spend:
+    """What a run's model calls have cost so far, against its budget. The main model and
+    the review model share one, so the budget covers both."""
+
+    limit_usd: float | None
+    # US dollars per million input and output tokens, by model name; output includes
+    # thinking tokens.
+    prices: Mapping[str, tuple[float, float]]
+    spent_usd: float = 0.0
+
+    def price(self, model: str) -> tuple[float, float] | None:
+        return self.prices.get(model.split(":", 1)[-1])
+
+    def charge(self, model: str, usage: "TokenUsage") -> None:
+        price = self.price(model)
+        if price is not None:
+            self.spent_usd += (usage.input_tokens * price[0] + usage.output_tokens * price[1]) / 1e6
+
+    @property
+    def exhausted(self) -> bool:
+        return self.limit_usd is not None and self.spent_usd >= self.limit_usd
 
 
 class PromptTooLongError(StructuredOutputError):
@@ -219,6 +244,7 @@ class StructuredLLM:
         max_concurrency: int | None = None,
         max_calls: int | None = None,
         cache_scope: Literal["shared", "run"] = "shared",
+        spend: Spend | None = None,
     ) -> None:
         self.model = model
         self.name = name
@@ -233,6 +259,7 @@ class StructuredLLM:
         self.calls = 0
         # "run": cached answers are reused only within the run that made them (D10).
         self.cache_scope = cache_scope
+        self.spend = spend or Spend(limit_usd=None, prices={})
         # The stronger model for review steps (AUDITOR_LLM_REVIEW_MODEL), if any.
         self.review: StructuredLLM | None = None
         self.provider: str | None = None
@@ -240,13 +267,22 @@ class StructuredLLM:
 
     @property
     def limit_reached(self) -> bool:
-        return self.max_calls is not None and self.calls >= self.max_calls
+        calls = self.max_calls is not None and self.calls >= self.max_calls
+        return calls or self.spend.exhausted
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
         """The main model, with the review model attached when one is configured; it has
         its own call limit of the same size."""
-        llm = cls._one(settings)
+        spend = Spend(limit_usd=settings.llm_max_cost_usd, prices=dict(settings.llm_prices))
+        if spend.limit_usd is not None:
+            for model in filter(None, (settings.llm_model, settings.llm_review_model)):
+                if spend.price(model) is None:
+                    raise ValueError(
+                        f"AUDITOR_LLM_MAX_COST_USD needs the price of {model}; add it to "
+                        "AUDITOR_LLM_PRICES"
+                    )
+        llm = cls._one(settings, spend)
         if settings.llm_review_model:
             options = settings.llm_review_options
             llm.review = cls._one(
@@ -255,12 +291,13 @@ class StructuredLLM:
                         "llm_model": settings.llm_review_model,
                         "llm_options": settings.llm_options if options is None else options,
                     }
-                )
+                ),
+                spend,
             )
         return llm
 
     @classmethod
-    def _one(cls, settings: Settings) -> "StructuredLLM":
+    def _one(cls, settings: Settings, spend: Spend) -> "StructuredLLM":
         cache = LLMCache(settings.cache_dir / "llm") if settings.llm_cache else None
         llm = cls(
             create_chat_model(settings),
@@ -272,6 +309,7 @@ class StructuredLLM:
             max_concurrency=settings.llm_max_concurrency,
             max_calls=settings.llm_max_calls,
             cache_scope=settings.llm_cache_scope,
+            spend=spend,
         )
         llm.provider = settings.llm_provider
         return llm
@@ -357,6 +395,11 @@ class StructuredLLM:
                 raise CallLimitReachedError(
                     f"the run's {self.max_calls} model calls are used up (AUDITOR_LLM_MAX_CALLS)"
                 )
+            if self.spend.exhausted:
+                raise CallLimitReachedError(
+                    f"the run's budget of ${self.spend.limit_usd:g} is used up "
+                    "(AUDITOR_LLM_MAX_COST_USD)"
+                )
             self.calls += 1
             started_at = datetime.now(UTC)
             started = time.perf_counter()
@@ -379,6 +422,7 @@ class StructuredLLM:
             raw = output["raw"]
             usage = TokenUsage.from_message(raw)
             total += usage
+            self.spend.charge(self.name, usage)
             record(usage, started_at, time.perf_counter() - started)
 
             parsed = output.get("parsed")
