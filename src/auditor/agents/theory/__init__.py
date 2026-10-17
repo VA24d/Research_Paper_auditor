@@ -165,7 +165,9 @@ def _finding(
         if span is None:
             continue
         start, end = span
-        summary = f"{deep.location.strip() or 'Claim'}: {deep.explanation.strip()}"
+        # Some answers leave the explanation empty and put it all in the witness.
+        why = deep.explanation.strip() or deep.witness.strip()
+        summary = f"{deep.location.strip() or 'Claim'}: {why}"
         return CandidateFinding.for_task(
             task,
             number,

@@ -103,6 +103,8 @@ Effort = Literal["minimal", "low", "medium", "high"]
 # Chat model fields by setting name (Gemini's `thinking_level` is the field
 # `reasoning_effort`).
 _FIELD_NAMES = {"thinking_level": "reasoning_effort"}
+# The chat model field that caps the output, by provider.
+_OUTPUT_FIELDS = {"google_genai": "max_output_tokens", "openai": "max_tokens"}
 # Gemini 2.5 takes a token budget instead of a level.
 _GEMINI_25_BUDGETS: dict[str, int] = {"minimal": 0, "low": 1024, "medium": 4096, "high": 12288}
 
@@ -234,7 +236,7 @@ class StructuredLLM:
         # The stronger model for review steps (AUDITOR_LLM_REVIEW_MODEL), if any.
         self.review: StructuredLLM | None = None
         self.provider: str | None = None
-        self._by_effort: dict[Effort, BaseChatModel] = {}
+        self._variants: dict[tuple[Effort | None, int | None], BaseChatModel] = {}
 
     @property
     def limit_reached(self) -> bool:
@@ -274,21 +276,29 @@ class StructuredLLM:
         llm.provider = settings.llm_provider
         return llm
 
-    def model_for(self, effort: Effort | None) -> BaseChatModel:
-        """The chat model with its thinking set to `effort` (the configured model for None
-        or a provider without such a setting)."""
-        if effort is None:
+    def model_for(
+        self, effort: Effort | None, *, max_output_tokens: int | None = None
+    ) -> BaseChatModel:
+        """The chat model with its thinking set to `effort` and its output capped at
+        `max_output_tokens` (the configured model for None, or for a provider without
+        such settings)."""
+        key = (effort, max_output_tokens)
+        if key == (None, None):
             return self.model
-        if effort not in self._by_effort:
-            options = effort_options(self.provider, self.name.split(":", 1)[-1], effort)
-            if not options:
-                return self.model
-            update = {_FIELD_NAMES.get(k, k): v for k, v in options.items()}
-            if "reasoning_effort" in update:
-                # A level replaces a configured token budget (Gemini 3 warns about both).
-                update.setdefault("thinking_budget", None)
-            self._by_effort[effort] = self.model.model_copy(update=update)
-        return self._by_effort[effort]
+        if key not in self._variants:
+            update: dict[str, Any] = {}
+            if effort is not None:
+                options = effort_options(self.provider, self.name.split(":", 1)[-1], effort)
+                update.update({_FIELD_NAMES.get(k, k): v for k, v in options.items()})
+                if "reasoning_effort" in update:
+                    # A level replaces a configured token budget (Gemini 3 warns about both).
+                    update.setdefault("thinking_budget", None)
+            if max_output_tokens is not None:
+                field = _OUTPUT_FIELDS.get(self.provider or "")
+                if field is not None:
+                    update[field] = max_output_tokens
+            self._variants[key] = self.model.model_copy(update=update) if update else self.model
+        return self._variants[key]
 
     async def generate[T: BaseModel](
         self,
@@ -298,10 +308,13 @@ class StructuredLLM:
         effort: Effort | None = None,
         purpose: str | None = None,
         sample: int = 0,
+        max_output_tokens: int | None = None,
     ) -> StructuredResult[T]:
         """A validated `schema` value. `effort` sets how hard the model thinks on this call
         (None keeps the configured setting); `purpose` names the step in the usage log;
-        `sample` numbers independent tries of the same question, which are cached apart."""
+        `sample` numbers independent tries of the same question, which are cached apart;
+        `max_output_tokens` caps this call's answer, so a model stuck repeating itself
+        stops early."""
         record = functools.partial(self._record, effort=effort, purpose=purpose)
         context = self.cache_context if effort is None else f"{self.cache_context}|{effort}"
         active = current_scope()
@@ -309,6 +322,8 @@ class StructuredLLM:
             context += f"|run={active.run_id}"
         if sample:
             context += f"|sample={sample}"
+        if max_output_tokens is not None:
+            context += f"|max_output={max_output_tokens}"
         cache_key = None
         if self.cache is not None:
             cache_key = LLMCache.key(self.name, self.method, schema, messages, context)
@@ -328,7 +343,8 @@ class StructuredLLM:
         kwargs: dict[str, Any] = {"include_raw": True}
         if self.method is not None:
             kwargs["method"] = self.method
-        runnable = self.model_for(effort).with_structured_output(schema, **kwargs)
+        model = self.model_for(effort, max_output_tokens=max_output_tokens)
+        runnable = model.with_structured_output(schema, **kwargs)
 
         conversation = list(messages)
         total = TokenUsage()
