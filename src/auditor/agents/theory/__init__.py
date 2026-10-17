@@ -29,6 +29,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from auditor.infra.context import RunContext
+from auditor.infra.sandbox import MathSandbox
 from auditor.planner.theory import paper_listing
 from auditor.schemas import (
     AuditTask,
@@ -68,6 +69,18 @@ sentence where it is, copy a quote of at least six words from that sentence exac
 written, give its location (such as "Lemma 3.2" or "Eq. (5)") and rate your confidence."""
 
 
+TEST_OFFER = """
+Before answering you may ask for one computation: put Python code in test_code (SymPy,
+NumPy, mpmath, NetworkX and z3 are available; there is no network; print what you need)
+and leave the other fields empty. You will get its output and then give your final answer.
+Use it to evaluate a formula at small values, search for a counterexample, or check an
+algebraic step."""
+
+
+def make_sandbox() -> MathSandbox:
+    return MathSandbox()
+
+
 class ScreenVerdict(BaseModel):
     claim_id: str
     verdict: Literal["fine", "suspicious", "needs_reasoning"]
@@ -80,6 +93,8 @@ class Screen(BaseModel):
 
 class DeepCheck(BaseModel):
     has_error: bool
+    # Python code to run in the math sandbox before the final answer (first round only).
+    test_code: str = ""
     sentence_id: str = ""
     quote: str = ""
     location: str = ""
@@ -285,16 +300,37 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     listing = paper_text(paper)
     llm = ctx.llm
 
+    sandbox = make_sandbox() if ctx.settings.theory_sandbox_enabled else None
+    if sandbox is not None and not await sandbox.available():
+        sandbox = None
+    system = SystemMessage(DEEP_PROMPT + (TEST_OFFER if sandbox is not None else ""))
+
     async def deep(claim: TheoryClaim, note: str, sample: int) -> DeepCheck:
         message = f"The paper:\n{listing}\n\nClaim to check:\n{_pack(paper, claim, note)}"
-        result = await llm.generate(
+        first = await llm.generate(
             DeepCheck,
-            [SystemMessage(DEEP_PROMPT), HumanMessage(message)],
+            [system, HumanMessage(message)],
             effort="high",
             purpose="theory-deep",
             sample=sample,
         )
-        return result.value
+        code = first.value.test_code.strip()
+        if sandbox is None or not code:
+            return first.value
+        ran = await sandbox.run(code)
+        output = ran.stdout if ran.ok else f"{ran.stdout}\n{ran.stderr}".strip()
+        follow_up = (
+            f"Your test code:\n{code}\n\nIt printed:\n{output or '(nothing)'}\n\n"
+            "Now give your final answer; do not ask for another test."
+        )
+        final = await llm.generate(
+            DeepCheck,
+            [system, HumanMessage(message), HumanMessage(follow_up)],
+            effort="high",
+            purpose="theory-deep-tested",
+            sample=sample,
+        )
+        return final.value
 
     # High-risk claims get several tries, since one try can miss what another finds.
     tries = [
