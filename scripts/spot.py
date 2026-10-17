@@ -111,7 +111,9 @@ def _reports(
 
 
 async def _score(args: argparse.Namespace) -> int:
-    errors = _read_jsonl(args.errors, SpotError)
+    # Only the papers the run audited; a paper folder is <paper_id>-<variant>.
+    audited = {path.parent.name.rsplit("-", 1)[0] for path in args.run.rglob("predictions.jsonl")}
+    errors = [e for e in _read_jsonl(args.errors, SpotError) if e.paper_id in audited]
     reports, total = _reports(args.run, args.before_verifier, args.any_class)
     grades_path: Path = args.grades or args.run / GRADES
     kept = {g.error_id: g for g in _read_jsonl(grades_path, Grade)}
