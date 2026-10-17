@@ -56,7 +56,9 @@ async def second_look(
             f"Paper sentence: {sentence}\n\nSetting: {setting.key} "
             f"(the paper says {setting.raw_value})\n\n{source.path}:\n{shown}"
         )
-        result = await llm.generate(Applies, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)])
+        result = await llm.generate(
+            Applies, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)], purpose="second-look"
+        )
         return result.value.answer
 
     answers = await asyncio.gather(*(ask(c) for c in asked))

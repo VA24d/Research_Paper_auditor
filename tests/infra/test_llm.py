@@ -8,10 +8,12 @@ from pydantic import BaseModel
 from auditor.config import Settings
 from auditor.infra import llm as llm_module
 from auditor.infra.llm import (
+    CallLimitReachedError,
     Effort,
     LLMCache,
     LLMNotConfiguredError,
     PromptTooLongError,
+    Spend,
     StructuredLLM,
     StructuredOutputError,
     TokenUsage,
@@ -359,3 +361,47 @@ def test_a_call_can_cap_its_output(tmp_path: Path) -> None:
     assert getattr(capped, "thinking_level", None) == "low"
     assert getattr(llm.model, "max_output_tokens", None) == 32768
     assert llm.model_for(None, max_output_tokens=8192) is not llm.model
+
+
+async def test_a_run_stops_once_its_dollar_budget_is_spent() -> None:
+    # Each reply costs 10 input and 5 output tokens (see tool_reply).
+    model = ScriptedChatModel(
+        replies=[tool_reply(Verdict, {"supported": True, "reason": str(i)}) for i in range(3)]
+    )
+    spend = Spend(limit_usd=0.000015, prices={"scripted": (1.0, 1.0)})
+    llm = StructuredLLM(model, name="test:scripted", spend=spend)
+    await llm.generate(Verdict, MESSAGES)
+    assert spend.spent_usd == pytest.approx(0.000015)
+    assert llm.limit_reached
+    with pytest.raises(CallLimitReachedError, match="AUDITOR_LLM_MAX_COST_USD"):
+        await llm.generate(Verdict, [HumanMessage("Another?")])
+    assert len(model.received) == 1
+
+
+def test_the_review_model_shares_the_run_budget(tmp_path: Path) -> None:
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="openai",
+        llm_model="small",
+        llm_options={"api_key": "x"},
+        llm_review_model="large",
+        llm_max_cost_usd=2.0,
+        llm_prices={"small": (0.1, 0.4), "large": (1.0, 4.0)},
+    )
+    main = StructuredLLM.from_settings(settings)
+    assert main.review is not None
+    assert main.spend is main.review.spend
+
+
+def test_a_budget_needs_the_price_of_every_model(tmp_path: Path) -> None:
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="openai",
+        llm_model="unpriced",
+        llm_options={"api_key": "x"},
+        llm_max_cost_usd=1.0,
+    )
+    with pytest.raises(ValueError, match="AUDITOR_LLM_PRICES"):
+        StructuredLLM.from_settings(settings)

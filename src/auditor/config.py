@@ -151,6 +151,17 @@ class Settings(BaseSettings):
     # Model calls one run may make in total; a hard stop for metered or shared credits.
     # Cache hits do not count.
     llm_max_calls: int | None = Field(default=None, ge=0)
+    # Dollars one run may spend on model calls, shared by the main and the review model.
+    llm_max_cost_usd: float | None = Field(default=None, gt=0)
+    # US dollars per million (input, output) tokens; output includes thinking. Gemini API
+    # list prices as of 2026-10-17 (3.8 Flash is $1.50 / $7.50 from 2027-01-01).
+    llm_prices: dict[str, tuple[float, float]] = Field(
+        default_factory=lambda: {
+            "gemini-2.5-flash": (0.30, 2.50),
+            "gemini-3.5-flash-lite": (0.30, 2.50),
+            "gemini-3.8-flash": (0.75, 3.75),
+        }
+    )
     # How the code agent compares a paper's method with its code: "pairs" asks one small
     # question per (paper sentence, code function) pair, which suits small local models;
     # "whole" sends the method text and the related files in one call.
@@ -159,6 +170,9 @@ class Settings(BaseSettings):
     # Ask the model, one code line at a time, which of several repository values a setting
     # mismatch is about (only when an LLM is configured).
     code_second_look: bool = True
+    # The planner's model pass over citation candidates (Part 2's checks). Runs that only
+    # evaluate other parts can leave it out; it was a quarter of the cost of a full run.
+    citation_llm_enabled: bool = True
     # Check the mathematics of the paper's formal claims with the LLM (decision D21). The
     # planner lists the claims in one call and groups them into at most `theory_max_tasks`
     # tasks of `theory_batch_size` claims; each task screens its claims in one cheap call,

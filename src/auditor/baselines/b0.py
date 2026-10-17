@@ -45,6 +45,6 @@ async def run_b0(
         HumanMessage(render_paper(paper, venue=venue, repository=repository)),
     ]
     with enter_scope(Scope.for_paper(run_id, paper, usage)):
-        result = await llm.generate(ReportedErrors, messages)
+        result = await llm.generate(ReportedErrors, messages, purpose="baseline-b0")
     predictions, dropped = to_predictions(result.value, paper, run_id=run_id, system=SystemName.B0)
     return BaselineResult(predictions=predictions, dropped=dropped)

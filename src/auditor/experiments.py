@@ -349,6 +349,8 @@ _OPERATIONAL_SETTINGS = frozenset(
         # run that hit them does not change any result.
         "llm_max_concurrency",
         "llm_max_calls",
+        "llm_max_cost_usd",
+        "llm_prices",
     }
 )
 
@@ -534,8 +536,8 @@ async def _run_papers(
         async with gate:
             if llm is not None and llm.limit_reached:
                 error = CallLimitReachedError(
-                    f"not started: the run's {llm.max_calls} model calls are used up "
-                    "(AUDITOR_LLM_MAX_CALLS)"
+                    "not started: the run's model budget is used up "
+                    "(AUDITOR_LLM_MAX_CALLS or AUDITOR_LLM_MAX_COST_USD)"
                 )
                 summary.failed.append(_record_failure(run, item.paper, error))
                 return

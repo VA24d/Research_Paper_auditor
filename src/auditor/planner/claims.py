@@ -104,7 +104,9 @@ async def refine_candidates(
         batch = candidates[offset : offset + batch_size]
         prompt = "\n\n".join(_describe(paper, i, c) for i, c in enumerate(batch))
         result = await llm.generate(
-            ClaimJudgements, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)]
+            ClaimJudgements,
+            [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)],
+            purpose="citation-refine",
         )
         for judgement in result.value.judgements:
             if not 0 <= judgement.candidate < len(batch):
