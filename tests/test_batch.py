@@ -1,17 +1,28 @@
 import json
+import types
 from pathlib import Path
 
 import pytest
+from langchain_core.messages import HumanMessage
 
 from auditor import experiments
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
+from auditor.config import Settings
 from auditor.experiments import InputError, missing_parts, read_dataset, resolve_repository
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.context import RunContext
+from auditor.infra.llm import LLMNotConfiguredError, StructuredLLM
 from auditor.orchestration import registry
-from auditor.schemas import AuditTask, PaperVariant, RepositoryRef, RunManifest, SystemName
+from auditor.schemas import (
+    AuditTask,
+    PaperVariant,
+    RepositoryRef,
+    RunManifest,
+    SystemName,
+    TaskResult,
+)
 from auditor.schemas.examples import example_paper
-from auditor.testing import ScriptedChatModel, tool_reply
+from auditor.testing import ScriptedChatModel, checked_result, tool_reply
 
 # The batch runner is tested against placeholder parts, whatever teammates have built.
 pytestmark = pytest.mark.usefixtures("parts")
@@ -282,3 +293,70 @@ def test_model_call_limits_do_not_change_the_fingerprint() -> None:
 
     assert fingerprint() == fingerprint(llm_max_calls=10, llm_max_concurrency=2)
     assert fingerprint() != fingerprint(method_check_pairs=3)
+
+
+def test_papers_are_not_started_once_the_model_call_limit_is_reached(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL, PaperVariant.INJECTED)
+    model = ScriptedChatModel(replies=[tool_reply(ReportedErrors, {"errors": []})] * 2)
+    monkeypatch.setattr(
+        StructuredLLM,
+        "from_settings",
+        classmethod(lambda cls, settings: cls(model, name="test:scripted", max_calls=1)),
+    )
+    code = main(["batch", str(dataset), "--experiment", "exp", "--systems", "b0", "--runs", "1"])
+    assert code == 1
+    assert len(model.received) == 1
+    out = capsys.readouterr().out
+    assert "1 done, 0 already done, 1 failed" in out
+    assert "AUDITOR_LLM_MAX_CALLS" in out
+
+
+def test_a_paper_whose_checks_hit_the_call_limit_is_reported_incomplete(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    parts: dict[str, types.ModuleType],
+) -> None:
+    async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
+        await ctx.require_llm().generate(ReportedErrors, [HumanMessage("x")])
+        return checked_result(task)
+
+    async def no_llm_pass(paper: object, candidates: object, llm: object) -> object:
+        return candidates
+
+    # Only the code checks call the model here, not the planner.
+    monkeypatch.setattr("auditor.planner.tasks.refine_candidates", no_llm_pass)
+    parts["auditor.agents.code"].check = check  # type: ignore[attr-defined]
+    model = ScriptedChatModel(replies=[tool_reply(ReportedErrors, {"errors": []})] * 20)
+    monkeypatch.setattr(
+        StructuredLLM,
+        "from_settings",
+        classmethod(lambda cls, settings: cls(model, name="test:scripted", max_calls=1)),
+    )
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
+    argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "full", "--runs", "1"]
+    assert main(argv) == 1
+    out = capsys.readouterr().out
+    assert "0 done, 0 already done, 1 failed" in out
+    assert "incomplete" in out
+    assert "AUDITOR_LLM_MAX_CALLS" in out
+
+
+def test_batch_can_run_the_full_system_without_the_model(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("AUDITOR_LLM_PROVIDER", "google_genai")
+    monkeypatch.setenv("AUDITOR_LLM_MODEL", "gemini-2.5-flash")
+
+    def no_model(cls: object, settings: Settings) -> object:
+        assert settings.llm_provider is None, "the model must not be created"
+        raise LLMNotConfiguredError("none")
+
+    monkeypatch.setattr(StructuredLLM, "from_settings", classmethod(no_model))
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
+    argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "full", "--runs", "1"]
+    assert main([*argv, "--no-llm"]) == 0
+    assert main([*argv[:-3], "b0", "--runs", "1", "--no-llm"]) == 2
+    assert "need an LLM" in capsys.readouterr().err

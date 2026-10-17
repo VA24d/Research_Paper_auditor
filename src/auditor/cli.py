@@ -19,6 +19,7 @@ from auditor.experiments import (
     PaperInput,
     check_same_inputs,
     code_sha256,
+    limit_failures,
     load_paper,
     load_venue,
     missing_parts,
@@ -150,6 +151,14 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
         + (f" ({duplicates} repeat an earlier finding)" if duplicates else "")
         + f". Output: {result.folder}"
     )
+    hit = limit_failures(outcome.results)
+    if hit:
+        print(
+            f"{hit} tasks failed because the run's model calls were used up "
+            "(AUDITOR_LLM_MAX_CALLS); the results are incomplete",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
@@ -208,6 +217,10 @@ async def _batch(args: argparse.Namespace, settings: Settings) -> int:
     if not args.llm_cache:
         # Reported runs must not reuse cached answers (decision D10).
         settings = settings.model_copy(update={"llm_cache": False})
+    if args.no_llm:
+        if set(args.systems) - {SystemName.FULL.value}:
+            raise InputError("--no-llm: baselines need an LLM; run them separately")
+        settings = settings.model_copy(update={"llm_provider": None})
     summaries = await run_batch(
         args.dataset,
         experiment=args.experiment,
@@ -288,7 +301,12 @@ def build_parser() -> argparse.ArgumentParser:
     audit = commands.add_parser("audit", help="Run the full audit on one paper")
     add_common(audit)
     audit.add_argument("--resume", action="store_true", help="Continue an interrupted run")
-    audit.add_argument("--no-llm", action="store_true", help="Skip the planner's LLM pass")
+    audit.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Run without the LLM, even when one is configured; checks that need it are "
+        "reported unverifiable",
+    )
     audit.add_argument("--max-concurrency", type=_positive, default=8)
 
     baseline = commands.add_parser("baseline", help="Run baseline B0 or B1 on one paper")
@@ -324,6 +342,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--analyse-data",
         action="store_true",
         help="Run data analysis mode for every system (see audit --help)",
+    )
+    batch.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Run the full system without the LLM, even when one is configured; checks that "
+        "need it are reported unverifiable (part of the run settings)",
     )
     return parser
 
