@@ -202,3 +202,68 @@ async def test_a_gain_in_percent_may_mean_percentage_points(tmp_path: Path) -> N
     )
     result, _ = await run(tmp_path, [points])
     assert result.findings == ()
+
+
+def two_table_paper() -> ParsedPaper:
+    rows1 = ["Method | AUC", "No Fusion | 0.754", "Ours | 0.801"]
+    rows8 = ["Variant | AUC", "Without A-Att | 0.774", "Full | 0.801"]
+    sentences = [
+        Sentence(id=f"a{i}", section_id="exp", kind=SentenceKind.TABLE, text=r)
+        for i, r in enumerate(rows1)
+    ] + [
+        Sentence(id=f"b{i}", section_id="exp", kind=SentenceKind.TABLE, text=r)
+        for i, r in enumerate(rows8)
+    ]
+    sentences.append(
+        Sentence(
+            id="s1", section_id="exp", text="Removing the attention gives the No Fusion model."
+        )
+    )
+    return ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sections=(Section(id="exp", title="Experiments"),),
+        sentences=tuple(sentences),
+        tables=(
+            Table(id="tab1", label="Table 1", row_ids=("a0", "a1", "a2")),
+            Table(id="tab8", label="Table 8", row_ids=("b0", "b1", "b2")),
+        ),
+    )
+
+
+async def test_one_result_reported_differently_in_two_tables_is_found(tmp_path: Path) -> None:
+    # A real ICLR review (arXiv 2407.11546): "Why does the No Fusion value (0.754) in
+    # Table 1 differ from the Without A-Att value (0.774) in Table 8?"
+    same = claim(
+        "s1",
+        "Removing the attention gives the No Fusion model",
+        "same_value",
+        table_id="tab1",
+        subject={"row_label": "No Fusion", "value": "0.754"},
+        others=[{"row_label": "Without A-Att", "value": "0.774", "table_id": "tab8"}],
+    )
+    result, _ = await run(tmp_path, [same], two_table_paper())
+    (finding,) = result.findings
+    assert finding.uncertain  # which results are the same is the model's reading
+    assert "Table 1" in finding.summary
+    assert "Table 8" in finding.summary
+    matching = {**same, "others": [{"row_label": "Full", "value": "0.801", "table_id": "tab8"}]}
+    matching["subject"] = {"row_label": "Ours", "value": "0.801"}
+    result, _ = await run(tmp_path, [matching], two_table_paper())
+    assert result.findings == ()
+
+
+async def test_a_drop_written_with_a_minus_sign_is_a_difference_of_that_size(
+    tmp_path: Path,
+) -> None:
+    # Seen on a real paper: "-8.6 points" for 30.0 against 38.6.
+    drop = claim(
+        "s3",
+        "Ours improves over Scratch by 4.4 points",
+        "difference",
+        stated="-4.4",
+        subject={"row_label": "Scratch", "value": "86.1"},
+        others=[{"row_label": "Ours", "value": "90.5"}],
+    )
+    result, _ = await run(tmp_path, [drop])
+    assert result.findings == ()

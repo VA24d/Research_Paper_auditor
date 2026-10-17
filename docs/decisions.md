@@ -504,3 +504,17 @@ against its tables:
 - **Field test.** On 12 set C papers with tables, the two integrity checks raised no
   findings, at $0.10 for 24 calls.
 
+Rules added in October 2026 after running on real cases from ICLR reviews:
+
+- **Placeholder spellings.** "TODOXXX", "Section X" or "Figure X" with a capital X, and
+  "[insert ...]" now count as placeholders. In papers that number tables or figures in
+  Roman numerals, "Table X" means the tenth table, so it is not flagged there.
+- **Dropped: references past the last table, figure or section.** On 229 real papers this
+  rule fired 74 times in 34 papers, nearly always because the parser had lost a caption
+  or a section number, so it was removed.
+- **Same result in two places.** A new claim kind, `same_value`, covers one result
+  reported in two places, such as a baseline in the main table and the matching row of an
+  ablation table. Its findings are uncertain, since which results are "the same" is the
+  model's reading.
+- **Stated drops.** A drop written as "-8.6 points" is compared by size.
+

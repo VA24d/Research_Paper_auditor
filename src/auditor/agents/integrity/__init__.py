@@ -54,7 +54,13 @@ MIN_QUOTE_WORDS = 4
 # Structural markers: what a typesetter or an author leaves behind, in any field.
 _UNRESOLVED = re.compile(r"\?\?|\[\s*\?\s*\]|\(\s*\?\s*\)|Error! Reference source not found")
 # Written in capitals ("todo" can be an ordinary word).
-_NOTE = re.compile(r"\b(?:TODO|TBD|FIXME)\b")
+_NOTE = re.compile(r"\b(?:TODO\w*|TBD|FIXME)\b")
+# "Section X", "Figure X": a reference whose number was never filled in (capital X only).
+_UNFILLED = re.compile(
+    r"\b(?:Section|Sec\.|Figure|Fig\.|Table|Tab\.|Equation|Eq\.|Appendix|Theorem|Lemma"
+    r"|Algorithm)\s+X\b"
+)
+_INSERT = re.compile(r"\[(?:insert|add|fill in|todo|tbd|placeholder)\b[^\]]{0,80}\]", re.I)
 _PLACEHOLDER = re.compile(
     r"\blorem ipsum\b|\bXX+(?:\.X+)?\s?%|\bX\.X+\s?%|\[citation needed\]", re.IGNORECASE
 )
@@ -122,8 +128,13 @@ def _finding(
     )
 
 
+# Roman-numbered tables or figures ("TABLE IX"): there, "Table X" is the tenth, not a gap.
+_ROMAN = re.compile(r"\b(?:Table|TABLE|Figure|FIGURE|Fig\.)\s+(?:I{1,3}|IV|VI{0,3}|IX)\b")
+
+
 def _marker_hits(sentences: list[Sentence]) -> list[tuple[Sentence, tuple[int, int], str]]:
     hits = []
+    roman = any(_ROMAN.search(s.text) for s in sentences)
     for sentence in sentences:
         unresolved = _UNRESOLVED.search(sentence.text)
         if unresolved is not None:
@@ -131,7 +142,12 @@ def _marker_hits(sentences: list[Sentence]) -> list[tuple[Sentence, tuple[int, i
                 (sentence, unresolved.span(), "An unresolved reference is left in the text.")
             )
             continue
-        leftover = _NOTE.search(sentence.text) or _PLACEHOLDER.search(sentence.text)
+        leftover = (
+            _NOTE.search(sentence.text)
+            or _PLACEHOLDER.search(sentence.text)
+            or (None if roman else _UNFILLED.search(sentence.text))
+            or _INSERT.search(sentence.text)
+        )
         if leftover is not None:
             hits.append(
                 (sentence, leftover.span(), "A leftover note or placeholder is in the text.")
