@@ -126,7 +126,8 @@ class Settings(BaseSettings):
     llm_provider: str | None = None
     llm_model: str | None = None
     llm_base_url: str | None = None
-    llm_timeout_s: float = Field(default=120.0, gt=0)
+    # A long paper with high thinking takes Gemini 3.8 Flash up to about 7 minutes.
+    llm_timeout_s: float = Field(default=600.0, gt=0)
     llm_max_retries: int = Field(default=2, ge=0)
     llm_structured_method: str | None = None
     llm_options: dict[str, JsonValue] = Field(default_factory=dict)
