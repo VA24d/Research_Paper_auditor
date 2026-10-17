@@ -216,6 +216,7 @@ class StructuredLLM:
         context_tokens: int | None = None,
         max_concurrency: int | None = None,
         max_calls: int | None = None,
+        cache_scope: Literal["shared", "run"] = "shared",
     ) -> None:
         self.model = model
         self.name = name
@@ -228,6 +229,8 @@ class StructuredLLM:
         # Model calls this instance may make in total (one per run); cache hits are free.
         self.max_calls = max_calls
         self.calls = 0
+        # "run": cached answers are reused only within the run that made them (D10).
+        self.cache_scope = cache_scope
         # The stronger model for review steps (AUDITOR_LLM_REVIEW_MODEL), if any.
         self.review: StructuredLLM | None = None
         self.provider: str | None = None
@@ -266,6 +269,7 @@ class StructuredLLM:
             context_tokens=settings.llm_context_tokens,
             max_concurrency=settings.llm_max_concurrency,
             max_calls=settings.llm_max_calls,
+            cache_scope=settings.llm_cache_scope,
         )
         llm.provider = settings.llm_provider
         return llm
@@ -298,6 +302,9 @@ class StructuredLLM:
         (None keeps the configured setting); `purpose` names the step in the usage log."""
         record = functools.partial(self._record, effort=effort, purpose=purpose)
         context = self.cache_context if effort is None else f"{self.cache_context}|{effort}"
+        active = current_scope()
+        if self.cache_scope == "run" and active is not None:
+            context += f"|run={active.run_id}"
         cache_key = None
         if self.cache is not None:
             cache_key = LLMCache.key(self.name, self.method, schema, messages, context)

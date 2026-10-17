@@ -1,9 +1,10 @@
 import tempfile
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, JsonValue, SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 DEFAULT_ALLOWED_HOSTS = (
     "localhost",
@@ -32,6 +33,28 @@ DEFAULT_ALLOWED_HOSTS = (
 )
 
 
+class _Unless(PydanticBaseSettingsSource):
+    """A settings source minus the fields a higher-priority source already sets.
+
+    pydantic-settings merges dict values across sources, so `AUDITOR_LLM_OPTIONS` given for
+    one run would otherwise keep every option from `.env` it does not mention (such as a
+    temperature or a thinking budget). A value set at a higher level replaces it whole."""
+
+    def __init__(
+        self, source: PydanticBaseSettingsSource, *higher: PydanticBaseSettingsSource
+    ) -> None:
+        super().__init__(source.settings_cls)
+        self.source = source
+        self.higher = higher
+
+    def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
+        return None, field_name, False
+
+    def __call__(self) -> dict[str, Any]:
+        taken = {key for higher in self.higher for key in higher()}
+        return {key: value for key, value in self.source().items() if key not in taken}
+
+
 class Settings(BaseSettings):
     """Runtime settings, read from AUDITOR_* environment variables and `.env`.
 
@@ -45,6 +68,22 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            _Unless(env_settings, init_settings),
+            _Unless(dotenv_settings, init_settings, env_settings),
+            file_secret_settings,
+        )
 
     data_dir: Path = Path("data")
     cache_dir: Path = Path("data/cache")
@@ -92,6 +131,9 @@ class Settings(BaseSettings):
     llm_structured_method: str | None = None
     llm_options: dict[str, JsonValue] = Field(default_factory=dict)
     llm_cache: bool = True
+    # "run" reuses a cached answer only within the run that made it, so repeated runs stay
+    # independent while the copies of a paper and a resumed run share answers (D10).
+    llm_cache_scope: Literal["shared", "run"] = "shared"
     # A stronger model for the review steps that judge other checks' findings (the merge of
     # the theory findings), from the same provider; its options default to llm_options.
     llm_review_model: str | None = None

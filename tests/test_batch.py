@@ -57,7 +57,8 @@ def test_batch_runs_every_system_and_repetition(tmp_path: Path) -> None:
             (tmp_path / "runs" / run_id / "manifest.json").read_bytes()
         )
         assert manifest.finished_at is not None
-        assert manifest.llm_cache is False
+        # Answers are reused only within the run that made them (D10).
+        assert manifest.llm_cache is True
         assert manifest.config["experiment"] == "exp"
         assert manifest.config["papers"] == 2
 

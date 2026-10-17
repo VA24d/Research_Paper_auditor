@@ -326,3 +326,20 @@ async def test_effort_is_part_of_the_cache_key_and_the_record(tmp_path: Path) ->
         ("low", "screen"),
         ("high", "verify"),
     ]
+
+
+async def test_a_run_scoped_cache_reuses_answers_within_a_run_only(tmp_path: Path) -> None:
+    replies = [tool_reply(Verdict, {"supported": True, "reason": str(i)}) for i in range(3)]
+    model = ScriptedChatModel(replies=replies)
+    llm = StructuredLLM(
+        model, name="test:scripted", cache=LLMCache(tmp_path / "llm"), cache_scope="run"
+    )
+    with enter_scope(Scope(run_id="exp-full-r1")):
+        first = await llm.generate(Verdict, MESSAGES)
+        again = await llm.generate(Verdict, MESSAGES)
+    with enter_scope(Scope(run_id="exp-full-r2")):
+        other_run = await llm.generate(Verdict, MESSAGES)
+    assert again.from_cache
+    assert again.value == first.value
+    assert not other_run.from_cache
+    assert len(model.received) == 2

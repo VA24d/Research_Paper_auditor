@@ -232,9 +232,14 @@ Facts that affect the choice (checked October 2026):
 ## D10. Caching and repeated runs — Agreed
 
 - The HTTP cache is always on.
-- The LLM response cache is on during development and **off** for reported runs, otherwise
-  repeated runs would be identical and the variance estimate would be meaningless.
-  `auditor batch` turns it off unless given `--llm-cache`.
+- The LLM response cache is shared during development. In reported runs an answer is
+  reused **only within the run that made it** (`AUDITOR_LLM_CACHE_SCOPE=run`, the default of
+  `auditor batch`; `--llm-cache` shares answers across runs for development). Within a run,
+  the original and injected copies of a paper ask many identical questions, and a resumed
+  run asks the same questions again; answering each once does not change the result. Across
+  the repeated runs nothing is shared, so the spread between them still measures the
+  model's own variation, which is what this rule protects. (Changed in October 2026; the
+  cache used to be off for reported runs.)
 - Every run writes a `RunManifest`: git commit, config, model ID, package versions, dataset
   version and seed (where the provider supports one).
 - Reported numbers are the mean and range over three runs, as in the proposal.
