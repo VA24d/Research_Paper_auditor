@@ -16,7 +16,8 @@
     "claim": null,
     "setting": null,
     "repository": null,
-    "rule": null
+    "rule": null,
+    "sections": null
   },
   {
     "schema_version": 1,
@@ -37,7 +38,8 @@
     "claim": "Prior work reports 92.1% exact match on SQuAD [2, 3].",
     "setting": null,
     "repository": null,
-    "rule": null
+    "rule": null,
+    "sections": null
   },
   {
     "schema_version": 1,
@@ -58,7 +60,8 @@
     "claim": "Retrieval also improves factual accuracy [7].",
     "setting": null,
     "repository": null,
-    "rule": null
+    "rule": null,
+    "sections": null
   },
   {
     "schema_version": 1,
@@ -98,7 +101,8 @@
       "url": "https://github.com/example/auditor-demo",
       "commit": "0123abcd"
     },
-    "rule": null
+    "rule": null,
+    "sections": null
   },
   {
     "schema_version": 1,
@@ -124,6 +128,7 @@
         "max_pages": 9
       },
       "needs_visual_inspection": false
-    }
+    },
+    "sections": null
   }
 ]

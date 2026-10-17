@@ -11,6 +11,7 @@ from auditor.planner.claims import ClaimCandidate, citation_candidates, refine_c
 from auditor.planner.repository import find_repository
 from auditor.planner.table_reader import read_tables
 from auditor.planner.tables import paper_settings
+from auditor.planner.theory import theory_tasks
 from auditor.schemas import (
     AuditTask,
     BibliographyAnchor,
@@ -192,6 +193,8 @@ async def plan_paper(
         *method_tasks(paper, repository),
         *template_tasks(paper, options.venue),
     ]
+    if ctx.settings.theory_check_enabled:
+        tasks += theory_tasks(paper, ctx.settings.theory_max_segments)
     return _unique(tasks)
 
 

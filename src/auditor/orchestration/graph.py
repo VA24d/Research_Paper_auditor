@@ -35,8 +35,9 @@ NODE_FOR_KIND = {
     TaskKind.CITATION: "citation",
     TaskKind.CODE: "code",
     TaskKind.TEMPLATE: "template",
+    TaskKind.THEORY: "theory",
 }
-SPECIALIST_NODES = ("citation", "code", "template")
+SPECIALIST_NODES = ("citation", "code", "template", "theory")
 
 
 class ThreadInUseError(RuntimeError):
@@ -69,6 +70,7 @@ class Specialists:
     citation: CheckFn = check_nothing
     code: CheckFn = check_nothing
     template: CheckFn = check_nothing
+    theory: CheckFn = check_nothing
 
 
 @dataclass(frozen=True)
@@ -130,6 +132,7 @@ def build_graph(
         ("citation", pipeline.specialists.citation),
         ("code", pipeline.specialists.code),
         ("template", pipeline.specialists.template),
+        ("theory", pipeline.specialists.theory),
     ):
         graph.add_node(name, specialist_node(check), input_schema=TaskInput)
     graph.add_node("verify", verify)

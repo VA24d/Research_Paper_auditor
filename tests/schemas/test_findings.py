@@ -48,6 +48,7 @@ def test_error_classes_match_decision_d4() -> None:
         "label_distribution_mismatch",
         "data_leakage",
         "method_mismatch",
+        "math_error",
         "template_violation",
     }
 

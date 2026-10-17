@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Annotated, Literal, Self
 
@@ -47,6 +48,8 @@ class TaskKind(StrEnum):
     CITATION = "citation"
     CODE = "code"
     TEMPLATE = "template"
+    # The mathematics of one segment of the paper: equations, derivations, proofs (D21).
+    THEORY = "theory"
 
 
 def compute_task_id(
@@ -95,6 +98,8 @@ class AuditTask(Record):
     setting: ExtractedSetting | None = None
     repository: RepositoryRef | None = None
     rule: VenueRule | None = None
+    # Theory tasks: the ids of the sections the task checks, in reading order.
+    sections: tuple[str, ...] | None = None
 
     @classmethod
     def create(
@@ -109,6 +114,7 @@ class AuditTask(Record):
         setting: ExtractedSetting | None = None,
         repository: RepositoryRef | None = None,
         rule: VenueRule | None = None,
+        sections: Sequence[str] | None = None,
     ) -> Self:
         return cls(
             task_id=compute_task_id(paper_id, variant, kind, anchor, target, claim),
@@ -121,6 +127,7 @@ class AuditTask(Record):
             setting=setting,
             repository=repository,
             rule=rule,
+            sections=tuple(sections) if sections is not None else None,
         )
 
     @model_validator(mode="after")
@@ -152,10 +159,12 @@ class AuditTask(Record):
                     and self.rule.id != self.target.rule_id
                 ):
                     raise ValueError("template task rule must match its target")
+            case TaskKind.THEORY:
+                _expect(self, SentenceAnchor, (SettingTarget,), {"sections"})
         return self
 
 
-_DETAIL_FIELDS = ("claim", "setting", "repository", "rule")
+_DETAIL_FIELDS = ("claim", "setting", "repository", "rule", "sections")
 
 
 def _expect(

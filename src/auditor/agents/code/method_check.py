@@ -28,6 +28,7 @@ from auditor.infra.snapshots import (
     SourceError,
     fetch_snapshot,
 )
+from auditor.planner.theory import formal_density
 from auditor.schemas import (
     AuditTask,
     CandidateFinding,
@@ -270,22 +271,6 @@ def _pair_order(pair: _Pair) -> tuple[int, str, int]:
     return (-pair.score, pair.chunk.path, pair.chunk.start)
 
 
-# Tokens that mark formal content: formulas, symbols, numbers and identifiers.
-_TECHNICAL = re.compile(
-    # Operators, sums, integrals, partial derivatives, inequalities, arrows, Greek letters.
-    r"[=+^\\\u2211\u220f\u222b\u2202\u2207\u00d7\u00b7\u2264\u2265\u2248\u2192\u0370-\u03ff]"
-    r"|\d|[a-z][A-Z]|\w_\w"
-)
-
-
-def _density(sentences: Sequence[Sentence]) -> float:
-    """How formal a section is: 1 for plain prose, up to 5 when every token is formal."""
-    tokens = [t for s in sentences for t in s.text.split()]
-    if not tokens:
-        return 1.0
-    return 1.0 + 4.0 * sum(1 for t in tokens if _TECHNICAL.search(t)) / len(tokens)
-
-
 def _within_budget(pairs: list[_Pair], method: Sequence[Sentence], limit: int) -> list[_Pair]:
     """At most `limit` pairs, shared out by section (as Google's Paper Assistant Tool gives
     dense sections more compute; arXiv 2606.28277). A section's share grows with its
@@ -298,7 +283,10 @@ def _within_budget(pairs: list[_Pair], method: Sequence[Sentence], limit: int) -
     by_section: dict[str, list[Sentence]] = {}
     for sentence in method:
         by_section.setdefault(sentence.section_id or "", []).append(sentence)
-    weights = {key: len(group) * _density(by_section.get(key, [])) for key, group in groups.items()}
+    weights = {
+        key: len(group) * formal_density([s.text for s in by_section.get(key, [])])
+        for key, group in groups.items()
+    }
     order = sorted(groups, key=lambda key: (-weights[key], key))
     quota = dict.fromkeys(order, 0)
     for key in order[:limit]:

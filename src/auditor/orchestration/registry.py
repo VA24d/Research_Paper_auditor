@@ -1,6 +1,7 @@
 """Finds each part's entry points by convention, with mocks until they exist.
 
-- `auditor.agents.citation`, `.code` and `.template` expose `check(task, ctx) -> TaskResult`.
+- `auditor.agents.citation`, `.code`, `.template` and `.theory` expose
+  `check(task, ctx) -> TaskResult`.
 - `auditor.agents.verifier` exposes `verify(results, ctx) -> list[VerifiedFinding]`.
 - `auditor.agents.<name>.tools` exposes `make_tools(ctx) -> list[BaseTool]` for B1.
 
@@ -27,6 +28,7 @@ SPECIALIST_PACKAGES = {
     "citation": "auditor.agents.citation",
     "code": "auditor.agents.code",
     "template": "auditor.agents.template",
+    "theory": "auditor.agents.theory",
 }
 VERIFIER_PACKAGE = "auditor.agents.verifier"
 

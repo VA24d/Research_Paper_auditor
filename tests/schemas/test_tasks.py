@@ -139,6 +139,25 @@ def test_kind_specific_rules(fields: dict[str, Any], message: str) -> None:
         make(**fields)
 
 
+def test_a_theory_task_names_the_sections_it_checks() -> None:
+    fields: dict[str, Any] = {
+        "kind": TaskKind.THEORY,
+        "anchor": SentenceAnchor(sentence_id="s4"),
+        "target": SettingTarget(key="math"),
+    }
+    with pytest.raises(ValidationError, match="need 'sections'"):
+        make(**fields)
+    task = make(**fields, sections=("sec2", "sec3"))
+    assert task.sections == ("sec2", "sec3")
+    with pytest.raises(ValidationError, match="do not take 'sections'"):
+        make(
+            kind=TaskKind.REFERENCE,
+            anchor=BibliographyAnchor(bib_id="b0"),
+            target=BibTarget(bib_id="b0"),
+            sections=("sec2",),
+        )
+
+
 def test_citation_task_for_unlinked_marker_is_valid() -> None:
     task = make(
         kind=TaskKind.CITATION,
