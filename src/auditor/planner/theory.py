@@ -9,6 +9,8 @@ each; when there are more than the budget allows, the least risky are left out f
 the later, costlier stages only see claims worth their time.
 """
 
+import asyncio
+import logging
 import re
 from collections.abc import Sequence
 from typing import Literal
@@ -16,10 +18,11 @@ from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.llm import StructuredLLM, StructuredOutputError
 from auditor.schemas import (
     AuditTask,
     ParsedPaper,
+    Sentence,
     SentenceAnchor,
     SentenceKind,
     SettingTarget,
@@ -27,9 +30,19 @@ from auditor.schemas import (
     TheoryClaim,
 )
 
+logger = logging.getLogger(__name__)
+
 THEORY_KEY = "math"
 # The listing sent to the model is cut here (about 50k tokens).
 MAX_LISTING_CHARS = 200_000
+# A paper is planned in chunks of about this many characters, in parallel: one long answer
+# per paper made a small model repeat itself until it hit the output cap.
+MAX_CHUNK_CHARS = 15_000
+MAX_PLAN_TOKENS = 8192
+# From this density on a chunk counts as formal (1 is plain prose).
+FORMAL_DENSITY = 1.5
+# The most sentences a fallback claim covers.
+MAX_FALLBACK_SENTENCES = 40
 # Tokens that mark formal content: operators, sums, integrals, partial derivatives,
 # inequalities, arrows, Greek letters, digits, camelCase and snake_case identifiers.
 _FORMAL_TOKEN = re.compile(
@@ -43,12 +56,13 @@ formulas, bounds, estimates, identities, complexity results and similar statemen
 argument or calculation in the paper supports. Leave out definitions, assumptions,
 citations of other work stated without proof, and prose. For each claim give:
 - kind: a word for it, such as "lemma" or "bound";
-- statement: what it says, in at most 25 words;
+- statement: what it says, in at most 20 words;
 - sentence_ids: the ids of the sentences that state it and that argue or derive it;
 - depends_on: the ids of the sentences with the definitions and earlier results it uses;
 - risk: "high" for long or delicate arguments, "low" for routine steps;
 - needs_reasoning: false if reading is enough to check it, true if it takes working through.
-Use only sentence ids from the listing."""
+List at most 15 claims, the riskiest first if there are more. Use only sentence ids from
+the listing."""
 
 
 class ClaimEntry(BaseModel):
@@ -73,15 +87,19 @@ def formal_density(texts: Sequence[str]) -> float:
     return 1.0 + 4.0 * formal / len(tokens)
 
 
-def paper_listing(paper: ParsedPaper) -> str:
-    """The abstract and body, one `[id] text` line per sentence, with section headings:
-    every sentence once, so a model can point at sentences by id instead of quoting."""
+def _readable(paper: ParsedPaper) -> list[Sentence]:
+    kinds = (SentenceKind.ABSTRACT, SentenceKind.BODY)
+    return [s for s in paper.sentences if s.kind in kinds]
+
+
+def paper_listing(paper: ParsedPaper, sentences: Sequence[Sentence] | None = None) -> str:
+    """The abstract and body (or the given sentences), one `[id] text` line per sentence,
+    with section headings: every sentence once, so a model can point at sentences by id
+    instead of quoting."""
     titles = {s.id: s.title for s in paper.sections}
     lines: list[str] = []
     current: str | None = None
-    for sentence in paper.sentences:
-        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY):
-            continue
+    for sentence in _readable(paper) if sentences is None else sentences:
         if sentence.section_id != current:
             current = sentence.section_id
             if titles.get(current or ""):
@@ -93,18 +111,70 @@ def paper_listing(paper: ParsedPaper) -> str:
 _RISK = {"high": 0, "medium": 1, "low": 2}
 
 
+def _chunks(paper: ParsedPaper) -> list[list[Sentence]]:
+    """The readable sentences in pieces of about MAX_CHUNK_CHARS, cut at section starts
+    where possible."""
+    chunks: list[list[Sentence]] = []
+    size = 0
+    previous: str | None = None
+    for sentence in _readable(paper):
+        new_section = sentence.section_id != previous
+        previous = sentence.section_id
+        over = size + len(sentence.text) > MAX_CHUNK_CHARS
+        if not chunks or (over and (new_section or size >= MAX_CHUNK_CHARS)):
+            chunks.append([])
+            size = 0
+        chunks[-1].append(sentence)
+        size += len(sentence.text)
+    return chunks
+
+
+def _fallback(chunk: Sequence[Sentence]) -> ClaimEntry | None:
+    """A claim covering the formal sentences of a chunk the plan said nothing about, so
+    formal text is never left unchecked; None for prose."""
+    formal = [s for s in chunk if formal_density([s.text]) >= FORMAL_DENSITY]
+    if formal_density([s.text for s in chunk]) < FORMAL_DENSITY and len(formal) < 3:
+        return None
+    return ClaimEntry(
+        kind="section",
+        statement="the formal content of this part of the paper",
+        sentence_ids=[s.id for s in formal[:MAX_FALLBACK_SENTENCES]],
+        risk="high",
+        needs_reasoning=True,
+    )
+
+
+async def _plan_chunk(
+    paper: ParsedPaper, chunk: Sequence[Sentence], llm: StructuredLLM
+) -> list[ClaimEntry]:
+    try:
+        result = await llm.generate(
+            ClaimInventory,
+            [SystemMessage(PLAN_PROMPT), HumanMessage(paper_listing(paper, chunk))],
+            effort="low",
+            purpose="theory-plan",
+            max_output_tokens=MAX_PLAN_TOKENS,
+        )
+        entries = result.value.claims
+    except StructuredOutputError as exc:
+        logger.warning(
+            "planning %s failed (%s); checking its formal text whole", paper.paper_id, exc
+        )
+        entries = []
+    ids = {s.id for s in chunk}
+    if not any(i in ids for e in entries for i in e.sentence_ids):
+        fallback = _fallback(chunk)
+        return [fallback] if fallback is not None else []
+    return entries
+
+
 async def theory_tasks(
     paper: ParsedPaper, llm: StructuredLLM, *, batch_size: int, max_tasks: int
 ) -> list[AuditTask]:
-    result = await llm.generate(
-        ClaimInventory,
-        [SystemMessage(PLAN_PROMPT), HumanMessage(paper_listing(paper))],
-        effort="minimal",
-        purpose="theory-plan",
-    )
+    planned = await asyncio.gather(*(_plan_chunk(paper, c, llm) for c in _chunks(paper)))
     order = {s.id: i for i, s in enumerate(paper.sentences)}
     claims: list[TheoryClaim] = []
-    for entry in result.value.claims:
+    for entry in (e for entries in planned for e in entries):
         ids = tuple(dict.fromkeys(i for i in entry.sentence_ids if i in order))
         if not ids:
             continue
@@ -112,7 +182,7 @@ async def theory_tasks(
             TheoryClaim(
                 claim_id=f"c{len(claims) + 1}",
                 kind=entry.kind.strip(),
-                statement=entry.statement.strip(),
+                statement=entry.statement.strip()[:300],
                 sentence_ids=ids,
                 depends_on=tuple(dict.fromkeys(i for i in entry.depends_on if i in order)),
                 risk=entry.risk,

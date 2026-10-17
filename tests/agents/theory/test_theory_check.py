@@ -2,7 +2,7 @@ import dataclasses
 from pathlib import Path
 from typing import Any
 
-from auditor.agents.theory import DeepCheck, Screen, check, locate
+from auditor.agents.theory import DeepCheck, Screen, anchor_quote, check, locate
 from auditor.infra.llm import StructuredLLM
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
@@ -243,3 +243,17 @@ async def test_a_high_risk_claim_gets_two_tries_and_either_can_find_the_error(
     (finding,) = (await check(task(), ctx)).findings
     assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
     assert len(model.received) == 3
+
+
+def test_a_quote_the_model_rendered_differently_counts_on_the_sentence_it_names() -> None:
+    sentences = paper().sentences
+    rendered = "For every n ≥ 1 we have S(n) = n²/2 exactly"
+    anchor = anchor_quote(rendered, "s1", sentences)
+    assert anchor is not None
+    assert anchor.sentence.id == "s1"
+    assert anchor.span is None  # the words match, not the characters
+    assert anchor_quote("an unrelated remark about graphs and colours", "s1", sentences) is None
+    exact = anchor_quote("we have S(n) = n^2 / 2 exactly", "", sentences)
+    assert exact is not None
+    assert exact.sentence.id == "s1"
+    assert exact.span is not None

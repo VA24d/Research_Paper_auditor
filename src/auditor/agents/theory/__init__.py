@@ -22,6 +22,7 @@ import asyncio
 import re
 import unicodedata
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -62,9 +63,9 @@ DEEP_PROMPT = """You check one formal claim of a research paper as a careful ref
 the whole paper for context. Work through the argument yourself. The default answer is that
 there is no error. Report an error only if you can show it: give the step that fails and
 why, a counterexample, or the correct value as the witness. Typos that leave the
-mathematics intact, notation and style are not errors. For an error, copy a quote of at
-least six words from the claim's sentences exactly as written, give its location (such as
-"Lemma 3.2" or "Eq. (5)") and rate your confidence."""
+mathematics intact, notation and style are not errors. For an error, give the id of the
+sentence where it is, copy a quote of at least six words from that sentence exactly as
+written, give its location (such as "Lemma 3.2" or "Eq. (5)") and rate your confidence."""
 
 
 class ScreenVerdict(BaseModel):
@@ -79,6 +80,7 @@ class Screen(BaseModel):
 
 class DeepCheck(BaseModel):
     has_error: bool
+    sentence_id: str = ""
     quote: str = ""
     location: str = ""
     explanation: str = ""
@@ -153,6 +155,43 @@ def locate(quote: str, text: str) -> tuple[int, int] | None:
     return where[found], where[found + len(wanted) - 1] + 1
 
 
+@dataclass(frozen=True)
+class QuoteAnchor:
+    sentence: Sentence
+    # The quote's characters in the sentence, or None when only its words match.
+    span: tuple[int, int] | None
+
+
+_WORD = re.compile(r"[A-Za-z]{2,}|\d+")
+_LATEX_COMMAND = re.compile(r"\\[A-Za-z]+")
+# Share of a quote's words that must occur in the sentence it names.
+MIN_WORD_OVERLAP = 0.7
+
+
+def _words(text: str) -> list[str]:
+    text = _LATEX_COMMAND.sub(" ", unicodedata.normalize("NFKC", text))
+    return [word.lower() for word in _WORD.findall(text)]
+
+
+def anchor_quote(quote: str, sentence_id: str, sentences: Sequence[Sentence]) -> QuoteAnchor | None:
+    """Where a model's quote is: the exact characters in the sentence it names or anywhere
+    else, or else the named sentence when most of the quote's words are in it. Models
+    often render a formula (\\equiv as ≡, x^2 as x²) instead of copying it, and that
+    must not lose a finding the model pinned to a sentence."""
+    named = next((s for s in sentences if s.id == sentence_id), None) if sentence_id else None
+    ordered = ([named] if named is not None else []) + [s for s in sentences if s is not named]
+    for sentence in ordered:
+        span = locate(quote, sentence.text)
+        if span is not None:
+            return QuoteAnchor(sentence, span)
+    if named is not None:
+        wanted = _words(quote)
+        have = set(_words(named.text))
+        if len(wanted) >= 4 and sum(w in have for w in wanted) / len(wanted) >= MIN_WORD_OVERLAP:
+            return QuoteAnchor(named, None)
+    return None
+
+
 def _finding(
     task: AuditTask, number: int, deep: DeepCheck, sentences: list[Sentence]
 ) -> CandidateFinding | None:
@@ -160,17 +199,22 @@ def _finding(
         return None
     if len(deep.quote.split()) < MIN_QUOTE_WORDS:
         return None
-    for sentence in sentences:
-        span = locate(deep.quote, sentence.text)
-        if span is None:
-            continue
-        start, end = span
-        summary = f"{deep.location.strip() or 'Claim'}: {deep.explanation.strip()}"
+    found = anchor_quote(deep.quote, deep.sentence_id, sentences)
+    if found is not None:
+        sentence = found.sentence
+        start, end = found.span if found.span is not None else (0, len(sentence.text))
+        # Some answers leave the explanation empty and put it all in the witness.
+        why = deep.explanation.strip() or deep.witness.strip()
+        summary = f"{deep.location.strip() or 'Claim'}: {why}"
         return CandidateFinding.for_task(
             task,
             number,
             error_class=ErrorClass.MATH_ERROR,
-            anchor=SentenceAnchor(sentence_id=sentence.id, start=start, end=end),
+            anchor=SentenceAnchor(
+                sentence_id=sentence.id,
+                start=start if found.span is not None else None,
+                end=end if found.span is not None else None,
+            ),
             summary=summary[:MAX_SUMMARY_CHARS],
             explanation=(
                 f"{deep.confidence} confidence. {deep.explanation.strip()} "

@@ -397,10 +397,15 @@ auditor gains a fourth specialist, `auditor.agents.theory`, for the class `math_
 The check is a cascade, so that deep thinking is spent only on claims that earn it. Each
 call sets its own thinking level, and the usage log records the level and the stage.
 
-1. **Plan** (`auditor.planner.theory`). One call to the main model with minimal thinking
-   reads the paper and lists its formal claims. Each claim has a kind, a short statement,
-   the sentences that state and argue it, the sentences it builds on, a risk level, and
-   whether checking it takes real reasoning. Which claims count, and how risky they are,
+1. **Plan** (`auditor.planner.theory`). The paper is cut into chunks of about 15,000
+   characters, and one call per chunk to the main model, with low thinking and an answer
+   capped at 8,192 tokens, lists its formal claims. On the full SPOT set, a single call
+   per paper with minimal thinking made the model repeat itself until it hit the output
+   cap on 6 of 26 papers. A formal chunk whose plan comes back empty or broken becomes one
+   high-risk claim covering its formal sentences, so no formal text goes unchecked.
+
+   Each claim has a kind, a short statement, the sentences that state and argue it, the
+   sentences it builds on, a risk level, and whether checking it takes real reasoning. Which claims count, and how risky they are,
    is the model's reading of the paper, not a list of keywords, so this works in any field.
    The claims become `theory` tasks of `AUDITOR_THEORY_BATCH_SIZE` (8) claims each, at most
    `AUDITOR_THEORY_MAX_TASKS` (6) of them. Over that budget, low-risk claims that only need

@@ -3,8 +3,16 @@ from pathlib import Path
 from typing import Any
 
 from auditor.infra.llm import StructuredLLM
+from auditor.infra.scope import Scope, enter_scope
+from auditor.infra.usage import UsageLog
 from auditor.planner.tasks import plan_paper
-from auditor.planner.theory import ClaimInventory, formal_density, paper_listing, theory_tasks
+from auditor.planner.theory import (
+    MAX_CHUNK_CHARS,
+    ClaimInventory,
+    formal_density,
+    paper_listing,
+    theory_tasks,
+)
 from auditor.schemas import (
     ParsedPaper,
     ParserInfo,
@@ -111,3 +119,56 @@ async def test_the_planner_adds_theory_tasks_only_when_enabled(tmp_path: Path) -
     settings = ctx.settings.model_copy(update={"theory_check_enabled": True})
     tasks = await plan_paper(paper(), dataclasses.replace(ctx, settings=settings))
     assert [len(t.claims or ()) for t in tasks if t.kind is TaskKind.THEORY] == [1]
+
+
+def long_paper(chunks: int) -> ParsedPaper:
+    """`chunks` sections of formal text, each about as long as one planning chunk."""
+    per = MAX_CHUNK_CHARS // len(FORMAL)
+    return ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sections=tuple(Section(id=f"sec{k}", title=f"Part {k}") for k in range(chunks)),
+        sentences=tuple(
+            Sentence(id=f"s{k}-{i}", section_id=f"sec{k}", text=FORMAL)
+            for k in range(chunks)
+            for i in range(per)
+        ),
+    )
+
+
+async def test_a_long_paper_is_planned_in_chunks_with_capped_answers() -> None:
+    model, scripted = llm({"claims": [claim(["s0-1"])]}, {"claims": [claim(["s1-2"])]})
+    usage = UsageLog()
+    with enter_scope(Scope(run_id="r", usage=usage)):
+        tasks = await theory_tasks(long_paper(2), model, batch_size=8, max_tasks=5)
+    assert len(scripted.received) == 2
+    assert [c.sentence_ids for t in tasks for c in t.claims or ()] == [("s0-1",), ("s1-2",)]
+    assert {(r.purpose, r.effort) for r in usage.llm_calls} == {("theory-plan", "low")}
+
+
+async def test_a_formal_chunk_without_claims_is_checked_as_a_whole() -> None:
+    # A plan that comes back empty (or cut off) must not leave formal text unchecked.
+    model, _ = llm({"claims": []})
+    (task,) = await theory_tasks(long_paper(1), model, batch_size=8, max_tasks=5)
+    (whole,) = task.claims or ()
+    assert whole.kind == "section"
+    assert whole.sentence_ids[0] == "s0-0"
+    assert whole.risk == "high"
+
+
+async def test_a_plan_that_fails_falls_back_to_the_formal_text() -> None:
+    # An answer cut off at the output cap does not validate.
+    broken = tool_reply(ClaimInventory, {"claims": [{"kind": "lemma"}]})
+    model = StructuredLLM(ScriptedChatModel(replies=[broken]), name="t", max_attempts=1)
+    (task,) = await theory_tasks(long_paper(1), model, batch_size=8, max_tasks=5)
+    assert (task.claims or ())[0].kind == "section"
+
+
+async def test_prose_without_claims_needs_no_fallback() -> None:
+    prose = ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sentences=(Sentence(id="s0", text=PROSE),),
+    )
+    model, _ = llm({"claims": []})
+    assert await theory_tasks(prose, model, batch_size=8, max_tasks=5) == []

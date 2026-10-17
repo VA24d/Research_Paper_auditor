@@ -3,6 +3,7 @@
     uv run python scripts/spot.py fetch --data data/spot --out datasets/spot
     AUDITOR_THEORY_CHECK_ENABLED=true uv run auditor batch data/spot/dataset.jsonl \
         --experiment spot --systems full b0 --runs 1
+    uv run python scripts/spot.py single runs/spot-single --data data/spot --effort medium
     uv run python scripts/spot.py score runs/spot-full-r1 --errors datasets/spot/errors.jsonl \
         --data data/spot [--before-verifier] [--any-class]
 
@@ -160,6 +161,34 @@ async def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _single(args: argparse.Namespace) -> int:
+    """One call per paper with the math-only prompt; writes a run folder `score` reads."""
+    from auditor.agents.theory.single import check_paper
+    from auditor.infra.scope import Scope, enter_scope
+    from auditor.infra.usage import UsageLog
+
+    papers = sorted((args.data / "papers").glob("*.json"))
+    if len(papers) > args.max_calls:
+        print(f"{len(papers)} papers is more than --max-calls {args.max_calls}", file=sys.stderr)
+        return 2
+    run: Path = args.run
+    usage = UsageLog(run / "usage")
+    llm = StructuredLLM.from_settings(Settings())
+    gate = asyncio.Semaphore(args.concurrency)
+
+    async def one(path: Path) -> None:
+        paper = ParsedPaper.model_validate_json(await asyncio.to_thread(path.read_bytes))
+        async with gate:
+            with enter_scope(Scope.for_paper(run.name, paper, usage)):
+                found = await check_paper(paper, llm, run_id=run.name, effort=args.effort)
+        folder = run / f"{paper.paper_id}-{paper.variant.value}"
+        await asyncio.to_thread(_write_jsonl, folder / "predictions.jsonl", list(found))
+
+    await asyncio.gather(*(one(path) for path in papers))
+    print(f"{len(papers)} papers checked in {run}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0] if __doc__ else None)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -177,12 +206,21 @@ def main() -> int:
     score.add_argument("--any-class", action="store_true")
     score.add_argument("--max-calls", type=int, default=50)
 
+    single = commands.add_parser("single")
+    single.add_argument("run", type=Path)
+    single.add_argument("--data", type=Path, required=True)
+    single.add_argument("--effort", choices=["minimal", "low", "medium", "high"])
+    single.add_argument("--concurrency", type=int, default=4)
+    single.add_argument("--max-calls", type=int, default=50)
+
     args = parser.parse_args()
     match args.command:
         case "fetch":
             return asyncio.run(_fetch(args))
         case "score":
             return asyncio.run(_score(args))
+        case "single":
+            return asyncio.run(_single(args))
     return 2
 
 

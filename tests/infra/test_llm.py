@@ -343,3 +343,19 @@ async def test_a_run_scoped_cache_reuses_answers_within_a_run_only(tmp_path: Pat
     assert again.value == first.value
     assert not other_run.from_cache
     assert len(model.received) == 2
+
+
+def test_a_call_can_cap_its_output(tmp_path: Path) -> None:
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="google_genai",
+        llm_model="gemini-3.5-flash-lite",
+        llm_options={"api_key": "x", "max_output_tokens": 32768},
+    )
+    llm = StructuredLLM.from_settings(settings)
+    capped = llm.model_for("low", max_output_tokens=8192)
+    assert getattr(capped, "max_output_tokens", None) == 8192
+    assert getattr(capped, "thinking_level", None) == "low"
+    assert getattr(llm.model, "max_output_tokens", None) == 32768
+    assert llm.model_for(None, max_output_tokens=8192) is not llm.model
