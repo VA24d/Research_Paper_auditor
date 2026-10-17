@@ -162,6 +162,10 @@ def _text_of(message: AIMessage) -> str:
     )
 
 
+class CallLimitReachedError(BudgetExceededError):
+    """The run has made all the model calls AUDITOR_LLM_MAX_CALLS allows."""
+
+
 class PromptTooLongError(StructuredOutputError):
     """The prompt does not fit the model's context window; local servers would otherwise
     cut it silently."""
@@ -202,6 +206,10 @@ class StructuredLLM:
         # Model calls this instance may make in total (one per run); cache hits are free.
         self.max_calls = max_calls
         self.calls = 0
+
+    @property
+    def limit_reached(self) -> bool:
+        return self.max_calls is not None and self.calls >= self.max_calls
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
@@ -249,7 +257,7 @@ class StructuredLLM:
             if active is not None:
                 active.budget.charge_llm_call()
             if self.max_calls is not None and self.calls >= self.max_calls:
-                raise BudgetExceededError(
+                raise CallLimitReachedError(
                     f"the run's {self.max_calls} model calls are used up (AUDITOR_LLM_MAX_CALLS)"
                 )
             self.calls += 1

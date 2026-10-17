@@ -3,7 +3,9 @@ import types
 from pathlib import Path
 
 import pytest
+from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
+from pydantic import BaseModel
 
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
@@ -219,3 +221,32 @@ def test_analyse_data_flag_turns_on_data_analysis(command: str) -> None:
     assert settings.data_analysis_enabled
     plain = settings_for_args(build_parser().parse_args(argv[:-1]), Settings())
     assert not plain.data_analysis_enabled
+
+
+def test_audit_fails_when_its_checks_run_out_of_model_calls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    parts: dict[str, types.ModuleType],
+) -> None:
+    async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
+        await ctx.require_llm().generate(Answer, [HumanMessage("x")])
+        return checked_result(task)
+
+    async def no_llm_pass(paper: object, candidates: object, llm: object) -> object:
+        return candidates
+
+    monkeypatch.setattr("auditor.planner.tasks.refine_candidates", no_llm_pass)
+    parts["auditor.agents.code"].check = check  # type: ignore[attr-defined]
+    model = ScriptedChatModel(replies=[tool_reply(Answer, {"text": "ok"})] * 20)
+    monkeypatch.setattr(
+        StructuredLLM,
+        "from_settings",
+        classmethod(lambda cls, settings: cls(model, name="test:scripted", max_calls=1)),
+    )
+    assert main(["audit", str(PAPER_JSON), "--run-id", "t2"]) == 1
+    assert "AUDITOR_LLM_MAX_CALLS" in capsys.readouterr().err
+
+
+class Answer(BaseModel):
+    text: str

@@ -32,7 +32,13 @@ from auditor.baselines.b1 import run_b1
 from auditor.config import Settings
 from auditor.infra.context import RunContext
 from auditor.infra.http import HttpClient
-from auditor.infra.llm import LLMNotConfiguredError, StructuredLLM, create_chat_model, model_id
+from auditor.infra.llm import (
+    CallLimitReachedError,
+    LLMNotConfiguredError,
+    StructuredLLM,
+    create_chat_model,
+    model_id,
+)
 from auditor.infra.log import configure_logging
 from auditor.infra.manifest import build_manifest, package_versions, redact, write_manifest
 from auditor.infra.snapshots import SourceError, parse_source
@@ -55,6 +61,7 @@ from auditor.schemas import (
     RepositoryRef,
     RunManifest,
     SystemName,
+    TaskResult,
     VenueProfile,
 )
 from auditor.schemas.evaluation import DatasetEntry
@@ -442,7 +449,7 @@ async def _run_one(
         # A paper whose thread already has state was interrupted earlier; continue it.
         for resume in (False, True):
             try:
-                await run_full(
+                full = await run_full(
                     item.paper,
                     settings=settings,
                     http=http,
@@ -456,10 +463,12 @@ async def _run_one(
                     max_concurrency=max_concurrency,
                     resume=resume,
                 )
-                return
             except ThreadInUseError:
                 if resume:
                     raise
+                continue
+            _refuse_incomplete(full.outcome.results, llm)
+            return
         return
     if llm is None:
         raise InputError("Baselines need an LLM.")
@@ -475,6 +484,24 @@ async def _run_one(
         repository=item.repository,
         venue=item.venue,
     )
+
+
+def limit_failures(results: Sequence[TaskResult]) -> int:
+    """Tasks that failed because the run's model calls were used up."""
+    prefix = f"{CallLimitReachedError.__name__}:"
+    return sum(1 for r in results if r.error is not None and r.error.startswith(prefix))
+
+
+def _refuse_incomplete(results: Sequence[TaskResult], llm: StructuredLLM | None) -> None:
+    """A paper whose checks ran out of model calls must not pass as done: its missing
+    findings would read as clean results."""
+    hit = limit_failures(results)
+    if hit:
+        limit = llm.max_calls if llm is not None else None
+        raise CallLimitReachedError(
+            f"incomplete: {hit} of {len(results)} tasks hit the run's limit of {limit} model "
+            "calls (AUDITOR_LLM_MAX_CALLS); rerun under a new --experiment with a higher limit"
+        )
 
 
 async def _run_papers(
@@ -501,6 +528,13 @@ async def _run_papers(
             summary.skipped += 1
             return
         async with gate:
+            if llm is not None and llm.limit_reached:
+                error = CallLimitReachedError(
+                    f"not started: the run's {llm.max_calls} model calls are used up "
+                    "(AUDITOR_LLM_MAX_CALLS)"
+                )
+                summary.failed.append(_record_failure(run, item.paper, error))
+                return
             try:
                 await _run_one(
                     system,
