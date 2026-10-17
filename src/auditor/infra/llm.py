@@ -7,6 +7,7 @@ recorded against the current task, and optionally cached on disk.
 """
 
 import asyncio
+import functools
 import hashlib
 import json
 import time
@@ -14,7 +15,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from langchain.chat_models import init_chat_model
@@ -95,6 +96,27 @@ def create_chat_model(settings: Settings) -> BaseChatModel:
     if not isinstance(model, BaseChatModel):
         raise TypeError(f"expected a chat model, got {type(model).__name__}")
     return model
+
+
+# How hard the model should think on one call; each provider has its own setting for it.
+Effort = Literal["minimal", "low", "medium", "high"]
+# Chat model fields by setting name (Gemini's `thinking_level` is the field
+# `reasoning_effort`).
+_FIELD_NAMES = {"thinking_level": "reasoning_effort"}
+# Gemini 2.5 takes a token budget instead of a level.
+_GEMINI_25_BUDGETS: dict[str, int] = {"minimal": 0, "low": 1024, "medium": 4096, "high": 12288}
+
+
+def effort_options(provider: str | None, model: str | None, effort: Effort) -> dict[str, Any]:
+    """The chat model settings that make one call think at `effort`, or {} when the
+    provider has no such setting."""
+    if provider == "google_genai":
+        if (model or "").startswith("gemini-2"):
+            return {"thinking_budget": _GEMINI_25_BUDGETS[effort]}
+        return {"thinking_level": effort}
+    if provider == "openai":
+        return {"reasoning_effort": effort}
+    return {}
 
 
 def _cache_context(settings: Settings) -> str:
@@ -208,6 +230,8 @@ class StructuredLLM:
         self.calls = 0
         # The stronger model for review steps (AUDITOR_LLM_REVIEW_MODEL), if any.
         self.review: StructuredLLM | None = None
+        self.provider: str | None = None
+        self._by_effort: dict[Effort, BaseChatModel] = {}
 
     @property
     def limit_reached(self) -> bool:
@@ -233,7 +257,7 @@ class StructuredLLM:
     @classmethod
     def _one(cls, settings: Settings) -> "StructuredLLM":
         cache = LLMCache(settings.cache_dir / "llm") if settings.llm_cache else None
-        return cls(
+        llm = cls(
             create_chat_model(settings),
             name=model_id(settings),
             method=settings.llm_structured_method,
@@ -243,16 +267,43 @@ class StructuredLLM:
             max_concurrency=settings.llm_max_concurrency,
             max_calls=settings.llm_max_calls,
         )
+        llm.provider = settings.llm_provider
+        return llm
+
+    def model_for(self, effort: Effort | None) -> BaseChatModel:
+        """The chat model with its thinking set to `effort` (the configured model for None
+        or a provider without such a setting)."""
+        if effort is None:
+            return self.model
+        if effort not in self._by_effort:
+            options = effort_options(self.provider, self.name.split(":", 1)[-1], effort)
+            if not options:
+                return self.model
+            update = {_FIELD_NAMES.get(k, k): v for k, v in options.items()}
+            if "reasoning_effort" in update:
+                # A level replaces a configured token budget (Gemini 3 warns about both).
+                update.setdefault("thinking_budget", None)
+            self._by_effort[effort] = self.model.model_copy(update=update)
+        return self._by_effort[effort]
 
     async def generate[T: BaseModel](
-        self, schema: type[T], messages: Sequence[BaseMessage]
+        self,
+        schema: type[T],
+        messages: Sequence[BaseMessage],
+        *,
+        effort: Effort | None = None,
+        purpose: str | None = None,
     ) -> StructuredResult[T]:
+        """A validated `schema` value. `effort` sets how hard the model thinks on this call
+        (None keeps the configured setting); `purpose` names the step in the usage log."""
+        record = functools.partial(self._record, effort=effort, purpose=purpose)
+        context = self.cache_context if effort is None else f"{self.cache_context}|{effort}"
         cache_key = None
         if self.cache is not None:
-            cache_key = LLMCache.key(self.name, self.method, schema, messages, self.cache_context)
+            cache_key = LLMCache.key(self.name, self.method, schema, messages, context)
             cached = self.cache.get(cache_key, schema)
             if cached is not None:
-                self._record(TokenUsage(), datetime.now(UTC), 0.0, cache_hit=True)
+                record(TokenUsage(), datetime.now(UTC), 0.0, cache_hit=True)
                 return StructuredResult(cached, attempts=0, usage=TokenUsage(), from_cache=True)
 
         if self.context_tokens is not None:
@@ -266,7 +317,7 @@ class StructuredLLM:
         kwargs: dict[str, Any] = {"include_raw": True}
         if self.method is not None:
             kwargs["method"] = self.method
-        runnable = self.model.with_structured_output(schema, **kwargs)
+        runnable = self.model_for(effort).with_structured_output(schema, **kwargs)
 
         conversation = list(messages)
         total = TokenUsage()
@@ -289,7 +340,7 @@ class StructuredLLM:
                     async with self._gate:
                         output = await runnable.ainvoke(conversation)
             except Exception as exc:
-                self._record(
+                record(
                     TokenUsage(),
                     started_at,
                     time.perf_counter() - started,
@@ -301,7 +352,7 @@ class StructuredLLM:
             raw = output["raw"]
             usage = TokenUsage.from_message(raw)
             total += usage
-            self._record(usage, started_at, time.perf_counter() - started)
+            record(usage, started_at, time.perf_counter() - started)
 
             parsed = output.get("parsed")
             error = output.get("parsing_error")
@@ -349,6 +400,8 @@ class StructuredLLM:
         *,
         cache_hit: bool = False,
         error: str | None = None,
+        effort: Effort | None = None,
+        purpose: str | None = None,
     ) -> None:
         active = current_scope()
         if active is None:
@@ -369,6 +422,8 @@ class StructuredLLM:
                 duration_s=duration_s,
                 status=CallStatus.ERROR if error else CallStatus.OK,
                 error=error,
+                effort=effort,
+                purpose=purpose,
             )
         )
 

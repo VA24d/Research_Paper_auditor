@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from auditor.config import Settings
 from auditor.infra import llm as llm_module
 from auditor.infra.llm import (
+    Effort,
     LLMCache,
     LLMNotConfiguredError,
     PromptTooLongError,
@@ -15,6 +16,7 @@ from auditor.infra.llm import (
     StructuredOutputError,
     TokenUsage,
     create_chat_model,
+    effort_options,
 )
 from auditor.infra.scope import Budget, BudgetExceededError, Scope, enter_scope
 from auditor.infra.usage import UsageLog
@@ -277,3 +279,50 @@ def test_a_review_model_is_built_next_to_the_main_one(tmp_path: Path) -> None:
     assert main.review.cache_context != main.cache_context
     alone = StructuredLLM.from_settings(settings.model_copy(update={"llm_review_model": None}))
     assert alone.review is None
+
+
+@pytest.mark.parametrize(
+    ("provider", "model", "effort", "expected"),
+    [
+        ("google_genai", "gemini-3.5-flash-lite", "minimal", {"thinking_level": "minimal"}),
+        ("google_genai", "gemini-3.8-flash", "high", {"thinking_level": "high"}),
+        ("google_genai", "gemini-2.5-flash", "minimal", {"thinking_budget": 0}),
+        ("google_genai", "gemini-2.5-flash", "high", {"thinking_budget": 12288}),
+        ("openai", "gpt-test", "low", {"reasoning_effort": "low"}),
+        ("ollama", "qwen3:8b", "low", {}),
+    ],
+)
+def test_thinking_effort_maps_to_each_providers_setting(
+    provider: str, model: str, effort: Effort, expected: dict[str, Any]
+) -> None:
+    assert effort_options(provider, model, effort) == expected
+
+
+def test_a_call_can_ask_for_less_thinking(tmp_path: Path) -> None:
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="google_genai",
+        llm_model="gemini-3.5-flash-lite",
+        llm_options={"api_key": "x", "thinking_level": "high"},
+    )
+    llm = StructuredLLM.from_settings(settings)
+    light = llm.model_for("minimal")
+    assert getattr(light, "thinking_level", None) == "minimal"
+    assert getattr(llm.model, "thinking_level", None) == "high"
+    assert llm.model_for(None) is llm.model
+    assert llm.model_for("minimal") is light
+
+
+async def test_effort_is_part_of_the_cache_key_and_the_record(tmp_path: Path) -> None:
+    model = ScriptedChatModel(replies=[tool_reply(Verdict, {"supported": True, "reason": "x"})] * 2)
+    llm = StructuredLLM(model, name="test:scripted", cache=LLMCache(tmp_path / "llm"))
+    usage = UsageLog()
+    with enter_scope(Scope(run_id="r1", usage=usage)):
+        await llm.generate(Verdict, MESSAGES, effort="low", purpose="screen")
+        again = await llm.generate(Verdict, MESSAGES, effort="high", purpose="verify")
+    assert not again.from_cache
+    assert [(r.effort, r.purpose) for r in usage.llm_calls] == [
+        ("low", "screen"),
+        ("high", "verify"),
+    ]
