@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from auditor.infra.context import RunContext
 from auditor.orchestration.graph import PlanFn
 from auditor.planner.claims import ClaimCandidate, citation_candidates, refine_candidates
+from auditor.planner.integrity import integrity_tasks
 from auditor.planner.repository import find_repository
 from auditor.planner.table_reader import read_tables
 from auditor.planner.tables import paper_settings
@@ -110,6 +111,35 @@ _METHOD_TITLE = re.compile(
 )
 
 
+DEFECTS_KEY = "code_defects"
+
+
+def defect_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[AuditTask]:
+    """One task per paper with code: does the released code compile and define what it uses
+    (decision D4 `code_defect`)? Anchored like the method task."""
+    method = method_tasks(paper, repository)
+    if not method:
+        return []
+    anchor = method[0].anchor
+    assert isinstance(anchor, SentenceAnchor)
+    return [
+        AuditTask.create(
+            paper_id=paper.paper_id,
+            variant=paper.variant,
+            kind=TaskKind.CODE,
+            anchor=anchor,
+            target=SettingTarget(key=DEFECTS_KEY),
+            setting=ExtractedSetting(
+                key=DEFECTS_KEY,
+                raw_name="code",
+                raw_value="released code",
+                source=PaperSource(anchor=anchor),
+            ),
+            repository=repository,
+        )
+    ]
+
+
 def method_tasks(paper: ParsedPaper, repository: RepositoryRef | None) -> list[AuditTask]:
     """One task per paper with code: does the code implement the method the paper
     describes (decision D4 `method_mismatch`)? Anchored on the first sentence of the method
@@ -191,7 +221,9 @@ async def plan_paper(
         *citation_tasks(paper, candidates),
         *code_tasks(paper, repository, settings),
         *method_tasks(paper, repository),
+        *defect_tasks(paper, repository),
         *template_tasks(paper, options.venue),
+        *integrity_tasks(paper),
     ]
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
         tasks += await theory_tasks(

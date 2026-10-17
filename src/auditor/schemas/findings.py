@@ -27,6 +27,8 @@ class ErrorClass(StrEnum):
     DATA_LEAKAGE = "data_leakage"
     METHOD_MISMATCH = "method_mismatch"
     MATH_ERROR = "math_error"
+    UNFINISHED_CONTENT = "unfinished_or_placeholder_content"
+    CODE_DEFECT = "code_defect"
     TEMPLATE_VIOLATION = "template_violation"
 
 

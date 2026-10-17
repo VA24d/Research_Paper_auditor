@@ -86,6 +86,8 @@ Macro-F1 is computed over these classes (the ones present in a given evaluation 
 | Data | `data_leakage` | Test or validation examples also appear in the training data |
 | Code | `method_mismatch` | The code implements a different loss, algorithm step, model component, data processing, training or evaluation procedure than the paper describes |
 | Theory | `math_error` | An equation, derivation or proof is wrong: a stated result does not follow, a proof step fails, or a formula is incorrect |
+| Integrity | `unfinished_or_placeholder_content` | The paper says its own results are placeholders, simulated or to be replaced, or it contains unfinished text, author notes or unresolved references |
+| Code | `code_defect` | The released code would fail as published: a file the experiment uses does not compile, uses a name defined nowhere, or imports a local module the repository lacks |
 | Template | `template_violation` | A venue formatting rule is broken |
 
 `none` marks clean control items and is used for the false-positive rate. Adding a class
@@ -252,6 +254,22 @@ Facts that affect the choice (checked October 2026):
 
 No repository code is executed anywhere in the system. The "optional run in sandbox" box in
 the proposal diagram is dropped.
+
+Reading code with tools is not running it. The code-defect check
+(`auditor.agents.code.defects`, class `code_defect`) parses the Python files with
+`compile()`, which builds the syntax tree and never executes anything. It also runs Ruff's
+undefined-name rules (F821, F822, F823) on the files the experiment uses: the scripts with
+an `if __name__ == "__main__":` block, and the local modules they import. It reports three
+kinds of defect:
+
+- files that do not compile;
+- names that are used but defined nowhere;
+- imports of a local package's module that the repository lacks.
+
+Undefined names are marked uncertain, because the code that uses them may never run. Code
+written for Python 2 is reported as unverifiable. On the 40 set C repositories, the check
+found 40 defects in 14 repositories. One is certain: a file left with git merge-conflict
+markers (`>>>>>>>`).
 
 ## D12. PDF parsing stack — Agreed
 
@@ -442,3 +460,28 @@ call sets its own thinking level, and the usage log records the level and the st
   no sentence id. SPOT runs are therefore scored as the SPOT and PAT papers do it: an LLM
   judge decides whether a reported issue is the same error as the annotation. A person
   checks every judgement before the numbers are reported (`scripts/spot.py`).
+
+## D22. The integrity screen and the `unfinished_or_placeholder_content` class — Agreed
+
+Some papers carry their own reason for rejection. One example is an ICLR 2027 submission
+whose table captions say "Numbers are simulated drafting results for manuscript
+preparation and should be replaced by actual experimental results before submission".
+Neither the code agent nor the citation agent would ever look at such a sentence. A fifth
+specialist, `auditor.agents.integrity`, gets one task per paper (document anchor, target
+rule `unfinished_content`). It checks in two ways:
+
+- **Structural markers, no model.** Unresolved references (`??`, `[?]`, `(?)`, Word's
+  "Error! Reference source not found") and leftover markers (TODO, TBD and FIXME in
+  capitals, `XX%` or `X.X%`, lorem ipsum, `[citation needed]`). On 195 real papers (set C
+  and SPOT), "XXX" and "X%" turned up as variable names and `[]` as an empty list in
+  pseudocode, so those are left to the model. The only marker hit left was a real one,
+  "Algorithm ??".
+- **One cheap model call per paper.** Flash-Lite with low thinking and an answer capped at
+  4,096 tokens reads every caption, footnote and paragraph. It reports statements that
+  the paper's own results are placeholders, simulated, invented or still to be replaced,
+  notes to the authors left in the text, and unfinished text. Which wording counts is the
+  model's reading, so this works in any field. A finding must quote its sentence exactly;
+  prose is copied, not rendered, so a word match is not enough here.
+
+Findings have severity `high` (D20). B0 and B1 learn the class from the class guide, and B1
+gets no extra tools.

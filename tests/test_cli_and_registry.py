@@ -39,7 +39,7 @@ def lines(path: Path) -> list[dict[str, object]]:
 
 def test_missing_entry_points_fall_back_to_mocks() -> None:
     specialists, mocked = registry.load_specialists()
-    assert mocked == ["citation", "code", "template", "theory"]
+    assert mocked == ["citation", "code", "template", "theory", "integrity"]
     assert specialists.code is check_nothing
     verifier, is_mock = registry.load_verifier()
     assert verifier is send_all_to_review
@@ -53,7 +53,7 @@ def test_real_entry_points_are_used(parts: dict[str, types.ModuleType]) -> None:
     parts["auditor.agents.code"].check = check  # type: ignore[attr-defined]
     specialists, mocked = registry.load_specialists()
     assert specialists.code is check
-    assert mocked == ["citation", "template", "theory"]
+    assert mocked == ["citation", "template", "theory", "integrity"]
 
 
 def test_tools_are_collected_from_each_part(
@@ -107,11 +107,12 @@ def test_audit_command_writes_a_complete_run(tmp_path: Path) -> None:
         "code",
         "template",
         "theory",
+        "integrity",
         "verifier",
     ]
     assert manifest.config["repository"] == "https://github.com/example/auditor-demo"
     paper_dir = run / "example-paper-original"
-    assert len(lines(paper_dir / "tasks.jsonl")) == 13
+    assert len(lines(paper_dir / "tasks.jsonl")) == 15
     assert {r["outcome"] for r in lines(paper_dir / "results.jsonl")} == {"checked"}
     assert lines(paper_dir / "predictions.jsonl") == []
     assert (run / "checkpoints.sqlite").exists()

@@ -197,6 +197,7 @@ def test_each_system_lists_the_parts_it_still_lacks(monkeypatch: pytest.MonkeyPa
         "code tools",
         "template tools",
         "theory tools",
+        "integrity tools",
     ]
 
 
@@ -207,7 +208,10 @@ def test_strict_refuses_b1_without_the_specialists_tools(
     dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
     argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "b1", "--strict"]
     assert main(argv) == 2
-    assert "b1: citation tools, code tools, template tools, theory tools" in capsys.readouterr().err
+    assert (
+        "b1: citation tools, code tools, template tools, theory tools, integrity tools"
+        in capsys.readouterr().err
+    )
 
 
 def test_continuing_a_run_with_different_inputs_is_refused(
