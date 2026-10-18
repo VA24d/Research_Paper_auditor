@@ -1,5 +1,6 @@
 """What a specialist's `check(task, ctx)` receives (decision D6)."""
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +29,8 @@ class RunContext:
     # Counts the paper's tasks share, by name, such as the theory checker's deep checks
     # left for the paper. A context belongs to one paper, so they are per paper.
     allowances: dict[str, int] = field(default_factory=dict, compare=False)
+    # Locks the paper's tasks share, by name.
+    locks: dict[str, asyncio.Lock] = field(default_factory=dict, compare=False)
 
     def require_llm(self) -> StructuredLLM:
         if self.llm is None:

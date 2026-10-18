@@ -432,3 +432,11 @@ async def test_calls_waiting_for_a_slot_are_not_sent_once_the_budget_is_spent() 
     )
     assert len(model.received) == 1
     assert sum(isinstance(r, CallLimitReachedError) for r in results) == 2
+
+
+def test_input_read_from_the_cache_is_charged_at_its_share() -> None:
+    spend = Spend(limit_usd=None, prices={"m": (1.0, 2.0)}, cached_input_share=0.25)
+    spend.charge(
+        "p:m", TokenUsage(input_tokens=1_000_000, output_tokens=0, cached_input_tokens=800_000)
+    )
+    assert spend.spent_usd == pytest.approx(0.2 + 0.8 * 0.25)

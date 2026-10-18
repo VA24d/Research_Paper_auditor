@@ -202,6 +202,8 @@ class Spend:
     # thinking tokens.
     prices: Mapping[str, tuple[float, float]]
     spent_usd: float = 0.0
+    # The share of the input price charged for input read from the provider's cache.
+    cached_input_share: float = 1.0
 
     def price(self, model: str) -> tuple[float, float] | None:
         return self.prices.get(model.split(":", 1)[-1])
@@ -209,7 +211,10 @@ class Spend:
     def charge(self, model: str, usage: "TokenUsage") -> None:
         price = self.price(model)
         if price is not None:
-            self.spent_usd += (usage.input_tokens * price[0] + usage.output_tokens * price[1]) / 1e6
+            cached = min(usage.cached_input_tokens, usage.input_tokens)
+            fresh = usage.input_tokens - cached
+            input_cost = (fresh + cached * self.cached_input_share) * price[0]
+            self.spent_usd += (input_cost + usage.output_tokens * price[1]) / 1e6
 
     @property
     def exhausted(self) -> bool:
@@ -301,7 +306,11 @@ class StructuredLLM:
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
         """The main model, with the review model attached when one is configured; it has
         its own call limit of the same size."""
-        spend = Spend(limit_usd=settings.llm_max_cost_usd, prices=dict(settings.llm_prices))
+        spend = Spend(
+            limit_usd=settings.llm_max_cost_usd,
+            prices=dict(settings.llm_prices),
+            cached_input_share=settings.llm_cached_input_share,
+        )
         if spend.limit_usd is not None:
             for model in filter(None, (settings.llm_model, settings.llm_review_model)):
                 if spend.price(model) is None:
