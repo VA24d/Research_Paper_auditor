@@ -899,5 +899,27 @@ recalls 43% of the numbers and GROBID 57%. The two together, as the results chec
 them, recall 72%. The PDF's text inside the crops holds 96% of them, so the crops rarely
 cut a table short; that text's rows are too rough to use as they are. The script builds the
 requests for the three model strategies (page image, crop image, crop image with its text)
-and parses their replies, but they have not been run, and the results check still reads
-unread pages from the page image.
+and parses their replies.
+
+All strategies on the same 12 papers (56 tables, 2,247 numbers), the model ones with
+Flash-Lite at low thinking:
+
+| Strategy | Recall | Precision in matched tables | Row labels | Cost |
+|---|---|---|---|---|
+| layout text | 20% | 81% | 21% | none |
+| GROBID | 41% | 76% | 40% | none |
+| both, as the results check read them | 51% | 85% | 54% | none |
+| PDF text inside the crop | 98% | 88% | 85% | none |
+| page image, 150 dpi | 97% | 88% | 88% | $0.04 |
+| crop image, 300 dpi | 96% | 94% | 88% | $0.11 |
+| crop image with the crop's text | 96% | 94% | 88% | $0.12 |
+
+The crop's own text is about as complete as any model reading and costs nothing, so the
+results check now reads each table from it (`add_crop_tables`, `AUDITOR_RESULTS_CROP_TABLES`).
+A crop table replaces the layout and GROBID tables of the same label. Each printed line is
+a row, its wide gaps are cell borders, and the caption's lines are taken off. Giving the
+model the crop's text with the image changed nothing. On set D, crop tables raised the
+reversed comparisons found from 28 to 31 of 33 and cut the result findings on the 40
+originals from 5 to 2. Gains found fell from 21 to 18 of 33, and the changed numbers stayed
+at 0 of 7, with or without the number pass. Reading tables is no longer the limit there;
+the extraction step that pairs a sentence with a cell is.
