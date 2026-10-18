@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from auditor.infra.context import RunContext
 from auditor.orchestration.graph import PlanFn
 from auditor.planner.claims import ClaimCandidate, citation_candidates, refine_candidates
+from auditor.planner.code_claims import claim_tasks
 from auditor.planner.integrity import integrity_tasks
 from auditor.planner.repository import find_repository
 from auditor.planner.table_reader import read_tables
@@ -216,15 +217,25 @@ async def plan_paper(
     if repository is not None and options.use_llm and ctx.llm is not None:
         settings += await read_tables(paper, ctx.llm, settings)
 
+    setting_tasks = code_tasks(paper, repository, settings)
     tasks = [
         *reference_tasks(paper),
         *citation_tasks(paper, candidates),
-        *code_tasks(paper, repository, settings),
+        *setting_tasks,
         *method_tasks(paper, repository),
         *defect_tasks(paper, repository),
         *template_tasks(paper, options.venue),
         *integrity_tasks(paper),
     ]
+    if ctx.settings.claim_loop_enabled and options.use_llm and ctx.llm is not None:
+        tasks += await claim_tasks(
+            paper,
+            repository,
+            ctx.llm,
+            limit=ctx.settings.claim_loop_max_claims,
+            max_output=ctx.settings.claim_loop_plan_max_output,
+            existing=setting_tasks,
+        )
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
         if ctx.settings.theory_selector == "triage":
             tasks += await triage_tasks(

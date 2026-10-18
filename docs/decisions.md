@@ -304,6 +304,47 @@ written for Python 2 is reported as unverifiable. On the 40 set C repositories, 
 found 40 defects in 14 repositories. One is certain: a file left with git merge-conflict
 markers (`>>>>>>>`).
 
+**Code and data claim loop** (October 2026). The settings check compares values, and the
+method check sends the method text with the most related files to the model in one call.
+Neither follows one claim through the code. The claim loop
+(`auditor.agents.code.claim_loop`, off by default, `AUDITOR_CLAIM_LOOP_ENABLED`) does that
+for claims about the experiments that rest on the released code or data:
+
+- **Plan.** One call to the main model, with low thinking and an answer capped at 4,096
+  tokens (`AUDITOR_CLAIM_LOOP_PLAN_MAX_OUTPUT`), lists up to
+  `AUDITOR_CLAIM_LOOP_MAX_CLAIMS` (6) claims in six categories: dataset and split,
+  preprocessing, number of training examples, architecture, training procedure and
+  evaluation protocol. Plain hyperparameter values are left to the settings check. Each
+  claim must quote at least 20 characters of its sentence verbatim, and the task is
+  anchored on that sentence by its parser id, narrowed to the quote. A dataset, size or
+  evaluation claim on a sentence that already has a settings or data task for the same
+  key is dropped.
+- **Explore.** Each claim is a code task (target `code_claim`). A tool-using agent on the
+  review model (`langchain.agents.create_agent`, as in B1) gets the claim, its sentence
+  with one sentence on each side, and the repository's file list. It uses the B1 code
+  tools: list, search and read files, look up a setting's values, and read the data
+  report in data analysis mode. Each claim has at most
+  `AUDITOR_CLAIM_LOOP_MAX_TOOL_CALLS` (12) tool calls and
+  `AUDITOR_CLAIM_LOOP_MAX_MODEL_CALLS` (8) model calls, at
+  `AUDITOR_CLAIM_LOOP_EFFORT` (medium), and never more than the task's budget has left.
+  A tool call past the limit is not run, and the model is told to answer. Every model call
+  goes through `StructuredLLM.direct_call`, so it counts against the run's call and dollar
+  limits and is logged with purpose `claim-loop`. These calls are not cached.
+- **Analyse.** The agent answers contradicted, supported or unsettled. A contradiction must
+  cite lines of a file in the snapshot, at most 40 of them, that a search or read in the
+  same loop showed it. Otherwise it is dropped and the task is unverifiable. Supported is
+  checked with no finding. Unsettled, or no answer within the limits, is unverifiable with
+  its reason, never a finding.
+- **Findings.** The finding quotes the paper sentence and gives the cited lines as CODE
+  evidence. Its class follows the category: `data_split_mismatch` (target `data_split`),
+  `dataset_size_mismatch` (`train_examples`) and `metric_mismatch` (`eval_metric`) keep
+  the sentence anchor. Preprocessing, architecture and training claims are
+  `method_mismatch` with a document anchor and target `method`, so they are matched per
+  paper like the method check's (D4). A finding is uncertain unless the model calls the
+  cited lines direct evidence with high confidence.
+
+Nothing in the repository is run. The loop has not yet been run on set C.
+
 ## D12. PDF parsing stack — Agreed
 
 - GROBID 0.9.1 (Docker image `grobid/grobid:0.9.1-crf`) for structure, bibliography,
