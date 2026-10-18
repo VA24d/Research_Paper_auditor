@@ -551,6 +551,19 @@ call sets its own thinking level, and the usage log records the level and the st
   $1.68, $0.21 per error found. The screen setup's one test-half run had found none, in
   the 11 papers it finished. The test half was not looked at paper by paper. The grades
   are the SPOT judge's, and no person has checked them.
+- **A second judge.** `scripts/spot.py rejudge` grades a run again with another model.
+  With 3.8 Flash as the second judge:
+  - test-half triage run: the first judge (the configured model, 2.5 Flash) matched 8
+    errors, the second 5, and both 5, in 4 of 13 papers;
+  - dev triage run: 6 by the first, 5 by both, also in 4 of 13 papers.
+
+  The first judge is generous. The conservative test-half figure, where both judges
+  agree, is 4 of 13 papers (31%), not 7 of 13.
+- **Pooled triage** (two triage calls, 6 deep checks, a broader prompt; branch
+  `p3-triage-pool`, not merged). On the test half it found 7 of 14 errors by the first
+  judge and 5 by both, in 4 of 13 papers. Its reports were right 7 times in 19, and it
+  cost $3.02 against $1.68. It does no better than single triage and costs more, so
+  single triage stays the default.
 - **Explicit context caching** (`AUDITOR_LLM_EXPLICIT_CACHE`, off by default;
   `auditor.infra.prefix_cache`). Vertex's implicit cache reused 8-9% of the 3.8 Flash
   input, so the message holding the paper goes into an explicit Vertex context cache the
@@ -706,3 +719,40 @@ Over the 195 local papers with a parse, the first versions gave 43 findings, nea
 false alarms: a "Mean" column that held another metric, and settings repeated by design.
 With the conditions above they give 1, a value shared by a model and its ablation without
 features, which may well be by design.
+
+**Set D** (`scripts/set_d.py`, `auditor.agents.integrity.set_d`; plant records and labels in
+`datasets/set_d`). Errors are planted in copies of the 40 set C papers and repositories,
+with the originals as clean controls. Placement follows a hash of the paper id. Planted
+sentences use the paper's own table labels, row names and numbers. The placeholder and
+GRIM sentences come from short generic templates, since nothing in the paper could supply
+them. The run checks each paper with the integrity screen, the results check (Flash-Lite
+extraction, 3.8 Flash challenge, layout tables from the PDF) and the code-defect check:
+
+| Plant | Found |
+|---|---|
+| placeholder or simulated-results sentence | 40 / 40 |
+| GRIM-impossible mean | 40 / 40 |
+| reversed comparison of two table rows | 28 / 33 |
+| wrong size of a gain between two table rows | 21 / 33 |
+| number the text quotes from a table, changed | 0 / 7 |
+| undefined name in an experiment file | 26 / 26 |
+| syntax error in an experiment file | 13 / 13 |
+
+That is 168 of 192 plants, at least one in each of the 40 papers. On the 40 originals the
+same checks give 3 placeholder findings, 5 result findings and 43 code defects. The code
+defects are the repositories' own, found before; the other 8 have not been checked by
+hand. The changed-number plant is the weak spot, and only 7 papers have a prose sentence
+that quotes a table number unambiguously. The set D runs led to five changes:
+
+- The comparison rule also reads a level set off by a comma just before the comparative
+  word ("reaches 54.81, higher than Y (56.06)"). Without the comma it is often a
+  difference ("3.16% higher than"); the 195 local papers give no hits either way.
+- A gain whose sentence gives both results is not excused by another column of the
+  same rows.
+- A gain the extraction model gave without the compared result is completed from its
+  sentence, when the sentence holds exactly the two results.
+- GRIM findings skip the challenge, which can only guess whether the data are whole
+  numbers. It had dropped 12 of the 40 planted cases.
+- In the code-defect check, a script that does not compile counts as an entry point when
+  its text has a main guard. Before this, breaking a script took it out of the scope that
+  was checked.

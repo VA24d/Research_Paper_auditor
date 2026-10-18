@@ -86,6 +86,9 @@ def _parse(text: str, path: str) -> ast.Module | None:
         return None
 
 
+_MAIN_GUARD = re.compile(r"^if\s+__name__\s*==\s*['\"]__main__['\"]", re.MULTILINE)
+
+
 def _is_entry_point(tree: ast.Module) -> bool:
     for node in tree.body:
         if (
@@ -143,10 +146,15 @@ def experiment_files(sources: Mapping[str, str]) -> list[str]:
     """The entry-point scripts and every local module they import, sorted."""
     by_module = {_module_name(path): path for path in sources}
     trees = {path: _parse(text, path) for path, text in sources.items()}
-    entries = [p for p, tree in trees.items() if tree is not None and _is_entry_point(tree)]
+    # A script that does not compile still runs as one: its main guard is in the text.
+    entries = [
+        p
+        for p, tree in trees.items()
+        if (_is_entry_point(tree) if tree is not None else _MAIN_GUARD.search(sources[p]))
+    ]
     if not entries:
-        # Without an entry point, every file that compiles is a candidate; nothing narrows.
-        entries = [p for p, tree in trees.items() if tree is not None] or list(sources)
+        # Without an entry point, every file is a candidate; nothing narrows.
+        entries = list(sources)
     seen: set[str] = set()
     queue = list(entries)
     while queue:

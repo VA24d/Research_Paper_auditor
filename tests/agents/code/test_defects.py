@@ -97,6 +97,18 @@ async def test_a_syntax_error_in_an_experiment_file_is_a_defect(tmp_path: Path) 
     assert syntax[0].evidence[0].path == "train.py"
 
 
+def test_a_script_that_does_not_compile_is_still_part_of_the_experiment() -> None:
+    broken = 'def main(args)\n    pass\n\n\nif __name__ == "__main__":\n    main(1)\n'
+    sources = {
+        "main.py": MAIN,
+        "utils.py": UTILS,
+        "eval.py": broken,
+        "scripts/old.py": BROKEN_UNUSED,
+    }
+    assert "eval.py" in experiment_files(sources)
+    assert "scripts/old.py" not in experiment_files(sources)
+
+
 async def test_a_missing_module_of_a_local_package_is_a_defect(tmp_path: Path) -> None:
     files = {
         "main.py": 'from models.resnet import build\n\nif __name__ == "__main__":\n    build()\n',

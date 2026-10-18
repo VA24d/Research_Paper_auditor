@@ -488,6 +488,9 @@ _COMPARATIVE = re.compile(
     re.IGNORECASE,
 )
 _UP = {"higher", "greater", "larger", "more"}
+# How far before a comparative word its number may be ("reaches 54.81, higher than").
+LEAD_CHARS = 24
+_LEAD_NUMBER = re.compile(r"(?<![<>=\u00b1\w.])[-\u2212]?\d+\.\d+(?=\)?,\s*$)")
 # A number with a decimal point that is not a bound ("p<0.01") or a spread ("\u00b1 0.13").
 _STATED = re.compile(r"(?<![<>=\u00b1\w.])[-\u2212]?\d+\.\d+")
 
@@ -506,6 +509,12 @@ def text_comparisons(task: AuditTask, paper: ParsedPaper, first: int = 0) -> lis
             continue
         for match in _COMPARATIVE.finditer(sentence.text):
             before, after = _STATED.search(match.group(2)), _STATED.search(match.group(3))
+            if before is None:
+                # "X reaches 54.81, higher than Y (56.06)": the number just before the
+                # comparative word, in the same clause.
+                # Only a level set off by a comma counts: "3.16% higher" is a difference.
+                lead = sentence.text[max(0, match.start() - LEAD_CHARS) : match.start()]
+                before = _LEAD_NUMBER.search(lead)
             if before is None or after is None:
                 continue
             one, two = _Number.parse(before.group()), _Number.parse(after.group())
@@ -671,7 +680,11 @@ def _verdict(
     other = compared[0]
     # "Drops by 2.2%" states the size of a change: sizes are compared.
     stated = _Number(abs(stated.value), stated.half_unit)
-    if _fits(claim.kind, stated, subject, other) or _fits_another_column(claim, rows, stated):
+    # When the sentence itself gives both numbers, it has said which column it means.
+    pinned = claim.subject.value in claim.quote and claim.others[0].value in claim.quote
+    if _fits(claim.kind, stated, subject, other) or (
+        not pinned and _fits_another_column(claim, rows, stated)
+    ):
         return None
     if claim.kind == "difference":
         computed = abs(subject.value - other.value)
@@ -888,6 +901,26 @@ def _text_against_rows(
     return None
 
 
+def _completed(claim: DataClaim, sentence: Sentence) -> DataClaim:
+    """A gain the model left without the compared result, completed from its sentence
+    when that gives exactly the two results ("by 3.6 points (92.83 against 90.73)"): the
+    subject's number and one other, then checked against the text."""
+    if claim.kind not in ("difference", "relative_percent") or claim.others:
+        return claim
+    stated = claim.stated.strip().removesuffix("%").strip()
+    numbers = [m.group() for m in _STATED.finditer(sentence.text) if m.group() != stated]
+    if len(numbers) != 2 or claim.subject.value not in numbers:
+        return claim
+    other = next(n for n in numbers if n != claim.subject.value)
+    return claim.model_copy(
+        update={
+            "table_id": "",
+            "subject": claim.subject.model_copy(update={"table_id": ""}),
+            "others": [Operand(row_label="", value=other)],
+        }
+    )
+
+
 def _table_holding(claim: DataClaim, paper: ParsedPaper) -> Table | None:
     """The table whose rows hold all of a claim's numbers under their labels, for a claim
     the model did not tie to a table id. Numbers stated in the sentence itself have row
@@ -926,8 +959,12 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     findings = table_findings(task, paper)
     comparisons = text_comparisons(task, paper, len(findings))
     rules: list[CandidateFinding] = []
-    for rule in (repeated_spreads, wrong_aggregates, grim_findings):
+    for rule in (repeated_spreads, wrong_aggregates):
         rules += rule(task, paper, len(findings) + len(comparisons) + len(rules))
+    # GRIM is arithmetic on what the sentence states; the challenge can only guess whether
+    # the data are whole numbers, and dropped 12 of 40 planted cases in set D, so its
+    # findings stay uncertain without a second look.
+    findings += grim_findings(task, paper, len(findings) + len(comparisons) + len(rules))
     if ctx.llm is None:
         findings += comparisons + rules
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
@@ -965,6 +1002,8 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     for claim in claims:
         if claim.sentence_id in flagged:
             continue
+        if claim.sentence_id in by_id:
+            claim = _completed(claim, by_id[claim.sentence_id])
         table = tables.get(claim.table_id) or _table_holding(claim, paper)
         uncertain = False
         if claim.kind == "same_value":
