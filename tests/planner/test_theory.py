@@ -232,9 +232,27 @@ async def test_the_planner_triages_with_the_review_model_when_asked(tmp_path: Pa
         ctx,
         review_llm=StructuredLLM(review, name="test:r"),
         settings=ctx.settings.model_copy(
-            update={"theory_check_enabled": True, "theory_selector": "triage"}
+            update={"theory_check_enabled": True, "theory_selector": "triage", "theory_repeats": 1}
         ),
     )
     tasks = [t for t in await plan_paper(paper(), ctx) if t.kind is TaskKind.THEORY]
     assert [len(t.claims or ()) for t in tasks] == [1]
     assert not cheap_model.received
+
+
+async def test_two_looks_give_two_independent_triage_tasks(tmp_path: Path) -> None:
+    cheap, _ = llm()
+    reply = {"suspects": [{"sentence_ids": ["s1"], "reason": "x"}]}
+    review = ScriptedChatModel(replies=[tool_reply(Suspects, reply) for _ in range(2)])
+    ctx = offline_context(tmp_path, paper=paper(), llm=cheap)
+    update = {"theory_check_enabled": True, "theory_selector": "triage", "theory_repeats": 2}
+    ctx = dataclasses.replace(
+        ctx,
+        review_llm=StructuredLLM(review, name="test:r"),
+        settings=ctx.settings.model_copy(update=update),
+    )
+    tasks = [t for t in await plan_paper(paper(), ctx) if t.kind is TaskKind.THEORY]
+    assert len({t.task_id for t in tasks}) == 2
+    ids = sorted(c.claim_id for t in tasks for c in t.claims or ())
+    # The second look's claims have their own ids, so their deep checks are asked afresh.
+    assert ids == ["c1", "r1c1"]

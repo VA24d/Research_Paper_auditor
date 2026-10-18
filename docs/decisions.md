@@ -632,6 +632,16 @@ call sets its own thinking level, and the usage log records the level and the st
   judge and 5 by both, in 4 of 13 papers. Its reports were right 7 times in 19, and it
   cost $3.02 against $1.68. It does no better than single triage and costs more, so
   single triage stays the default.
+- **Two looks per paper** (`AUDITOR_THEORY_REPEATS`, 2). Separate triage-plus-deep runs
+  of one paper find mostly different errors. On the dev half, two earlier runs together
+  found errors in 8 of 13 papers by the first judge, against 5 for either alone. So each
+  paper now gets two independent looks: each has its own triage answer, claim ids and task,
+  so its deep checks are not answered from the first look's cache. Their findings are
+  pooled, and the D20 merge folds repeats. On the test half, one run with two looks found
+  6 errors in 5 of 13 papers by both judges (7 in 6 papers by the first). That compares
+  with 5 errors in 4 papers for one look. 6 of its 11 reports matched, for $2.48 against
+  $1.68. The test half has now been scored for several setups, so these figures are less
+  clean than a first look would be.
 - **Ordinary papers.** On 15 set C papers (machine learning, parsed from the PDF), the
   theory checker alone (`scripts/math_alarms.py`: triage, deep checks, challenge) named
   suspects in 3 papers and kept 1 finding, for $0.21. That finding says a DenseNet

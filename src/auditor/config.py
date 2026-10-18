@@ -228,6 +228,11 @@ class Settings(BaseSettings):
     theory_selector: Literal["screen", "triage"] = "triage"
     # Output cap of the triage call, thinking included.
     theory_triage_max_output: int = Field(default=16_384, gt=0)
+    # Independent looks at a paper, each with its own triage and deep checks; findings are
+    # pooled and repeats merged (D20). Runs find mostly different errors: on the SPOT test
+    # half two looks caught 5 of 13 papers by both judges, one look 4, for $2.48 against
+    # $1.68.
+    theory_repeats: int = Field(default=2, ge=1)
     theory_deep_context: Literal["paper", "sections"] = "paper"
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.

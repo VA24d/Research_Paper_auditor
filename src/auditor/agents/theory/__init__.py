@@ -412,7 +412,8 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         )
     ]
     # The paper's tasks share its deep checks; a task that comes later gets what is left.
-    left = ctx.allowances.setdefault(DEEP_ALLOWANCE, ctx.settings.theory_deep_per_paper)
+    allowance = ctx.settings.theory_deep_per_paper * ctx.settings.theory_repeats
+    left = ctx.allowances.setdefault(DEEP_ALLOWANCE, allowance)
     tries = tries[:left]
     ctx.allowances[DEEP_ALLOWANCE] = left - len(tries)
     results = await asyncio.gather(*(deep(*one) for one in tries))
