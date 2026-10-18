@@ -263,7 +263,9 @@ async def explore(
 ) -> tuple[ClaimVerdict | None, Exploration]:
     """The verdict of the loop on one claim (None if it stopped without one), and what
     its tool calls did."""
-    llm = ctx.require_review_llm()
+    llm = (
+        ctx.require_review_llm() if ctx.settings.claim_loop_model == "review" else ctx.require_llm()
+    )
     effort: Effort = ctx.settings.claim_loop_effort
     exploration = Exploration(limit=tool_limit)
     scoped = dataclasses.replace(ctx, repository=task.repository)
