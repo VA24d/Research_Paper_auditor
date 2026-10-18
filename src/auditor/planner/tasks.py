@@ -228,7 +228,10 @@ async def plan_paper(
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
         if ctx.settings.theory_selector == "triage":
             tasks += await triage_tasks(
-                paper, ctx.require_review_llm(), limit=ctx.settings.theory_deep_per_paper
+                paper,
+                ctx.require_review_llm(),
+                limit=ctx.settings.theory_deep_per_paper,
+                max_output=ctx.settings.theory_triage_max_output,
             )
             return _unique(tasks)
         tasks += await theory_tasks(

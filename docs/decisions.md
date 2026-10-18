@@ -563,6 +563,11 @@ call sets its own thinking level, and the usage log records the level and the st
   message whose cache cannot be made or has expired. On 2408.16162, 4,798 of the about
   5,500 input tokens of each 3.8 Flash call (triage, two deep checks, challenge) were read
   from the cache. The team lead approved creating these caches on the shared project.
+- **Triage output cap.** Six dev papers had used nearly all of the triage call's 16k
+  output on thinking. Run again with a 32k cap (`AUDITOR_THEORY_TRIAGE_MAX_OUTPUT`),
+  four of them thought for 24k to 32k tokens, but the dev half's score stayed at 6 of 15
+  errors in 5 of 13 papers (now from 11 reports, 5 matched), for $1.05 more. The cap
+  stays at 16k.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its
