@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 
 from auditor.agents.theory import anchor_quote
 from auditor.infra.context import RunContext
+from auditor.parser.table_crops import add_crop_tables
 from auditor.schemas import (
     CELL_SEPARATOR,
     AuditTask,
@@ -255,6 +256,9 @@ def _tables(paper: ParsedPaper) -> list[Table]:
         return (table.label or "").strip().rstrip(".:").casefold()
 
     read = [t for t in paper.tables if t.page is not None and t.row_ids]
+    # A table cut from its page box beats the layout text's reading of the same label.
+    cropped = {key(t) for t in read if t.id.startswith("crop-") and t.label}
+    read = [t for t in read if t.id.startswith("crop-") or key(t) not in cropped]
     covered = {key(t) for t in read if t.label}
     parser = [t for t in paper.tables if t.page is None and not (t.label and key(t) in covered)]
     return parser + read
@@ -1154,6 +1158,8 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     if ctx.llm is None:
         findings += comparisons + rules
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
+    if ctx.source_pdf is not None and ctx.settings.results_crop_tables:
+        paper = await asyncio.to_thread(add_crop_tables, paper, ctx.source_pdf)
     paper = await _read_unread_tables(paper, ctx)
     llm = ctx.llm
     plans = await asyncio.gather(

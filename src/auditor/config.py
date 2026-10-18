@@ -247,6 +247,9 @@ class Settings(BaseSettings):
     # A second look, on the review model, at each text-table inconsistency the arithmetic
     # finds: the numbers it used may be the wrong column or the wrong comparison.
     results_challenge_enabled: bool = True
+    # Read each captioned table from the PDF's text inside its page box (parser.table_crops)
+    # before the layout text and GROBID's tables.
+    results_crop_tables: bool = True
     # A second extraction pass for numbers the text quotes from a table (D22): prose
     # sentences with a decimal number that name a table or a row's label, at most
     # `results_number_max_sentences` per paper, are read again with the tables they use,
