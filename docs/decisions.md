@@ -924,7 +924,7 @@ originals from 5 to 2. Gains found fell from 21 to 18 of 33, and the changed num
 at 0 of 7, with or without the number pass. Reading tables is no longer the limit there;
 the extraction step that pairs a sentence with a cell is.
 
-**Cell rule** (`cell_findings`, `AUDITOR_RESULTS_CELL_RULE_ENABLED`, off by default). This
+**Cell rule** (`cell_findings`, `AUDITOR_RESULTS_CELL_RULE_ENABLED`, on by default, since it found nothing on 254 real papers and calls no model). This
 pairs a sentence with a cell in code, with no model. The sentence must be prose and must
 name a table, or follow a sentence of its section that does. A decimal number in it
 belongs to the nearest row label of that table before it, at most 80 characters back. A

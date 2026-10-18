@@ -143,8 +143,9 @@ async def run(
         ctx = dataclasses.replace(
             ctx, settings=ctx.settings.model_copy(update={"results_number_pass_enabled": True})
         )
-    if settings:
-        ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
+    # The cell rule is off unless a test asks for it, so each test sees one step's findings.
+    settings = {"results_cell_rule_enabled": False, **settings}
+    ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
     return await check(results_task(p), ctx), model
 
 
@@ -898,13 +899,13 @@ def test_the_cell_rule_needs_the_table_named_and_a_prose_sentence() -> None:
     assert not cells(spread, rows=["Model | AUC | MF1", "SleepDG | 0.75 | 69.64"])
 
 
-async def test_the_cell_rule_runs_only_when_enabled(tmp_path: Path) -> None:
+async def test_the_cell_rule_is_on_by_default_and_can_be_turned_off(tmp_path: Path) -> None:
     p = cell_paper(CELL_WRONG)
     ctx = offline_context(tmp_path, paper=p)
-    assert not (await check(results_task(p), ctx)).findings
-    on = ctx.settings.model_copy(update={"results_cell_rule_enabled": True})
-    (finding,) = (await check(results_task(p), dataclasses.replace(ctx, settings=on))).findings
+    (finding,) = (await check(results_task(p), ctx)).findings
     assert "74.77" in finding.summary
+    off = ctx.settings.model_copy(update={"results_cell_rule_enabled": False})
+    assert not (await check(results_task(p), dataclasses.replace(ctx, settings=off))).findings
 
 
 async def test_the_challenge_step_reviews_the_cell_rule_findings(tmp_path: Path) -> None:
