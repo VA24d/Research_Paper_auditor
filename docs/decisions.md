@@ -526,7 +526,8 @@ call sets its own thinking level, and the usage log records the level and the st
     filter. Deep checks went to the claims the plan rated high risk, which were often
     not the wrong ones (2401.09543's Claim 7 was rated low risk; 2406.11623's Green
     function lemma medium).
-  - When a deep check got the wrong claim, it found the error 3 times out of about 5.
+  - The 3 errors found all came from deep checks that happened to get the wrong claim:
+    picking the claim is the weak step, not checking it.
   - Running the same setup again on the same 13 papers found 1 of 15, not 3: picking
     claims this way is mostly luck.
 - **Triage** (`AUDITOR_THEORY_SELECTOR=triage`). One review-model call (medium thinking)
