@@ -11,9 +11,11 @@ from auditor.planner.tasks import plan_paper
 from auditor.planner.theory import (
     MAX_CHUNK_CHARS,
     ClaimInventory,
+    Suspects,
     formal_density,
     paper_listing,
     theory_tasks,
+    triage_tasks,
 )
 from auditor.schemas import (
     ParsedPaper,
@@ -195,3 +197,43 @@ async def test_the_citation_pass_can_be_left_out(
     assert called == []
     await plan_paper(ctx.paper, ctx)
     assert len(called) == 1
+
+
+async def test_triage_names_the_suspect_claims_in_one_task() -> None:
+    suspects = {
+        "suspects": [
+            {
+                "sentence_ids": ["s2", "s99"],
+                "statement": "f is bounded",
+                "reason": "n^2 should be n^3",
+            },
+            {"sentence_ids": ["s99"], "reason": "an id the paper lacks"},
+            {"sentence_ids": ["s4"], "reason": "case x = 0 is missed"},
+            {"sentence_ids": ["s5"], "reason": "over the limit"},
+        ]
+    }
+    model = ScriptedChatModel(replies=[tool_reply(Suspects, suspects)])
+    (task,) = await triage_tasks(paper(), StructuredLLM(model, name="test:s"), limit=2)
+    claims = task.claims or ()
+    assert [c.sentence_ids for c in claims] == [("s2",), ("s4",)]
+    assert claims[0].suspicion == "n^2 should be n^3"
+    # The triage step reads the whole paper.
+    assert FORMAL in str(model.received[0][1].content)
+
+
+async def test_the_planner_triages_with_the_review_model_when_asked(tmp_path: Path) -> None:
+    cheap, cheap_model = llm()
+    review = ScriptedChatModel(
+        replies=[tool_reply(Suspects, {"suspects": [{"sentence_ids": ["s1"], "reason": "x"}]})]
+    )
+    ctx = offline_context(tmp_path, paper=paper(), llm=cheap)
+    ctx = dataclasses.replace(
+        ctx,
+        review_llm=StructuredLLM(review, name="test:r"),
+        settings=ctx.settings.model_copy(
+            update={"theory_check_enabled": True, "theory_selector": "triage"}
+        ),
+    )
+    tasks = [t for t in await plan_paper(paper(), ctx) if t.kind is TaskKind.THEORY]
+    assert [len(t.claims or ()) for t in tasks] == [1]
+    assert not cheap_model.received

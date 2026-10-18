@@ -322,19 +322,25 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         )
     paper = ctx.paper
     claims = task.claims
-    used = list(dict.fromkeys(i for c in claims for i in c.depends_on))
-    prompt = (
-        f"Definitions and results the claims use:\n{_lines(paper, used) or '(none)'}\n\n"
-        "Claims:\n" + "\n\n".join(_pack(paper, c) for c in claims)
-    )
-    screened = await ctx.llm.generate(
-        Screen,
-        [SystemMessage(SCREEN_PROMPT), HumanMessage(prompt)],
-        effort="low",
-        purpose="theory-screen",
-    )
-    verdicts = {v.claim_id: v for v in screened.value.verdicts}
-    escalated = _escalated(claims, verdicts, ctx.settings.theory_deep_checks)
+    triaged = all(c.suspicion for c in claims)
+    escalated: list[tuple[TheoryClaim, str]]
+    if triaged:
+        # The triage step already read the whole paper; its suspects need no screen.
+        escalated = [(c, c.suspicion) for c in claims]
+    else:
+        used = list(dict.fromkeys(i for c in claims for i in c.depends_on))
+        prompt = (
+            f"Definitions and results the claims use:\n{_lines(paper, used) or '(none)'}\n\n"
+            "Claims:\n" + "\n\n".join(_pack(paper, c) for c in claims)
+        )
+        screened = await ctx.llm.generate(
+            Screen,
+            [SystemMessage(SCREEN_PROMPT), HumanMessage(prompt)],
+            effort="low",
+            purpose="theory-screen",
+        )
+        verdicts = {v.claim_id: v for v in screened.value.verdicts}
+        escalated = _escalated(claims, verdicts, ctx.settings.theory_deep_checks)
     # The paper comes first and is the same in every deep check, so a provider's prompt
     # cache can reuse it.
     listing = paper_text(paper)
@@ -400,7 +406,9 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     tries = [
         (claim, note, sample)
         for claim, note in escalated
-        for sample in range(ctx.settings.theory_deep_samples if claim.risk == "high" else 1)
+        for sample in range(
+            ctx.settings.theory_deep_samples if claim.risk == "high" and not triaged else 1
+        )
     ]
     # The paper's tasks share its deep checks; a task that comes later gets what is left.
     left = ctx.allowances.setdefault(DEEP_ALLOWANCE, ctx.settings.theory_deep_per_paper)

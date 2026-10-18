@@ -197,6 +197,11 @@ class Settings(BaseSettings):
     # SPOT dev papers, medium thinking with the whole paper found the same error as high
     # for $0.45 instead of $1.62; the sections found none.
     theory_deep_effort: Literal["low", "medium", "high"] = "medium"
+    # How claims are picked for deep checks: "screen" lists them with the main model and
+    # screens them cheaply; "triage" has the review model read the whole paper and name
+    # the claims most likely to be wrong, which go straight to deep checks. On the SPOT dev
+    # half the screen called 140 of 162 claims fine, including the wrong ones.
+    theory_selector: Literal["screen", "triage"] = "screen"
     theory_deep_context: Literal["paper", "sections"] = "paper"
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.

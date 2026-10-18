@@ -519,6 +519,25 @@ call sets its own thinking level, and the usage log records the level and the st
   papers, from 3 reports, all 3 matched; $1.73 in all, $0.58 per error found. The best
   earlier setup on the same half, one 3.8 Flash call per paper, found 2 of 15 with 18
   reports. The judge's grades have not been checked by a person.
+- **Where the dev half went wrong.** A trace of the run above, stage by stage:
+  - The Flash-Lite plan listed 162 claims, and missed some of the wrong ones entirely
+    (2406.06431 got two claims; Theorem 4.2 was not one of them).
+  - The Flash-Lite screen called 140 of the 162 fine and 2 suspicious, so it did not
+    filter. Deep checks went to the claims the plan rated high risk, which were often
+    not the wrong ones (2401.09543's Claim 7 was rated low risk; 2406.11623's Green
+    function lemma medium).
+  - When a deep check got the wrong claim, it found the error 3 times out of about 5.
+  - Running the same setup again on the same 13 papers found 1 of 15, not 3: picking
+    claims this way is mostly luck.
+- **Triage** (`AUDITOR_THEORY_SELECTOR=triage`). One review-model call (medium thinking)
+  reads the whole paper and names up to `AUDITOR_THEORY_DEEP_PER_PAPER` claims it
+  suspects, each with its reason; these go straight to deep checks, with no plan or
+  screen. On the three dev papers the screen had missed (2401.09543, 2405.05635,
+  2406.11623) it found 1 annotated error (Proposition 3.9 of 2405.05635), from 4
+  reports, for $0.33. With a restated claim in its answer, 3.8 Flash repeated phrases
+  until the output cap in two of three papers, so the answer has only a reason, a kind
+  and sentence ids. The default stays "screen" until triage is measured on the whole dev
+  half.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its
