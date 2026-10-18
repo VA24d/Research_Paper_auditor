@@ -513,6 +513,12 @@ call sets its own thinking level, and the usage log records the level and the st
   share of deep-check input from 27% to 37%.
   `AUDITOR_LLM_CACHED_INPUT_SHARE` sets the price of cached input for the dollar cap; it
   defaults to 1, which counts cached tokens in full.
+- **SPOT dev half with the defaults** (Flash-Lite plan and screen, 3.8 Flash medium deep
+  checks with the sandbox, 4 tries per paper). The five papers above were not run again;
+  the other eight ran once with the same code. Together: 3 of 15 errors found, in 3 of 13
+  papers, from 3 reports, all 3 matched; $1.73 in all, $0.58 per error found. The best
+  earlier setup on the same half, one 3.8 Flash call per paper, found 2 of 15 with 18
+  reports. The judge's grades have not been checked by a person.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its
