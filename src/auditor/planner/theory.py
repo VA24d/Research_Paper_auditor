@@ -235,18 +235,22 @@ async def theory_tasks(
     ]
 
 
-TRIAGE_PROMPT = """You are a careful referee. Read the whole paper and name the formal
-claims most likely to contain a real mathematical error: a false statement, a step that
-does not follow, a missing case, a result used outside its assumptions, a wrong constant,
-exponent or bound, or a conclusion stronger than the argument gives. Rank them, most
-likely first, and give at most {limit}. For each give:
+TRIAGE_PROMPT = """You are a careful referee. Read the whole paper and name the {limit}
+places most likely to hold a real mathematical error, most likely first. Look at:
+- theorems, lemmas, propositions and their proofs: a false statement, a step that does
+  not follow, a missing case, a result used outside its assumptions, a wrong constant,
+  exponent or bound, or a conclusion stronger than the argument gives;
+- statements the paper makes without proof and then relies on, anywhere in it,
+  including the introduction and preliminaries;
+- results that later ones build on.
+Give {limit} entries even when some doubts are weaker; a deep check follows each one.
+For each give:
 - reason: in at most 30 words, what looks wrong and what a check should work out;
 - kind: one word for it, such as "lemma" or "bound";
 - sentence_ids: the ids of the sentences that state it and the step you doubt;
 - depends_on: the ids of the sentences with the definitions and results it uses.
-Do not restate the claim or write formulas outside the reason.
-Name a claim only for a concrete doubt, not because it is long. Use only sentence ids
-from the listing; an empty list is a valid answer."""
+Do not restate the claim or write formulas outside the reason. Use only sentence ids from
+the listing."""
 
 
 class SuspectEntry(BaseModel):
@@ -263,31 +267,49 @@ class Suspects(BaseModel):
 
 
 async def triage_tasks(
-    paper: ParsedPaper, llm: StructuredLLM, *, limit: int, max_output: int = 16_384
+    paper: ParsedPaper,
+    llm: StructuredLLM,
+    *,
+    limit: int,
+    max_output: int = 16_384,
+    samples: int = 1,
 ) -> list[AuditTask]:
     """One task with the claims a referee reading the whole paper suspects most, at most
     `limit`. One call to the review model replaces the cheap listing and screen, which
-    passed nearly every claim, wrong ones included."""
+    passed nearly every claim, wrong ones included. With several `samples`, the calls'
+    suspects are pooled: a place named by more calls comes first, then the calls' lists
+    are taken in turn, since one call often names an error another misses."""
     if limit <= 0:
         return []
-    try:
-        result = await llm.generate(
-            Suspects,
-            [paper_context(paper), HumanMessage(TRIAGE_PROMPT.format(limit=limit))],
-            effort="medium",
-            purpose="theory-triage",
-            max_output_tokens=max_output,
-            cache_prefix=True,
-        )
-    except StructuredOutputError as exc:
-        logger.warning("triage of %s failed (%s)", paper.paper_id, exc)
-        return []
+
+    async def one(sample: int) -> list[SuspectEntry]:
+        try:
+            result = await llm.generate(
+                Suspects,
+                [paper_context(paper), HumanMessage(TRIAGE_PROMPT.format(limit=limit))],
+                effort="medium",
+                purpose="theory-triage",
+                sample=sample,
+                max_output_tokens=max_output,
+                cache_prefix=True,
+            )
+        except StructuredOutputError as exc:
+            logger.warning("triage of %s failed (%s)", paper.paper_id, exc)
+            return []
+        return result.value.suspects
+
     order = {s.id: i for i, s in enumerate(paper.sentences)}
+    lists = []
+    for entries in await asyncio.gather(*(one(n) for n in range(max(samples, 1)))):
+        valid = []
+        for entry in entries:
+            ids = tuple(dict.fromkeys(i for i in entry.sentence_ids if i in order))
+            if ids:
+                valid.append((ids, entry))
+        lists.append(valid)
+    pooled = _pool(lists)
     claims: list[TheoryClaim] = []
-    for entry in result.value.suspects:
-        ids = tuple(dict.fromkeys(i for i in entry.sentence_ids if i in order))
-        if not ids or len(claims) >= limit:
-            continue
+    for ids, entry in pooled[:limit]:
         claims.append(
             TheoryClaim(
                 claim_id=f"c{len(claims) + 1}",
@@ -311,3 +333,25 @@ async def triage_tasks(
             claims=claims,
         )
     ]
+
+
+def _pool(
+    lists: Sequence[Sequence[tuple[tuple[str, ...], SuspectEntry]]],
+) -> list[tuple[tuple[str, ...], SuspectEntry]]:
+    """The suspects of several triage calls, once each: entries that share a sentence are
+    the same place. Places more calls name come first; ties keep the calls' own ranks,
+    taken in turn."""
+    places: list[tuple[set[str], tuple[str, ...], SuspectEntry, set[int], int]] = []
+    for rank in range(max((len(entries) for entries in lists), default=0)):
+        for call, entries in enumerate(lists):
+            if rank >= len(entries):
+                continue
+            ids, entry = entries[rank]
+            same = next((p for p in places if p[0] & set(ids)), None)
+            if same is None:
+                places.append((set(ids), ids, entry, {call}, len(places)))
+            else:
+                same[0].update(ids)
+                same[3].add(call)
+    places.sort(key=lambda p: (-len(p[3]), p[4]))
+    return [(ids, entry) for _, ids, entry, _, _ in places]

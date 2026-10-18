@@ -225,7 +225,10 @@ async def test_triage_names_the_suspect_claims_in_one_task() -> None:
 async def test_the_planner_triages_with_the_review_model_when_asked(tmp_path: Path) -> None:
     cheap, cheap_model = llm()
     review = ScriptedChatModel(
-        replies=[tool_reply(Suspects, {"suspects": [{"sentence_ids": ["s1"], "reason": "x"}]})]
+        replies=[
+            tool_reply(Suspects, {"suspects": [{"sentence_ids": ["s1"], "reason": "x"}]})
+            for _ in range(2)  # two triage calls, whose suspects are pooled
+        ]
     )
     ctx = offline_context(tmp_path, paper=paper(), llm=cheap)
     ctx = dataclasses.replace(
@@ -238,3 +241,22 @@ async def test_the_planner_triages_with_the_review_model_when_asked(tmp_path: Pa
     tasks = [t for t in await plan_paper(paper(), ctx) if t.kind is TaskKind.THEORY]
     assert [len(t.claims or ()) for t in tasks] == [1]
     assert not cheap_model.received
+
+
+async def test_the_suspects_of_several_triage_calls_are_pooled() -> None:
+    first = {
+        "suspects": [
+            {"sentence_ids": ["s2"], "reason": "a"},
+            {"sentence_ids": ["s3"], "reason": "b"},
+        ]
+    }
+    second = {
+        "suspects": [
+            {"sentence_ids": ["s5"], "reason": "c"},
+            {"sentence_ids": ["s3", "s4"], "reason": "b again"},
+        ]
+    }
+    model = ScriptedChatModel(replies=[tool_reply(Suspects, first), tool_reply(Suspects, second)])
+    (task,) = await triage_tasks(paper(), StructuredLLM(model, name="test:s"), limit=3, samples=2)
+    # s3 is named by both calls and comes first; then each call's first suspect.
+    assert [c.sentence_ids[0] for c in task.claims or ()] == ["s3", "s2", "s5"]

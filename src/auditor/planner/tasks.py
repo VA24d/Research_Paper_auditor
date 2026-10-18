@@ -232,6 +232,7 @@ async def plan_paper(
                 ctx.require_review_llm(),
                 limit=ctx.settings.theory_deep_per_paper,
                 max_output=ctx.settings.theory_triage_max_output,
+                samples=ctx.settings.theory_triage_samples,
             )
             return _unique(tasks)
         tasks += await theory_tasks(

@@ -199,7 +199,7 @@ class Settings(BaseSettings):
     theory_deep_samples: int = Field(default=2, ge=1)
     # Deep-check tries across all of a paper's theory tasks. Without it each task had its
     # own: one long SPOT paper made 13 deep checks and cost $1.30.
-    theory_deep_per_paper: int = Field(default=4, ge=0)
+    theory_deep_per_paper: int = Field(default=6, ge=0)
     # Thinking of a deep check's first round, and what of the paper it sees: the whole
     # paper (the same in every deep check, so a provider's prompt cache can reuse it), or
     # only the sections holding the claim and what it uses, with their neighbours. On five
@@ -214,6 +214,8 @@ class Settings(BaseSettings):
     theory_selector: Literal["screen", "triage"] = "triage"
     # Output cap of the triage call, thinking included.
     theory_triage_max_output: int = Field(default=16_384, gt=0)
+    # Triage calls per paper whose suspects are pooled; answers differ between calls.
+    theory_triage_samples: int = Field(default=2, ge=1)
     theory_deep_context: Literal["paper", "sections"] = "paper"
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.
