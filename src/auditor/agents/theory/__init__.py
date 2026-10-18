@@ -82,6 +82,24 @@ algebraic step."""
 # cost; medium thinking with this cap keeps it to about half.
 TESTED_MAX_OUTPUT = 16_384
 DEEP_ALLOWANCE = "theory-deep-checks"
+WARM_LOCK = "theory-paper-cached"
+
+
+def _sections_text(paper: ParsedPaper, claim: TheoryClaim) -> str:
+    """The first section and the sections holding the claim and what it uses, each with
+    its neighbours: a shorter prompt than the whole paper, at the risk of missing a step
+    stated further away."""
+    order = [s.id for s in paper.sections]
+    by_id = {s.id: s for s in paper.sentences}
+    held = {by_id[i].section_id for i in (*claim.sentence_ids, *claim.depends_on) if i in by_id}
+    keep: set[str | None] = set(order[:1])
+    for section in held:
+        if section in order:
+            at = order.index(section)
+            keep.update(order[max(0, at - 1) : at + 2])
+        else:
+            keep.add(section)
+    return paper_listing(paper, [s for s in paper.sentences if s.section_id in keep])
 
 
 def make_sandbox() -> MathSandbox:
@@ -321,35 +339,56 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     # cache can reuse it.
     listing = paper_text(paper)
     llm = ctx.require_review_llm() if ctx.settings.theory_deep_model == "review" else ctx.llm
+    whole = ctx.settings.theory_deep_context == "paper"
 
     sandbox = make_sandbox() if ctx.settings.theory_sandbox_enabled else None
     if sandbox is not None and not await sandbox.available():
         sandbox = None
+    # One system prompt for both rounds, so the second round's prompt starts with the
+    # first's and the provider's cache covers the paper in it.
     system = SystemMessage(DEEP_PROMPT + (TEST_OFFER if sandbox is not None else ""))
 
+    async def first_round(message: str, sample: int) -> DeepCheck:
+        async def call() -> DeepCheck:
+            result = await llm.generate(
+                DeepCheck,
+                [system, HumanMessage(message)],
+                effort=ctx.settings.theory_deep_effort,
+                purpose="theory-deep",
+                sample=sample,
+            )
+            return result.value
+
+        if not whole:
+            return await call()
+        # A paper's first deep check runs alone: calls sent at the same moment cannot
+        # reuse each other's prompt, so the others wait until the paper is in the cache.
+        lock = ctx.locks.setdefault(WARM_LOCK, asyncio.Lock())
+        if not ctx.allowances.get(WARM_LOCK):
+            async with lock:
+                if not ctx.allowances.get(WARM_LOCK):
+                    answer = await call()
+                    ctx.allowances[WARM_LOCK] = 1
+                    return answer
+        return await call()
+
     async def deep(claim: TheoryClaim, note: str, sample: int) -> DeepCheck:
-        message = f"The paper:\n{listing}\n\nClaim to check:\n{_pack(paper, claim, note)}"
-        first = await llm.generate(
-            DeepCheck,
-            [system, HumanMessage(message)],
-            effort="high",
-            purpose="theory-deep",
-            sample=sample,
-        )
-        code = first.value.test_code.strip()
+        text = listing if whole else _sections_text(paper, claim)
+        message = f"The paper:\n{text}\n\nClaim to check:\n{_pack(paper, claim, note)}"
+        first = await first_round(message, sample)
+        code = first.test_code.strip()
         if sandbox is None or not code:
-            return first.value
+            return first
         ran = await sandbox.run(code)
         output = ran.stdout if ran.ok else f"{ran.stdout}\n{ran.stderr}".strip()
         follow_up = (
             f"Your test code:\n{code}\n\nIt printed:\n{output or '(nothing)'}\n\n"
-            "Now give your final answer, with every field it needs; do not ask for "
-            "another test."
+            "Now give your final answer, with every field it needs. You cannot ask for "
+            "another test: leave test_code empty."
         )
-        # The second round is told only how to answer, not offered another test.
         final = await llm.generate(
             DeepCheck,
-            [SystemMessage(DEEP_PROMPT), HumanMessage(message), HumanMessage(follow_up)],
+            [system, HumanMessage(message), HumanMessage(follow_up)],
             effort="medium",
             purpose="theory-deep-tested",
             max_output_tokens=TESTED_MAX_OUTPUT,

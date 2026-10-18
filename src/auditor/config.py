@@ -155,6 +155,10 @@ class Settings(BaseSettings):
     llm_max_cost_usd: float | None = Field(default=None, gt=0)
     # US dollars per million (input, output) tokens; output includes thinking. Gemini API
     # list prices as of 2026-10-17 (3.8 Flash is $1.50 / $7.50 from 2027-01-01).
+    # The share of the input price a provider charges for input read from its prompt
+    # cache (Gemini bills cached tokens at a fraction of the input price). 1 counts them
+    # in full, which keeps AUDITOR_LLM_MAX_COST_USD on the safe side.
+    llm_cached_input_share: float = Field(default=1.0, ge=0, le=1)
     llm_prices: dict[str, tuple[float, float]] = Field(
         default_factory=lambda: {
             "gemini-2.5-flash": (0.30, 2.50),
@@ -187,6 +191,13 @@ class Settings(BaseSettings):
     # Deep-check tries across all of a paper's theory tasks. Without it each task had its
     # own: one long SPOT paper made 13 deep checks and cost $1.30.
     theory_deep_per_paper: int = Field(default=4, ge=0)
+    # Thinking of a deep check's first round, and what of the paper it sees: the whole
+    # paper (the same in every deep check, so a provider's prompt cache can reuse it), or
+    # only the sections holding the claim and what it uses, with their neighbours. On five
+    # SPOT dev papers, medium thinking with the whole paper found the same error as high
+    # for $0.45 instead of $1.62; the sections found none.
+    theory_deep_effort: Literal["low", "medium", "high"] = "medium"
+    theory_deep_context: Literal["paper", "sections"] = "paper"
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.
     theory_sandbox_enabled: bool = True

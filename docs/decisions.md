@@ -498,6 +498,21 @@ call sets its own thinking level, and the usage log records the level and the st
   2401.09543, and stopped 2408.16162 before its challenge, though its deep check had found
   the annotated error again. The other three gave no findings. A paper's theory tasks now
   share at most `AUDITOR_THEORY_DEEP_PER_PAPER` (4) deep-check tries.
+- **Cost settings, measured on the same five papers.**
+
+  | Setup | Cost | Errors found |
+  |---|---|---|
+  | high thinking, no per-paper limit | $1.62, cap reached | 0 counted (the cap stopped the one found) |
+  | medium thinking, whole paper | $0.45 | 1 of 5 (2408.16162, precision 1 of 1) |
+  | medium thinking, nearby sections only | $0.28 | 0 of 5 |
+
+  Medium is now the default (`AUDITOR_THEORY_DEEP_EFFORT`). The whole paper stays the
+  default context (`AUDITOR_THEORY_DEEP_CONTEXT=sections` is the other choice). To let
+  the provider cache the paper, both rounds of a deep check share one system prompt, and
+  a paper's first deep check runs alone before the others start. That raised the cached
+  share of deep-check input from 27% to 37%.
+  `AUDITOR_LLM_CACHED_INPUT_SHARE` sets the price of cached input for the dollar cap; it
+  defaults to 1, which counts cached tokens in full.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its

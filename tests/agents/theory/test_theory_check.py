@@ -123,10 +123,10 @@ async def test_a_suspicious_claim_gets_a_deep_check_and_becomes_a_finding(
     (quote,) = finding.evidence
     assert quote.kind is EvidenceKind.QUOTE
     assert quote.source.kind is SourceKind.SUBMISSION
-    # The screen is cheap and shallow; only the deep check thinks hard.
+    # The screen is cheap and shallow; the deep check thinks harder.
     assert [(r.purpose, r.effort) for r in usage.llm_calls] == [
         ("theory-screen", "low"),
-        ("theory-deep", "high"),
+        ("theory-deep", "medium"),
     ]
     screen_prompt, deep_prompt = (" ".join(str(m.content) for m in call) for call in model.received)
     assert f"[s0] {DEFINITION}" in screen_prompt  # what the claim uses
@@ -324,16 +324,18 @@ async def test_a_deep_check_can_test_a_claim_with_code_before_answering(
         (finding,) = (await check(task(), ctx)).findings
     assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
     assert box.ran == [test["test_code"]]
-    # Reading the test's output needs less thinking than the first round.
+    # The answer after a test runs at medium thinking with a capped output.
     assert [(r.purpose, r.effort) for r in usage.llm_calls][1:] == [
-        ("theory-deep", "high"),
+        ("theory-deep", "medium"),
         ("theory-deep-tested", "medium"),
     ]
     final = " ".join(str(m.content) for m in model.received[2])
     assert "S(1) = 1, formula gives 0.5" in final
-    # The final round is not offered another test, so the model answers in full.
-    assert "test_code" in str(model.received[1][0].content)
-    assert "test_code" not in str(model.received[2][0].content)
+    # Both rounds start with the same prompt, so the provider's cache covers the paper in
+    # the second; only the last message says that no further test is possible.
+    first_round, second_round = model.received[1], model.received[2]
+    assert [m.content for m in second_round[:2]] == [m.content for m in first_round]
+    assert "leave test_code empty" in str(second_round[-1].content)
 
 
 async def test_without_the_sandbox_the_deep_check_answers_at_once(tmp_path: Path) -> None:
@@ -372,3 +374,22 @@ async def test_a_papers_tasks_share_its_deep_checks(tmp_path: Path) -> None:
     # The second task of the same paper has no deep check left: only its screen runs.
     assert (await check(task(), ctx)).findings == ()
     assert len(model.received) == 3
+
+
+def test_the_sections_context_keeps_the_claims_sections_and_their_neighbours() -> None:
+    from auditor.agents.theory import _sections_text
+
+    sections = tuple(Section(id=f"sec{i}", title=f"Part {i}") for i in range(6))
+    sentences = tuple(
+        Sentence(id=f"x{i}", section_id=f"sec{i}", text=f"Sentence in part {i}.") for i in range(6)
+    )
+    p = ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sections=sections,
+        sentences=sentences,
+    )
+    claim = TheoryClaim(claim_id="c", kind="lemma", sentence_ids=("x4",), risk="high")
+    text = _sections_text(p, claim)
+    kept = [i for i in range(6) if f"[x{i}]" in text]
+    assert kept == [0, 3, 4, 5]  # the first section, and part 4 with its neighbours
