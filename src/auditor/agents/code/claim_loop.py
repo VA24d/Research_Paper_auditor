@@ -39,6 +39,7 @@ from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, Field
 
 from auditor.agents.code.data_checks import paper_quote_text
+from auditor.agents.code.method_check import related_files
 from auditor.agents.code.tools import make_tools
 from auditor.infra.context import RunContext
 from auditor.infra.llm import Effort, StructuredLLM, TokenUsage
@@ -224,6 +225,9 @@ def _limits(ctx: RunContext) -> tuple[int, int]:
     return max(tools, 0), max(models, 0)
 
 
+RELATED_FILES = 5
+
+
 def _passage(ctx: RunContext, sentence_id: str) -> str:
     """The claim's sentence with one sentence of context on each side."""
     body = [s for s in ctx.paper.sentences if s.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY)]
@@ -243,10 +247,15 @@ def _first_message(
     listed = "\n".join(f"  {path}" for path in files[:MAX_LISTED_FILES])
     if len(files) > MAX_LISTED_FILES:
         listed += f"\n  ... and {len(files) - MAX_LISTED_FILES} more (list_repository_files)"
+    passage = _passage(ctx, anchor.sentence_id)
+    # The files that share the most words with the claim, as a place to start.
+    related = related_files(snapshot, f"{claim} {passage}")[:RELATED_FILES]
+    hint = "\n".join(f"  {path}" for path in related) or "  (none)"
     return HumanMessage(
         f"Claim ({category}): {claim}\n"
         f"Paper sentence: {sentence}\n"
-        f"Passage: {_passage(ctx, anchor.sentence_id)}\n\n"
+        f"Passage: {passage}\n\n"
+        f"Files most related to the claim:\n{hint}\n\n"
         f"Repository {snapshot.source_id}, files:\n{listed}"
     )
 

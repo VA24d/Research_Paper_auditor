@@ -236,6 +236,7 @@ async def plan_paper(
             limit=ctx.settings.claim_loop_max_claims,
             max_output=ctx.settings.claim_loop_plan_max_output,
             existing=setting_tasks,
+            focus=ctx.settings.claim_loop_focus,
         )
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
         if ctx.settings.theory_selector == "triage":

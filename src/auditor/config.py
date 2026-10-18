@@ -178,7 +178,11 @@ class Settings(BaseSettings):
     # How the code agent compares a paper's method with its code: "pairs" asks one small
     # question per (paper sentence, code function) pair, which suits small local models;
     # "whole" sends the method text and the related files in one call.
-    method_check_mode: Literal["pairs", "whole"] = "pairs"
+    method_check_mode: Literal["pairs", "whole"] = "whole"
+    # Which model reads the method and the code: the main model or the review model. On
+    # set C, 3.8 Flash in "whole" mode found 2 of 28 SciCoQA discrepancies; the "pairs"
+    # mode found none with Flash-Lite or 3.8 Flash.
+    method_check_model: Literal["main", "review"] = "review"
     method_check_pairs: int = Field(default=12, gt=0)
     # Ask the model, one code line at a time, which of several repository values a setting
     # mismatch is about (only when an LLM is configured).
@@ -195,6 +199,9 @@ class Settings(BaseSettings):
     claim_loop_max_model_calls: int = Field(default=8, gt=0)
     claim_loop_plan_max_output: int = Field(default=4096, gt=0)
     claim_loop_effort: Literal["low", "medium", "high"] = "medium"
+    # What the claims are about: the experiments (data, splits, evaluation), or the
+    # method's implementation details, read from the method sections.
+    claim_loop_focus: Literal["experiments", "method"] = "experiments"
     # Which model explores: the review model, or the main (cheap) one.
     claim_loop_model: Literal["main", "review"] = "review"
     # The planner's model pass over citation candidates (Part 2's checks). Runs that only

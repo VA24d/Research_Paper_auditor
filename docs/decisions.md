@@ -358,6 +358,26 @@ The planned claims are mostly about datasets and evaluation. SciCoQA's discrepan
 method details (a loss term, which features are concatenated), which the method check
 covers. The loop stays off by default.
 
+Other ways of finding those discrepancies were measured on the same 10 pairs (28
+discrepancies, judged by 3.8 Flash):
+
+| Strategy | Found | Findings | Cost |
+|---|---|---|---|
+| claim loop, experiment claims, Flash-Lite exploring | 1 | 4 | $0.77 |
+| claim loop on the method's implementation details (`AUDITOR_CLAIM_LOOP_FOCUS=method`), with the five files most related to each claim named in its first message | 0 | 2 | $0.75 |
+| claim loop given the discrepancies' own sentences, Flash-Lite exploring | 1 | 1 | $0.16 |
+| the same, 3.8 Flash exploring | 2 | 3 | $0.43 |
+| method check, "pairs" mode, Flash-Lite or 3.8 Flash | 0 | 0 | $0.28 / $0.65 |
+| method check, "whole" mode, 3.8 Flash | 2 | 8 | $0.79 |
+| grep retrieval: each method sentence's terms searched in the code, the hit windows judged by 3.8 Flash | 0 | 8 | $0.60 |
+
+Even told which sentence is wrong, the loop found 2 of 28. Retrieval is part of the
+problem: in "pairs" mode the changed lines were never next to the sentence they
+contradict. Grep retrieval found the planted setting changes (a batch size, epochs, a
+learning rate, an optimizer) but no method discrepancy, so it was not kept. The method
+check now defaults to "whole" mode on the review model (`AUDITOR_METHOD_CHECK_MODE`,
+`AUDITOR_METHOD_CHECK_MODEL`).
+
 ## D12. PDF parsing stack — Agreed
 
 - GROBID 0.9.1 (Docker image `grobid/grobid:0.9.1-crf`) for structure, bibliography,
