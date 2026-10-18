@@ -200,8 +200,9 @@ class Settings(BaseSettings):
     # How claims are picked for deep checks: "screen" lists them with the main model and
     # screens them cheaply; "triage" has the review model read the whole paper and name
     # the claims most likely to be wrong, which go straight to deep checks. On the SPOT dev
-    # half the screen called 140 of 162 claims fine, including the wrong ones.
-    theory_selector: Literal["screen", "triage"] = "screen"
+    # half the screen called 140 of 162 claims fine, including the wrong ones; triage
+    # found 6 of 15 errors in 5 of 13 papers, against 3 and then 1 of 15 for the screen.
+    theory_selector: Literal["screen", "triage"] = "triage"
     theory_deep_context: Literal["paper", "sections"] = "paper"
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.

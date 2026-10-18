@@ -110,6 +110,19 @@ def paper_listing(paper: ParsedPaper, sentences: Sequence[Sentence] | None = Non
 
 _RISK = {"high": 0, "medium": 1, "low": 2}
 
+PAPER_CONTEXT = """You review the mathematics of a research paper for a referee. The paper
+follows, one sentence per line with its id in brackets; the task comes after it.
+
+The paper:
+{listing}"""
+
+
+def paper_context(paper: ParsedPaper) -> SystemMessage:
+    """The paper as the first message of every review-model call about it (triage, deep
+    checks, challenge), so a provider's prompt cache can reuse it across all of them; the
+    instructions come after it."""
+    return SystemMessage(PAPER_CONTEXT.format(listing=paper_listing(paper)))
+
 
 def _chunks(paper: ParsedPaper) -> list[list[Sentence]]:
     """The readable sentences in pieces of about MAX_CHUNK_CHARS, cut at section starts
@@ -259,7 +272,7 @@ async def triage_tasks(paper: ParsedPaper, llm: StructuredLLM, *, limit: int) ->
     try:
         result = await llm.generate(
             Suspects,
-            [SystemMessage(TRIAGE_PROMPT.format(limit=limit)), HumanMessage(paper_listing(paper))],
+            [paper_context(paper), HumanMessage(TRIAGE_PROMPT.format(limit=limit))],
             effort="medium",
             purpose="theory-triage",
             max_output_tokens=MAX_TRIAGE_TOKENS,

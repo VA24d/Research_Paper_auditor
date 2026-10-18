@@ -25,12 +25,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from auditor.infra.context import RunContext
 from auditor.infra.sandbox import MathSandbox
-from auditor.planner.theory import paper_listing
+from auditor.planner.theory import paper_context, paper_listing
 from auditor.schemas import (
     AuditTask,
     CandidateFinding,
@@ -126,11 +126,6 @@ class DeepCheck(BaseModel):
     explanation: str = ""
     witness: str = ""
     confidence: Literal["low", "medium", "high"] = "low"
-
-
-def paper_text(paper: ParsedPaper) -> str:
-    """The paper as the checks see it (one `[id] sentence` line each)."""
-    return paper_listing(paper)
 
 
 def _lines(paper: ParsedPaper, ids: Sequence[str]) -> str:
@@ -341,9 +336,6 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         )
         verdicts = {v.claim_id: v for v in screened.value.verdicts}
         escalated = _escalated(claims, verdicts, ctx.settings.theory_deep_checks)
-    # The paper comes first and is the same in every deep check, so a provider's prompt
-    # cache can reuse it.
-    listing = paper_text(paper)
     llm = ctx.require_review_llm() if ctx.settings.theory_deep_model == "review" else ctx.llm
     whole = ctx.settings.theory_deep_context == "paper"
 
@@ -352,13 +344,16 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         sandbox = None
     # One system prompt for both rounds, so the second round's prompt starts with the
     # first's and the provider's cache covers the paper in it.
-    system = SystemMessage(DEEP_PROMPT + (TEST_OFFER if sandbox is not None else ""))
+    instructions = DEEP_PROMPT + (TEST_OFFER if sandbox is not None else "")
+    # With the whole paper, it comes first, in the message every review-model call about
+    # the paper starts with; the instructions and the claim follow.
+    head: list[BaseMessage] = [paper_context(paper)] if whole else [SystemMessage(instructions)]
 
     async def first_round(message: str, sample: int) -> DeepCheck:
         async def call() -> DeepCheck:
             result = await llm.generate(
                 DeepCheck,
-                [system, HumanMessage(message)],
+                [*head, HumanMessage(message)],
                 effort=ctx.settings.theory_deep_effort,
                 purpose="theory-deep",
                 sample=sample,
@@ -379,8 +374,12 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         return await call()
 
     async def deep(claim: TheoryClaim, note: str, sample: int) -> DeepCheck:
-        text = listing if whole else _sections_text(paper, claim)
-        message = f"The paper:\n{text}\n\nClaim to check:\n{_pack(paper, claim, note)}"
+        claim_text = f"Claim to check:\n{_pack(paper, claim, note)}"
+        message = (
+            f"{instructions}\n\n{claim_text}"
+            if whole
+            else f"The paper:\n{_sections_text(paper, claim)}\n\n{claim_text}"
+        )
         first = await first_round(message, sample)
         code = first.test_code.strip()
         if sandbox is None or not code:
@@ -394,7 +393,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         )
         final = await llm.generate(
             DeepCheck,
-            [system, HumanMessage(message), HumanMessage(follow_up)],
+            [*head, HumanMessage(message), HumanMessage(follow_up)],
             effort="medium",
             purpose="theory-deep-tested",
             max_output_tokens=TESTED_MAX_OUTPUT,

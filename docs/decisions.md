@@ -537,8 +537,15 @@ call sets its own thinking level, and the usage log records the level and the st
   2406.11623) it found 1 annotated error (Proposition 3.9 of 2405.05635), from 4
   reports, for $0.33. With a restated claim in its answer, 3.8 Flash repeated phrases
   until the output cap in two of three papers, so the answer has only a reason, a kind
-  and sentence ids. The default stays "screen" until triage is measured on the whole dev
-  half.
+  and sentence ids.
+- **Triage on the whole dev half.** The other ten papers ran once and were added to the
+  three above: 6 of 15 errors found, in 5 of 13 papers, from 13 reports, of which 6
+  matched; $2.08 in all, $0.35 per error found. The screen setup found 3 of 15, and 1 of
+  15 when the same setup ran again. One report of 2406.03201 was matched to both of that
+  paper's errors, which is generous. 2408.16162, found by the screen setup, was missed.
+  Triage is now the default. Every review-model call about a paper (triage, deep checks,
+  challenge) now starts with the same message holding the paper, so the prompt cache can
+  reuse it; Vertex still reported only 8% of the 3.8 Flash input as cached.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its

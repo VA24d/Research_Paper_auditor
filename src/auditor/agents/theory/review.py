@@ -12,11 +12,11 @@ repeats, and one that is not an error is dropped with the model's reason.
 from collections.abc import Sequence
 from typing import Literal
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
-from auditor.agents.theory import paper_text
 from auditor.infra.context import RunContext
+from auditor.planner.theory import paper_context
 from auditor.schemas import ErrorClass, SentenceAnchor, VerificationState, VerifiedFinding
 
 SYSTEM_PROMPT = """You are the senior referee who checks the mathematics of a research
@@ -65,10 +65,11 @@ async def review_math(
         return out
     texts = {s.id: s.text for s in ctx.paper.sentences}
     listing = "\n".join(_candidate(n, out[i], texts) for n, i in enumerate(positions, start=1))
-    prompt = f"The paper:\n{paper_text(ctx.paper)}\n\nCandidate errors:\n{listing}"
+    prompt = f"{SYSTEM_PROMPT}\n\nCandidate errors:\n{listing}"
     result = await ctx.require_review_llm().generate(
         MathVerdicts,
-        [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)],
+        # The paper first, as in the deep checks, so the prompt cache covers it.
+        [paper_context(ctx.paper), HumanMessage(prompt)],
         effort="medium",
         purpose="theory-challenge",
     )
