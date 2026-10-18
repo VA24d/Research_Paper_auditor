@@ -817,7 +817,7 @@ that quotes a table number unambiguously. The set D runs led to five changes:
   its text has a main guard. Before this, breaking a script took it out of the scope that
   was checked.
 
-**Number pass** (`AUDITOR_RESULTS_NUMBER_PASS_ENABLED`, on by default). On set D none of
+**Number pass** (`AUDITOR_RESULTS_NUMBER_PASS_ENABLED`, off by default). On set D none of
 the 7 changed numbers were found. The per-section extraction usually does not list a
 sentence such as "BASE performs the worst (68.76% in average ACC and 74.77% in average
 MF1)" as a `value` claim. A second pass now reads such sentences again. Code picks them
@@ -836,4 +836,6 @@ here. The sentence must hold the text's number. A pair is dropped when the two n
 agree within rounding, or when one is the other times 100 (68.76% against 0.6876) or with
 its sign changed. It is also dropped when the named row holds the text's number too, since
 the text then quotes another cell. What remains goes through the challenge step like the
-other candidates. Recall on set D has not been measured yet.
+other candidates. Measured on set D, it found none of the 7 changed numbers either, at
+$0.48 for the 80 papers. Flash-Lite and 3.8 Flash both left the row label empty or read
+the wrong row for the planted sentences, so the pass stays off until it finds something.

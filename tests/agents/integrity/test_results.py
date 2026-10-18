@@ -138,6 +138,10 @@ async def run(
         ctx = without_challenge(ctx)
     if numbers is None:
         ctx = without_number_pass(ctx)
+    else:
+        ctx = dataclasses.replace(
+            ctx, settings=ctx.settings.model_copy(update={"results_number_pass_enabled": True})
+        )
     if settings:
         ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
     return await check(results_task(p), ctx), model

@@ -1112,7 +1112,7 @@ async def _number_pass(
         lines = [f"[{s.id}] {s.text}" for s, _ in batch]
         used = list({t.id: t for _, shown in batch for t in shown}.values())
         listings.append(_with_tables(paper, lines, used))
-    llm = ctx.llm
+    llm = ctx.require_review_llm() if settings.results_number_model == "review" else ctx.llm
     replies = await asyncio.gather(
         *(
             llm.generate(

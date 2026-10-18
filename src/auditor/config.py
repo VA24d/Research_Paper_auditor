@@ -238,9 +238,11 @@ class Settings(BaseSettings):
     # `results_number_max_sentences` per paper, are read again with the tables they use,
     # and each number is paired with the cell it is read from. On set D the per-section
     # extraction found none of 7 planted wrong numbers.
-    results_number_pass_enabled: bool = True
+    results_number_pass_enabled: bool = False
     results_number_max_sentences: int = Field(default=12, ge=0)
     results_number_effort: Literal["low", "medium", "high"] = "medium"
+    # The model that reads the cells: the main model, or the review model.
+    results_number_model: Literal["main", "review"] = "main"
     # Which model does the deep checks: the main (cheap) one, or the review model. On SPOT,
     # Flash-Lite deep checks mostly answered "no error"; the stronger model costs more.
     theory_deep_model: Literal["main", "review"] = "main"
