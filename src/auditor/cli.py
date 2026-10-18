@@ -34,6 +34,7 @@ from auditor.experiments import (
 )
 from auditor.infra.files import atomic_write
 from auditor.infra.http import HttpClient
+from auditor.infra.llm import closing_llm
 from auditor.infra.log import configure_logging
 from auditor.infra.manifest import build_manifest, new_run_id, write_manifest
 from auditor.infra.usage import UsageLog
@@ -117,7 +118,10 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
                 "inputs": inputs,
             },
         )
-        async with AsyncSqliteSaver.from_conn_string(str(run.path / "checkpoints.sqlite")) as saver:
+        async with (
+            AsyncSqliteSaver.from_conn_string(str(run.path / "checkpoints.sqlite")) as saver,
+            closing_llm(llm),
+        ):
             try:
                 result = await run_full(
                     paper,

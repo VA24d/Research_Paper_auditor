@@ -11,8 +11,9 @@ import contextlib
 import functools
 import hashlib
 import json
+import logging
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,8 +30,11 @@ from pydantic import BaseModel, ValidationError
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
 from auditor.infra.manifest import redact
+from auditor.infra.prefix_cache import GenAICacheClient, PrefixCache
 from auditor.infra.scope import BudgetExceededError, Scope, current_scope
 from auditor.schemas import CallStatus, LLMCallRecord
+
+logger = logging.getLogger(__name__)
 
 
 class LLMNotConfiguredError(RuntimeError):
@@ -266,6 +270,8 @@ class StructuredLLM:
         max_calls: int | None = None,
         cache_scope: Literal["shared", "run"] = "shared",
         spend: Spend | None = None,
+        prefix_cache: PrefixCache | None = None,
+        cache_storage_price: float = 0.0,
     ) -> None:
         self.model = model
         self.name = name
@@ -284,12 +290,37 @@ class StructuredLLM:
         # The stronger model for review steps (AUDITOR_LLM_REVIEW_MODEL), if any.
         self.review: StructuredLLM | None = None
         self.provider: str | None = None
-        self._variants: dict[tuple[Effort | None, int | None], BaseChatModel] = {}
+        self._variants: dict[tuple[Effort | None, int | None, str | None], BaseChatModel] = {}
+        # Explicit context caches for long first messages (Vertex Gemini only), and the
+        # storage price charged for each when it is made, in US dollars per million
+        # tokens per hour.
+        self.prefix_cache = prefix_cache
+        self.cache_storage_price = cache_storage_price
 
     @property
     def limit_reached(self) -> bool:
         calls = self.max_calls is not None and self.calls >= self.max_calls
         return calls or self.spend.exhausted
+
+    @property
+    def _bare_name(self) -> str:
+        return self.name.split(":", 1)[-1]
+
+    async def _cache_for(self, text: str) -> str | None:
+        assert self.prefix_cache is not None
+        made = len(self.prefix_cache.created)
+        name = await self.prefix_cache.name_for(self._bare_name, text)
+        if len(self.prefix_cache.created) > made:
+            # Storage for the cache's whole lifetime, charged when it is made.
+            hours = self.prefix_cache.ttl_s / 3600
+            tokens = len(text) / CHARS_PER_TOKEN
+            self.spend.spent_usd += tokens * hours * self.cache_storage_price / 1e6
+        return name
+
+    async def aclose(self) -> None:
+        """Delete the context caches this model made (the review model shares them)."""
+        if self.prefix_cache is not None:
+            await self.prefix_cache.close()
 
     def _check_limits(self) -> None:
         if self.max_calls is not None and self.calls >= self.max_calls:
@@ -318,7 +349,14 @@ class StructuredLLM:
                         f"AUDITOR_LLM_MAX_COST_USD needs the price of {model}; add it to "
                         "AUDITOR_LLM_PRICES"
                     )
-        llm = cls._one(settings, spend)
+        prefix_cache = None
+        if settings.llm_explicit_cache and settings.llm_provider == "google_genai":
+            prefix_cache = PrefixCache(
+                GenAICacheClient(dict(settings.llm_options)),
+                ttl_s=settings.llm_explicit_cache_ttl_s,
+                min_chars=settings.llm_explicit_cache_min_chars,
+            )
+        llm = cls._one(settings, spend, prefix_cache)
         if settings.llm_review_model:
             options = settings.llm_review_options
             llm.review = cls._one(
@@ -329,11 +367,14 @@ class StructuredLLM:
                     }
                 ),
                 spend,
+                prefix_cache,
             )
         return llm
 
     @classmethod
-    def _one(cls, settings: Settings, spend: Spend) -> "StructuredLLM":
+    def _one(
+        cls, settings: Settings, spend: Spend, prefix_cache: PrefixCache | None = None
+    ) -> "StructuredLLM":
         cache = LLMCache(settings.cache_dir / "llm") if settings.llm_cache else None
         llm = cls(
             create_chat_model(settings),
@@ -346,18 +387,24 @@ class StructuredLLM:
             max_calls=settings.llm_max_calls,
             cache_scope=settings.llm_cache_scope,
             spend=spend,
+            prefix_cache=prefix_cache,
+            cache_storage_price=settings.llm_cache_storage_price,
         )
         llm.provider = settings.llm_provider
         return llm
 
     def model_for(
-        self, effort: Effort | None, *, max_output_tokens: int | None = None
+        self,
+        effort: Effort | None,
+        *,
+        max_output_tokens: int | None = None,
+        cached_content: str | None = None,
     ) -> BaseChatModel:
-        """The chat model with its thinking set to `effort` and its output capped at
-        `max_output_tokens` (the configured model for None, or for a provider without
-        such settings)."""
-        key = (effort, max_output_tokens)
-        if key == (None, None):
+        """The chat model with its thinking set to `effort`, its output capped at
+        `max_output_tokens` and reading the context cache `cached_content` (the
+        configured model for None, or for a provider without such settings)."""
+        key = (effort, max_output_tokens, cached_content)
+        if key == (None, None, None):
             return self.model
         if key not in self._variants:
             update: dict[str, Any] = {}
@@ -371,6 +418,8 @@ class StructuredLLM:
                 field = _OUTPUT_FIELDS.get(self.provider or "")
                 if field is not None:
                     update[field] = max_output_tokens
+            if cached_content is not None:
+                update["cached_content"] = cached_content
             self._variants[key] = self.model.model_copy(update=update) if update else self.model
         return self._variants[key]
 
@@ -383,12 +432,14 @@ class StructuredLLM:
         purpose: str | None = None,
         sample: int = 0,
         max_output_tokens: int | None = None,
+        cache_prefix: bool = False,
     ) -> StructuredResult[T]:
         """A validated `schema` value. `effort` sets how hard the model thinks on this call
         (None keeps the configured setting); `purpose` names the step in the usage log;
         `sample` numbers independent tries of the same question, which are cached apart;
         `max_output_tokens` caps this call's answer, so a model stuck repeating itself
-        stops early."""
+        stops early; `cache_prefix` lets the first (system) message come from an explicit
+        context cache, when the model has one (AUDITOR_LLM_EXPLICIT_CACHE)."""
         record = functools.partial(self._record, effort=effort, purpose=purpose)
         context = self.cache_context if effort is None else f"{self.cache_context}|{effort}"
         active = current_scope()
@@ -418,12 +469,27 @@ class StructuredLLM:
         if self.method is not None:
             kwargs["method"] = self.method
         model = self.model_for(effort, max_output_tokens=max_output_tokens)
-        runnable = model.with_structured_output(schema, **kwargs)
+        plain = model.with_structured_output(schema, **kwargs)
+        head = messages[0] if messages else None
+        cache_name = None
+        if cache_prefix and self.prefix_cache is not None and isinstance(head, SystemMessage):
+            cache_name = await self._cache_for(str(head.content))
+
+        def runnable_for(turns: list[BaseMessage]) -> tuple[Any, list[BaseMessage], bool]:
+            # A conversation that starts with the cached message names the cache instead
+            # of sending it again.
+            if cache_name is not None and turns and turns[0] is head:
+                cached = self.model_for(
+                    effort, max_output_tokens=max_output_tokens, cached_content=cache_name
+                )
+                return cached.with_structured_output(schema, **kwargs), turns[1:], True
+            return plain, turns, False
 
         conversation = list(messages)
         total = TokenUsage()
         problem = ""
         for attempt in range(1, self.max_attempts + 1):
+            runnable, sent, from_cache = runnable_for(conversation)
             active = current_scope()
             if active is not None:
                 active.budget.charge_llm_call()
@@ -436,7 +502,7 @@ class StructuredLLM:
                 started_at = datetime.now(UTC)
                 started = time.perf_counter()
                 try:
-                    output = await runnable.ainvoke(conversation)
+                    output = await runnable.ainvoke(sent)
                 except Exception as exc:
                     record(
                         TokenUsage(),
@@ -444,7 +510,15 @@ class StructuredLLM:
                         time.perf_counter() - started,
                         error=f"{type(exc).__name__}: {exc}",
                     )
-                    raise
+                    if not from_cache or attempt == self.max_attempts:
+                        raise
+                    # The cache may have expired or been refused: send the message whole.
+                    logger.warning("call with a context cache failed (%s); sending it whole", exc)
+                    assert self.prefix_cache is not None
+                    assert head is not None
+                    self.prefix_cache.forget(self._bare_name, str(head.content))
+                    cache_name = None
+                    continue
             if not isinstance(output, dict):
                 raise TypeError(f"expected a dict from include_raw, got {type(output).__name__}")
             raw = output["raw"]
@@ -576,3 +650,13 @@ class UsageCallback(AsyncCallbackHandler):
                 error=error,
             )
         )
+
+
+@contextlib.asynccontextmanager
+async def closing_llm(llm: StructuredLLM | None) -> AsyncIterator[StructuredLLM | None]:
+    """`llm`, with its context caches deleted when the block ends."""
+    try:
+        yield llm
+    finally:
+        if llm is not None:
+            await llm.aclose()

@@ -551,6 +551,18 @@ call sets its own thinking level, and the usage log records the level and the st
   $1.68, $0.21 per error found. The screen setup's one test-half run had found none, in
   the 11 papers it finished. The test half was not looked at paper by paper. The grades
   are the SPOT judge's, and no person has checked them.
+- **Explicit context caching** (`AUDITOR_LLM_EXPLICIT_CACHE`, off by default;
+  `auditor.infra.prefix_cache`). Vertex's implicit cache reused 8-9% of the 3.8 Flash
+  input, so the message holding the paper goes into an explicit Vertex context cache the
+  first time a review-model call sends it; later calls about the paper name the cache and
+  send only the instructions. Each cache is a resource on the Google Cloud project: it
+  expires after `AUDITOR_LLM_EXPLICIT_CACHE_TTL_S` (1200 s), the run deletes the ones it
+  made when it ends, and its storage for the whole lifetime is charged to the dollar cap
+  (`AUDITOR_LLM_CACHE_STORAGE_PRICE`, $1 per million tokens per hour). Messages shorter
+  than `AUDITOR_LLM_EXPLICIT_CACHE_MIN_CHARS` (16,000) are sent as usual, and so is any
+  message whose cache cannot be made or has expired. On 2408.16162, 4,798 of the about
+  5,500 input tokens of each 3.8 Flash call (triage, two deep checks, challenge) were read
+  from the cache. The team lead approved creating these caches on the shared project.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its

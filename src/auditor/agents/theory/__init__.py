@@ -357,6 +357,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
                 effort=ctx.settings.theory_deep_effort,
                 purpose="theory-deep",
                 sample=sample,
+                cache_prefix=whole,
             )
             return result.value
 
@@ -398,6 +399,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
             purpose="theory-deep-tested",
             max_output_tokens=TESTED_MAX_OUTPUT,
             sample=sample,
+            cache_prefix=whole,
         )
         return final.value
 

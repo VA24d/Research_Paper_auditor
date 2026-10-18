@@ -159,6 +159,15 @@ class Settings(BaseSettings):
     # cache (Gemini bills cached tokens at a fraction of the input price). 1 counts them
     # in full, which keeps AUDITOR_LLM_MAX_COST_USD on the safe side.
     llm_cached_input_share: float = Field(default=1.0, ge=0, le=1)
+    # Explicit context caching on Vertex Gemini of the long first message that review-model
+    # calls about a paper share (auditor.infra.prefix_cache). Each cache is a short-lived
+    # resource on the project, deleted at the end of the run; storage is charged to the
+    # dollar cap for the whole lifetime, at `llm_cache_storage_price` US dollars per million
+    # tokens per hour.
+    llm_explicit_cache: bool = False
+    llm_explicit_cache_ttl_s: int = Field(default=1200, gt=0)
+    llm_explicit_cache_min_chars: int = Field(default=16_000, ge=0)
+    llm_cache_storage_price: float = Field(default=1.0, ge=0)
     llm_prices: dict[str, tuple[float, float]] = Field(
         default_factory=lambda: {
             "gemini-2.5-flash": (0.30, 2.50),

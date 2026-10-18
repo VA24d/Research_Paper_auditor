@@ -276,6 +276,7 @@ async def triage_tasks(paper: ParsedPaper, llm: StructuredLLM, *, limit: int) ->
             effort="medium",
             purpose="theory-triage",
             max_output_tokens=MAX_TRIAGE_TOKENS,
+            cache_prefix=True,
         )
     except StructuredOutputError as exc:
         logger.warning("triage of %s failed (%s)", paper.paper_id, exc)

@@ -37,6 +37,7 @@ from auditor.infra.llm import (
     CallLimitReachedError,
     LLMNotConfiguredError,
     StructuredLLM,
+    closing_llm,
     create_chat_model,
     model_id,
 )
@@ -595,7 +596,7 @@ async def run_batch(
     dataset_hash = hashlib.sha256(await asyncio.to_thread(dataset.read_bytes)).hexdigest()
 
     summaries = []
-    async with HttpClient(settings) as http:
+    async with HttpClient(settings) as http, closing_llm(llm):
         prepared = []
         seen = set()
         for entry in entries:
