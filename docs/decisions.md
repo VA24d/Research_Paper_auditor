@@ -286,6 +286,16 @@ theory checker's deep checks may run one piece of Python in the math sandbox
 
 Without Docker, the deep checks answer without it.
 
+First run on the SPOT dev half (October 2026): Flash-Lite plan and screen, 3.8 Flash deep
+checks with the sandbox. The $3 cap stopped it after 6 of 13 papers with no findings. The
+deep checks asked for a test in 27 of 38 first answers, and 19 of the 22 answers that
+followed a test came back with every field empty. The second round now gets the deep-check
+prompt without the offer of a test, and is told to answer in full. Theory and integrity
+tasks also have their own limits (`KIND_POLICIES`): the default 10 model calls and 5
+minutes per task made several fail and be retried, paying for the same calls again. The
+cap is now checked again when a call gets a free slot, since calls already queued went
+out after the money ran out.
+
 Undefined names are marked uncertain, because the code that uses them may never run. Code
 written for Python 2 is reported as unverifiable. On the 40 set C repositories, the check
 found 40 defects in 14 repositories. One is certain: a file left with git merge-conflict

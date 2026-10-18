@@ -9,7 +9,7 @@ node: transient errors are retried here and anything left becomes a `failed` res
 import asyncio
 import logging
 import random
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 
 from langchain_core.exceptions import ModelError
@@ -18,7 +18,7 @@ from auditor.infra.context import RunContext
 from auditor.infra.http import HttpRequestError
 from auditor.infra.scope import Budget, Scope, enter_scope
 from auditor.infra.usage import UsageLog
-from auditor.schemas import AuditTask, TaskOutcome, TaskResult
+from auditor.schemas import AuditTask, TaskKind, TaskOutcome, TaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,18 @@ class TaskPolicy:
     backoff_base_s: float = 2.0
     max_tool_calls: int | None = 30
     max_llm_calls: int | None = 10
+
+
+# Kinds whose tasks need more model calls and time than the default allows. A theory task
+# runs up to 2 deep checks with 2 tries each, each try in two rounds when it tests a step
+# in the math sandbox, at high thinking (a round can take 5 minutes on 3.8 Flash). The
+# results check makes one extraction call per section, up to 6 image readings and a
+# challenge call. With the default limits these tasks failed on SPOT and were retried,
+# paying for the same calls again.
+KIND_POLICIES: Mapping[TaskKind, TaskPolicy] = {
+    TaskKind.THEORY: TaskPolicy(max_attempts=2, timeout_s=1800.0, max_llm_calls=40),
+    TaskKind.INTEGRITY: TaskPolicy(timeout_s=900.0, max_llm_calls=40),
+}
 
 
 def is_transient(exc: BaseException) -> bool:

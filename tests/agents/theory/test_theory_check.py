@@ -292,6 +292,9 @@ async def test_a_deep_check_can_test_a_claim_with_code_before_answering(
     assert box.ran == [test["test_code"]]
     final = " ".join(str(m.content) for m in model.received[2])
     assert "S(1) = 1, formula gives 0.5" in final
+    # The final round is not offered another test, so the model answers in full.
+    assert "test_code" in str(model.received[1][0].content)
+    assert "test_code" not in str(model.received[2][0].content)
 
 
 async def test_without_the_sandbox_the_deep_check_answers_at_once(tmp_path: Path) -> None:

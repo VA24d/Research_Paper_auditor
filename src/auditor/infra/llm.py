@@ -7,6 +7,7 @@ recorded against the current task, and optionally cached on disk.
 """
 
 import asyncio
+import contextlib
 import functools
 import hashlib
 import json
@@ -285,6 +286,17 @@ class StructuredLLM:
         calls = self.max_calls is not None and self.calls >= self.max_calls
         return calls or self.spend.exhausted
 
+    def _check_limits(self) -> None:
+        if self.max_calls is not None and self.calls >= self.max_calls:
+            raise CallLimitReachedError(
+                f"the run's {self.max_calls} model calls are used up (AUDITOR_LLM_MAX_CALLS)"
+            )
+        if self.spend.exhausted:
+            raise CallLimitReachedError(
+                f"the run's budget of ${self.spend.limit_usd:g} is used up "
+                "(AUDITOR_LLM_MAX_COST_USD)"
+            )
+
     @classmethod
     def from_settings(cls, settings: Settings) -> "StructuredLLM":
         """The main model, with the review model attached when one is configured; it has
@@ -406,32 +418,24 @@ class StructuredLLM:
             active = current_scope()
             if active is not None:
                 active.budget.charge_llm_call()
-            if self.max_calls is not None and self.calls >= self.max_calls:
-                raise CallLimitReachedError(
-                    f"the run's {self.max_calls} model calls are used up (AUDITOR_LLM_MAX_CALLS)"
-                )
-            if self.spend.exhausted:
-                raise CallLimitReachedError(
-                    f"the run's budget of ${self.spend.limit_usd:g} is used up "
-                    "(AUDITOR_LLM_MAX_COST_USD)"
-                )
-            self.calls += 1
-            started_at = datetime.now(UTC)
-            started = time.perf_counter()
-            try:
-                if self._gate is None:
+            self._check_limits()
+            async with self._gate or contextlib.nullcontext():
+                # Checked again once a slot is free: calls that were waiting for one when
+                # the budget ran out are not sent.
+                self._check_limits()
+                self.calls += 1
+                started_at = datetime.now(UTC)
+                started = time.perf_counter()
+                try:
                     output = await runnable.ainvoke(conversation)
-                else:
-                    async with self._gate:
-                        output = await runnable.ainvoke(conversation)
-            except Exception as exc:
-                record(
-                    TokenUsage(),
-                    started_at,
-                    time.perf_counter() - started,
-                    error=f"{type(exc).__name__}: {exc}",
-                )
-                raise
+                except Exception as exc:
+                    record(
+                        TokenUsage(),
+                        started_at,
+                        time.perf_counter() - started,
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                    raise
             if not isinstance(output, dict):
                 raise TypeError(f"expected a dict from include_raw, got {type(output).__name__}")
             raw = output["raw"]

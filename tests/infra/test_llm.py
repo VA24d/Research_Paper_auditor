@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -417,3 +418,17 @@ def test_an_image_counts_as_a_few_hundred_tokens_not_its_base64_length() -> None
     assert estimated_tokens([message]) == estimated_tokens(
         [HumanMessage("x" * (400 + IMAGE_CHARS))]
     )
+
+
+async def test_calls_waiting_for_a_slot_are_not_sent_once_the_budget_is_spent() -> None:
+    model = ScriptedChatModel(
+        replies=[tool_reply(Verdict, {"supported": True, "reason": str(i)}) for i in range(3)]
+    )
+    spend = Spend(limit_usd=0.000015, prices={"scripted": (1.0, 1.0)})
+    llm = StructuredLLM(model, name="test:scripted", spend=spend, max_concurrency=1)
+    questions = [[HumanMessage(f"Question {i}?")] for i in range(3)]
+    results = await asyncio.gather(
+        *(llm.generate(Verdict, q) for q in questions), return_exceptions=True
+    )
+    assert len(model.received) == 1
+    assert sum(isinstance(r, CallLimitReachedError) for r in results) == 2
