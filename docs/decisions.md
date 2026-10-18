@@ -546,6 +546,11 @@ call sets its own thinking level, and the usage log records the level and the st
   Triage is now the default. Every review-model call about a paper (triage, deep checks,
   challenge) now starts with the same message holding the paper, so the prompt cache can
   reuse it; Vertex still reported only 8% of the 3.8 Flash input as cached.
+- **Test half, once, with the frozen defaults** (triage, after the dev-half choice): 8 of
+  14 errors found, in 7 of 13 papers (54%), from 12 reports of which 9 matched (75%);
+  $1.68, $0.21 per error found. The screen setup's one test-half run had found none, in
+  the 11 papers it finished. The test half was not looked at paper by paper. The grades
+  are the SPOT judge's, and no person has checked them.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its
