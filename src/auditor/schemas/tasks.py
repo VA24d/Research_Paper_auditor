@@ -57,6 +57,9 @@ class TheoryClaim(Record):
     risk: Literal["low", "medium", "high"] = "medium"
     # Whether checking it takes real reasoning (a derivation), not just reading.
     needs_reasoning: bool = True
+    # Why a referee reading the whole paper suspects it (the triage step); a claim with a
+    # suspicion goes straight to a deep check.
+    suspicion: str = ""
 
 
 class TaskKind(StrEnum):

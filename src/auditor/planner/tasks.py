@@ -12,7 +12,7 @@ from auditor.planner.integrity import integrity_tasks
 from auditor.planner.repository import find_repository
 from auditor.planner.table_reader import read_tables
 from auditor.planner.tables import paper_settings
-from auditor.planner.theory import theory_tasks
+from auditor.planner.theory import theory_tasks, triage_tasks
 from auditor.schemas import (
     AuditTask,
     BibliographyAnchor,
@@ -226,6 +226,11 @@ async def plan_paper(
         *integrity_tasks(paper),
     ]
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
+        if ctx.settings.theory_selector == "triage":
+            tasks += await triage_tasks(
+                paper, ctx.require_review_llm(), limit=ctx.settings.theory_deep_per_paper
+            )
+            return _unique(tasks)
         tasks += await theory_tasks(
             paper,
             ctx.llm,

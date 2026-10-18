@@ -220,3 +220,79 @@ async def theory_tasks(
         )
         for batch in batches
     ]
+
+
+TRIAGE_PROMPT = """You are a careful referee. Read the whole paper and name the formal
+claims most likely to contain a real mathematical error: a false statement, a step that
+does not follow, a missing case, a result used outside its assumptions, a wrong constant,
+exponent or bound, or a conclusion stronger than the argument gives. Rank them, most
+likely first, and give at most {limit}. For each give:
+- reason: in at most 30 words, what looks wrong and what a check should work out;
+- kind: one word for it, such as "lemma" or "bound";
+- sentence_ids: the ids of the sentences that state it and the step you doubt;
+- depends_on: the ids of the sentences with the definitions and results it uses.
+Do not restate the claim or write formulas outside the reason.
+Name a claim only for a concrete doubt, not because it is long. Use only sentence ids
+from the listing; an empty list is a valid answer."""
+MAX_TRIAGE_TOKENS = 16_384
+
+
+class SuspectEntry(BaseModel):
+    # Few free-text fields, the reason first: with a restated claim as well, 3.8 Flash
+    # repeated phrases inside it until the output cap in two of three papers.
+    reason: str = ""
+    kind: str = ""
+    sentence_ids: list[str]
+    depends_on: list[str] = []
+
+
+class Suspects(BaseModel):
+    suspects: list[SuspectEntry]
+
+
+async def triage_tasks(paper: ParsedPaper, llm: StructuredLLM, *, limit: int) -> list[AuditTask]:
+    """One task with the claims a referee reading the whole paper suspects most, at most
+    `limit`. One call to the review model replaces the cheap listing and screen, which
+    passed nearly every claim, wrong ones included."""
+    if limit <= 0:
+        return []
+    try:
+        result = await llm.generate(
+            Suspects,
+            [SystemMessage(TRIAGE_PROMPT.format(limit=limit)), HumanMessage(paper_listing(paper))],
+            effort="medium",
+            purpose="theory-triage",
+            max_output_tokens=MAX_TRIAGE_TOKENS,
+        )
+    except StructuredOutputError as exc:
+        logger.warning("triage of %s failed (%s)", paper.paper_id, exc)
+        return []
+    order = {s.id: i for i, s in enumerate(paper.sentences)}
+    claims: list[TheoryClaim] = []
+    for entry in result.value.suspects:
+        ids = tuple(dict.fromkeys(i for i in entry.sentence_ids if i in order))
+        if not ids or len(claims) >= limit:
+            continue
+        claims.append(
+            TheoryClaim(
+                claim_id=f"c{len(claims) + 1}",
+                kind=entry.kind.strip()[:40],
+                statement=entry.reason.strip()[:300],
+                sentence_ids=ids,
+                depends_on=tuple(dict.fromkeys(i for i in entry.depends_on if i in order)),
+                risk="high",
+                suspicion=entry.reason.strip()[:300] or "named by the triage step",
+            )
+        )
+    if not claims:
+        return []
+    return [
+        AuditTask.create(
+            paper_id=paper.paper_id,
+            variant=paper.variant,
+            kind=TaskKind.THEORY,
+            anchor=SentenceAnchor(sentence_id=claims[0].sentence_ids[0]),
+            target=SettingTarget(key=THEORY_KEY),
+            claims=claims,
+        )
+    ]

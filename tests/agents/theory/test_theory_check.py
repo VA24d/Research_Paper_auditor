@@ -393,3 +393,15 @@ def test_the_sections_context_keeps_the_claims_sections_and_their_neighbours() -
     text = _sections_text(p, claim)
     kept = [i for i in range(6) if f"[x{i}]" in text]
     assert kept == [0, 3, 4, 5]  # the first section, and part 4 with its neighbours
+
+
+async def test_suspects_named_by_triage_skip_the_screen(tmp_path: Path) -> None:
+    claims = [c.model_copy(update={"suspicion": "n = 1 fails"}) for c in (task().claims or ())]
+    suspects = task().model_copy(update={"claims": tuple(claims)})
+    # One deep check per suspect, with no screen before them.
+    replies = [tool_reply(DeepCheck, ERROR), tool_reply(DeepCheck, {"has_error": False})]
+    ctx, model = context(tmp_path, replies, theory_deep_samples=2)
+    (finding,) = (await check(suspects, ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert len(model.received) == 2
+    assert "n = 1 fails" in str(model.received[0][1].content)
