@@ -184,6 +184,9 @@ class Settings(BaseSettings):
     # Tries of a high-risk claim's deep check; an error any try shows counts, and the
     # challenge step filters what is not real. Answers vary from one try to the next.
     theory_deep_samples: int = Field(default=2, ge=1)
+    # Deep-check tries across all of a paper's theory tasks. Without it each task had its
+    # own: one long SPOT paper made 13 deep checks and cost $1.30.
+    theory_deep_per_paper: int = Field(default=4, ge=0)
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.
     theory_sandbox_enabled: bool = True

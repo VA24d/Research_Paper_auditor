@@ -1,7 +1,7 @@
 """What a specialist's `check(task, ctx)` receives (decision D6)."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from auditor.config import Settings
@@ -25,6 +25,9 @@ class RunContext:
     # The PDF the paper was parsed from, when the input was a PDF; checks that need to look
     # at a page (a table the parser could not read) use it.
     source_pdf: Path | None = None
+    # Counts the paper's tasks share, by name, such as the theory checker's deep checks
+    # left for the paper. A context belongs to one paper, so they are per paper.
+    allowances: dict[str, int] = field(default_factory=dict, compare=False)
 
     def require_llm(self) -> StructuredLLM:
         if self.llm is None:

@@ -319,9 +319,16 @@ async def test_a_deep_check_can_test_a_claim_with_code_before_answering(
         tool_reply(DeepCheck, ERROR),
     ]
     ctx, model = context(tmp_path, replies, theory_sandbox_enabled=True)
-    (finding,) = (await check(task(), ctx)).findings
+    usage = UsageLog()
+    with enter_scope(Scope(run_id="r", usage=usage)):
+        (finding,) = (await check(task(), ctx)).findings
     assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
     assert box.ran == [test["test_code"]]
+    # Reading the test's output needs less thinking than the first round.
+    assert [(r.purpose, r.effort) for r in usage.llm_calls][1:] == [
+        ("theory-deep", "high"),
+        ("theory-deep-tested", "medium"),
+    ]
     final = " ".join(str(m.content) for m in model.received[2])
     assert "S(1) = 1, formula gives 0.5" in final
     # The final round is not offered another test, so the model answers in full.
@@ -352,3 +359,16 @@ async def test_deep_checks_can_use_the_review_model(tmp_path: Path) -> None:
     assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
     assert len(model.received) == 1
     assert len(strong.received) == 1
+
+
+async def test_a_papers_tasks_share_its_deep_checks(tmp_path: Path) -> None:
+    replies = [
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, ERROR),
+        screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}),
+    ]
+    ctx, model = context(tmp_path, replies, theory_deep_per_paper=1)
+    assert len((await check(task(), ctx)).findings) == 1
+    # The second task of the same paper has no deep check left: only its screen runs.
+    assert (await check(task(), ctx)).findings == ()
+    assert len(model.received) == 3

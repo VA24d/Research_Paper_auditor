@@ -288,9 +288,12 @@ Without Docker, the deep checks answer without it.
 
 First run on the SPOT dev half (October 2026): Flash-Lite plan and screen, 3.8 Flash deep
 checks with the sandbox. The $3 cap stopped it after 6 of 13 papers with no findings. The
-deep checks asked for a test in 27 of 38 first answers, and 19 of the 22 answers that
-followed a test came back with every field empty. The second round now gets the deep-check
-prompt without the offer of a test, and is told to answer in full. Theory and integrity
+deep checks asked for a test in 27 of 38 first answers. 19 of the 22 answers that
+followed a test were a bare "no error", which the prompt allows. They were first read as
+broken answers, but the same pattern came back after the prompt was changed. The second
+round now gets the deep-check prompt without the offer of a test, with medium thinking
+and a 16k output cap (`TESTED_MAX_OUTPUT`): at high thinking it used about 30k output
+tokens, most of a paper's cost, and with the cap it used 0.7k to 16k. Theory and integrity
 tasks also have their own limits (`KIND_POLICIES`): the default 10 model calls and 5
 minutes per task made several fail and be retried, paying for the same calls again. The
 cap is now checked again when a call gets a free slot, since calls already queued went
@@ -489,6 +492,12 @@ call sets its own thinking level, and the usage log records the level and the st
   the screen cleared all five claims. With these two changes, one run of that paper
   found the annotated error, which survived the challenge and matched in the judge's
   grade, for $0.16.
+- **Five dev papers, $1.50 cap** (2401.09543, 2405.01133, 2405.05635, 2406.01892,
+  2408.16162). 2406.01892 alone cost $1.30: five theory tasks, 13 deep checks and 13
+  tested rounds, each with the whole paper (48k tokens) in the prompt. The cap then stopped
+  2401.09543, and stopped 2408.16162 before its challenge, though its deep check had found
+  the annotated error again. The other three gave no findings. A paper's theory tasks now
+  share at most `AUDITOR_THEORY_DEEP_PER_PAPER` (4) deep-check tries.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its

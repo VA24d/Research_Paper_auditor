@@ -77,6 +77,13 @@ Use it to evaluate a formula at small values, search for a counterexample, or ch
 algebraic step."""
 
 
+# The answer after a sandbox test reads the output of a check the first round already
+# reasoned out. At high thinking it took about 30k output tokens on SPOT, most of a paper's
+# cost; medium thinking with this cap keeps it to about half.
+TESTED_MAX_OUTPUT = 16_384
+DEEP_ALLOWANCE = "theory-deep-checks"
+
+
 def make_sandbox() -> MathSandbox:
     return MathSandbox()
 
@@ -339,13 +346,13 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
             "Now give your final answer, with every field it needs; do not ask for "
             "another test."
         )
-        # The second round is told only how to answer: with the offer of a test in the
-        # system prompt, 3.8 Flash left every field empty in 19 of 22 final answers.
+        # The second round is told only how to answer, not offered another test.
         final = await llm.generate(
             DeepCheck,
             [SystemMessage(DEEP_PROMPT), HumanMessage(message), HumanMessage(follow_up)],
-            effort="high",
+            effort="medium",
             purpose="theory-deep-tested",
+            max_output_tokens=TESTED_MAX_OUTPUT,
             sample=sample,
         )
         return final.value
@@ -356,6 +363,10 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         for claim, note in escalated
         for sample in range(ctx.settings.theory_deep_samples if claim.risk == "high" else 1)
     ]
+    # The paper's tasks share its deep checks; a task that comes later gets what is left.
+    left = ctx.allowances.setdefault(DEEP_ALLOWANCE, ctx.settings.theory_deep_per_paper)
+    tries = tries[:left]
+    ctx.allowances[DEEP_ALLOWANCE] = left - len(tries)
     results = await asyncio.gather(*(deep(*one) for one in tries))
     by_id = {s.id: s for s in paper.sentences}
     findings: list[CandidateFinding] = []
