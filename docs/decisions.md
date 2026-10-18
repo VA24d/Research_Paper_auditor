@@ -687,3 +687,22 @@ gave 4 findings, in 2 papers:
 
 That is 1 real finding in 4 before the new rules, and 1 in 1 after them. The rules were
 written for these same papers, so the second figure is not an independent precision.
+
+Three more rules with no model (October 2026), each uncertain and each reviewed by the
+challenge step when a model is configured:
+
+- **Copied cell.** Two rows of a table give the same mean and spread ("85.31 \u00b1 1.27") in
+  one column, and the rows agree on no other cell. Rows that share other cells repeat a
+  setting by design; a value three or more rows share is left alone.
+- **Wrong average or total.** A last column headed "Avg", "Mean", "Total" or "Sum" is not
+  the mean or sum of the row's other cells, within rounding, in a table where at least
+  two thirds of the rows (and at least two) agree. A column that no row averages plainly
+  is another quantity, a weighted mean or a subset.
+- **GRIM.** A sentence gives one mean to two decimals and one sample size N under 100, and
+  no whole number of points over N rounds to that mean ("M = 3.47, N = 28"). A mean over
+  several items per person has a finer grain, so this is a hint.
+
+Over the 195 local papers with a parse, the first versions gave 43 findings, nearly all
+false alarms: a "Mean" column that held another metric, and settings repeated by design.
+With the conditions above they give 1, a value shared by a model and its ablation without
+features, which may well be by design.

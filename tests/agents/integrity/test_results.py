@@ -9,7 +9,10 @@ from auditor.agents.integrity.results import (
     DataClaims,
     ResultVerdicts,
     TableImages,
+    grim_findings,
+    repeated_spreads,
     table_findings,
+    wrong_aggregates,
 )
 from auditor.infra.context import RunContext
 from auditor.infra.llm import StructuredLLM
@@ -546,3 +549,61 @@ async def test_the_challenge_step_also_reviews_the_comparisons_the_rule_finds(
     result, model = await run(tmp_path, [], p, verdicts=verdicts)
     assert not result.findings
     assert "0.5 dropout" in " ".join(str(m.content) for m in model.received[-1])
+
+
+def test_one_mean_and_spread_in_two_rows_is_flagged_as_uncertain() -> None:
+    rows = [
+        *ROWS[:2],
+        "Contrastive-SSL | 88.8 ± 1.1 | 76.1 ± 0.6",
+        "Ours | 88.8 ± 1.1 | 75.5 ± 0.5",
+    ]
+    p = paper(rows)
+    (finding,) = repeated_spreads(results_task(p), p)
+    assert finding.uncertain
+    assert "88.8 ± 1.1" in finding.summary
+    # Different spreads, or a mean too short to be telling, are left alone.
+    assert repeated_spreads(results_task(paper()), paper()) == []
+    # Rows that share another cell repeat a setting by design.
+    same = [*ROWS[:2], "A | 88.8 ± 1.1 | 76.1 ± 0.6", "B | 88.8 ± 1.1 | 76.1 ± 0.6"]
+    assert repeated_spreads(results_task(paper(same)), paper(same)) == []
+
+
+def test_an_average_column_that_does_not_average_its_row_is_flagged() -> None:
+    rows = [
+        "Method | A | B | C | Avg",
+        "Base | 70.0 | 80.0 | 90.0 | 80.0",
+        "Small | 60.0 | 70.0 | 80.0 | 70.0",
+        "Large | 72.0 | 81.0 | 90.0 | 81.0",
+        "Ours | 71.0 | 82.0 | 93.0 | 84.0",
+    ]
+    p = paper(rows)
+    (finding,) = wrong_aggregates(results_task(p), p)
+    assert finding.anchor.sentence_id == "t4"  # type: ignore[union-attr]
+    assert "82.0" in finding.summary  # the mean the row's cells give
+    assert finding.uncertain
+    # A last column no row averages is another quantity, not a wrong average.
+    other = [
+        "Method | A | B | Mean",
+        "X | 1.0 | 2.0 | 9.0",
+        "Y | 3.0 | 4.0 | 8.0",
+        "Z | 5.0 | 6.0 | 7.0",
+    ]
+    assert wrong_aggregates(results_task(paper(other)), paper(other)) == []
+    totals = ["Split | Train | Val | Test | Total", "Images | 800 | 100 | 100 | 1000"]
+    assert wrong_aggregates(results_task(paper(totals)), paper(totals)) == []
+
+
+def test_the_grim_test_flags_an_impossible_mean_of_whole_numbers() -> None:
+    def with_text(text: str) -> ParsedPaper:
+        p = paper()
+        extra = Sentence(id="s9", section_id="exp", text=text)
+        return p.model_copy(update={"sentences": (*p.sentences, extra)})
+
+    bad = with_text("Participants rated the tool highly (M = 3.47, SD = 0.81, N = 28).")
+    (finding,) = grim_findings(results_task(bad), bad)
+    assert "3.47" in finding.summary
+    assert finding.uncertain
+    # 3.46 is 97/28, a possible mean; large samples say nothing.
+    for text in ("Ratings were high (M = 3.46, N = 28).", "Ratings were high (M = 3.47, N = 300)."):
+        ok = with_text(text)
+        assert grim_findings(results_task(ok), ok) == []

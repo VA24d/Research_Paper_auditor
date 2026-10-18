@@ -17,6 +17,7 @@ import asyncio
 import base64
 import io
 import logging
+import math
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -324,6 +325,161 @@ def table_findings(task: AuditTask, paper: ParsedPaper, first: int = 0) -> list[
                 findings.append(
                     _finding(task, first + len(findings), row, match.span(), summary, "")
                 )
+    return findings
+
+
+_MEAN_SD = re.compile(r"(?<![\w.])(\d+\.\d+)\s*(?:\u00b1|\+-|\+/-)\s*(\d+\.\d+)")
+_AVERAGE_HEADER = re.compile(r"^(?:avg|average|mean)\.?$", re.IGNORECASE)
+_TOTAL_HEADER = re.compile(r"^(?:total|sum)\.?$", re.IGNORECASE)
+_GRIM_MEAN = re.compile(r"\b(?:M|[Mm]ean|[Aa]verage)\s*(?:=|of|was|is)?\s*(\d+\.\d{2})(?!\d)")
+_GRIM_N = re.compile(r"\b[Nn]\s*=\s*(\d+)\b")
+# GRIM says something only when a mean's last digit is finer than one answer in N.
+GRIM_MAX_N = 100
+
+
+def repeated_spreads(task: AuditTask, paper: ParsedPaper, first: int = 0) -> list[CandidateFinding]:
+    """One mean and spread ("85.31 \u00b1 1.27") given by two rows of a table in the same
+    column, when the two rows agree on nothing else: two runs rarely agree to every digit
+    of both, so it is often a copied cell. Rows that share other cells too (a setting
+    repeated by design, a baseline listed twice) and values shared by more than two rows
+    are left alone. Uncertain."""
+    findings: list[CandidateFinding] = []
+    for table in _tables(paper):
+        name = table.label or "A table"
+        rows = [(row, row.text.split(CELL_SEPARATOR)) for row in _rows(paper, table)]
+        width = max((len(cells) for _, cells in rows), default=0)
+        for column in range(1, width):
+            holders: dict[tuple[str, str], list[tuple[Sentence, list[str]]]] = {}
+            for row, cells in rows:
+                if column >= len(cells):
+                    continue
+                match = _MEAN_SD.search(cells[column])
+                if match is None:
+                    continue
+                mean, spread = match.groups()
+                if float(spread) == 0 or len(mean.replace(".", "").lstrip("0")) < 3:
+                    continue
+                holders.setdefault((mean, spread), []).append((row, cells))
+            for (mean, spread), pair in holders.items():
+                if len(pair) != 2:
+                    continue
+                (a, cells_a), (b, cells_b) = pair
+                shared = sum(
+                    1
+                    for i in range(1, min(len(cells_a), len(cells_b)))
+                    if i != column
+                    and cells_a[i].strip()
+                    and cells_a[i].strip() == cells_b[i].strip()
+                )
+                if shared:
+                    continue
+                value = cells_b[column].strip()
+                start = b.text.find(value)
+                span = (start, start + len(value)) if start >= 0 else None
+                label_a, label_b = cells_a[0].strip(), cells_b[0].strip()
+                summary = (
+                    f"{name} gives {mean} \u00b1 {spread} for both {label_a} and {label_b} "
+                    "in one column, though the rows differ everywhere else: a copied cell?"
+                )
+                lookup = f"{name}: {a.text} / {b.text}"
+                findings.append(
+                    _finding(task, first + len(findings), b, span, summary, lookup, True)
+                )
+    return findings
+
+
+def _cell_values(row: Sentence) -> list[_Number | None]:
+    """The first number of each cell after the label cell, or None for a cell without."""
+    cells = row.text.split(CELL_SEPARATOR)[1:]
+    return [_Number.parse(cell) if _NUMBER.search(cell) else None for cell in cells]
+
+
+def wrong_aggregates(task: AuditTask, paper: ParsedPaper, first: int = 0) -> list[CandidateFinding]:
+    """A row whose last cell, headed "Avg", "Mean", "Total" or "Sum", is not the mean or
+    the sum of the row's other cells, in a table where most rows' last cells are. A
+    column that no row averages plainly (another metric, a weighted mean, a subset) is
+    left alone, so only an outlier among rows that agree is reported. Uncertain."""
+    findings: list[CandidateFinding] = []
+    for table in _tables(paper):
+        rows = _rows(paper, table)
+        header = next(
+            (
+                row
+                for row in rows[:HEADER_ROWS]
+                if _AVERAGE_HEADER.match(row.text.split(CELL_SEPARATOR)[-1].strip())
+                or _TOTAL_HEADER.match(row.text.split(CELL_SEPARATOR)[-1].strip())
+            ),
+            None,
+        )
+        if header is None:
+            continue
+        cells = header.text.split(CELL_SEPARATOR)
+        total = bool(_TOTAL_HEADER.match(cells[-1].strip()))
+        checked: list[tuple[Sentence, _Number, float, int]] = []
+        for row in rows[rows.index(header) + 1 :]:
+            values = _cell_values(row)
+            if len(values) != len(cells) - 1 or any(v is None for v in values):
+                continue
+            *parts, stated = [v for v in values if v is not None]
+            if len(parts) < 2:
+                continue
+            computed = sum(p.value for p in parts)
+            slack = stated.half_unit + sum(p.half_unit for p in parts)
+            if not total:
+                computed /= len(parts)
+                slack = stated.half_unit + max(p.half_unit for p in parts)
+            wrong = abs(computed - stated.value) > slack + 1e-9
+            checked.append((row, stated, computed, len(parts)) if wrong else (row, stated, -1.0, 0))
+        wrong_rows = [c for c in checked if c[3]]
+        agree = len(checked) - len(wrong_rows)
+        if len(checked) < 3 or agree < 2 * len(wrong_rows) or agree < 2:
+            continue
+        name = table.label or "A table"
+        word = "total" if total else "average"
+        for row, stated, computed, count in wrong_rows:
+            label = row.text.split(CELL_SEPARATOR)[0].strip()
+            summary = (
+                f"{name} gives {label} an {word} of {stated.value:g}, but its other "
+                f"{count} cells give {computed:.{_decimals(stated)}f}, while the other rows' "
+                f"{word}s agree with their cells."
+            )
+            findings.append(
+                _finding(task, first + len(findings), row, None, summary, row.text, True)
+            )
+    return findings
+
+
+def _decimals(number: _Number) -> int:
+    return max(0, round(-math.log10(number.half_unit * 2)))
+
+
+def grim_findings(task: AuditTask, paper: ParsedPaper, first: int = 0) -> list[CandidateFinding]:
+    """The GRIM test: a mean of N whole-number answers is a multiple of 1/N, so a mean
+    given to two decimals with N under 100 can be impossible ("M = 3.47, N = 28").
+    Uncertain: a mean over several items per person, or of non-integer data, has a finer
+    grain."""
+    findings: list[CandidateFinding] = []
+    for sentence in paper.sentences:
+        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY):
+            continue
+        means = list(_GRIM_MEAN.finditer(sentence.text))
+        sizes = {int(m.group(1)) for m in _GRIM_N.finditer(sentence.text)}
+        if len(means) != 1 or len(sizes) != 1:
+            continue
+        (n,) = sizes
+        mean = float(means[0].group(1))
+        if not 1 < n < GRIM_MAX_N:
+            continue
+        nearest = round(mean * n) / n
+        if abs(nearest - mean) <= 0.005 + 1e-9:
+            continue
+        summary = (
+            f"A mean of {means[0].group(1)} is not possible for {n} whole-number values "
+            f"(GRIM): the nearest possible mean is {nearest:.2f}."
+        )
+        findings.append(
+            _finding(task, first + len(findings), sentence, means[0].span(1), summary, "", True)
+        )
     return findings
 
 
@@ -746,6 +902,17 @@ def _table_holding(claim: DataClaim, paper: ParsedPaper) -> Table | None:
     return None
 
 
+def _rule_table(paper: ParsedPaper, finding: CandidateFinding) -> str:
+    """The table holding a table rule's finding, with its caption."""
+    if not isinstance(finding.anchor, SentenceAnchor):
+        return ""
+    for table in _tables(paper):
+        if finding.anchor.sentence_id in table.row_ids:
+            rows = "\n".join(row.text for row in _rows(paper, table))
+            return f"{table.label or table.id} {_caption(paper, table)}".strip() + "\n" + rows
+    return ""
+
+
 def _around(body: Sequence[Sentence], order: dict[str, int], finding: CandidateFinding) -> str:
     """The finding's sentence with the two before and after it."""
     if not isinstance(finding.anchor, SentenceAnchor) or finding.anchor.sentence_id not in order:
@@ -758,8 +925,11 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     paper = ctx.paper
     findings = table_findings(task, paper)
     comparisons = text_comparisons(task, paper, len(findings))
+    rules: list[CandidateFinding] = []
+    for rule in (repeated_spreads, wrong_aggregates, grim_findings):
+        rules += rule(task, paper, len(findings) + len(comparisons) + len(rules))
     if ctx.llm is None:
-        findings += comparisons
+        findings += comparisons + rules
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
     paper = await _read_unread_tables(paper, ctx)
     llm = ctx.llm
@@ -785,6 +955,12 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     candidates = [
         _Candidate(f, _around(body, order, f), "(numbers from the text)") for f in comparisons
     ]
+    # The table rules' findings are uncertain readings too: the challenge sees each with
+    # its table (or, for GRIM, its sentence).
+    for finding in rules:
+        evidence = [e.text for e in finding.evidence if e.kind is EvidenceKind.LOOKUP]
+        rows_text = _rule_table(paper, finding) or "\n".join(evidence) or "(numbers from the text)"
+        candidates.append(_Candidate(finding, _around(body, order, finding), rows_text))
     flagged = {f.anchor.sentence_id for f in comparisons if isinstance(f.anchor, SentenceAnchor)}
     for claim in claims:
         if claim.sentence_id in flagged:
