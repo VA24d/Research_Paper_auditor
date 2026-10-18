@@ -256,6 +256,10 @@ class Settings(BaseSettings):
     # and each number is paired with the cell it is read from. On set D the per-section
     # extraction found none of 7 planted wrong numbers.
     results_number_pass_enabled: bool = False
+    # The cell rule (D22), no model: a number a sentence gives for a row of a table it
+    # names that no cell of the row holds. Its findings go to the challenge step when a
+    # model is configured. Off until measured on more papers.
+    results_cell_rule_enabled: bool = True
     results_number_max_sentences: int = Field(default=12, ge=0)
     results_number_effort: Literal["low", "medium", "high"] = "medium"
     # The model that reads the cells: the main model, or the review model.

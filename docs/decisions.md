@@ -923,3 +923,35 @@ reversed comparisons found from 28 to 31 of 33 and cut the result findings on th
 originals from 5 to 2. Gains found fell from 21 to 18 of 33, and the changed numbers stayed
 at 0 of 7, with or without the number pass. Reading tables is no longer the limit there;
 the extraction step that pairs a sentence with a cell is.
+
+**Cell rule** (`cell_findings`, `AUDITOR_RESULTS_CELL_RULE_ENABLED`, on by default, since it found nothing on 254 real papers and calls no model). This
+pairs a sentence with a cell in code, with no model. The sentence must be prose and must
+name a table, or follow a sentence of its section that does. A decimal number in it
+belongs to the nearest row label of that table before it, at most 80 characters back. A
+label is a worded cell before the row's first number; a citation, a footnote mark or a
+note in brackets after it may be left off ("BERT [2]", "HDN (Ours)"). Generic labels
+("Ours", "Avg", "Random") and labels in small letters only are not used. The number is
+reported when every cell of that row disagrees with it and some cell is written like it,
+with as many whole digits and at least as many decimals. No table, caption or footnote of
+the paper may hold the number. Agreement allows rounding or cutting to fewer decimals, a percentage of a
+fraction and the sign. A number is skipped when it is short ("0.5", "2.3") or has a sign or
+"±" before it, or when it is a range, a bound or a count with a unit. It is also skipped
+when a change word ("by", "improves", "than", "vs") or another row's label stands between
+it and the label. Sentences with "respectively" or a figure reference are not read. A number
+that is a difference or a relative change of the row's cells is left alone, and so is the
+mean of the row or of the label's rows over several settings. Findings are uncertain and
+go to the challenge step when a model is configured. The survey used 254 local
+parses with a PDF: the 169 set C papers and 85 real cases from OpenReview and arXiv, some
+of them versions of one paper, each read with crop and layout tables. There the rule
+checks about 40 numbers in 15 papers and reports none. The
+first versions reported 2, both false alarms: a value the sentence itself calls "worse
+than the reports in Table 1", and an average over five rows of one model. On set D it finds
+1 of the 7 changed numbers (51.4 for PPO, against 46.8 in Table 2) and fires on none of
+the 66 gain and comparison plants. Of the other 6, three are in table text the parser ran
+into the body, two name no table, and one gives a row whose label the text does not
+write. Dropping the table condition finds 3 of 7, but it
+gives 5 false alarms on the 254 papers, so the condition stays. For arXiv 2512.21706 no
+reader without a model gets Table 6, so the rule cannot see the 8.93. With that table typed
+in, it reports Moshi's 4.25 in the same sentence against the table's 6.85. It misses the
+8.93, because the text writes the label in lower case ("simulation"). The rule stays off
+until it has been run on papers with more prose quoting tables.

@@ -10,9 +10,10 @@ which a cheap model does well, and the verdict is computed. A second pass reads 
 sentences that quote numbers from a named table or row once more, with only those tables,
 and pairs each number with the cell it comes from; the comparison is again done here.
 
-Two checks need no model: a table value that cannot be right (a negative standard
-deviation), and a sentence that calls one stated number higher or lower than another when it
-is the other way round.
+Several checks need no model: a table value that cannot be right (a negative standard
+deviation), a sentence that calls one stated number higher or lower than another when it is
+the other way round, and a number a sentence gives for a row of a table that no cell of the
+row holds (the cell rule).
 """
 
 import asyncio
@@ -22,6 +23,7 @@ import logging
 import math
 import re
 from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -1144,6 +1146,392 @@ async def _number_pass(
     return out
 
 
+# The cell rule: a number a sentence gives for a row of a table it names, which no cell of
+# that row holds. No model reads anything; every condition below is there to keep false
+# alarms out, so the rule fires only on clear cases.
+#
+# How far after a row label a number may be and still be that row's ("BASE performs the
+# worst (68.76% in average ACC and 74.77% in average MF1)").
+CELL_WINDOW = 80
+# A table named in the sentence just before, in the same section, counts as named ("...,
+# Table 2). The other mismatch is ChatGPT against PPO, ... (51.4% vs 61.4%)").
+CELL_REACH = 1
+# Labels that name no one row: they recur in tables of every kind and in plain prose.
+_GENERIC_LABELS = frozenset(
+    {
+        "all",
+        "average",
+        "avg",
+        "baseline",
+        "baselines",
+        "best",
+        "default",
+        "full",
+        "human",
+        "humans",
+        "max",
+        "mean",
+        "median",
+        "min",
+        "none",
+        "ours",
+        "overall",
+        "random",
+        "std",
+        "sum",
+        "test",
+        "total",
+        "train",
+        "val",
+        "validation",
+    }
+)
+# A decimal number in prose, with the sign or bound written before it.
+_CELL_TEXT_NUMBER = re.compile(
+    r"(?<![\w.,])([-\u2212+\u00b1~\u2248<>\u2264\u2265\u0394])?\s?(\d+\.\d+)(?![\d.]|,\d)"
+)
+# Words between a label and a number that make the number another row's, a change, a
+# bound or a number from elsewhere.
+_CELL_BETWEEN = re.compile(
+    r"\b(?:than|over|vs|versus|compared|against|relative|from|whereas|while|but|unlike|"
+    r"except|instead|by|outperform\w*|surpass\w*|exceed\w*|beat\w*|margin|improv\w*|"
+    r"gain\w*|boost\w*|increas\w*|decreas\w*|reduc\w*|drop\w*|degrad\w*|lag\w*|behind|"
+    r"gap|differ\w*|delta|up to|at least|at most|about|around|approximately|nearly|"
+    r"almost|roughly|between|reported|report|reports|et al)\b|\[\d[\d,\s\u2013-]*\]|;",
+    re.IGNORECASE,
+)
+# What a number is followed by when it is a change, a ratio, a range or a count of things.
+_CELL_AFTER = re.compile(
+    r"^\s*%?\s*(?:points?\b|pts?\b|pp\b|p\.p\.|percentage|absolute|relative|improvement|"
+    r"gain|increase|decrease|drop|reduction|higher|lower|better|worse|more|less|fewer|"
+    r"faster|slower|smaller|larger|times|fold|x\b|\u00d7|[-\u2013\u2014~]\s*\d|to\s+\d|"
+    r"\u00b1|\+-|(?:[KMBGT]|k|ms|s|sec|h|hrs?|hours?|mins?|minutes?|days?|[KMGT]B|epochs?|"
+    r"steps?|iterations?|samples?|tokens?|words?|layers?|params?|parameters|[GT]?FLOPs?|"
+    r"Hz|kHz|fps|FPS|px|pixels?|cm|mm|m|km|kg|g|bits?|bpp)\b)",
+)
+# A comparison after the number, in its clause.
+_CELL_THAN = re.compile(r"^[^;.]{0,60}?\bthan\b")
+# What comes just before a number in a range or a sum ("71.2-73.5", "between 3.2 and").
+_CELL_RANGE_BEFORE = re.compile(
+    r"(?:\d\s*(?:-|\u2013|\u2014|~|to)\s*|\bbetween\s+[\d.]+\s+and\s+)$"
+)
+_STOPWORDS = frozenset(
+    {"the", "a", "an", "of", "and", "in", "on", "with", "to", "for", "is", "are", "was"}
+    | {"were", "we", "our", "by", "at", "as", "that", "this", "it", "its"}
+)
+
+
+def _label_key(table: Table) -> str:
+    return (table.label or table.id).strip().rstrip(".:").casefold()
+
+
+def _prose_sentence(text: str) -> bool:
+    """A sentence of words, not a table run into the body text by the parser: most of its
+    tokens are words, and it has the small words of a sentence."""
+    tokens = text.split()
+    words = [w for w in tokens if re.search(r"[A-Za-z]{3}", w)]
+    small = sum(1 for w in tokens if w.casefold() in _STOPWORDS)
+    if len(words) < 6 or not small:
+        return False
+    return (small >= 2 and len(words) >= 0.5 * len(tokens)) or len(words) >= 0.6 * len(tokens)
+
+
+def _label_forms(label: str) -> list[str]:
+    """The ways the text may write a row's label: as the table writes it, and without a
+    citation, a footnote mark or a note in brackets after it ("BERT [2]", "ChatGPT*\u2020",
+    "HDN (Ours)")."""
+    forms = [label.strip()]
+    bare = re.sub(r"\s*\[[^\]]*\]\s*$", "", forms[0])
+    bare = re.sub(r"[\s*\u2020\u2021\u00a7\u00b6#\u2217]+$", "", bare)
+    forms.append(bare)
+    forms.append(re.sub(r"\s*\([^)]*\)\s*$", "", bare).strip())
+    out = []
+    for form in forms:
+        if form in out or form.casefold() in _GENERIC_LABELS or len(form) < 2:
+            continue
+        # A label in small letters only ("random", "train") is too often a plain word.
+        if not re.search(r"[A-Z0-9+/]", form) or not re.search(r"[A-Za-z]{2}", form):
+            continue
+        out.append(form)
+    return out
+
+
+def _significant(written: str) -> bool:
+    """A number written with enough digits to be a quoted result, not a setting ("0.5")
+    or a small change ("2.3"): three significant digits, or two decimals."""
+    digits = written.replace(".", "").lstrip("0")
+    return len(digits) >= 3 or len(written.split(".")[1]) >= 2
+
+
+def _same(stated: _Number, held: _Number, row: bool = True) -> bool:
+    """Whether the text's number is the cell's, allowing a percentage for a fraction
+    (68.76% for 0.6876) and the sign. In the row itself one unit of the coarser number is
+    allowed (71.2 for 71.29, cut rather than rounded). Elsewhere in the paper the cell must
+    be written at least as finely and round to the text's number: a coarse number of some
+    other table ("4.2") says little about where "4.25" comes from."""
+    for factor in (1.0, 100.0, 0.01):
+        if row:
+            slack = 2 * max(stated.half_unit, held.half_unit * factor)
+        elif held.half_unit * factor > stated.half_unit + 1e-12:
+            continue
+        else:
+            slack = stated.half_unit + held.half_unit * factor
+        if abs(abs(stated.value) - abs(held.value) * factor) <= slack + 1e-9:
+            return True
+    return False
+
+
+def _magnitude(number: _Number) -> int:
+    """The number of digits before the decimal point (0 for 0.47)."""
+    whole = int(abs(number.value))
+    return len(str(whole)) if whole else 0
+
+
+def _comparable(stated: _Number, held: _Number) -> bool:
+    """A cell that could be the one the text means: the same number of whole digits and
+    at least as many decimals, so a typo or a changed value rather than another quantity."""
+    if held.half_unit > stated.half_unit + 1e-12:
+        return False
+    return _magnitude(stated) == _magnitude(held)
+
+
+_RESULT_CELL = re.compile(r"[\d.,\u00b1+\-\u2212%()\s*]+")
+
+
+def _row_labels(row: Sentence) -> list[tuple[str, int]]:
+    """The labels of a results row with the place of their cell: the cells with words
+    before its first cell of numbers ("28 | EDM | 29.0", "(w/ Ether) | InertialAR | 90.9"),
+    in a row holding a decimal number (which leaves out header rows)."""
+    cells = row.text.split(CELL_SEPARATOR)
+    if not any(_DECIMAL.search(cell) for cell in cells[1:]):
+        return []
+    out = []
+    for i, cell in enumerate(cells):
+        cell = cell.strip()
+        if _RESULT_CELL.fullmatch(cell) and _NUMBER.search(cell):
+            break
+        if len(cell) <= MAX_LABEL_CHARS and re.search(r"[A-Za-z]{2}", cell):
+            out.append((cell, i))
+    return out if len(out) < len(cells) else []
+
+
+def _results(text: str, after: int = 0) -> list[_Number]:
+    """The numbers of a row after its label (the cell at `after`), in order; a spread
+    after "\u00b1" is left out."""
+    cells = text.split(CELL_SEPARATOR)[after + 1 :]
+    out: list[_Number] = []
+    for cell in cells:
+        cell = cell.replace(",", "")
+        for m in _NUMBER.finditer(cell):
+            if cell[: m.start()].rstrip().endswith(_SPREAD_SIGNS):
+                continue
+            number = _Number.parse(m.group())
+            if number is not None:
+                out.append(number)
+    return out
+
+
+def _mean_is(stated: _Number, numbers: Sequence[_Number]) -> bool:
+    if not numbers:
+        return False
+    mean = sum(n.value for n in numbers) / len(numbers)
+    return abs(mean - stated.value) <= stated.half_unit + max(n.half_unit for n in numbers)
+
+
+def _derived(
+    stated: _Number, rows: Sequence[Sentence], mine: Sequence[tuple[Sentence, int]]
+) -> bool:
+    """Whether the text's number follows from the table: a difference or a relative change
+    between two of the row's own numbers, or between the row's number and another row's
+    at the same place; the mean of the row's numbers; or, when the label has several rows
+    (one per setting), the mean of its numbers at one place over those rows."""
+    pairs: list[tuple[_Number, _Number]] = []
+    own_rows = [_results(row.text, at) for row, at in mine]
+    for (row, _), own in zip(mine, own_rows, strict=True):
+        pairs += [(a, b) for i, a in enumerate(own) for b in own[i + 1 :]]
+        if _mean_is(stated, own):
+            return True
+        for other in rows:
+            theirs = _results(other.text, len(other.text.split(CELL_SEPARATOR)) - len(own) - 1)
+            if other is row or len(theirs) != len(own):
+                continue
+            pairs += list(zip(own, theirs, strict=True))
+    width = {len(own) for own in own_rows}
+    if len(own_rows) > 1 and len(width) == 1:
+        for place in range(width.pop()):
+            if _mean_is(stated, [own[place] for own in own_rows]):
+                return True
+    return any(_fits("relative_percent", stated, a, b) for a, b in pairs)
+
+
+@dataclass(frozen=True)
+class _CellMatch:
+    sentence: Sentence
+    span: tuple[int, int]
+    summary: str
+    lookup: str
+    table: Table
+
+
+def _table_numbers(paper: ParsedPaper) -> list[_Number]:
+    """Every number the paper gives outside its prose: in any table row, caption or
+    footnote, and in body text the parser ran a table into."""
+    out: list[_Number] = []
+    for sentence in paper.sentences:
+        if sentence.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY) and _prose_sentence(
+            sentence.text
+        ):
+            continue
+        for m in _NUMBER.finditer(sentence.text.replace(",", "")):
+            if "." in m.group() and (number := _Number.parse(m.group())) is not None:
+                out.append(number)
+    return out
+
+
+def _cell_matches(
+    paper: ParsedPaper,
+    skip: AbstractSet[str] = frozenset(),
+    need_table: bool = True,
+    reach: int = CELL_REACH,
+) -> list[_CellMatch]:
+    """The cell rule's matches. A table counts as named when the sentence names it, or
+    one of the `reach` sentences before it in its section does; with `need_table` false,
+    a sentence naming no table is checked against every table."""
+    tables = [t for t in _tables(paper) if _rows(paper, t)]
+    labelled: dict[str, list[tuple[str, Sentence, int]]] = {}
+    for table in tables:
+        for row in _rows(paper, table):
+            for label, at in _row_labels(row):
+                for form in _label_forms(label):
+                    labelled.setdefault(table.id, []).append((form, row, at))
+    known: list[_Number] | None = None
+    body = [s for s in paper.sentences if s.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY)]
+    out: list[_CellMatch] = []
+    for at, sentence in enumerate(body):
+        text = sentence.text
+        if sentence.id in skip or not _CELL_TEXT_NUMBER.search(text):
+            continue
+        if not _prose_sentence(text) or re.search(r"\brespectively\b", text, re.IGNORECASE):
+            continue
+        if re.search(r"\b(?:Fig(?:ure)?s?\.?)\s*\d", text):
+            continue
+        # "Results in Table ." followed by "6 show ...": the parser split the name.
+        naming = text
+        if at and re.search(r"\bTab(?:le)?\s*\.?\s*$", body[at - 1].text):
+            naming = body[at - 1].text + " " + text
+        for earlier in body[max(0, at - reach) : at]:
+            if earlier.section_id == sentence.section_id:
+                naming = earlier.text + " " + naming
+        named = [t for t in tables if _names_table(t, naming)]
+        used = named if need_table else (named or tables)
+        if not used:
+            continue
+        # A named table that could not be read may hold the number.
+        read = {_label_key(t) for t in tables}
+        if any(_label_key(t) not in read for t in paper.tables if _names_table(t, naming)):
+            continue
+        mentions: list[tuple[int, int, str, Table]] = []
+        for table in used:
+            for form, _, _ in labelled.get(table.id, []):
+                for m in re.finditer(rf"(?<![\w-]){re.escape(form)}(?![\w-])", text):
+                    mentions.append((m.start(), m.end(), form, table))
+        # A mention inside a longer one ("MPNet" in "MPNet-300K") is the longer one's.
+        mentions = [
+            m
+            for m in mentions
+            if not any(
+                o[0] <= m[0] and m[1] <= o[1] and o[1] - o[0] > m[1] - m[0] for o in mentions
+            )
+        ]
+        if not mentions:
+            continue
+        for number in _CELL_TEXT_NUMBER.finditer(text):
+            sign, written = number.group(1), number.group(2)
+            start = number.start(2)
+            if sign or not _significant(written):
+                continue
+            # A spread or a bound written without a space ("1336.12\u00b173.32").
+            if text[:start].rstrip()[-1:] in ("\u00b1", "+", "-", "\u2212", "<", ">", "~"):
+                continue
+            if _CELL_AFTER.match(text[number.end() :]) or _CELL_RANGE_BEFORE.search(text[:start]):
+                continue
+            # "0.1253, which is slightly worse than the reports in Table 1": the text says
+            # its number is not the table's.
+            if _CELL_THAN.match(text[number.end() :]):
+                continue
+            # The row: the nearest label before the number, in the same clause.
+            before = [m for m in mentions if m[1] <= start and start - m[1] <= CELL_WINDOW]
+            if not before:
+                continue
+            end = max(m[1] for m in before)
+            owners = [m for m in before if m[1] == end]
+            between = text[end:start]
+            if _CELL_BETWEEN.search(between):
+                continue
+            # "BASE (lambda = 0.05)" sets something; "Simulation = 8.93" gives the row's.
+            if text[:start].rstrip().endswith(("=", ":")) and between.strip() not in ("=", ":"):
+                continue
+            # Another row's label between the owner and the number makes it ambiguous.
+            if any(end < m[0] < start for m in mentions):
+                continue
+            stated = _Number.parse(written)
+            assert stated is not None
+            form = owners[0][2]
+            rows = [
+                (table, row, at)
+                for table in used
+                for f, row, at in labelled.get(table.id, [])
+                if f == form
+            ]
+            held = [(table, row, n) for table, row, at in rows for n in _results(row.text, at)]
+            if not held or any(_same(stated, n) for _, _, n in held):
+                continue
+            close = [(t, r, n) for t, r, n in held if _comparable(stated, n)]
+            if not close:
+                continue
+            if known is None:
+                known = _table_numbers(paper)
+            if any(_same(stated, n, row=False) for n in known):
+                continue
+            by_table: dict[str, list[tuple[Sentence, int]]] = {}
+            for table, row, at in rows:
+                by_table.setdefault(table.id, []).append((row, at))
+            if any(
+                _derived(stated, _rows(paper, t), by_table[t.id]) for t in used if t.id in by_table
+            ):
+                continue
+            table, row, _ = min(close, key=lambda c: abs(c[2].value - stated.value))
+            at = next(a for t, r, a in rows if r is row)
+            name = table.label or table.id
+            given = ", ".join(f"{n.value:.{_decimals(n)}f}" for n in _results(row.text, at))
+            summary = (
+                f"The text gives {written} for {form}, but no cell of its row in {name} "
+                f"holds it (the row gives {given}), and no table of the paper has {written}."
+            )
+            out.append(
+                _CellMatch(sentence, (start, number.end()), summary, f"{name}: {row.text}", table)
+            )
+            break
+    return out
+
+
+def cell_findings(
+    task: AuditTask, paper: ParsedPaper, first: int = 0, skip: set[str] | None = None
+) -> list[CandidateFinding]:
+    """A number a prose sentence gives for a row of a table it names (or the sentence
+    before it names), when no cell of that row holds it ("Table 3 ... BASE reaches 74.77"
+    where BASE's cells are 68.76 and 63.34), found with no model. The number belongs to the
+    nearest row label before it, in the same clause. It is not reported when it agrees
+    with a cell within rounding, as a percentage of a fraction or with its sign changed;
+    when any table of the paper holds it; when it is a change, a mean, a range, a bound or
+    a count; or when the row has no cell written like it. Uncertain: the text may quote
+    another setting."""
+    return [
+        _finding(task, first + k, m.sentence, m.span, m.summary, m.lookup, True)
+        for k, m in enumerate(_cell_matches(paper, skip or set()))
+    ]
+
+
 async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     paper = ctx.paper
     findings = table_findings(task, paper)
@@ -1155,11 +1543,17 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     # the data are whole numbers, and dropped 12 of 40 planted cases in set D, so its
     # findings stay uncertain without a second look.
     findings += grim_findings(task, paper, len(findings) + len(comparisons) + len(rules))
+    compared = {f.anchor.sentence_id for f in comparisons if isinstance(f.anchor, SentenceAnchor)}
+    cells_on = ctx.settings.results_cell_rule_enabled
+    # Without a model the crops are read only for the cell rule.
+    crops = ctx.settings.results_crop_tables and (ctx.llm is not None or cells_on)
+    if ctx.source_pdf is not None and crops:
+        paper = await asyncio.to_thread(add_crop_tables, paper, ctx.source_pdf)
     if ctx.llm is None:
         findings += comparisons + rules
+        if cells_on:
+            findings += cell_findings(task, paper, len(findings), compared)
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
-    if ctx.source_pdf is not None and ctx.settings.results_crop_tables:
-        paper = await asyncio.to_thread(add_crop_tables, paper, ctx.source_pdf)
     paper = await _read_unread_tables(paper, ctx)
     llm = ctx.llm
     plans = await asyncio.gather(
@@ -1190,7 +1584,15 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
         evidence = [e.text for e in finding.evidence if e.kind is EvidenceKind.LOOKUP]
         rows_text = _rule_table(paper, finding) or "\n".join(evidence) or "(numbers from the text)"
         candidates.append(_Candidate(finding, _around(body, order, finding), rows_text))
-    flagged = {f.anchor.sentence_id for f in comparisons if isinstance(f.anchor, SentenceAnchor)}
+    # The cell rule's findings are uncertain too: a sentence may quote another setting.
+    flagged = set(compared)
+    for m in _cell_matches(paper, compared) if cells_on else []:
+        number = len(findings) + len(candidates)
+        finding = _finding(task, number, m.sentence, m.span, m.summary, m.lookup, True)
+        shown = f"{m.table.label or m.table.id} {_caption(paper, m.table)}".strip()
+        shown += "\n" + "\n".join(row.text for row in _rows(paper, m.table))
+        candidates.append(_Candidate(finding, _around(body, order, finding), shown))
+        flagged.add(m.sentence.id)
     for claim in claims:
         if claim.sentence_id in flagged:
             continue

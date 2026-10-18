@@ -10,6 +10,7 @@ from auditor.agents.integrity.results import (
     ResultVerdicts,
     TableImages,
     TableNumbers,
+    cell_findings,
     grim_findings,
     number_candidates,
     repeated_spreads,
@@ -142,8 +143,9 @@ async def run(
         ctx = dataclasses.replace(
             ctx, settings=ctx.settings.model_copy(update={"results_number_pass_enabled": True})
         )
-    if settings:
-        ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
+    # The cell rule is off unless a test asks for it, so each test sees one step's findings.
+    settings = {"results_cell_rule_enabled": False, **settings}
+    ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
     return await check(results_task(p), ctx), model
 
 
@@ -797,3 +799,121 @@ async def test_with_the_number_pass_off_there_is_no_extra_call(tmp_path: Path) -
     result, model = await run(tmp_path, [], p, numbers=[], results_number_pass_enabled=False)
     assert not result.findings
     assert len(model.received) == 1  # only the plan
+
+
+CELL_ROWS = [
+    "Model | Avg. ACC | Avg. MF1",
+    "BASE | 68.76 | 63.34",
+    "SleepDG | 75.03 ± 0.41 | 69.64 ± 0.52",
+]
+SECOND = ["Model | ACC", "BASE | 55.12", "SleepDG | 61.40"]
+# A set D plant, with the table named: BASE's MF1 is 63.34 in Table 1.
+CELL_WRONG = "As Table 1 shows, BASE performs the worst (68.76% in average ACC and 74.77% in MF1)."
+
+
+def cell_paper(*texts: str, rows: list[str] = CELL_ROWS) -> ParsedPaper:
+    """A paper whose body sentences are `texts`, with Table 1 (`rows`) and Table 2."""
+    first = [
+        Sentence(id=f"t{i}", section_id="exp", kind=SentenceKind.TABLE, text=row)
+        for i, row in enumerate(rows)
+    ]
+    second = [
+        Sentence(id=f"u{i}", section_id="exp", kind=SentenceKind.TABLE, text=row)
+        for i, row in enumerate(SECOND)
+    ]
+    body = [Sentence(id=f"s{i}", section_id="exp", text=t) for i, t in enumerate(texts, start=1)]
+    return ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sections=(Section(id="exp", title="Experiments"),),
+        sentences=(*first, *second, *body),
+        tables=(
+            Table(id="tab1", label="Table 1", row_ids=tuple(s.id for s in first)),
+            Table(id="tab2", label="Table 2", row_ids=tuple(s.id for s in second)),
+        ),
+    )
+
+
+def cells(*texts: str, rows: list[str] = CELL_ROWS) -> list[str]:
+    p = cell_paper(*texts, rows=rows)
+    return [f.summary for f in cell_findings(results_task(p), p)]
+
+
+def test_the_cell_rule_flags_a_number_no_cell_of_its_row_holds() -> None:
+    p = cell_paper(CELL_WRONG)
+    (finding,) = cell_findings(results_task(p), p)
+    assert finding.uncertain
+    start = CELL_WRONG.index("74.77")
+    assert finding.anchor == SentenceAnchor(sentence_id="s1", start=start, end=start + 5)
+    assert "74.77" in finding.summary
+    assert "BASE" in finding.summary
+    assert "63.34" in finding.summary
+    assert "BASE | 68.76 | 63.34" in finding.evidence[-1].text
+
+
+def test_the_cell_rule_accepts_numbers_that_agree_with_the_row() -> None:
+    assert not cells(
+        # The cell itself, rounded, and cut to fewer decimals.
+        "In Table 1, BASE reaches 63.34 in average MF1, which is the lowest score.",
+        "In Table 1, BASE reaches 63.3 in average MF1, which is the lowest score.",
+        "In Table 1, SleepDG reaches 75.0 in average accuracy and is the best of the models.",
+        # A mean with its spread.
+        "In Table 1, SleepDG reaches 69.64 ± 0.52 in MF1, which is the best of all.",
+    )
+    # A percentage the table gives as a fraction.
+    fractions = ["Model | Avg. ACC | Avg. MF1", "BASE | 0.6876 | 0.6334"]
+    assert not cells("In Table 1, BASE reaches 63.34% in average MF1 on the data.", rows=fractions)
+
+
+def test_the_cell_rule_leaves_changes_and_other_rows_numbers_alone() -> None:
+    assert not cells(
+        # Changes between two rows, written in several ways.
+        "In Table 1, SleepDG improves the MF1 of BASE by 6.30 points on all of the data.",
+        "In Table 1, SleepDG gets an MF1 that is 6.30 points above the score of BASE.",
+        "In Table 1, SleepDG reaches +6.30 in MF1 and +6.27 in accuracy over the baseline.",
+        "Table 1 shows a relative gain for SleepDG of 9.94% in MF1 over BASE on the data.",
+        "In Table 1, SleepDG reaches 6.30 in MF1 above the baseline, the largest of the gains.",
+        # Each number belongs to the nearest label before it.
+        "In Table 1, BASE gets 63.34 and SleepDG 69.64 in average MF1 on the data.",
+        "In Table 1, BASE is far behind SleepDG (69.64) in average MF1 on the data.",
+        # A number of another table, and ranges.
+        "In Table 1, BASE reaches 55.12 in accuracy on the second set, as in the other table.",
+        "In Table 1, BASE scores between 63.34 and 64.50 in MF1 over the five domains.",
+        "In Table 1, BASE reaches 60.12-64.50 in MF1 over the five domains in the study.",
+        # Values for several rows, read in order.
+        "In Table 1, BASE and SleepDG reach 64.50 and 70.10 in MF1, respectively.",
+    )
+
+
+def test_the_cell_rule_needs_the_table_named_and_a_prose_sentence() -> None:
+    worst = "BASE performs the worst (68.76% in average ACC and 74.77% in MF1)."
+    assert not cells(worst)
+    assert not cells("We compare five models on the data.", worst)
+    # The sentence before it may name the table.
+    (summary,) = cells("Table 1 compares five models on the data.", worst)
+    assert "74.77" in summary
+    # A table the parser ran into the body text.
+    assert not cells("Table 1 Model ACC MF1 BASE 74.77 63.34 SleepDG 75.03 69.64 MF1 ACC")
+    # A spread written without a space.
+    spread = "In Table 1, SleepDG reaches an MF1 of 69.64±0.71 on all of the data."
+    assert not cells(spread, rows=["Model | AUC | MF1", "SleepDG | 0.75 | 69.64"])
+
+
+async def test_the_cell_rule_is_on_by_default_and_can_be_turned_off(tmp_path: Path) -> None:
+    p = cell_paper(CELL_WRONG)
+    ctx = offline_context(tmp_path, paper=p)
+    (finding,) = (await check(results_task(p), ctx)).findings
+    assert "74.77" in finding.summary
+    off = ctx.settings.model_copy(update={"results_cell_rule_enabled": False})
+    assert not (await check(results_task(p), dataclasses.replace(ctx, settings=off))).findings
+
+
+async def test_the_challenge_step_reviews_the_cell_rule_findings(tmp_path: Path) -> None:
+    p = cell_paper(CELL_WRONG)
+    verdicts = [{"number": 1, "verdict": "misread"}]
+    result, model = await run(tmp_path, [], p, verdicts=verdicts, results_cell_rule_enabled=True)
+    assert not result.findings
+    challenge = " ".join(str(m.content) for m in model.received[1])
+    assert "74.77" in challenge
+    assert "BASE | 68.76 | 63.34" in challenge
+    assert CELL_WRONG in challenge
