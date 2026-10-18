@@ -25,6 +25,7 @@ from auditor.schemas import (
     PaperSource,
     ParsedPaper,
     RepositoryRef,
+    Sentence,
     SentenceAnchor,
     SentenceKind,
     SettingTarget,
@@ -70,6 +71,40 @@ is a valid answer.
 
 The paper:
 {listing}"""
+
+
+METHOD_PROMPT = """You prepare a check of a research paper's method against its released
+code. The paper's method sections follow, one sentence per line with its id in brackets.
+List the concrete implementation details that a reader could point to in the code and that
+the code could get wrong:
+- architecture: which inputs, features or outputs a component takes and how components are
+  connected (what is concatenated, added or fed where; which layers are shared or frozen);
+- training: the objective (its terms and how they are combined or weighted), the training
+  stages and what each updates, sampling and augmentation;
+- preprocessing: how inputs or labels are transformed, normalised or encoded;
+- evaluation: how the reported quantities are computed;
+- dataset_split: which data each stage uses.
+Prefer details stated precisely (an equation, a named input, an order of steps) over general
+descriptions. Leave out single hyperparameter values, results and claims about other work.
+For each detail give:
+- sentence_id: the id of the sentence that states it;
+- quote: at least five consecutive words of that sentence, copied exactly;
+- category: one of the categories above;
+- claim: what the code should do, in at most 25 words.
+List at most {limit} details, the most specific first. An empty list is a valid answer.
+
+The paper:
+{listing}"""
+
+
+def _method_sentences(paper: ParsedPaper) -> list[Sentence]:
+    """The body sentences of the method-like sections, or the whole body if none."""
+    from auditor.agents.code.method_check import METHOD_SECTION
+
+    titles = {s.id: s.title for s in paper.sections}
+    body = [s for s in paper.sentences if s.kind is SentenceKind.BODY]
+    chosen = [s for s in body if METHOD_SECTION.search(titles.get(s.section_id or "", ""))]
+    return chosen or body
 
 
 class PlannedClaim(BaseModel):
@@ -131,18 +166,21 @@ async def claim_tasks(
     limit: int,
     max_output: int = 4096,
     existing: Sequence[AuditTask] = (),
+    focus: Literal["experiments", "method"] = "experiments",
 ) -> list[AuditTask]:
     """At most `limit` code tasks, one per claim the code or data can settle."""
     if repository is None or limit <= 0:
         return []
-    listing = paper_listing(paper)
+    method = focus == "method"
+    listing = paper_listing(paper, _method_sentences(paper)) if method else paper_listing(paper)
     if not listing:
         return []
+    prompt = METHOD_PROMPT if method else PLAN_PROMPT
     try:
         result = await llm.generate(
             ClaimPlan,
             [
-                SystemMessage(PLAN_PROMPT.format(limit=limit, listing=listing)),
+                SystemMessage(prompt.format(limit=limit, listing=listing)),
                 HumanMessage("List the claims."),
             ],
             effort="low",
@@ -165,19 +203,30 @@ async def claim_tasks(
         keys = COVERING_KEYS.get(entry.category, frozenset())
         if any((anchor.sentence_id, key) in covered for key in keys):
             continue
-        task = AuditTask.create(
-            paper_id=paper.paper_id,
-            variant=paper.variant,
-            kind=TaskKind.CODE,
-            anchor=anchor,
-            target=SettingTarget(key=CLAIM_KEY),
-            setting=ExtractedSetting(
-                key=CLAIM_KEY,
-                raw_name=entry.category,
-                raw_value=statement,
-                source=PaperSource(anchor=anchor),
-            ),
-            repository=repository,
-        )
+        task = claim_task(paper, repository, anchor, entry.category, statement)
         tasks.setdefault(task.task_id, task)
     return list(tasks.values())
+
+
+def claim_task(
+    paper: ParsedPaper,
+    repository: RepositoryRef,
+    anchor: SentenceAnchor,
+    category: str,
+    statement: str,
+) -> AuditTask:
+    """The code task that checks one claim of `paper` against `repository`."""
+    return AuditTask.create(
+        paper_id=paper.paper_id,
+        variant=paper.variant,
+        kind=TaskKind.CODE,
+        anchor=anchor,
+        target=SettingTarget(key=CLAIM_KEY),
+        setting=ExtractedSetting(
+            key=CLAIM_KEY,
+            raw_name=category,
+            raw_value=statement,
+            source=PaperSource(anchor=anchor),
+        ),
+        repository=repository,
+    )

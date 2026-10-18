@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 
 from auditor.agents.code.data_checks import paper_quote_text
 from auditor.infra.context import RunContext
+from auditor.infra.llm import StructuredLLM
 from auditor.infra.snapshots import (
     Snapshot,
     SnapshotUnavailableError,
@@ -117,6 +118,13 @@ class MethodReview(BaseModel):
     discrepancies: list[Discrepancy] = Field(default_factory=list)
 
 
+def _method_llm(ctx: RunContext) -> StructuredLLM:
+    """The review model when one is configured and the settings ask for it, else the main."""
+    if ctx.settings.method_check_model == "review" and ctx.review_llm is not None:
+        return ctx.review_llm
+    return ctx.require_llm()
+
+
 async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
     repository = task.repository
     if repository is None:
@@ -145,7 +153,7 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
         f"Paper method text:\n{method_text}\n\nRepository {snapshot.source_id}, related files:\n"
         + "\n\n".join(_numbered(snapshot, path) for path in files)
     )
-    result = await ctx.require_llm().generate(
+    result = await _method_llm(ctx).generate(
         MethodReview, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)], purpose="method-whole"
     )
     findings: list[CandidateFinding] = []
@@ -315,7 +323,7 @@ async def _check_pairs(
             task, TaskOutcome.UNVERIFIABLE, reason="no code shares terms with the method text"
         )
     gate = asyncio.Semaphore(_CONCURRENCY)
-    llm = ctx.require_llm()
+    llm = _method_llm(ctx)
 
     async def judge(pair: _Pair) -> PairJudgement:
         lines = snapshot.read_text(pair.chunk.path).splitlines()
