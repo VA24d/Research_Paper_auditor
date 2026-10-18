@@ -343,7 +343,20 @@ for claims about the experiments that rest on the released code or data:
   paper like the method check's (D4). A finding is uncertain unless the model calls the
   cited lines direct evidence with high confidence.
 
-Nothing in the repository is run. The loop has not yet been run on set C.
+Nothing in the repository is run.
+
+First run on set C (`scripts/claim_eval.py`). It covered 10 pairs, each original and its
+injected copy, with Flash-Lite exploring (`AUDITOR_CLAIM_LOOP_MODEL=main`; 3.8 Flash cost
+$0.51 for one pair) and 3.8 Flash judging:
+
+- 82 claims were planned. Half were checked and half were unverifiable within the limits.
+- 4 findings came out, 2 of them on the originals.
+- 1 of the 28 SciCoQA discrepancies of those pairs was found.
+- The run cost $0.77.
+
+The planned claims are mostly about datasets and evaluation. SciCoQA's discrepancies are in
+method details (a loss term, which features are concatenated), which the method check
+covers. The loop stays off by default.
 
 ## D12. PDF parsing stack — Agreed
 

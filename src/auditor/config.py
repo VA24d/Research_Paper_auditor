@@ -195,6 +195,8 @@ class Settings(BaseSettings):
     claim_loop_max_model_calls: int = Field(default=8, gt=0)
     claim_loop_plan_max_output: int = Field(default=4096, gt=0)
     claim_loop_effort: Literal["low", "medium", "high"] = "medium"
+    # Which model explores: the review model, or the main (cheap) one.
+    claim_loop_model: Literal["main", "review"] = "review"
     # The planner's model pass over citation candidates (Part 2's checks). Runs that only
     # evaluate other parts can leave it out; it was a quarter of the cost of a full run.
     citation_llm_enabled: bool = True
