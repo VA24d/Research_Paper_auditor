@@ -6,7 +6,9 @@ judge these claims. It only reads them: for each claim it names the sentence, th
 the numbers the claim rests on, copied from the table as written. The arithmetic is then
 done here, with each number's rounding taken into account, and a number the model gives is
 used only if it really is in the table row it names. So the model's job is extraction,
-which a cheap model does well, and the verdict is computed.
+which a cheap model does well, and the verdict is computed. A second pass reads the
+sentences that quote numbers from a named table or row once more, with only those tables,
+and pairs each number with the cell it comes from; the comparison is again done here.
 
 Two checks need no model: a table value that cannot be right (a negative standard
 deviation), and a sentence that calls one stated number higher or lower than another when it
@@ -539,6 +541,15 @@ def text_comparisons(task: AuditTask, paper: ParsedPaper, first: int = 0) -> lis
 _TABLE_NUMBER = re.compile(r"\d+\.\d+|\d{3,}")
 
 
+def _names_table(table: Table, text: str) -> bool:
+    """Whether `text` names the table: "Table 6", "Tab. 6", and "Table . 6" where the
+    parser split a sentence after it."""
+    found = re.findall(r"(\d+|[IVX]+)\b", table.label or "")
+    return any(
+        re.search(rf"\bTab(?:le)?\s*\.?\s*{re.escape(n)}\b", text, re.IGNORECASE) for n in found
+    )
+
+
 def _units(paper: ParsedPaper) -> list[str]:
     """The paper cut into listings for the plan step, one per section that can state a
     table's numbers: the section's sentences with digits, and the tables it names or
@@ -550,13 +561,6 @@ def _units(paper: ParsedPaper) -> list[str]:
         for t in tables
     }
 
-    def named(table: Table, text: str) -> bool:
-        # "Table 6", "Tab. 6", and "Table . 6" where the parser split a sentence after it.
-        found = re.findall(r"(\d+|[IVX]+)\b", table.label or "")
-        return any(
-            re.search(rf"\bTab(?:le)?\s*\.?\s*{re.escape(n)}\b", text, re.IGNORECASE) for n in found
-        )
-
     sections: dict[str, list[Sentence]] = {}
     for sentence in paper.sentences:
         if sentence.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY):
@@ -567,7 +571,7 @@ def _units(paper: ParsedPaper) -> list[str]:
     for sentences in sections.values():
         text = " ".join(s.text for s in sentences)
         quoted = {m.group() for s in sentences for m in _TABLE_NUMBER.finditer(s.text)}
-        used = [t for t in tables if named(t, text) or quoted & numbers[t.id]]
+        used = [t for t in tables if _names_table(t, text) or quoted & numbers[t.id]]
         lines = [f"[{s.id}] {s.text}" for s in sentences if any(c.isdigit() for c in s.text)]
         compares = any(len(re.findall(r"\d\.\d", s.text)) >= 2 for s in sentences)
         if not lines:
@@ -595,15 +599,18 @@ def _with_tables(paper: ParsedPaper, lines: list[str], tables: Sequence[Table]) 
 
 
 def _value_in_row(
-    rows: Sequence[Sentence], operand: Operand, need_label: bool = True
+    rows: Sequence[Sentence], operand: Operand, need_label: bool = True, columns: bool = True
 ) -> _Number | None:
     """The operand's number, if a row naming its label (when `need_label`) holds it exactly
-    as written. The label may also be a column's, named in the table's header rows."""
+    as written. The label may also be a column's, named in the table's header rows, unless
+    `columns` is false."""
     label = operand.row_label.strip().casefold()
     wanted = _Number.parse(operand.value)
     if wanted is None or (need_label and not label):
         return None
-    in_header = need_label and any(label in row.text.casefold() for row in rows[:HEADER_ROWS])
+    in_header = (
+        need_label and columns and any(label in row.text.casefold() for row in rows[:HEADER_ROWS])
+    )
     for row in rows:
         if need_label and not in_header and label not in row.text.casefold():
             continue
@@ -954,6 +961,185 @@ def _around(body: Sequence[Sentence], order: dict[str, int], finding: CandidateF
     return " ".join(s.text for s in body[max(0, at - 2) : at + 3])
 
 
+NUMBER_PROMPT = """You pair the numbers a research paper's text quotes from its tables with
+the table cells they come from. You get some sentences of the paper, each with its id, and
+the tables they name or whose rows they mention. For every number with a decimal point in
+the sentences, give:
+- the sentence id and the number exactly as the sentence writes it;
+- a quote of at least four words copied exactly from the sentence, around the number;
+- when the text means the number to be read from one of the tables (a result in a cell):
+  the table id, the row label exactly as the table writes it (the first cell of the row),
+  the column header of the cell, and the value the table gives in that cell, copied
+  exactly from the table with all its digits, even when it differs from the sentence's
+  number. Never put the sentence's number there unless the cell holds it.
+For a number that is not read from a table cell (a count, a setting, a difference or gain
+computed from two cells, a number from another paper, a value the tables do not have),
+leave table_id, row_label, column and table_value empty."""
+
+# Sentences read together in one call of the number pass, and the tables shown for one
+# sentence: those it names first, then those holding the row labels it mentions.
+NUMBER_BATCH = 4
+MAX_NUMBER_TABLES = 3
+MAX_NUMBER_TOKENS = 8192
+MAX_LABEL_CHARS = 40
+_DECIMAL = re.compile(r"(?<![\w.])\d+\.\d+(?![\d.])")
+
+
+class TableNumber(BaseModel):
+    sentence_id: str
+    number: str
+    quote: str = ""
+    table_id: str = ""
+    row_label: str = ""
+    column: str = ""
+    # Empty when the number is not read from a table cell.
+    table_value: str = ""
+
+
+class TableNumbers(BaseModel):
+    numbers: list[TableNumber]
+
+
+def _row_label(row: Sentence) -> str | None:
+    """The label of a results row: its first cell, when the cell has a word and is short,
+    and the row holds a decimal number (which leaves out header rows)."""
+    cells = row.text.split(CELL_SEPARATOR)
+    label = cells[0].strip()
+    if len(cells) < 2 or len(label) > MAX_LABEL_CHARS or not re.search(r"[A-Za-z]{2}", label):
+        return None
+    if not any(_DECIMAL.search(cell) for cell in cells[1:]):
+        return None
+    return label
+
+
+def _mentions(label: str, text: str) -> bool:
+    return re.search(rf"(?<!\w){re.escape(label)}(?!\w)", text) is not None
+
+
+def number_candidates(
+    paper: ParsedPaper, skip: set[str], limit: int
+) -> list[tuple[Sentence, list[Table]]]:
+    """The prose sentences the number pass reads, each with the tables it uses: sentences
+    with a decimal number that name a table ("Table 3", "Tab. 3") or mention the label of
+    a row of some table. Sentences in `skip` are left out. At most `limit`, the ones naming
+    a table first, each group in reading order."""
+    tables = [t for t in _tables(paper) if _rows(paper, t)]
+    labels = {
+        t.id: {label for row in _rows(paper, t) if (label := _row_label(row))} for t in tables
+    }
+    naming: list[tuple[Sentence, list[Table]]] = []
+    holding: list[tuple[Sentence, list[Table]]] = []
+    for sentence in paper.sentences:
+        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY):
+            continue
+        if sentence.id in skip or not _DECIMAL.search(sentence.text):
+            continue
+        named = [t for t in tables if _names_table(t, sentence.text)]
+        matched = [
+            t
+            for t in tables
+            if t not in named and any(_mentions(label, sentence.text) for label in labels[t.id])
+        ]
+        used = (named + matched)[:MAX_NUMBER_TABLES]
+        if used:
+            (naming if named else holding).append((sentence, used))
+    return (naming + holding)[:limit]
+
+
+def _rescaled(stated: _Number, held: _Number) -> bool:
+    """Whether the text's number is the cell's in another scale or sign: 68.76% for
+    0.6876, or -3.2 for a drop the table gives as 3.2."""
+    return any(
+        abs(held.low) * factor - 1e-9 <= abs(stated.high)
+        and abs(stated.low) <= abs(held.high) * factor + 1e-9
+        for factor in (1, 100, 0.01)
+    )
+
+
+def _number_verdict(
+    item: TableNumber, sentence: Sentence, shown: Sequence[Table], paper: ParsedPaper
+) -> tuple[DataClaim, Table, tuple[str, str]] | None:
+    """The `value` claim a reply makes, its table and the disagreement, when the cell's
+    value is really in the row the reply names and the text's number differs from it
+    beyond rounding."""
+    number = item.number.strip().replace(_MINUS, "-")
+    written = {m.group().replace(_MINUS, "-") for m in _NUMBER.finditer(sentence.text)}
+    if not item.table_value.strip() or number not in written:
+        return None
+    claim = DataClaim(
+        sentence_id=sentence.id,
+        quote=item.quote,
+        kind="value",
+        stated=number,
+        subject=Operand(row_label=item.row_label, value=item.table_value.strip()),
+    )
+    for table in [t for t in shown if t.id == item.table_id] or list(shown):
+        rows = _rows(paper, table)
+        # The label must be the row's: a column's label would let any row's cell count.
+        if _value_in_row(rows, claim.subject, columns=False) is None:
+            continue
+        stated, held = _Number.parse(number), _Number.parse(claim.subject.value)
+        if stated is None or held is None or _rescaled(stated, held):
+            return None
+        # The row holds the text's number too: the text quotes another of its cells.
+        if _value_in_row(rows, Operand(row_label=item.row_label, value=number)) is not None:
+            return None
+        claim = claim.model_copy(update={"table_id": table.id})
+        verdict = _verdict(claim, rows, table.label or table.id)
+        if verdict is None:
+            return None
+        summary, lookup = verdict
+        if item.column.strip():
+            summary = f"{summary.removesuffix('.')} ({item.column.strip()})."
+        return claim, table, (summary, lookup)
+    return None
+
+
+async def _number_pass(
+    paper: ParsedPaper, skip: set[str], ctx: RunContext
+) -> list[tuple[DataClaim, Table, tuple[str, str]]]:
+    """The second extraction pass: sentences that quote numbers from a table, read with
+    only the tables they use, and each number paired with its cell. The per-section
+    extraction seldom lists such a sentence as a claim; this pass asks about nothing else.
+    The model only reads the cells; whether the text agrees is computed."""
+    settings = ctx.settings
+    if ctx.llm is None or not settings.results_number_pass_enabled:
+        return []
+    picked = number_candidates(paper, skip, settings.results_number_max_sentences)
+    batches = [picked[i : i + NUMBER_BATCH] for i in range(0, len(picked), NUMBER_BATCH)]
+    listings = []
+    for batch in batches:
+        lines = [f"[{s.id}] {s.text}" for s, _ in batch]
+        used = list({t.id: t for _, shown in batch for t in shown}.values())
+        listings.append(_with_tables(paper, lines, used))
+    llm = ctx.require_review_llm() if settings.results_number_model == "review" else ctx.llm
+    replies = await asyncio.gather(
+        *(
+            llm.generate(
+                TableNumbers,
+                [SystemMessage(NUMBER_PROMPT), HumanMessage(listing)],
+                effort=settings.results_number_effort,
+                purpose="results-numbers",
+                max_output_tokens=MAX_NUMBER_TOKENS,
+            )
+            for listing in listings
+        )
+    )
+    shown = {s.id: (s, tables) for s, tables in picked}
+    out: list[tuple[DataClaim, Table, tuple[str, str]]] = []
+    done: set[str] = set()
+    for reply in replies:
+        for item in reply.value.numbers:
+            if item.sentence_id not in shown or item.sentence_id in done:
+                continue
+            sentence, tables = shown[item.sentence_id]
+            found = _number_verdict(item, sentence, tables, paper)
+            if found is not None:
+                out.append(found)
+                done.add(sentence.id)
+    return out
+
+
 async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     paper = ctx.paper
     findings = table_findings(task, paper)
@@ -1041,6 +1227,20 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
         context = _around(body, order, candidate)
         candidates.append(_Candidate(candidate, context, rows or "(numbers from the text)"))
         flagged.add(found.sentence.id)
+    flagged |= {
+        f.anchor.sentence_id
+        for f in [*findings, *(c.finding for c in candidates)]
+        if isinstance(f.anchor, SentenceAnchor)
+    }
+    for claim, table, (summary, lookup) in await _number_pass(paper, flagged, ctx):
+        found = anchor_quote(claim.quote, claim.sentence_id, body)
+        if found is None or found.sentence.id != claim.sentence_id:
+            continue
+        number = len(findings) + len(candidates)
+        candidate = _finding(task, number, found.sentence, found.span, summary, lookup)
+        rows = f"{table.label or table.id} {_caption(paper, table)}".strip() + "\n"
+        rows += "\n".join(row.text for row in _rows(paper, table))
+        candidates.append(_Candidate(candidate, _around(body, order, candidate), rows))
     if ctx.settings.results_challenge_enabled:
         kept = await _challenge(candidates, ctx)
     else:

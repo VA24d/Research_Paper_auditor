@@ -9,7 +9,9 @@ from auditor.agents.integrity.results import (
     DataClaims,
     ResultVerdicts,
     TableImages,
+    TableNumbers,
     grim_findings,
+    number_candidates,
     repeated_spreads,
     table_findings,
     wrong_aggregates,
@@ -108,22 +110,40 @@ def without_challenge(ctx: RunContext) -> RunContext:
     return dataclasses.replace(ctx, settings=settings)
 
 
+def without_number_pass(ctx: RunContext) -> RunContext:
+    settings = ctx.settings.model_copy(update={"results_number_pass_enabled": False})
+    return dataclasses.replace(ctx, settings=settings)
+
+
 async def run(
     tmp_path: Path,
     claims: list[dict[str, Any]],
     p: ParsedPaper | None = None,
     verdicts: list[dict[str, Any]] | None = None,
+    numbers: list[list[dict[str, Any]]] | None = None,
+    **settings: Any,
 ) -> Any:
-    """The check on `p` with the model giving `claims`, and then `verdicts` in the
-    challenge step (which is skipped when `verdicts` is None)."""
+    """The check on `p` with the model giving `claims`, then one reply of the number pass
+    per list in `numbers` (the pass is off when `numbers` is None), and then `verdicts` in
+    the challenge step (which is skipped when `verdicts` is None)."""
     p = p or paper()
     replies = [tool_reply(DataClaims, {"claims": claims})]
+    for reply in numbers or []:
+        replies.append(tool_reply(TableNumbers, {"numbers": reply}))
     if verdicts is not None:
         replies.append(tool_reply(ResultVerdicts, {"verdicts": verdicts}))
     model = ScriptedChatModel(replies=replies)
     ctx = offline_context(tmp_path, paper=p, llm=StructuredLLM(model, name="test:s"))
     if verdicts is None:
         ctx = without_challenge(ctx)
+    if numbers is None:
+        ctx = without_number_pass(ctx)
+    else:
+        ctx = dataclasses.replace(
+            ctx, settings=ctx.settings.model_copy(update={"results_number_pass_enabled": True})
+        )
+    if settings:
+        ctx = dataclasses.replace(ctx, settings=ctx.settings.model_copy(update=settings))
     return await check(results_task(p), ctx), model
 
 
@@ -340,7 +360,8 @@ async def test_a_table_the_parser_could_not_read_is_read_from_its_page_image(
         ]
     )
     ctx = offline_context(tmp_path, paper=p, llm=StructuredLLM(model, name="test:s"))
-    ctx = dataclasses.replace(without_challenge(ctx), source_pdf=tmp_path / "paper.pdf")
+    ctx = without_number_pass(without_challenge(ctx))
+    ctx = dataclasses.replace(ctx, source_pdf=tmp_path / "paper.pdf")
     result = await check(results_task(p), ctx)
     (finding,) = result.findings
     assert "1.7" in finding.summary
@@ -650,3 +671,129 @@ async def test_a_gain_without_its_compared_result_is_completed_from_the_sentence
     result, _ = await run(tmp_path, [gain], p)
     (finding,) = result.findings
     assert "2.1" in finding.summary
+
+
+SCORES = ["Model | Avg. ACC | Avg. MF1", "BASE | 68.76 | 63.34", "Ours | 75.10 | 70.02"]
+# A set D plant: the text gives 74.77 for BASE's MF1, which Table 1 gives as 63.34.
+WORST = "In Table 1, BASE performs the worst (68.76% in average ACC and 74.77% in average MF1)."
+
+
+def score_paper(*texts: str, rows: list[str] = SCORES) -> ParsedPaper:
+    table_rows = [
+        Sentence(id=f"t{i}", section_id="exp", kind=SentenceKind.TABLE, text=row)
+        for i, row in enumerate(rows)
+    ]
+    body = [Sentence(id=f"s{i}", section_id="exp", text=t) for i, t in enumerate(texts, start=1)]
+    return ParsedPaper(
+        paper_id="p",
+        parser=ParserInfo(name="test", version="1"),
+        sections=(Section(id="exp", title="Experiments"),),
+        sentences=(*table_rows, *body),
+        tables=(Table(id="tab1", label="Table 1", row_ids=tuple(s.id for s in table_rows)),),
+    )
+
+
+def mf1(table_value: str, **fields: Any) -> dict[str, Any]:
+    return {
+        "sentence_id": "s1",
+        "number": "74.77",
+        "quote": "and 74.77% in average MF1",
+        "table_id": "tab1",
+        "row_label": "BASE",
+        "column": "Avg. MF1",
+        "table_value": table_value,
+        **fields,
+    }
+
+
+ACC = {
+    "sentence_id": "s1",
+    "number": "68.76",
+    "quote": "68.76% in average ACC",
+    "table_id": "tab1",
+    "row_label": "BASE",
+    "column": "Avg. ACC",
+    "table_value": "68.76",
+}
+
+
+async def test_a_number_that_differs_from_the_row_it_quotes_is_found(tmp_path: Path) -> None:
+    verdicts = [{"number": 1, "verdict": "inconsistent"}]
+    p = score_paper(WORST)
+    result, model = await run(tmp_path, [], p, verdicts=verdicts, numbers=[[ACC, mf1("63.34")]])
+    (finding,) = result.findings
+    assert finding.anchor.sentence_id == "s1"
+    assert "74.77" in finding.summary
+    assert "63.34" in finding.summary
+    assert "Avg. MF1" in finding.summary
+    assert not finding.uncertain
+    numbers = " ".join(str(m.content) for m in model.received[1])
+    assert f"[s1] {WORST}" in numbers
+    assert "BASE | 68.76 | 63.34" in numbers
+    # The candidate went through the challenge step with its table.
+    challenge = " ".join(str(m.content) for m in model.received[2])
+    assert "BASE | 68.76 | 63.34" in challenge
+    assert WORST in challenge
+
+
+async def test_a_number_that_matches_its_cell_gives_nothing(tmp_path: Path) -> None:
+    right = WORST.replace("74.77", "63.3")  # 63.3 is 63.34 rounded
+    p = score_paper(right)
+    result, _ = await run(tmp_path, [], p, numbers=[[ACC, mf1("63.34", number="63.3")]])
+    assert not result.findings
+    # A percentage the table gives as a fraction is the same number.
+    fractions = ["Model | Avg. ACC | Avg. MF1", "BASE | 0.6876 | 0.6334", "Ours | 0.75 | 0.70"]
+    p = score_paper(right, rows=fractions)
+    result, _ = await run(tmp_path, [], p, numbers=[[mf1("0.6334", number="63.3")]])
+    assert not result.findings
+
+
+async def test_a_number_the_model_says_is_not_a_table_value_gives_nothing(
+    tmp_path: Path,
+) -> None:
+    p = score_paper(WORST)
+    unread = mf1("", table_id="", row_label="", column="")
+    result, _ = await run(tmp_path, [], p, numbers=[[unread]])
+    assert not result.findings
+
+
+async def test_a_table_value_that_is_not_in_the_named_row_is_ignored(tmp_path: Path) -> None:
+    p = score_paper(WORST)
+    # 70.02 is Ours's MF1, not BASE's; 64.34 is in no row; 74.7 is not in the sentence.
+    replies = [mf1("70.02"), mf1("64.34"), mf1("63.34", number="74.7")]
+    result, _ = await run(tmp_path, [], p, numbers=[replies])
+    assert not result.findings
+
+
+def test_the_number_pass_reads_sentences_naming_a_table_first_up_to_the_cap() -> None:
+    p = score_paper(
+        "Ours reaches 75.10 in average accuracy, the best of all models.",
+        "We train for 10 epochs with the settings of Table 1.",  # no decimal number
+        "Table 1 lists the scores, where BASE gets 68.76 on average.",
+        "Table 1 shows that Ours reaches 70.02 in average MF1.",
+        "A plain sentence with 3.5 points of gain and no table or row.",
+    )
+    picked = number_candidates(p, set(), 10)
+    assert [s.id for s, _ in picked] == ["s3", "s4", "s1"]
+    assert all([t.id for t in tables] == ["tab1"] for _, tables in picked)
+    assert [s.id for s, _ in number_candidates(p, {"s3"}, 2)] == ["s4", "s1"]
+    assert [s.id for s, _ in number_candidates(p, set(), 1)] == ["s3"]
+
+
+async def test_the_number_pass_respects_its_cap(tmp_path: Path) -> None:
+    texts = [f"Table 1 shows that BASE reaches {60 + i}.5 in setting {i}." for i in range(6)]
+    p = score_paper(*texts)
+    result, model = await run(tmp_path, [], p, numbers=[[]], results_number_max_sentences=2)
+    assert not result.findings
+    assert len(model.received) == 2  # the plan, then one call of the number pass
+    numbers = " ".join(str(m.content) for m in model.received[1])
+    assert "[s1]" in numbers
+    assert "[s2]" in numbers
+    assert "[s3]" not in numbers
+
+
+async def test_with_the_number_pass_off_there_is_no_extra_call(tmp_path: Path) -> None:
+    p = score_paper(WORST)
+    result, model = await run(tmp_path, [], p, numbers=[], results_number_pass_enabled=False)
+    assert not result.findings
+    assert len(model.received) == 1  # only the plan

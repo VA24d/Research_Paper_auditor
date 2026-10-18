@@ -829,3 +829,26 @@ that quotes a table number unambiguously. The set D runs led to five changes:
 - In the code-defect check, a script that does not compile counts as an entry point when
   its text has a main guard. Before this, breaking a script took it out of the scope that
   was checked.
+
+**Number pass** (`AUDITOR_RESULTS_NUMBER_PASS_ENABLED`, off by default). On set D none of
+the 7 changed numbers were found. The per-section extraction usually does not list a
+sentence such as "BASE performs the worst (68.76% in average ACC and 74.77% in average
+MF1)" as a `value` claim. A second pass now reads such sentences again. Code picks them
+with no model. A candidate is a body or abstract sentence with a decimal number that names
+a table ("Table 3", "Tab. 3") or contains the label of a table row. A row label is the
+row's first cell, with letters, at most 40 characters, in a row holding a decimal number.
+Sentences already flagged in the run are skipped. At most 12 sentences per paper are read
+(`AUDITOR_RESULTS_NUMBER_MAX_SENTENCES`), those naming a table first, each group in
+reading order. Each call takes 4 sentences and only the tables they use, at most 3 per
+sentence. It runs on the main model with medium thinking (`AUDITOR_RESULTS_NUMBER_EFFORT`)
+and an answer capped at 8,192 tokens. For each decimal number the model gives the row
+label, the column and the value the table has in that cell. It leaves these empty when the
+number is not read from a table. The rest is done in code. The cell's value must be in a
+row whose own text holds the label; a label found only in the header rows does not count
+here. The sentence must hold the text's number. A pair is dropped when the two numbers
+agree within rounding, or when one is the other times 100 (68.76% against 0.6876) or with
+its sign changed. It is also dropped when the named row holds the text's number too, since
+the text then quotes another cell. What remains goes through the challenge step like the
+other candidates. Measured on set D, it found none of the 7 changed numbers either, at
+$0.48 for the 80 papers. Flash-Lite and 3.8 Flash both left the row label empty or read
+the wrong row for the planted sentences, so the pass stays off until it finds something.
