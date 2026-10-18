@@ -619,6 +619,11 @@ call sets its own thinking level, and the usage log records the level and the st
   judge and 5 by both, in 4 of 13 papers. Its reports were right 7 times in 19, and it
   cost $3.02 against $1.68. It does no better than single triage and costs more, so
   single triage stays the default.
+- **Ordinary papers.** On 15 set C papers (machine learning, parsed from the PDF), the
+  theory checker alone (`scripts/math_alarms.py`: triage, deep checks, challenge) named
+  suspects in 3 papers and kept 1 finding, for $0.21. That finding says a DenseNet
+  related-work sentence gives n! skip connections for an n-layer block; the right count
+  is quadratic, so it may be a real error. Triage named nothing in the other 12 papers.
 - **Explicit context caching** (`AUDITOR_LLM_EXPLICIT_CACHE`, off by default;
   `auditor.infra.prefix_cache`). Vertex's implicit cache reused 8-9% of the 3.8 Flash
   input, so the message holding the paper goes into an explicit Vertex context cache the
