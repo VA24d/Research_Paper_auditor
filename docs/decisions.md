@@ -355,6 +355,20 @@ Nothing in the repository is run. The loop has not yet been run on set C.
 - `ParsedPaper` JSON fixtures are committed for tests, so only people working on the parser
   need Docker running.
 
+**LaTeX source as input (plan D7, October 2026).** `auditor audit` and `batch` also take
+the main .tex file of a paper's source (`auditor.parser.latex`).
+`scripts/fetch_arxiv.py --source` fetches an arXiv e-print and unpacks it, refusing
+members that would leave their folder. Formulas stay as LaTeX: on two SPOT papers the
+source kept about 800 math marks, where GROBID kept 3 and 4. With the same theory
+checker on both inputs:
+
+- 2405.05635: the annotated error was found from either input.
+- 2408.16162: found from the PDF, not from the source in this run.
+
+Two papers show no gain for the source; their errors are in the reasoning, which
+survives GROBID. The parser stays as the input for papers whose errors sit in the
+formulas themselves. The bibliography is not read from the source.
+
 ## D13. Paper and repository files are not committed — Agreed
 
 PDFs, LaTeX sources and cloned repositories stay out of git (size, and arXiv licence terms).
