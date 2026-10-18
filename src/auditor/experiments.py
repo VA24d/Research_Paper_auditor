@@ -54,6 +54,7 @@ from auditor.orchestration.registry import (
     missing_tools,
 )
 from auditor.parser.grobid import GrobidClient
+from auditor.parser.latex import LatexError, parse_latex
 from auditor.parser.pipeline import ParseError, parse_pdf
 from auditor.planner.repository import find_repository
 from auditor.planner.tasks import PlannerOptions, make_planner
@@ -80,9 +81,15 @@ class InputError(Exception):
 async def load_paper(
     source: Path, settings: Settings, http: HttpClient, *, refresh: bool = False
 ) -> ParsedPaper:
-    """A ParsedPaper from its JSON file, or by parsing a PDF with GROBID."""
+    """A ParsedPaper from its JSON file, from its LaTeX source (the main .tex file; the
+    formulas stay as written), or by parsing a PDF with GROBID."""
     if not await asyncio.to_thread(source.is_file):
         raise InputError(f"No such file: {source}")
+    if source.suffix.lower() == ".tex":
+        try:
+            return await asyncio.to_thread(parse_latex, source)
+        except LatexError as exc:
+            raise InputError(f"Could not read the LaTeX source: {exc}") from exc
     if source.suffix.lower() == ".json":
         try:
             return ParsedPaper.model_validate_json(await asyncio.to_thread(source.read_bytes))

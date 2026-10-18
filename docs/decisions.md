@@ -355,6 +355,20 @@ Nothing in the repository is run. The loop has not yet been run on set C.
 - `ParsedPaper` JSON fixtures are committed for tests, so only people working on the parser
   need Docker running.
 
+**LaTeX source as input (plan D7, October 2026).** `auditor audit` and `batch` also take
+the main .tex file of a paper's source (`auditor.parser.latex`).
+`scripts/fetch_arxiv.py --source` fetches an arXiv e-print and unpacks it, refusing
+members that would leave their folder. Formulas stay as LaTeX: on two SPOT papers the
+source kept about 800 math marks, where GROBID kept 3 and 4. With the same theory
+checker on both inputs:
+
+- 2405.05635: the annotated error was found from either input.
+- 2408.16162: found from the PDF, not from the source in this run.
+
+Two papers show no gain for the source; their errors are in the reasoning, which
+survives GROBID. The parser stays as the input for papers whose errors sit in the
+formulas themselves. The bibliography is not read from the source.
+
 ## D13. Paper and repository files are not committed — Agreed
 
 PDFs, LaTeX sources and cloned repositories stay out of git (size, and arXiv licence terms).
@@ -605,6 +619,11 @@ call sets its own thinking level, and the usage log records the level and the st
   judge and 5 by both, in 4 of 13 papers. Its reports were right 7 times in 19, and it
   cost $3.02 against $1.68. It does no better than single triage and costs more, so
   single triage stays the default.
+- **Ordinary papers.** On 15 set C papers (machine learning, parsed from the PDF), the
+  theory checker alone (`scripts/math_alarms.py`: triage, deep checks, challenge) named
+  suspects in 3 papers and kept 1 finding, for $0.21. That finding says a DenseNet
+  related-work sentence gives n! skip connections for an n-layer block; the right count
+  is quadratic, so it may be a real error. Triage named nothing in the other 12 papers.
 - **Explicit context caching** (`AUDITOR_LLM_EXPLICIT_CACHE`, off by default;
   `auditor.infra.prefix_cache`). Vertex's implicit cache reused 8-9% of the 3.8 Flash
   input, so the message holding the paper goes into an explicit Vertex context cache the
