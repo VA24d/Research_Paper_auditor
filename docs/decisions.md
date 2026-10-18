@@ -481,7 +481,14 @@ call sets its own thinking level, and the usage log records the level and the st
 - **Evidence gate.** An error is kept only if it quotes the paper verbatim, at least six
   words long, ignoring spacing. The finding is anchored on the quoted sentence and span,
   so D3 sentence matching works for injected math errors. Confidence below high makes it
-  uncertain.
+  uncertain. An answer that leaves the quote empty but names a sentence that exists is
+  kept, anchored on the whole sentence; 3.8 Flash did this on a retracted SPOT paper with
+  the right error as its witness.
+- **Main result.** When the screen calls every claim fine, the claim that needs reasoning
+  and rests on the most others still gets a deep check. On SPOT 2408.16162 (retracted)
+  the screen cleared all five claims. With these two changes, one run of that paper
+  found the annotated error, which survived the challenge and matched in the judge's
+  grade, for $0.16.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its

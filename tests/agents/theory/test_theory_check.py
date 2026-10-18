@@ -157,6 +157,38 @@ async def test_a_high_risk_claim_is_checked_deeply_even_when_screened_fine(
     assert len(model.received) == 2
 
 
+async def test_when_the_screen_clears_everything_the_main_result_is_still_checked(
+    tmp_path: Path,
+) -> None:
+    medium = task()
+    claims = [c.model_copy(update={"risk": "medium"}) for c in medium.claims or ()]
+    replies = [
+        screen({"claim_id": "c1", "verdict": "fine"}, {"claim_id": "c2", "verdict": "fine"}),
+        tool_reply(DeepCheck, ERROR),
+    ]
+    ctx, model = context(tmp_path, replies)
+    (finding,) = (await check(medium.model_copy(update={"claims": tuple(claims)}), ctx)).findings
+    assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
+    assert len(model.received) == 2
+
+
+async def test_an_error_naming_its_sentence_without_a_quote_is_kept(tmp_path: Path) -> None:
+    for sentence_id, kept in (("s1", True), ("s9", False)):
+        named = {**ERROR, "quote": "", "sentence_id": sentence_id}
+        replies = [
+            screen(
+                {"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}
+            ),
+            tool_reply(DeepCheck, named),
+        ]
+        ctx, _ = context(tmp_path, replies)
+        findings = (await check(task(), ctx)).findings
+        assert len(findings) == int(kept)
+        if kept:
+            assert findings[0].anchor.sentence_id == "s1"  # type: ignore[union-attr]
+            assert findings[0].evidence[0].text == LEMMA
+
+
 async def test_risky_claims_that_need_reasoning_are_checked_deeply_too(tmp_path: Path) -> None:
     replies = [
         screen(

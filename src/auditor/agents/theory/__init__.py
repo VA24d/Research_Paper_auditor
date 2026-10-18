@@ -212,9 +212,16 @@ def _finding(
 ) -> CandidateFinding | None:
     if not deep.has_error or not deep.witness.strip():
         return None
-    if len(deep.quote.split()) < MIN_QUOTE_WORDS:
+    if len(deep.quote.split()) >= MIN_QUOTE_WORDS:
+        found = anchor_quote(deep.quote, deep.sentence_id, sentences)
+    elif deep.quote.strip():
         return None
-    found = anchor_quote(deep.quote, deep.sentence_id, sentences)
+    else:
+        # 3.8 Flash at times names the sentence and leaves the quote empty (on a retracted
+        # SPOT paper, with the right error as the witness). A sentence id that exists is
+        # evidence enough; the whole sentence is quoted.
+        named = next((s for s in sentences if s.id == deep.sentence_id.strip()), None)
+        found = QuoteAnchor(named, None) if named is not None else None
     if found is not None:
         sentence = found.sentence
         start, end = found.span if found.span is not None else (0, len(sentence.text))
@@ -268,6 +275,14 @@ def _escalated(
         if said == "suspicious" or hard or unsettled:
             picked.append((said != "suspicious", _RISK[claim.risk], claim, note))
     picked.sort(key=lambda item: (item[0], item[1]))
+    if not picked and limit:
+        # A quick read clearing every claim does not clear a delicate argument: on a
+        # retracted SPOT paper it called all five claims fine. The claim that rests on the
+        # most others, the main result, still gets a deep check.
+        central = [c for c in claims if c.needs_reasoning and c.risk != "low"]
+        if central:
+            claim = max(central, key=lambda c: (-_RISK[c.risk], len(c.depends_on)))
+            return [(claim, "")]
     return [(claim, note) for _, _, claim, note in picked[:limit]]
 
 
