@@ -212,6 +212,8 @@ class Settings(BaseSettings):
     # half the screen called 140 of 162 claims fine, including the wrong ones; triage
     # found 6 of 15 errors in 5 of 13 papers, against 3 and then 1 of 15 for the screen.
     theory_selector: Literal["screen", "triage"] = "triage"
+    # Output cap of the triage call, thinking included.
+    theory_triage_max_output: int = Field(default=16_384, gt=0)
     theory_deep_context: Literal["paper", "sections"] = "paper"
     # Let deep checks run one piece of Python in the Docker math sandbox before answering
     # (auditor.infra.sandbox); without Docker or its image they answer without it.

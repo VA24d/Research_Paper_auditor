@@ -247,7 +247,6 @@ likely first, and give at most {limit}. For each give:
 Do not restate the claim or write formulas outside the reason.
 Name a claim only for a concrete doubt, not because it is long. Use only sentence ids
 from the listing; an empty list is a valid answer."""
-MAX_TRIAGE_TOKENS = 16_384
 
 
 class SuspectEntry(BaseModel):
@@ -263,7 +262,9 @@ class Suspects(BaseModel):
     suspects: list[SuspectEntry]
 
 
-async def triage_tasks(paper: ParsedPaper, llm: StructuredLLM, *, limit: int) -> list[AuditTask]:
+async def triage_tasks(
+    paper: ParsedPaper, llm: StructuredLLM, *, limit: int, max_output: int = 16_384
+) -> list[AuditTask]:
     """One task with the claims a referee reading the whole paper suspects most, at most
     `limit`. One call to the review model replaces the cheap listing and screen, which
     passed nearly every claim, wrong ones included."""
@@ -275,7 +276,7 @@ async def triage_tasks(paper: ParsedPaper, llm: StructuredLLM, *, limit: int) ->
             [paper_context(paper), HumanMessage(TRIAGE_PROMPT.format(limit=limit))],
             effort="medium",
             purpose="theory-triage",
-            max_output_tokens=MAX_TRIAGE_TOKENS,
+            max_output_tokens=max_output,
             cache_prefix=True,
         )
     except StructuredOutputError as exc:
