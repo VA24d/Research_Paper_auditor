@@ -287,6 +287,17 @@ def _page_tables(lines: Sequence[str]) -> tuple[list[tuple[str, list[str]]], lis
     return tables, numbers
 
 
+def read_layout_tables(pages: Sequence[str]) -> list[tuple[int, str, list[str]]]:
+    """(page, label, rows) of each table read from the layout text `pages`, with each row's
+    cells joined by `CELL_SEPARATOR`. Pages left unread give nothing."""
+    found = []
+    for number, page in enumerate(pages, start=1):
+        read = _page_tables(page.splitlines())
+        for label, rows in read[0] if read is not None else []:
+            found.append((number, label, rows))
+    return found
+
+
 def _label(numbers: Sequence[str]) -> str:
     return "; ".join(f"Table {n}" for n in dict.fromkeys(numbers))
 

@@ -882,3 +882,22 @@ the text then quotes another cell. What remains goes through the challenge step 
 other candidates. Measured on set D, it found none of the 7 changed numbers either, at
 $0.48 for the 80 papers. Flash-Lite and 3.8 Flash both left the row label empty or read
 the wrong row for the planted sentences, so the pass stays off until it finds something.
+
+**Table crops and a table benchmark** (`auditor.parser.table_crops`,
+`scripts/table_bench.py`, October 2026). At 150 dpi a page image shows a table at a
+fraction of the page, and small digits, signs and subscripts blur. The parser can now find
+each captioned table's box with pdfplumber and render only that box, at 300 dpi by default.
+The box runs between the horizontal rules nearest the caption when two or more of them have
+one width. Without such rules it covers the lines next to the caption that look like table
+rows. On a two-column page it keeps to the caption's column unless the rows run past it. On
+the 169 set C PDFs it found 735 tables, 692 from rules and 43 from text; 28 lines read as
+captions got no box, some of them sentences that start with "Table 2." The benchmark scores
+ways of reading tables against the tables in the papers' LaTeX sources and calls no model.
+A number counts when the aligned row holds it, compared by value after formatting is
+removed. On the 39 set C papers with a source (140 tables, 6,217 numbers), the layout text
+recalls 43% of the numbers and GROBID 57%. The two together, as the results check reads
+them, recall 72%. The PDF's text inside the crops holds 96% of them, so the crops rarely
+cut a table short; that text's rows are too rough to use as they are. The script builds the
+requests for the three model strategies (page image, crop image, crop image with its text)
+and parses their replies, but they have not been run, and the results check still reads
+unread pages from the page image.
