@@ -233,6 +233,14 @@ class Settings(BaseSettings):
     # A second look, on the review model, at each text-table inconsistency the arithmetic
     # finds: the numbers it used may be the wrong column or the wrong comparison.
     results_challenge_enabled: bool = True
+    # A second extraction pass for numbers the text quotes from a table (D22): prose
+    # sentences with a decimal number that name a table or a row's label, at most
+    # `results_number_max_sentences` per paper, are read again with the tables they use,
+    # and each number is paired with the cell it is read from. On set D the per-section
+    # extraction found none of 7 planted wrong numbers.
+    results_number_pass_enabled: bool = True
+    results_number_max_sentences: int = Field(default=12, ge=0)
+    results_number_effort: Literal["low", "medium", "high"] = "medium"
     # Which model does the deep checks: the main (cheap) one, or the review model. On SPOT,
     # Flash-Lite deep checks mostly answered "no error"; the stronger model costs more.
     theory_deep_model: Literal["main", "review"] = "main"
