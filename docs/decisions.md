@@ -573,3 +573,21 @@ Changes from the table-reading work (October 2026):
   - The ICLR review cases mostly cannot be tested: the reviewers' errors are fixed in the
     arXiv versions or are not stated numbers.
 
+
+Results on the 40 set C originals (October 2026). Flash-Lite did the extraction and 3.8
+Flash the challenge, at $0.58 for all 40 (379 calls). The 32 papers not used for tuning
+gave 4 findings, in 2 papers:
+
+- One looks like a real error. arXiv 2002.00718v2 says LwF exceeds LwF-MC on new classes
+  "by 18.9%", but Table 2 gives 25.6 against 10.5, which is 15.1 points. 18.9 is ILT's
+  value in the same column.
+- Three were false alarms, and two rules now remove them:
+  - **A relative change may be taken against either number.** "A relative degradation of
+    58% (0.0788 cf. 0.0335)" is 58% of 0.0788.
+  - **Another column of the same two rows.** A stated change that the two named rows give
+    in some other column is accepted. The model had read the 100-50 "all" column where
+    the text was about 100-10. The rows' numbers are taken in order after the label, not
+    by cell, since extraction often merges cells; spreads after "±" are left out.
+
+That is 1 real finding in 4 before the new rules, and 1 in 1 after them. The rules were
+written for these same papers, so the second figure is not an independent precision.

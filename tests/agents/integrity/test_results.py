@@ -394,6 +394,40 @@ async def test_a_stated_drop_in_percent_is_compared_by_size(tmp_path: Path) -> N
     assert not result.findings
 
 
+async def test_a_relative_change_may_be_taken_against_either_number(tmp_path: Path) -> None:
+    # Seen on a real paper: "a relative degradation of 58% (0.0788 cf. 0.0335)".
+    rows = ["System | min-tDCF", "Full | 0.0335", "w/o pooling | 0.0788"]
+
+    def degradation(stated: str) -> dict[str, Any]:
+        return claim(
+            "s1",
+            "Ours improves over Contrastive-SSL by 2.7 points",
+            "relative_percent",
+            stated=stated,
+            subject={"row_label": "w/o pooling", "value": "0.0788"},
+            others=[{"row_label": "Full", "value": "0.0335"}],
+        )
+
+    result, _ = await run(tmp_path, [degradation("58%")], paper(rows))
+    assert not result.findings
+    result, _ = await run(tmp_path, [degradation("80%")], paper(rows))
+    assert len(result.findings) == 1
+
+
+async def test_a_change_another_column_of_the_same_rows_gives_is_not_reported(
+    tmp_path: Path,
+) -> None:
+    # Ours against Scratch is 4.4 points on B2a and 1.7 on PMI; the model read B2a.
+    def gain(stated: str) -> dict[str, Any]:
+        return {**RIGHT_CLAIM, "stated": stated}
+
+    result, _ = await run(tmp_path, [gain("1.7")])
+    assert not result.findings
+    # 0.4 is the difference of the spreads (1.0 against 1.4), not of two results.
+    result, _ = await run(tmp_path, [gain("0.4")])
+    assert len(result.findings) == 1
+
+
 async def test_a_number_the_text_gives_for_a_row_is_checked_against_that_row(
     tmp_path: Path,
 ) -> None:
