@@ -263,11 +263,18 @@ class Suspects(BaseModel):
 
 
 async def triage_tasks(
-    paper: ParsedPaper, llm: StructuredLLM, *, limit: int, max_output: int = 16_384
+    paper: ParsedPaper,
+    llm: StructuredLLM,
+    *,
+    limit: int,
+    max_output: int = 16_384,
+    repeat: int = 0,
 ) -> list[AuditTask]:
     """One task with the claims a referee reading the whole paper suspects most, at most
     `limit`. One call to the review model replaces the cheap listing and screen, which
-    passed nearly every claim, wrong ones included."""
+    passed nearly every claim, wrong ones included. A `repeat` above 0 is an independent
+    second look: its own triage answer, claim ids and task, so its deep checks are asked
+    afresh rather than answered from the first look's cache."""
     if limit <= 0:
         return []
     try:
@@ -276,12 +283,14 @@ async def triage_tasks(
             [paper_context(paper), HumanMessage(TRIAGE_PROMPT.format(limit=limit))],
             effort="medium",
             purpose="theory-triage",
+            sample=repeat,
             max_output_tokens=max_output,
             cache_prefix=True,
         )
     except StructuredOutputError as exc:
         logger.warning("triage of %s failed (%s)", paper.paper_id, exc)
         return []
+    prefix = f"r{repeat}" if repeat else ""
     order = {s.id: i for i, s in enumerate(paper.sentences)}
     claims: list[TheoryClaim] = []
     for entry in result.value.suspects:
@@ -290,7 +299,7 @@ async def triage_tasks(
             continue
         claims.append(
             TheoryClaim(
-                claim_id=f"c{len(claims) + 1}",
+                claim_id=f"{prefix}c{len(claims) + 1}",
                 kind=entry.kind.strip()[:40],
                 statement=entry.reason.strip()[:300],
                 sentence_ids=ids,
@@ -307,7 +316,8 @@ async def triage_tasks(
             variant=paper.variant,
             kind=TaskKind.THEORY,
             anchor=SentenceAnchor(sentence_id=claims[0].sentence_ids[0]),
-            target=SettingTarget(key=THEORY_KEY),
+            # A second look is its own task: same paper, another key.
+            target=SettingTarget(key=f"{THEORY_KEY}_{prefix}" if repeat else THEORY_KEY),
             claims=claims,
         )
     ]

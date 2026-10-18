@@ -19,6 +19,8 @@ from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
 
+CACHE_TIMEOUT_MS = 60_000
+
 
 class CacheClient(Protocol):
     async def create(self, model: str, system_instruction: str, ttl_s: int) -> str: ...
@@ -32,11 +34,14 @@ class GenAICacheClient:
 
     def __init__(self, options: dict[str, Any]) -> None:
         from google import genai
+        from google.genai import types
 
+        # A cache call that hangs on a lost connection would hold up the paper for good.
         self._client = genai.Client(
             vertexai=bool(options.get("vertexai")),
             project=options.get("project"),
             location=options.get("location"),
+            http_options=types.HttpOptions(timeout=CACHE_TIMEOUT_MS),
         )
 
     async def create(self, model: str, system_instruction: str, ttl_s: int) -> str:

@@ -369,7 +369,7 @@ async def test_a_papers_tasks_share_its_deep_checks(tmp_path: Path) -> None:
         tool_reply(DeepCheck, ERROR),
         screen({"claim_id": "c1", "verdict": "suspicious"}, {"claim_id": "c2", "verdict": "fine"}),
     ]
-    ctx, model = context(tmp_path, replies, theory_deep_per_paper=1)
+    ctx, model = context(tmp_path, replies, theory_deep_per_paper=1, theory_repeats=1)
     assert len((await check(task(), ctx)).findings) == 1
     # The second task of the same paper has no deep check left: only its screen runs.
     assert (await check(task(), ctx)).findings == ()

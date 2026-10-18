@@ -1,5 +1,6 @@
 """Turns a parsed paper into AuditTasks (decisions D3 and D6)."""
 
+import asyncio
 import logging
 import re
 from collections.abc import Sequence
@@ -238,12 +239,20 @@ async def plan_paper(
         )
     if ctx.settings.theory_check_enabled and options.use_llm and ctx.llm is not None:
         if ctx.settings.theory_selector == "triage":
-            tasks += await triage_tasks(
-                paper,
-                ctx.require_review_llm(),
-                limit=ctx.settings.theory_deep_per_paper,
-                max_output=ctx.settings.theory_triage_max_output,
+            repeats = ctx.settings.theory_repeats
+            looks = await asyncio.gather(
+                *(
+                    triage_tasks(
+                        paper,
+                        ctx.require_review_llm(),
+                        limit=ctx.settings.theory_deep_per_paper,
+                        max_output=ctx.settings.theory_triage_max_output,
+                        repeat=repeat,
+                    )
+                    for repeat in range(repeats)
+                )
             )
+            tasks += [task for look in looks for task in look]
             return _unique(tasks)
         tasks += await theory_tasks(
             paper,
