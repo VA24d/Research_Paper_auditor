@@ -71,8 +71,8 @@ written, give its location (such as "Lemma 3.2" or "Eq. (5)") and rate your conf
 
 TEST_OFFER = """
 Before answering you may ask for one computation: put Python code in test_code (SymPy,
-NumPy, mpmath, NetworkX and z3 are available; there is no network; print what you need)
-and leave the other fields empty. You will get its output and then give your final answer.
+NumPy, mpmath, NetworkX and z3 are available; there is no network; print what you need).
+You will get its output and then give your final answer, in full.
 Use it to evaluate a formula at small values, search for a counterexample, or check an
 algebraic step."""
 
@@ -321,11 +321,14 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
         output = ran.stdout if ran.ok else f"{ran.stdout}\n{ran.stderr}".strip()
         follow_up = (
             f"Your test code:\n{code}\n\nIt printed:\n{output or '(nothing)'}\n\n"
-            "Now give your final answer; do not ask for another test."
+            "Now give your final answer, with every field it needs; do not ask for "
+            "another test."
         )
+        # The second round is told only how to answer: with the offer of a test in the
+        # system prompt, 3.8 Flash left every field empty in 19 of 22 final answers.
         final = await llm.generate(
             DeepCheck,
-            [system, HumanMessage(message), HumanMessage(follow_up)],
+            [SystemMessage(DEEP_PROMPT), HumanMessage(message), HumanMessage(follow_up)],
             effort="high",
             purpose="theory-deep-tested",
             sample=sample,

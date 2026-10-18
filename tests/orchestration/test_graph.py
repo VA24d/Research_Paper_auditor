@@ -8,6 +8,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from auditor.infra.context import RunContext
+from auditor.infra.scope import current_scope
 from auditor.infra.tools import tracked_tool
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.graph import (
@@ -20,7 +21,7 @@ from auditor.orchestration.graph import (
     thread_id,
 )
 from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
-from auditor.orchestration.runner import CheckFn, TaskPolicy
+from auditor.orchestration.runner import KIND_POLICIES, CheckFn, TaskPolicy
 from auditor.orchestration.synthesis import synthesise
 from auditor.schemas import (
     AuditTask,
@@ -363,3 +364,31 @@ async def test_review_steps_run_after_the_verifier_in_order(tmp_path: Path) -> N
     )
     assert seen == ["first", "second saw 1"]
     assert [d.finding.finding_id for d in outcome.verified] == [decisions[0].finding.finding_id]
+
+
+async def test_a_kind_with_its_own_policy_runs_under_it(tmp_path: Path) -> None:
+    seen: list[int | None] = []
+
+    async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
+        active = current_scope()
+        assert active is not None
+        seen.append(active.budget.max_llm_calls)
+        return checked_result(task)
+
+    roomy = TaskPolicy(max_attempts=1, timeout_s=5.0, backoff_base_s=0.0, max_llm_calls=40)
+    await run_audit(
+        pipeline(
+            tmp_path,
+            [citation_task(0)],
+            specialists=Specialists(citation=check),
+            policies={TaskKind.CITATION: roomy},
+        ),
+        example_paper(),
+        run_id="r1",
+        system=SystemName.FULL,
+    )
+    assert seen == [40]
+    # Theory and integrity tasks get more model calls than the default by default.
+    default = TaskPolicy().max_llm_calls or 0
+    for kind in (TaskKind.THEORY, TaskKind.INTEGRITY):
+        assert (KIND_POLICIES[kind].max_llm_calls or 0) > default

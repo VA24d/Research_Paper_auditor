@@ -286,6 +286,16 @@ theory checker's deep checks may run one piece of Python in the math sandbox
 
 Without Docker, the deep checks answer without it.
 
+First run on the SPOT dev half (October 2026): Flash-Lite plan and screen, 3.8 Flash deep
+checks with the sandbox. The $3 cap stopped it after 6 of 13 papers with no findings. The
+deep checks asked for a test in 27 of 38 first answers, and 19 of the 22 answers that
+followed a test came back with every field empty. The second round now gets the deep-check
+prompt without the offer of a test, and is told to answer in full. Theory and integrity
+tasks also have their own limits (`KIND_POLICIES`): the default 10 model calls and 5
+minutes per task made several fail and be retried, paying for the same calls again. The
+cap is now checked again when a call gets a free slot, since calls already queued went
+out after the money ran out.
+
 Undefined names are marked uncertain, because the code that uses them may never run. Code
 written for Python 2 is reported as unverifiable. On the 40 set C repositories, the check
 found 40 defects in 14 repositories. One is certain: a file left with git merge-conflict
@@ -573,3 +583,21 @@ Changes from the table-reading work (October 2026):
   - The ICLR review cases mostly cannot be tested: the reviewers' errors are fixed in the
     arXiv versions or are not stated numbers.
 
+
+Results on the 40 set C originals (October 2026). Flash-Lite did the extraction and 3.8
+Flash the challenge, at $0.58 for all 40 (379 calls). The 32 papers not used for tuning
+gave 4 findings, in 2 papers:
+
+- One looks like a real error. arXiv 2002.00718v2 says LwF exceeds LwF-MC on new classes
+  "by 18.9%", but Table 2 gives 25.6 against 10.5, which is 15.1 points. 18.9 is ILT's
+  value in the same column.
+- Three were false alarms, and two rules now remove them:
+  - **A relative change may be taken against either number.** "A relative degradation of
+    58% (0.0788 cf. 0.0335)" is 58% of 0.0788.
+  - **Another column of the same two rows.** A stated change that the two named rows give
+    in some other column is accepted. The model had read the 100-50 "all" column where
+    the text was about 100-10. The rows' numbers are taken in order after the label, not
+    by cell, since extraction often merges cells; spreads after "±" are left out.
+
+That is 1 real finding in 4 before the new rules, and 1 in 1 after them. The rules were
+written for these same papers, so the second figure is not an independent precision.

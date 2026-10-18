@@ -54,6 +54,8 @@ HEADER_ROWS = 3
 MAX_PLAN_TOKENS = 6144
 _MINUS = "\u2212"
 _NUMBER = re.compile(r"(?<![\w.])[-\u2212]?\d+(?:\.\d+)?")
+# What comes before a spread: "60.5 \u00b1 0.39", "60.5 +- 0.39".
+_SPREAD_SIGNS = ("\u00b1", "+-", "+/-")
 _NEGATIVE_STD = re.compile(r"\u00b1\s*[-\u2212]\s*\d+(?:\.\d+)?")
 
 PLAN_PROMPT = """You extract the claims a research paper makes about its own results from its
@@ -511,36 +513,18 @@ def _verdict(
     if len(compared) != 1:
         return None
     other = compared[0]
+    # "Drops by 2.2%" states the size of a change: sizes are compared.
+    stated = _Number(abs(stated.value), stated.half_unit)
+    if _fits(claim.kind, stated, subject, other) or _fits_another_column(claim, rows, stated):
+        return None
     if claim.kind == "difference":
-        low = abs(subject.value - other.value) - subject.half_unit - other.half_unit
-        high = abs(subject.value - other.value) + subject.half_unit + other.half_unit
         computed = abs(subject.value - other.value)
         unit = " points"
     else:
-        corners = [
-            (a - b) / b * 100
-            for a in (subject.low, subject.high)
-            for b in (other.low, other.high)
-            if b
-        ]
-        if not corners:
+        if not other.value:
             return None
-        low, high = min(corners), max(corners)
-        computed = (subject.value - other.value) / other.value * 100 if other.value else 0.0
+        computed = (subject.value - other.value) / other.value * 100
         unit = "%"
-        # "Drops by 2.2%" states the size of a change: compare sizes, as for differences.
-        stated = _Number(abs(stated.value), stated.half_unit)
-        if high < 0:
-            low, high = -high, -low
-        elif low < 0:
-            low, high = 0.0, max(-low, high)
-        # "Improves by 4.8%" often means 4.8 percentage points; either reading is accepted.
-        points = abs(subject.value - other.value)
-        spread = subject.half_unit + other.half_unit
-        if points - spread <= stated.high and stated.low <= points + spread:
-            return None
-    if low <= stated.high and stated.low <= high:
-        return None
     said = claim.stated.strip().removesuffix("%").strip()
     decimals = max(len(said.split(".")[1]) if "." in said else 0, 1)
     summary = (
@@ -553,6 +537,73 @@ def _verdict(
         f"{claim.others[0].row_label} {claim.others[0].value}"
     )
     return summary, lookup
+
+
+def _sizes(changes: Sequence[float]) -> tuple[float, float]:
+    """The interval of sizes of changes ranging over `changes`."""
+    low, high = min(changes), max(changes)
+    if high < 0:
+        return -high, -low
+    if low < 0:
+        return 0.0, max(-low, high)
+    return low, high
+
+
+def _fits(kind: str, stated: _Number, subject: _Number, other: _Number) -> bool:
+    """Whether the size of change the text states follows from the two numbers, within
+    their rounding. A relative change may be taken against either number ("degrades by
+    34%" from 0.0335 to 0.0514 is 34% of 0.0514), and "improves by 4.8%" often means 4.8
+    percentage points; every one of these readings is accepted."""
+    spread = subject.half_unit + other.half_unit
+    points = abs(subject.value - other.value)
+    if points - spread <= stated.high and stated.low <= points + spread:
+        return True
+    if kind == "difference":
+        return False
+    pairs = [(a, b) for a in (subject.low, subject.high) for b in (other.low, other.high)]
+    for changes in (
+        [(a - b) / b * 100 for a, b in pairs if b],
+        [(a - b) / a * 100 for a, b in pairs if a],
+    ):
+        if changes:
+            low, high = _sizes(changes)
+            if low <= stated.high and stated.low <= high:
+                return True
+    return False
+
+
+def _fits_another_column(claim: DataClaim, rows: Sequence[Sentence], stated: _Number) -> bool:
+    """Whether the stated change follows from the two rows' numbers in some other column
+    of the table: the first model often reads the right rows in the wrong column, such as
+    another setting's "all" column."""
+    if len(claim.others) != 1:
+        return False
+    mine = _cell_numbers(rows, claim.subject.row_label)
+    theirs = _cell_numbers(rows, claim.others[0].row_label)
+    if mine is None or theirs is None or len(mine) != len(theirs):
+        return False
+    return any(
+        _fits(claim.kind, stated, subject, other)
+        for subject, other in zip(mine, theirs, strict=True)
+        if subject is not None and other is not None
+    )
+
+
+def _cell_numbers(rows: Sequence[Sentence], label: str) -> list[_Number | None] | None:
+    """The results in the one row naming `label`, in order, after the label, or None when
+    no row or several rows name it. Cell borders are not used, since extraction often
+    merges cells; a spread after "±" is not a result."""
+    wanted = label.strip().casefold()
+    named = [row for row in rows[1:] if wanted and wanted in row.text.casefold()]
+    if len(named) != 1:
+        return None
+    text = named[0].text
+    after = text[text.casefold().index(wanted) + len(wanted) :].replace(",", "")
+    return [
+        _Number.parse(m.group())
+        for m in _NUMBER.finditer(after)
+        if not after[: m.start()].rstrip().endswith(_SPREAD_SIGNS)
+    ]
 
 
 def _same_value(

@@ -2,7 +2,7 @@
 merge duplicates and rank the findings (decision D20)."""
 
 import operator
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Annotated, Any, Protocol, TypedDict
 
@@ -16,7 +16,7 @@ from auditor.infra.context import RunContext
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.mocks import check_nothing, send_all_to_review
-from auditor.orchestration.runner import CheckFn, TaskPolicy, run_task
+from auditor.orchestration.runner import KIND_POLICIES, CheckFn, TaskPolicy, run_task
 from auditor.orchestration.synthesis import synthesise
 from auditor.schemas import (
     AuditTask,
@@ -85,6 +85,8 @@ class AuditPipeline:
     verifier: VerifyFn = send_all_to_review
     reviews: tuple[ReviewFn, ...] = ()
     policy: TaskPolicy = field(default_factory=TaskPolicy)
+    # Limits for the kinds that need more than `policy` gives.
+    policies: Mapping[TaskKind, TaskPolicy] = field(default_factory=lambda: dict(KIND_POLICIES))
     max_concurrency: int = 8
 
 
@@ -118,9 +120,9 @@ def build_graph(
 
     def specialist_node(check: CheckFn) -> _TaskNode:
         async def node(state: TaskInput) -> dict[str, Any]:
-            result = await run_task(
-                check, state["task"], ctx, policy=pipeline.policy, run_id=run_id, usage=usage
-            )
+            task = state["task"]
+            policy = pipeline.policies.get(task.kind, pipeline.policy)
+            result = await run_task(check, task, ctx, policy=policy, run_id=run_id, usage=usage)
             return {"results": [result]}
 
         return node
