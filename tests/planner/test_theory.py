@@ -120,7 +120,8 @@ async def test_the_planner_adds_theory_tasks_only_when_enabled(tmp_path: Path) -
     model, _ = llm({"claims": [claim(["s1"])]})
     ctx = offline_context(tmp_path, paper=paper(), llm=model)
     assert not [t for t in await plan_paper(paper(), ctx) if t.kind is TaskKind.THEORY]
-    settings = ctx.settings.model_copy(update={"theory_check_enabled": True})
+    update = {"theory_check_enabled": True, "theory_selector": "screen"}
+    settings = ctx.settings.model_copy(update=update)
     tasks = await plan_paper(paper(), dataclasses.replace(ctx, settings=settings))
     assert [len(t.claims or ()) for t in tasks if t.kind is TaskKind.THEORY] == [1]
 
@@ -217,8 +218,8 @@ async def test_triage_names_the_suspect_claims_in_one_task() -> None:
     claims = task.claims or ()
     assert [c.sentence_ids for c in claims] == [("s2",), ("s4",)]
     assert claims[0].suspicion == "n^2 should be n^3"
-    # The triage step reads the whole paper.
-    assert FORMAL in str(model.received[0][1].content)
+    # The triage step reads the whole paper, which comes first.
+    assert FORMAL in str(model.received[0][0].content)
 
 
 async def test_the_planner_triages_with_the_review_model_when_asked(tmp_path: Path) -> None:

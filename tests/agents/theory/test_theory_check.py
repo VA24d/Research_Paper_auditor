@@ -405,3 +405,16 @@ async def test_suspects_named_by_triage_skip_the_screen(tmp_path: Path) -> None:
     assert finding.anchor.sentence_id == "s1"  # type: ignore[union-attr]
     assert len(model.received) == 2
     assert "n = 1 fails" in str(model.received[0][1].content)
+
+
+async def test_triage_deep_checks_share_the_papers_first_message(tmp_path: Path) -> None:
+    from auditor.planner.theory import paper_context
+
+    claims = [c.model_copy(update={"suspicion": "n = 1 fails"}) for c in (task().claims or ())]
+    replies = [tool_reply(DeepCheck, ERROR), tool_reply(DeepCheck, {"has_error": False})]
+    ctx, model = context(tmp_path, replies)
+    await check(task().model_copy(update={"claims": tuple(claims)}), ctx)
+    first = paper_context(paper()).content
+    # Every call starts with the same message holding the paper, for the prompt cache.
+    assert [call[0].content for call in model.received] == [first, first]
+    assert LEMMA in str(first)
