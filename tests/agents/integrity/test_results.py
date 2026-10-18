@@ -519,10 +519,19 @@ async def test_a_reversed_comparison_in_the_text_is_found_without_a_model(
     assert "0.78" in finding.summary
 
 
+async def test_a_number_just_before_the_comparative_word_is_compared(tmp_path: Path) -> None:
+    p = comparison_paper("In Table 6, Source-view reaches 54.81, higher than Merged (56.06).")
+    result = await check(results_task(p), offline_context(tmp_path, paper=p))
+    (finding,) = result.findings
+    assert "54.81" in finding.summary
+
+
 @pytest.mark.parametrize(
     "text",
     [
         "PlaNet-S had higher IoU (0.83 ± 0.13) than U-Net (0.78 ± 0.01).",
+        "Our accuracy is 3.16% higher than the benchmark of 73.47%.",
+        "In Table 6, Source-view reaches 57.81, higher than Merged (56.06).",
         "Our model uses more than 2.5 times fewer parameters than the baseline.",
         "The p-value is lower (p<0.01) than the threshold of 0.05 used before.",
         "Loss is lower with 0.5 dropout than with 0.1 dropout on this task.",
@@ -607,3 +616,37 @@ def test_the_grim_test_flags_an_impossible_mean_of_whole_numbers() -> None:
     for text in ("Ratings were high (M = 3.46, N = 28).", "Ratings were high (M = 3.47, N = 300)."):
         ok = with_text(text)
         assert grim_findings(results_task(ok), ok) == []
+
+
+async def test_a_gain_whose_sentence_gives_both_numbers_is_not_excused_by_another_column(
+    tmp_path: Path,
+) -> None:
+    # Ours against Scratch is 4.4 on B2a and 1.7 on PMI; the sentence pins B2a.
+    text = "Ours improves over Scratch by 1.7 points (90.5 against 86.1)."
+    p = paper()
+    extra = Sentence(id="s5", section_id="exp", text=text)
+    p = p.model_copy(update={"sentences": (*p.sentences, extra)})
+    pinned = {**RIGHT_CLAIM, "sentence_id": "s5", "stated": "1.7", "quote": text[:-1]}
+    result, _ = await run(tmp_path, [pinned], p)
+    assert len(result.findings) == 1
+
+
+async def test_a_gain_without_its_compared_result_is_completed_from_the_sentence(
+    tmp_path: Path,
+) -> None:
+    text = "SAINT-i improves over Logistic Reg. by 3.6 points (92.83 against 90.73)."
+    p = paper()
+    p = p.model_copy(
+        update={"sentences": (*p.sentences, Sentence(id="s7", section_id="exp", text=text))}
+    )
+    gain = claim(
+        "s7",
+        "SAINT-i improves over Logistic Reg. by 3.6 points",
+        "difference",
+        stated="3.6",
+        subject={"row_label": "SAINT-i", "value": "92.83"},
+        others=[],
+    )
+    result, _ = await run(tmp_path, [gain], p)
+    (finding,) = result.findings
+    assert "2.1" in finding.summary

@@ -13,6 +13,8 @@ annotated errors to `--out`. `score` asks an LLM judge, once per annotated error
 reports, whether the run reported it, and writes the grades next to the run
 (`spot_grades.jsonl`). Existing grades are reused, so a second `score` makes no model
 calls. A person checks every grade (`human_agrees`) before numbers are reported.
+    uv run python scripts/spot.py rejudge runs/spot-full-r1 --errors datasets/spot/errors.jsonl \
+        --data data/spot --out second_grades.jsonl   # with AUDITOR_LLM_MODEL set to another judge
 """
 
 import argparse
@@ -176,6 +178,70 @@ async def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _rejudge(args: argparse.Namespace) -> int:
+    """Grade a run again with the configured model (set it to another model than the
+    first judge's) and report how often the two judges agree. An error counts as found
+    by both only when both judges match it, which is the conservative number."""
+    audited = {path.parent.name.rsplit("-", 1)[0] for path in args.run.rglob("predictions.jsonl")}
+    every = _read_jsonl(args.errors, SpotError)
+    papers = [e.paper_id for e in every]
+    errors = [
+        e
+        for e in every
+        if e.paper_id in audited
+        and (args.split is None or split_of(e.paper_id, papers) == args.split)
+    ]
+    first = {g.error_id: g for g in _read_jsonl(args.run / GRADES, Grade)}
+    reports, total = _reports(args.run, args.before_verifier, args.any_class)
+    calls = sum(1 for e in errors if reports.get(e.paper_id))
+    if calls > args.max_calls:
+        print(f"{calls} judge calls; more than --max-calls {args.max_calls}", file=sys.stderr)
+        return 2
+    llm = StructuredLLM.from_settings(Settings())
+    second: dict[str, Grade] = {}
+    by_paper: dict[str, list[SpotError]] = {}
+    for error in errors:
+        by_paper.setdefault(error.paper_id, []).append(error)
+    for paper_id, paper_errors in by_paper.items():
+        paper_reports = reports.get(paper_id, [])
+        path = args.data / "papers" / f"{paper_id}.json"
+        paper = ParsedPaper.model_validate_json(path.read_bytes())
+        texts = {s.id: s.text for s in paper.sentences}
+        for grade in await judge_paper(llm, paper_errors, paper_reports, texts):
+            second[grade.error_id] = grade
+    _write_jsonl(args.out, [second[k] for k in sorted(second)])
+    pairs = [
+        (bool(first[e.error_id].matched), bool(second[e.error_id].matched))
+        for e in errors
+        if e.error_id in first
+    ]
+    agree = sum(1 for a, b in pairs if a == b)
+    both = sum(1 for a, b in pairs if a and b)
+    print(
+        json.dumps(
+            {
+                "errors": len(pairs),
+                "found_first_judge": sum(a for a, _ in pairs),
+                "found_second_judge": sum(b for _, b in pairs),
+                "found_by_both": both,
+                "agreement": round(agree / len(pairs), 3) if pairs else None,
+                "papers_found_by_both": len(
+                    {
+                        e.paper_id
+                        for e in errors
+                        if e.error_id in first
+                        and first[e.error_id].matched
+                        and second[e.error_id].matched
+                    }
+                ),
+                "reports": total,
+                "judge_calls": llm.calls,
+            }
+        )
+    )
+    return 0
+
+
 async def _single(args: argparse.Namespace) -> int:
     """One call per paper with the math-only prompt; writes a run folder `score` reads."""
     from auditor.agents.theory.single import check_paper
@@ -222,6 +288,16 @@ def main() -> int:
     score.add_argument("--max-calls", type=int, default=50)
     score.add_argument("--split", choices=["dev", "test"])
 
+    rejudge = commands.add_parser("rejudge")
+    rejudge.add_argument("run", type=Path)
+    rejudge.add_argument("--errors", type=Path, required=True)
+    rejudge.add_argument("--data", type=Path, required=True)
+    rejudge.add_argument("--out", type=Path, required=True)
+    rejudge.add_argument("--before-verifier", action="store_true")
+    rejudge.add_argument("--any-class", action="store_true")
+    rejudge.add_argument("--max-calls", type=int, default=50)
+    rejudge.add_argument("--split", choices=["dev", "test"])
+
     single = commands.add_parser("single")
     single.add_argument("run", type=Path)
     single.add_argument("--data", type=Path, required=True)
@@ -237,6 +313,8 @@ def main() -> int:
             return asyncio.run(_score(args))
         case "single":
             return asyncio.run(_single(args))
+        case "rejudge":
+            return asyncio.run(_rejudge(args))
     return 2
 
 
