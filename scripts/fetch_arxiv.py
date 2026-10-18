@@ -9,6 +9,11 @@ Requests go through the shared HTTP client, so arXiv's limit of one request ever
 seconds and the response cache apply.
 
     uv run python scripts/fetch_arxiv.py datasets/parser_fixtures/arxiv_ids.txt
+    uv run python scripts/fetch_arxiv.py ids.txt --source --out data/sources
+
+With `--source`, the LaTeX e-print is fetched instead and unpacked into
+`<out>/<paper id>/` (auditor.parser.latex.unpack_eprint); the main .tex file it prints is
+an input for `auditor audit` that keeps the formulas (plan D7).
 """
 
 import argparse
@@ -22,6 +27,7 @@ from pathlib import Path
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
 from auditor.infra.http import HttpClient
+from auditor.parser.latex import LatexError, find_main, unpack_eprint
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
@@ -58,6 +64,32 @@ def problem(entry: Entry, content: bytes) -> str | None:
     return None
 
 
+async def fetch_sources(entries: list[Entry], out: Path, settings: Settings) -> int:
+    failures = 0
+    async with HttpClient(settings) as http:
+        for entry in entries:
+            folder = out / entry.paper_id
+            if folder.exists():
+                try:
+                    print(f"have    {entry.arxiv_id}: {find_main(folder)}")
+                    continue
+                except LatexError:
+                    pass
+            response = await http.get(f"https://arxiv.org/e-print/{entry.arxiv_id}")
+            if not response.ok:
+                print(f"FAILED  {entry.arxiv_id}: HTTP {response.status_code}")
+                failures += 1
+                continue
+            try:
+                main = unpack_eprint(response.content, folder)
+            except LatexError as exc:
+                print(f"FAILED  {entry.arxiv_id}: {exc}")
+                failures += 1
+                continue
+            print(f"fetched {entry.arxiv_id}: {main}")
+    return failures
+
+
 async def fetch(wanted: list[tuple[Entry, Path]], settings: Settings) -> int:
     failures = 0
     async with HttpClient(settings) as http:
@@ -78,8 +110,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--out", type=Path, help="Directory for the PDFs (default: data/papers)")
+    parser.add_argument("--source", action="store_true", help="Fetch the LaTeX e-print")
     args = parser.parse_args()
     settings = Settings()
+    if args.source:
+        out = args.out or settings.data_dir / "sources"
+        out.mkdir(parents=True, exist_ok=True)
+        return 1 if asyncio.run(fetch_sources(read_manifest(args.manifest), out, settings)) else 0
     out = args.out or settings.data_dir / "papers"
     out.mkdir(parents=True, exist_ok=True)
     wanted = []
