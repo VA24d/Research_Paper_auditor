@@ -183,6 +183,18 @@ class Settings(BaseSettings):
     # Ask the model, one code line at a time, which of several repository values a setting
     # mismatch is about (only when an LLM is configured).
     code_second_look: bool = True
+    # The code and data claim loop (auditor.agents.code.claim_loop). The planner lists up
+    # to `claim_loop_max_claims` claims that rest on the released code or data (dataset
+    # and split, preprocessing, number of training examples, architecture, training
+    # procedure, evaluation protocol) in one cheap call; each becomes a code task that the
+    # review model checks against the repository with tools, in at most
+    # `claim_loop_max_tool_calls` tool calls and `claim_loop_max_model_calls` model calls.
+    claim_loop_enabled: bool = False
+    claim_loop_max_claims: int = Field(default=6, gt=0)
+    claim_loop_max_tool_calls: int = Field(default=12, gt=0)
+    claim_loop_max_model_calls: int = Field(default=8, gt=0)
+    claim_loop_plan_max_output: int = Field(default=4096, gt=0)
+    claim_loop_effort: Literal["low", "medium", "high"] = "medium"
     # The planner's model pass over citation candidates (Part 2's checks). Runs that only
     # evaluate other parts can leave it out; it was a quarter of the cost of a full run.
     citation_llm_enabled: bool = True

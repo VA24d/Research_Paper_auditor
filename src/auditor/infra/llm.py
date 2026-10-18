@@ -13,7 +13,7 @@ import hashlib
 import json
 import logging
 import time
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -564,6 +564,46 @@ class StructuredLLM:
         raise StructuredOutputError(
             f"{schema.__name__}: no valid output after {self.max_attempts} attempts: {problem}"
         )
+
+    async def direct_call[R](
+        self,
+        call: Callable[[], Awaitable[R]],
+        usage_of: Callable[[R], TokenUsage],
+        *,
+        effort: Effort | None = None,
+        purpose: str | None = None,
+    ) -> R:
+        """Run one chat-model call made outside `generate`, such as one turn of a
+        tool-using agent, under the same rules: it is charged to the task's budget and to
+        the run's call and dollar limits, waits for a concurrency slot, and is recorded in
+        the usage log. `usage_of` reads the token usage from what `call` returns."""
+        active = current_scope()
+        if active is not None:
+            active.budget.charge_llm_call()
+        self._check_limits()
+        async with self._gate or contextlib.nullcontext():
+            self._check_limits()
+            self.calls += 1
+            started_at = datetime.now(UTC)
+            started = time.perf_counter()
+            try:
+                result = await call()
+            except Exception as exc:
+                self._record(
+                    TokenUsage(),
+                    started_at,
+                    time.perf_counter() - started,
+                    error=f"{type(exc).__name__}: {exc}",
+                    effort=effort,
+                    purpose=purpose,
+                )
+                raise
+        usage = usage_of(result)
+        self.spend.charge(self.name, usage)
+        self._record(
+            usage, started_at, time.perf_counter() - started, effort=effort, purpose=purpose
+        )
+        return result
 
     def _record(
         self,
