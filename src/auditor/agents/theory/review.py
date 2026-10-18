@@ -72,6 +72,7 @@ async def review_math(
         [paper_context(ctx.paper), HumanMessage(prompt)],
         effort="medium",
         purpose="theory-challenge",
+        cache_prefix=True,
     )
     by_number = dict(enumerate(positions, start=1))
     for verdict in result.value.verdicts:
