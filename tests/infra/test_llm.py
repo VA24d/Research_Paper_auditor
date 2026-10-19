@@ -440,3 +440,48 @@ def test_input_read_from_the_cache_is_charged_at_its_share() -> None:
         "p:m", TokenUsage(input_tokens=1_000_000, output_tokens=0, cached_input_tokens=800_000)
     )
     assert spend.spent_usd == pytest.approx(0.2 + 0.8 * 0.25)
+
+
+async def test_a_ledger_stops_runs_once_their_total_reaches_its_limit(tmp_path: Path) -> None:
+    from auditor.infra.llm import ledger_total
+
+    ledger = tmp_path / "ledger.jsonl"
+    prices = {"scripted": (1.0, 1.0)}
+    replies = [tool_reply(Verdict, {"supported": True, "reason": str(i)}) for i in range(3)]
+    first = StructuredLLM(
+        ScriptedChatModel(replies=replies),
+        name="test:scripted",
+        spend=Spend(limit_usd=None, prices=prices, ledger=ledger, ledger_limit_usd=0.000015),
+    )
+    await first.generate(Verdict, MESSAGES)
+    assert ledger_total(ledger) == pytest.approx(0.000015)
+    # Another run sharing the ledger is stopped before it spends anything.
+    second = StructuredLLM(
+        ScriptedChatModel(replies=replies),
+        name="test:scripted",
+        spend=Spend(limit_usd=None, prices=prices, ledger=ledger, ledger_limit_usd=0.000015),
+    )
+    with pytest.raises(CallLimitReachedError, match="LEDGER"):
+        await second.generate(Verdict, [HumanMessage("Another?")])
+
+
+def test_vertex_partner_models_use_the_openai_compatible_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import auditor.infra.llm as module
+
+    class FakeAuth(module._GoogleBearer):
+        def __init__(self) -> None:
+            pass
+
+    monkeypatch.setattr(module, "_GoogleBearer", FakeAuth)
+    settings = Settings(
+        llm_provider="vertex_maas",
+        llm_model="deepseek-ai/deepseek-v4.1-flash-maas",
+        llm_options={"project": "p", "location": "global", "max_output_tokens": 512},
+    )
+    model = create_chat_model(settings)
+    assert "projects/p/locations/global/endpoints/openapi" in str(
+        getattr(model, "openai_api_base", "")
+    )
+    assert getattr(model, "max_tokens", None) == 512

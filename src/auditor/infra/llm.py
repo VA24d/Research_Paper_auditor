@@ -20,12 +20,13 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import UUID
 
+import httpx
 from langchain.chat_models import init_chat_model
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
@@ -85,11 +86,70 @@ def model_id(settings: Settings) -> str:
     return f"{settings.llm_provider}:{settings.llm_model}"
 
 
+# Partner models that Vertex AI serves on its OpenAI-compatible endpoint (Model Garden
+# "model as a service": DeepSeek, Qwen, GLM, Kimi, MiniMax, gpt-oss), billed to the same
+# project and called with Application Default Credentials.
+VERTEX_MAAS = "vertex_maas"
+
+
+class _GoogleBearer(httpx.Auth):
+    """Adds a fresh Application Default Credentials token to every request."""
+
+    def __init__(self) -> None:
+        import google.auth
+
+        self._credentials, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
+
+    def _token(self) -> str:
+        import google.auth.transport.requests
+
+        if not self._credentials.valid:
+            self._credentials.refresh(google.auth.transport.requests.Request())  # type: ignore[no-untyped-call]
+        return str(self._credentials.token)
+
+    def auth_flow(self, request: httpx.Request) -> Any:
+        request.headers["Authorization"] = f"Bearer {self._token()}"
+        yield request
+
+
+def _vertex_maas_model(settings: Settings) -> BaseChatModel:
+    from langchain_openai import ChatOpenAI
+
+    options: dict[str, Any] = dict(settings.llm_options)
+    project = str(options.pop("project", ""))
+    location = str(options.pop("location", "global"))
+    options.pop("vertexai", None)
+    if not project:
+        raise LLMNotConfiguredError("vertex_maas needs a project in AUDITOR_LLM_OPTIONS")
+    host = (
+        "aiplatform.googleapis.com"
+        if location == "global"
+        else f"{location}-aiplatform.googleapis.com"
+    )
+    auth = _GoogleBearer()
+    if "max_output_tokens" in options:
+        options["max_tokens"] = options.pop("max_output_tokens")
+    return ChatOpenAI(
+        model_name=str(settings.llm_model),
+        openai_api_base=f"https://{host}/v1/projects/{project}/locations/{location}/endpoints/openapi",
+        openai_api_key=SecretStr("adc"),  # unused: the token comes from _GoogleBearer
+        http_client=httpx.Client(auth=auth, timeout=settings.llm_timeout_s),
+        http_async_client=httpx.AsyncClient(auth=auth, timeout=settings.llm_timeout_s),
+        request_timeout=settings.llm_timeout_s,
+        max_retries=settings.llm_max_retries,
+        **options,
+    )
+
+
 def create_chat_model(settings: Settings) -> BaseChatModel:
     if not settings.llm_provider or not settings.llm_model:
         raise LLMNotConfiguredError(
             "Set AUDITOR_LLM_PROVIDER and AUDITOR_LLM_MODEL (see .env.example)."
         )
+    if settings.llm_provider == VERTEX_MAAS:
+        return _vertex_maas_model(settings)
     kwargs: dict[str, Any] = {
         "timeout": settings.llm_timeout_s,
         "max_retries": settings.llm_max_retries,
@@ -208,6 +268,11 @@ class Spend:
     spent_usd: float = 0.0
     # The share of the input price charged for input read from the provider's cache.
     cached_input_share: float = 1.0
+    # A ledger file that every run appends its spend to, and the total it may reach across
+    # runs (AUDITOR_LLM_LEDGER, AUDITOR_LLM_LEDGER_LIMIT_USD): a budget for a night of
+    # experiments, not only for one command.
+    ledger: Path | None = None
+    ledger_limit_usd: float | None = None
 
     def price(self, model: str) -> tuple[float, float] | None:
         return self.prices.get(model.split(":", 1)[-1])
@@ -218,11 +283,46 @@ class Spend:
             cached = min(usage.cached_input_tokens, usage.input_tokens)
             fresh = usage.input_tokens - cached
             input_cost = (fresh + cached * self.cached_input_share) * price[0]
-            self.spent_usd += (input_cost + usage.output_tokens * price[1]) / 1e6
+            cost = (input_cost + usage.output_tokens * price[1]) / 1e6
+            self.spent_usd += cost
+            if self.ledger is not None and cost:
+                _append_ledger(self.ledger, model, cost)
 
     @property
     def exhausted(self) -> bool:
-        return self.limit_usd is not None and self.spent_usd >= self.limit_usd
+        if self.limit_usd is not None and self.spent_usd >= self.limit_usd:
+            return True
+        if self.ledger is not None and self.ledger_limit_usd is not None:
+            return ledger_total(self.ledger) >= self.ledger_limit_usd
+        return False
+
+
+def _append_ledger(path: Path, model: str, cost: float) -> None:
+    """One line per priced call. A short append is atomic enough on its own; where fcntl
+    exists (not on Windows) it is also locked against other runs writing at once."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps({"at": datetime.now(UTC).isoformat(), "model": model, "usd": cost}) + "\n"
+    with path.open("a", encoding="utf-8") as handle:
+        try:
+            import fcntl
+
+            fcntl.flock(handle, fcntl.LOCK_EX)
+        except ImportError:
+            pass
+        handle.write(line)
+
+
+def ledger_total(path: Path) -> float:
+    """The dollars all runs have written to the ledger so far."""
+    if not path.is_file():
+        return 0.0
+    total = 0.0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            total += float(json.loads(line)["usd"])
+        except (ValueError, KeyError, TypeError):
+            continue
+    return total
 
 
 class PromptTooLongError(StructuredOutputError):
@@ -329,8 +429,9 @@ class StructuredLLM:
             )
         if self.spend.exhausted:
             raise CallLimitReachedError(
-                f"the run's budget of ${self.spend.limit_usd:g} is used up "
-                "(AUDITOR_LLM_MAX_COST_USD)"
+                f"the budget is used up: ${self.spend.spent_usd:.2f} this run "
+                f"(AUDITOR_LLM_MAX_COST_USD {self.spend.limit_usd}), ledger limit "
+                f"{self.spend.ledger_limit_usd} (AUDITOR_LLM_LEDGER_LIMIT_USD)"
             )
 
     @classmethod
@@ -341,6 +442,8 @@ class StructuredLLM:
             limit_usd=settings.llm_max_cost_usd,
             prices=dict(settings.llm_prices),
             cached_input_share=settings.llm_cached_input_share,
+            ledger=settings.llm_ledger,
+            ledger_limit_usd=settings.llm_ledger_limit_usd,
         )
         if spend.limit_usd is not None:
             for model in filter(None, (settings.llm_model, settings.llm_review_model)):
@@ -363,7 +466,11 @@ class StructuredLLM:
                 settings.model_copy(
                     update={
                         "llm_model": settings.llm_review_model,
+                        "llm_provider": settings.llm_review_provider or settings.llm_provider,
                         "llm_options": settings.llm_options if options is None else options,
+                        "llm_structured_method": (
+                            settings.llm_review_structured_method or settings.llm_structured_method
+                        ),
                     }
                 ),
                 spend,
