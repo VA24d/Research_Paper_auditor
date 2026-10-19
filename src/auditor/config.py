@@ -178,10 +178,17 @@ class Settings(BaseSettings):
     # How the code agent compares a paper's method with its code: "pairs" asks one small
     # question per (paper sentence, code function) pair, which suits small local models;
     # "whole" sends the method text and the related files in one call.
-    method_check_mode: Literal["pairs", "whole"] = "whole"
+    method_check_mode: Literal["pairs", "whole", "rag"] = "rag"
+    # An OpenAI-compatible embeddings endpoint for code retrieval in "rag" mode (for
+    # example LM Studio at http://localhost:1234); without one, BM25 ranks the code.
+    embed_url: str | None = None
+    embed_model: str = "text-embedding-nomic-embed-text-v1.5"
+    # Method sentences per call in "rag" mode, each group with its own code; 0 sends the
+    # whole method text in one call.
+    method_rag_sentences: int = Field(default=0, ge=0)
     # Which model reads the method and the code: the main model or the review model. On
-    # set C, 3.8 Flash in "whole" mode found 2 of 28 SciCoQA discrepancies; the "pairs"
-    # mode found none with Flash-Lite or 3.8 Flash.
+    # 10 set C pairs, 3.8 Flash found 4 of 28 SciCoQA discrepancies in "rag" mode, 2 in
+    # "whole" mode and none in "pairs" mode.
     method_check_model: Literal["main", "review"] = "review"
     method_check_pairs: int = Field(default=12, gt=0)
     # Ask the model, one code line at a time, which of several repository values a setting

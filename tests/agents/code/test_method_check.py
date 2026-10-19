@@ -249,3 +249,32 @@ def test_an_unused_share_goes_to_the_next_best_pairs() -> None:
         chunk("train.py", 1, "trainer saves checkpoint"),
     ]
     assert len(method_pairs(paper, chunks, 4)) == 4
+
+
+def rag_context(
+    tmp_path: Path, paper: ParsedPaper, replies: list[dict[str, Any]]
+) -> tuple[RunContext, ScriptedChatModel]:
+    ctx, model = context(tmp_path, paper, replies)
+    settings = ctx.settings.model_copy(update={"method_check_mode": "rag", "embed_url": None})
+    return dataclasses.replace(ctx, settings=settings), model
+
+
+async def test_rag_mode_shows_the_code_each_sentence_retrieves(tmp_path: Path) -> None:
+    paper = method_paper()
+    ctx, model = rag_context(tmp_path, paper, [{"discrepancies": [DISCREPANCY]}])
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.METHOD_MISMATCH
+    code = [e for e in finding.evidence if e.kind is EvidenceKind.CODE]
+    assert code[0].path == "model.py"
+    prompt = " ".join(str(m.content) for m in model.received[0])
+    # Without an embeddings endpoint the code is ranked by BM25, shown with line numbers.
+    assert "(bm25)" in prompt
+    assert "    5|     return torch.nn.functional.cross_entropy" in prompt
+
+
+async def test_rag_mode_drops_a_discrepancy_on_lines_it_did_not_show(tmp_path: Path) -> None:
+    paper = method_paper()
+    elsewhere = {**DISCREPANCY, "code_start_line": 40, "code_end_line": 41}
+    ctx, _ = rag_context(tmp_path, paper, [{"discrepancies": [elsewhere]}])
+    assert (await check(task(paper, repo(tmp_path)), ctx)).findings == ()

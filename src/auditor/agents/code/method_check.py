@@ -20,6 +20,7 @@ from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from auditor.agents.code.code_retrieval import Chunk, method_sentences, retrieve
 from auditor.agents.code.data_checks import paper_quote_text
 from auditor.infra.context import RunContext
 from auditor.infra.llm import StructuredLLM
@@ -88,7 +89,7 @@ _STOPWORDS = frozenset(
 )
 
 SYSTEM_PROMPT = """You check whether research code implements the method its paper describes.
-You get the paper's method text and the repository files most related to it, with line
+You get the paper's method text and the repository code most related to it, with line
 numbers. List every place where the code does something different from what the paper says
 (a different loss, algorithm step, model component, data processing, training or evaluation
 procedure), or where one of them leaves out something the other relies on.
@@ -142,6 +143,8 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
             task, TaskOutcome.UNVERIFIABLE, reason=f"the repository could not be fetched: {exc}"
         )
     method_text = paper_method_text(ctx.paper)
+    if ctx.settings.method_check_mode == "rag":
+        return await _check_rag(task, ctx, snapshot, method_text)
     files = related_files(snapshot, method_text)
     if not files:
         return TaskResult.for_task(
@@ -176,6 +179,77 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
                 uncertain=discrepancy.confidence != "high",
             )
         )
+    return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
+
+
+# --- rag mode ----------------------------------------------------------------------------
+
+
+async def _check_rag(
+    task: AuditTask, ctx: RunContext, snapshot: Snapshot, method_text: str
+) -> TaskResult:
+    """The method text with the code each of its sentences retrieves (code_retrieval),
+    in one call. A discrepancy must cite lines inside a shown chunk."""
+    group = ctx.settings.method_rag_sentences
+    sentences = method_sentences(method_text)
+    parts = (
+        [" ".join(sentences[i : i + group]) for i in range(0, len(sentences), group)]
+        if group and sentences
+        else [method_text]
+    )
+    budget = MAX_CODE_CHARS if len(parts) == 1 else MAX_CODE_CHARS // 2
+
+    async def review(part: str) -> tuple[list[Chunk], list[Discrepancy]]:
+        chunks, how = await retrieve(snapshot, part, ctx.http, ctx.settings, budget)
+        if not chunks:
+            return [], []
+        shown = "\n\n".join(f"--- {c.path} (lines {c.start}-{c.end})\n{c.numbered}" for c in chunks)
+        prompt = (
+            f"Paper method text:\n{part}\n\nRepository {snapshot.source_id}, the code "
+            f"most related to the method sentences ({how}):\n{shown}"
+        )
+        result = await _method_llm(ctx).generate(
+            MethodReview,
+            [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)],
+            purpose="method-rag",
+        )
+        return chunks, result.value.discrepancies
+
+    reviewed = await asyncio.gather(*(review(p) for p in parts))
+    if not any(chunks for chunks, _ in reviewed):
+        return TaskResult.for_task(
+            task, TaskOutcome.UNVERIFIABLE, reason="the repository has no code to compare"
+        )
+    findings: list[CandidateFinding] = []
+    for chunks, discrepancies in reviewed:
+        for discrepancy in discrepancies:
+            inside = any(
+                c.path == discrepancy.code_path
+                and c.start <= discrepancy.code_start_line <= discrepancy.code_end_line <= c.end
+                for c in chunks
+            )
+            evidence = (
+                _evidence(ctx.paper, snapshot, [discrepancy.code_path], discrepancy)
+                if inside
+                else None
+            )
+            if evidence is None:
+                ctx.logger.info("dropping a method discrepancy without shown evidence")
+                continue
+            findings.append(
+                CandidateFinding.for_task(
+                    task,
+                    len(findings),
+                    error_class=ErrorClass.METHOD_MISMATCH,
+                    summary=discrepancy.description,
+                    anchor=DocumentAnchor(),
+                    explanation=(
+                        f"{discrepancy.category} discrepancy, {discrepancy.confidence} confidence."
+                    ),
+                    evidence=evidence,
+                    uncertain=discrepancy.confidence != "high",
+                )
+            )
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
 
 
