@@ -427,6 +427,25 @@ The rest are debatable or false:
 "rag" is now the default mode. Without an embedding endpoint it ranks by BM25, which
 showed the changed line less often (48 of 84) and has not been run end to end.
 
+**Where "rag" missed** (57 synthetic discrepancies of the 25 pairs, replayed from the
+cached answers at no cost):
+
+| Outcome | Count |
+|---|---|
+| changed line not shown | 14 |
+| shown, but the model reported nothing near it | 26 |
+| reported on the right lines, then dropped by the evidence gate | 7 |
+| reported and kept | 10 |
+
+All 7 drops had quotes that ran past one sentence or across an equation the parser lost
+("as follows: where: ..."). A quote is now anchored on the sentence holding its opening
+words: exactly, or by 80% of its first 12 words (`quoted_sentence`). A quote the paper does
+not contain is still refused. Replayed on the same answers, "rag" finds 19 of 65
+discrepancies, in 13 of 29 paper versions, where it found 11 in 8. It added 3 findings on
+the originals: a missing landmark loader, one-layer heads where the paper says MLPs, and a
+concatenation that doubles a dimension the paper gives. All three look real. Showing more
+of the right code and getting the model to report what it is shown are the remaining gaps.
+
 ## D12. PDF parsing stack — Agreed
 
 - GROBID 0.9.1 (Docker image `grobid/grobid:0.9.1-crf`) for structure, bibliography,

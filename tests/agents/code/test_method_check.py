@@ -278,3 +278,15 @@ async def test_rag_mode_drops_a_discrepancy_on_lines_it_did_not_show(tmp_path: P
     elsewhere = {**DISCREPANCY, "code_start_line": 40, "code_end_line": 41}
     ctx, _ = rag_context(tmp_path, paper, [{"discrepancies": [elsewhere]}])
     assert (await check(task(paper, repo(tmp_path)), ctx)).findings == ()
+
+
+def test_a_quote_that_runs_past_its_sentence_is_anchored_on_where_it_starts() -> None:
+    from auditor.agents.code.method_check import quoted_sentence
+
+    paper = method_paper()
+    across = "We train with the focal loss with gamma set to two, as follows: where p is"
+    found = quoted_sentence(paper, across)
+    assert found is not None
+    assert found.text == LOSS
+    # A quote the paper does not contain is still refused.
+    assert quoted_sentence(paper, "the weights are drawn from a heavy tailed prior always") is None
