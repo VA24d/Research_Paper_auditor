@@ -142,6 +142,11 @@ class Settings(BaseSettings):
     # the theory findings), from the same provider; its options default to llm_options.
     llm_review_model: str | None = None
     llm_review_options: dict[str, JsonValue] | None = None
+    # The review model's provider and structured-output method when they differ from the
+    # main model's (for example Gemini for the cheap steps and a Vertex partner model,
+    # provider "vertex_maas", for the review steps).
+    llm_review_provider: str | None = None
+    llm_review_structured_method: str | None = None
     # The model's context window in tokens. Prompts that do not fit fail loudly instead of
     # being cut by the server (Ollama's default context is only a few thousand tokens).
     llm_context_tokens: int | None = Field(default=None, gt=0)
@@ -153,6 +158,9 @@ class Settings(BaseSettings):
     llm_max_calls: int | None = Field(default=None, ge=0)
     # Dollars one run may spend on model calls, shared by the main and the review model.
     llm_max_cost_usd: float | None = Field(default=None, gt=0)
+    # A ledger shared by all runs (one JSON line per priced call) and its dollar limit.
+    llm_ledger: Path | None = None
+    llm_ledger_limit_usd: float | None = Field(default=None, gt=0)
     # US dollars per million (input, output) tokens; output includes thinking. Gemini API
     # list prices as of 2026-10-17 (3.8 Flash is $1.50 / $7.50 from 2027-01-01).
     # The share of the input price a provider charges for input read from its prompt
@@ -173,6 +181,18 @@ class Settings(BaseSettings):
             "gemini-2.5-flash": (0.30, 2.50),
             "gemini-3.5-flash-lite": (0.30, 2.50),
             "gemini-3.8-flash": (0.75, 3.75),
+            # Vertex partner models: placeholders above their list prices, so the dollar cap
+            # errs on the safe side until the real prices are filled in.
+            "deepseek-ai/deepseek-v4.1-flash-maas": (0.60, 2.40),
+            "deepseek-ai/deepseek-v3.2-maas": (0.60, 1.80),
+            "moonshotai/kimi-k2-thinking-maas": (0.80, 3.20),
+            "zai-org/glm-5-maas": (1.00, 3.50),
+            "zai-org/glm-4.7-maas": (0.60, 2.40),
+            "qwen/qwen3-235b-a22b-instruct-2507-maas": (0.40, 1.60),
+            "qwen/qwen3-next-80b-a3b-instruct-maas": (0.30, 1.50),
+            "qwen/qwen3-coder-480b-a35b-instruct-maas": (1.00, 4.00),
+            "minimaxai/minimax-m2-maas": (0.40, 1.60),
+            "openai/gpt-oss-120b-maas": (0.20, 0.80),
         }
     )
     # How the code agent compares a paper's method with its code: "pairs" asks one small
