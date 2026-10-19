@@ -87,7 +87,7 @@ async def _run(args: argparse.Namespace) -> int:
     settings = Settings().model_copy(update={"claim_loop_enabled": True})
     entries = _entries(args.set_c)
     pairs = sorted({_load(e.paper).paper_id for e in entries if "/papers/" in e.paper})
-    chosen = set(pairs[: args.pairs])
+    chosen = set(pairs[args.skip : args.skip + args.pairs])
     done = _done(args.out)
     llm = StructuredLLM.from_settings(settings)
     gate = asyncio.Semaphore(args.concurrency)
@@ -223,6 +223,7 @@ def main() -> int:
     run = commands.add_parser("run")
     run.add_argument("--set-c", type=Path, required=True)
     run.add_argument("--pairs", type=int, default=10)
+    run.add_argument("--skip", type=int, default=0, help="pairs to leave out first")
     run.add_argument("--out", type=Path, required=True)
     run.add_argument("--concurrency", type=int, default=4)
     run.add_argument(

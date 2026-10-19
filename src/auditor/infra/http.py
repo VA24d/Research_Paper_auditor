@@ -391,15 +391,18 @@ class HttpClient:
         *,
         data: Mapping[str, Any] | None = None,
         files: Mapping[str, Any] | None = None,
+        json: Any = None,
         headers: Mapping[str, str] | None = None,
         request_timeout_s: float | None = None,
         attempts: int | None = None,
     ) -> HttpResponse:
+        """`json` sends a JSON body instead of a form (`data`)."""
         return await self._send(
             "POST",
             url,
             data=data,
             files=files,
+            json=json,
             headers=headers,
             request_timeout_s=request_timeout_s,
             use_cache=False,
@@ -456,6 +459,7 @@ class HttpClient:
         params: Mapping[str, Any] | None = None,
         data: Mapping[str, Any] | None = None,
         files: Mapping[str, Any] | None = None,
+        json: Any = None,
         headers: Mapping[str, str] | None = None,
         request_timeout_s: float | None = None,
         use_cache: bool,
@@ -494,6 +498,7 @@ class HttpClient:
                         request_url,
                         data=data,
                         files=files,
+                        json=json,
                         headers=headers,
                         timeout=(
                             request_timeout_s

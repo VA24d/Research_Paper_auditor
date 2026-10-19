@@ -375,8 +375,57 @@ Even told which sentence is wrong, the loop found 2 of 28. Retrieval is part of 
 problem: in "pairs" mode the changed lines were never next to the sentence they
 contradict. Grep retrieval found the planted setting changes (a batch size, epochs, a
 learning rate, an optimizer) but no method discrepancy, so it was not kept. The method
-check now defaults to "whole" mode on the review model (`AUDITOR_METHOD_CHECK_MODE`,
+check then defaulted to "whole" mode on the review model (`AUDITOR_METHOD_CHECK_MODE`,
 `AUDITOR_METHOD_CHECK_MODEL`).
+
+**Retrieval for the method check** (`auditor.agents.code.code_retrieval`). "Whole" mode
+sends the six files that share the most words with the method text. Of the 84 SciCoQA
+synthetic discrepancies in set C, those files held the changed file 35 times. A comparison
+of retrieval methods counted how often the changed line was in the code shown, within the
+same 60,000-character budget:
+
+| Retrieval | Changed line shown |
+|---|---|
+| six files by word overlap ("whole") | 35 / 84 |
+| BM25 per method sentence over function chunks | 48 / 84 |
+| embeddings per sentence (nomic-embed-text, run locally in LM Studio) | 59 / 84 |
+| BM25 and embeddings fused | 57 / 84 |
+
+In the chunked version, Python files are cut into functions and the code between them.
+Each method sentence ranks the chunks, and the sentences take turns adding their best
+chunk until the budget is spent. "rag" mode sends the method text with those chunks in one
+call to the review model. A discrepancy must cite lines inside a shown chunk. Embeddings
+are used when `AUDITOR_EMBED_URL` names an OpenAI-compatible endpoint, and BM25
+otherwise.
+
+| Run (3.8 Flash, embeddings) | Discrepancies found | Findings | On the originals | Cost |
+|---|---|---|---|---|
+| "whole", 10 pairs | 2 / 28 | 8 | 3 | $0.79 |
+| "rag", the same 10 pairs | 4 / 28 | 14 | 8 | $0.94 |
+| "rag", 12 sentences per call with their own code | 3 / 28 | 14 | 7 | |
+| "rag", 15 more pairs | 7 / 37 | 20 | 8 | $1.42 |
+
+So "rag" found 11 of 65 discrepancies on 25 pairs. Its findings on the originals are not
+covered by the labels, since SciCoQA's real discrepancies are only the ones users
+reported. I read all 16 against the code. About 12 look like real differences between paper
+and code:
+- a gamma augmentation sampled non-uniformly;
+- class-weighted cross-entropy where the paper averages over pixels;
+- an attention block that computes its output and then returns its input;
+- a 5×5 first convolution where the paper says 3×3;
+- MSE where the paper says binary cross-entropy;
+- a test-time crop that is commented out;
+- the KL divergence taken the other way round.
+
+The rest are debatable or false:
+- log-softmax against the paper's "logistic sigmoid for our classification problems",
+  found twice;
+- a QuartzNet C1 layer the paper calls a "1D convolution", which the code makes
+  separable;
+- a final linear activation where the paper says every layer uses LeakyReLU.
+
+"rag" is now the default mode. Without an embedding endpoint it ranks by BM25, which
+showed the changed line less often (48 of 84) and has not been run end to end.
 
 ## D12. PDF parsing stack — Agreed
 
