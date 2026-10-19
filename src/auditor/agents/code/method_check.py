@@ -494,13 +494,47 @@ def _normalised(text: str) -> str:
     return " ".join(text.split())
 
 
+_QUOTE_WORD = re.compile(r"[A-Za-z]{3,}|\d+")
+# Share of a quote's first words that must be in the sentence it is anchored on.
+MIN_QUOTE_OVERLAP = 0.8
+QUOTE_HEAD_WORDS = 12
+
+
+def quoted_sentence(paper: ParsedPaper, quote: str) -> Sentence | None:
+    """The sentence a quote comes from. Models often quote across a sentence boundary or
+    an equation the parser dropped ("as follows: where: ..."), so a quote that is not one
+    sentence's text is anchored on the sentence holding its opening words: first exactly,
+    then by most of its first words. On set C, 7 of 17 discrepancies the model reported on
+    the right lines were dropped because their quotes ran past one sentence."""
+    kinds = (SentenceKind.BODY, SentenceKind.ABSTRACT, SentenceKind.CAPTION)
+    body = [s for s in paper.sentences if s.kind in kinds]
+    found = next((s for s in paper.sentences if quote in _normalised(s.text)), None)
+    if found is not None:
+        return found
+    head = " ".join(quote.split()[:QUOTE_HEAD_WORDS])
+    if len(head) >= MIN_QUOTE_CHARS:
+        found = next((s for s in body if head in _normalised(s.text)), None)
+        if found is not None:
+            return found
+    words = [w.lower() for w in _QUOTE_WORD.findall(quote)][:QUOTE_HEAD_WORDS]
+    if len(words) < 6:
+        return None
+    best, score = None, 0.0
+    for sentence in body:
+        have = {w.lower() for w in _QUOTE_WORD.findall(sentence.text)}
+        share = sum(1 for w in words if w in have) / len(words)
+        if share > score:
+            best, score = sentence, share
+    return best if score >= MIN_QUOTE_OVERLAP else None
+
+
 def _evidence(
     paper: ParsedPaper, snapshot: Snapshot, files: list[str], discrepancy: Discrepancy
 ) -> list[Evidence] | None:
     quote = _normalised(discrepancy.paper_quote)
     if len(quote) < MIN_QUOTE_CHARS:
         return None
-    sentence = next((s for s in paper.sentences if quote and quote in _normalised(s.text)), None)
+    sentence = quoted_sentence(paper, quote)
     if sentence is None or discrepancy.code_path not in files:
         return None
     lines = snapshot.read_text(discrepancy.code_path).splitlines()
