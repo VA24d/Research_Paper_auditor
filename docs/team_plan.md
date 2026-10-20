@@ -130,29 +130,40 @@ Integration and baselines:
 
 ### Part 2 — Anurag: citation agent and retrieval
 
-- [ ] **P2.1** Clients for arXiv, OpenAlex, Crossref and Semantic Scholar, all through the
+Status: P2.1-P2.7 are implemented and tested on the `p2-citation-checker` branch (not yet
+merged). P2.8 and P2.9 have their machinery (`auditor.agents.citation.set_b`,
+`auditor.agents.citation.eval`, `scripts/set_b.py`, `scripts/citation_eval.py`) and
+offline tests; building the actual 60-paper dataset (downloads, GROBID parsing, source
+text fetching, injections, second review) still needs to run and be annotated.
+
+- [x] **P2.1** Clients for arXiv, OpenAlex, Crossref and Semantic Scholar, all through the
   shared HTTP client (P1.4).
-- [ ] **P2.2** Reference resolution from DOI, arXiv ID, or title and authors; a clear
+- [x] **P2.2** Reference resolution from DOI, arXiv ID, or title and authors; a clear
   "not found" result with the reason.
-- [ ] **P2.3** Full-text retrieval for open-access sources. Reuse the Part 1 parser for PDFs,
+- [x] **P2.3** Full-text retrieval for open-access sources. Reuse the Part 1 parser for PDFs,
   or arXiv HTML where available. Fall back to the abstract when the full text is unavailable,
   and record which one was used.
-- [ ] **P2.4** Chunking and passage retrieval with exact character offsets into the source,
+- [x] **P2.4** Chunking and passage retrieval with exact character offsets into the source,
   and an abstract-only mode for the ablation. Any embedding model must run on all three
   operating systems.
-- [ ] **P2.5** Citation agent `check()` for reference tasks (existence, metadata) and citation
+- [x] **P2.5** Citation agent `check()` for reference tasks (existence, metadata) and citation
   tasks (support: supported, contradicted, insufficient; number checks), returning a
   `TaskResult` with `CandidateFinding`s and `Evidence` quotes. Unlinked citation mentions are
   resolved from the marker text where possible, otherwise returned as `unverifiable` (D6).
-- [ ] **P2.6** Citation tools for B1 (D7).
-- [ ] **P2.7** HALLMARK test split: loader and existence-check evaluation.
+- [x] **P2.6** Citation tools for B1 (D7).
+- [x] **P2.7** HALLMARK test split: loader and existence-check evaluation.
 - [ ] **P2.8** Set B: 60 recent arXiv papers, about 600 claim–source pairs, injection scripts
   that edit `ParsedPaper` copies (the unchanged originals are kept too), `GoldLabel`s
   including clean controls, and the gold evidence passage for each pair (needed for
   Recall@5). Every label is validated against its source and a sample is reviewed by a
-  second person before freezing (D18).
+  second person before freezing (D18). *(Machinery, injection functions, gold labels with
+  gold evidence passages, D18 validation and the CLI are done and tested; the dataset
+  itself still needs to be built and annotated.)*
 - [ ] **P2.9** Citation module evaluation: Recall@5, precision, recall and F1, full text
-  against abstract only, and tool-call accuracy of reference lookups (D8).
+  against abstract only, and tool-call accuracy of reference lookups (D8). *(Recall@5,
+  module scores and tool-call accuracy are implemented and tested; the abstract-only
+  comparison runs the same code with `AUDITOR_CITATION_ABSTRACT_ONLY=1`; measured numbers
+  wait for the set B build.)*
 
 ### Part 3 — Vijay: code agent and template checker
 

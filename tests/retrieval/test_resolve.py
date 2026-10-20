@@ -86,7 +86,9 @@ def test_match_marker_to_bibliography_prefers_the_matching_year() -> None:
         BibEntry(id="b0", raw="Smith 2018", authors=("Adam Smith",), year=2018),
         BibEntry(id="b1", raw="Smith 2020", authors=("Jane Smith",), year=2020),
     )
-    assert match_marker_to_bibliography(entries, "(Smith et al., 2020)").id == "b1"
+    matched = match_marker_to_bibliography(entries, "(Smith et al., 2020)")
+    assert matched is not None
+    assert matched.id == "b1"
     # A year that matches no entry within one year rejects the marker.
     assert match_marker_to_bibliography(entries, "(Smith et al., 2001)") is None
 

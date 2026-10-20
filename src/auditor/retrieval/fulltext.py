@@ -217,9 +217,16 @@ async def retrieve_source(
     exists, so the evaluation can compare the two.
     """
     if not abstract_only:
+
+        async def fetch_html() -> str | None:
+            return await _html_full_text(http, work)
+
+        async def fetch_pdf() -> str | None:
+            return await _pdf_full_text(http, work, settings, grobid)
+
         for level, fetch in (
-            (SourceLevel.FULL_HTML, lambda: _html_full_text(http, work)),
-            (SourceLevel.FULL_PDF, lambda: _pdf_full_text(http, work, settings, grobid)),
+            (SourceLevel.FULL_HTML, fetch_html),
+            (SourceLevel.FULL_PDF, fetch_pdf),
         ):
             cached = _cached(settings, work, level)
             if cached is not None:

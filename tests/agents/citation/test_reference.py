@@ -41,12 +41,6 @@ def reference_task(bib_id: str = "b1") -> AuditTask:
     )
 
 
-async def run(resolution: Resolution, bib_id: str = "b1"):
-    return await check_reference(
-        reference_task(bib_id), offline_context(Path(), paper=example_paper())
-    )
-
-
 async def test_a_clean_reference_is_checked_without_findings(tmp_path: Path) -> None:
     result = await check_reference(
         reference_task(),

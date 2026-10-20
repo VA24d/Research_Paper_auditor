@@ -175,7 +175,11 @@ def parse_marker(marker: str) -> MarkerName:
     year_match = _YEAR.search(marker)
     year = int(year_match.group(0)[:4]) if year_match else None
     seen: set[str] = set()
-    unique = [s for s in surnames if not (s in seen or seen.add(s))]
+    unique: list[str] = []
+    for surname in surnames:
+        if surname not in seen:
+            seen.add(surname)
+            unique.append(surname)
     return MarkerName(surnames=tuple(unique), year=year)
 
 

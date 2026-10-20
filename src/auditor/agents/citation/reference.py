@@ -12,6 +12,7 @@ from auditor.retrieval.resolve import Resolution, titles_match
 from auditor.schemas import (
     AuditTask,
     BibEntry,
+    BibTarget,
     CandidateFinding,
     ErrorClass,
     Evidence,
@@ -71,6 +72,8 @@ def _metadata_findings(task: AuditTask, entry: BibEntry, work: Work) -> list[Can
 async def check_reference(task: AuditTask, ctx: RunContext, resolution: Resolution) -> TaskResult:
     """Whether the bibliography entry exists and its metadata matches (decision P2.5)."""
     if task.kind is not TaskKind.REFERENCE:
+        raise ValueError(f"{task.task_id} is not a reference task")
+    if not isinstance(task.target, BibTarget):
         raise ValueError(f"{task.task_id} is not a reference task")
 
     try:

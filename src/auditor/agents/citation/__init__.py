@@ -25,6 +25,8 @@ from auditor.schemas import (
 async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
     """The entry point for the citation agent (decision P2.5)."""
     if task.kind is TaskKind.REFERENCE:
+        if not isinstance(task.target, BibTarget):
+            raise ValueError(f"{task.task_id} is not a reference task")
         try:
             entry = ctx.paper.bib_entry(task.target.bib_id)
         except KeyError:

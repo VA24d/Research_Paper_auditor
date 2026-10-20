@@ -8,12 +8,17 @@ any network.
 import dataclasses
 from pathlib import Path
 
+import pytest
+
 from auditor.agents.citation import check
+from auditor.config import Settings
+from auditor.infra.http import HttpClient
 from auditor.retrieval.clients import Work
 from auditor.retrieval.fulltext import SourceLevel, SourceText
 from auditor.retrieval.resolve import Resolution
 from auditor.schemas import (
     AuditTask,
+    BibEntry,
     BibliographyAnchor,
     BibTarget,
     MarkerTarget,
@@ -51,55 +56,70 @@ def citation_task(target: BibTarget | MarkerTarget) -> AuditTask:
     )
 
 
-def patch_resolution(monkeypatch, resolution: Resolution, calls: list) -> None:
-    async def fake_resolve(http, entry):
-        calls.append(entry)
+def patch_resolution(
+    monkeypatch: pytest.MonkeyPatch, resolution: Resolution, calls: list[str]
+) -> None:
+    async def fake_resolve(http: HttpClient, entry: BibEntry) -> Resolution:
+        calls.append(entry.id)
         return resolution
 
     monkeypatch.setattr("auditor.agents.citation.resolve_entry", fake_resolve)
 
 
-def patch_marker_resolution(monkeypatch, resolution: Resolution, calls: list) -> None:
-    async def fake_resolve_marker(http, marker, entries):
+def patch_marker_resolution(
+    monkeypatch: pytest.MonkeyPatch, resolution: Resolution, calls: list[str]
+) -> None:
+    async def fake_resolve_marker(
+        http: HttpClient, marker: str, entries: tuple[BibEntry, ...]
+    ) -> Resolution:
         calls.append(marker)
         return resolution
 
     monkeypatch.setattr("auditor.agents.citation.resolve_marker", fake_resolve_marker)
 
 
-def patch_retrieval(monkeypatch, calls: list) -> None:
-    async def fake_retrieve(http, work, settings, *, grobid=None, abstract_only=False):
+def patch_retrieval(monkeypatch: pytest.MonkeyPatch, calls: list[bool]) -> None:
+    async def fake_retrieve(
+        http: HttpClient,
+        work: Work,
+        settings: Settings,
+        *,
+        grobid: object = None,
+        abstract_only: bool = False,
+    ) -> SourceText:
         calls.append(abstract_only)
         return SourceText(work=work, level=SourceLevel.ABSTRACT, text="The abstract text.")
 
     monkeypatch.setattr("auditor.agents.citation.retrieve_source", fake_retrieve)
 
 
-async def test_a_reference_task_resolves_its_entry(tmp_path: Path, monkeypatch) -> None:
-    calls: list = []
+async def test_a_reference_task_resolves_its_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
     patch_resolution(monkeypatch, Resolution(work=WORK), calls)
     result = await check(reference_task(), offline_context(tmp_path))
     assert result.outcome is TaskOutcome.CHECKED
-    assert [entry.id for entry in calls] == ["b0"]
+    assert calls == ["b0"]
 
 
 async def test_a_citation_task_with_a_bib_target_resolves_and_retrieves(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    resolved: list = []
-    retrieved: list = []
+    resolved: list[str] = []
+    retrieved: list[bool] = []
     patch_resolution(monkeypatch, Resolution(work=WORK), resolved)
     patch_retrieval(monkeypatch, retrieved)
     result = await check(citation_task(BibTarget(bib_id="b1")), offline_context(tmp_path))
     assert result.outcome is TaskOutcome.UNVERIFIABLE  # no LLM configured
-    assert [entry.id for entry in resolved] == ["b1"]
+    assert resolved == ["b1"]
     assert retrieved == [False]  # full text by default
 
 
 async def test_the_abstract_only_setting_is_passed_to_retrieval(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    retrieved: list = []
+    retrieved: list[bool] = []
     patch_resolution(monkeypatch, Resolution(work=WORK), [])
     patch_retrieval(monkeypatch, retrieved)
     ctx = offline_context(tmp_path)
@@ -109,7 +129,7 @@ async def test_the_abstract_only_setting_is_passed_to_retrieval(
 
 
 async def test_an_unresolvable_citation_is_unverifiable_with_the_reason(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     patch_resolution(monkeypatch, Resolution(reason="no work with this title was found"), [])
     result = await check(citation_task(BibTarget(bib_id="b1")), offline_context(tmp_path))
@@ -117,16 +137,20 @@ async def test_an_unresolvable_citation_is_unverifiable_with_the_reason(
     assert result.reason == "no work with this title was found"
 
 
-async def test_an_unlinked_marker_goes_through_resolve_marker(tmp_path: Path, monkeypatch) -> None:
-    calls: list = []
+async def test_an_unlinked_marker_goes_through_resolve_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
     patch_marker_resolution(monkeypatch, Resolution(reason="no bibliography entry matches"), calls)
     result = await check(citation_task(MarkerTarget(marker="[7]")), offline_context(tmp_path))
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert calls == ["[7]"]
 
 
-async def test_a_resolved_marker_retrieves_the_source(tmp_path: Path, monkeypatch) -> None:
-    retrieved: list = []
+async def test_a_resolved_marker_retrieves_the_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    retrieved: list[bool] = []
     patch_marker_resolution(monkeypatch, Resolution(work=WORK), [])
     patch_retrieval(monkeypatch, retrieved)
     result = await check(citation_task(MarkerTarget(marker="[7]")), offline_context(tmp_path))
@@ -134,7 +158,9 @@ async def test_a_resolved_marker_retrieves_the_source(tmp_path: Path, monkeypatc
     assert retrieved == [False]
 
 
-async def test_an_entry_missing_from_the_paper_is_unverifiable(tmp_path: Path, monkeypatch) -> None:
+async def test_an_entry_missing_from_the_paper_is_unverifiable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     paper = example_paper()
     without_b1 = ParsedPaper.model_validate(
         {

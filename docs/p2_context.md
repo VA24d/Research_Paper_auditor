@@ -1,0 +1,391 @@
+# P2 Citation Checker — Working Context
+
+Owner: Anurag (Part 2: citation agent and retrieval). This file tracks understanding,
+decisions and progress so a new session can pick up where this one left off. Read this
+file FIRST, then docs/team_plan.md (Part 2 section) and docs/decisions.md.
+
+## Project summary
+
+Evidence-gated verification agent for research paper auditing (LMA group project).
+Pipeline: PDF/ParsedPaper -> planner -> AuditTask[] -> specialists (citation/code/
+template/theory/integrity) -> TaskResult[] -> verifier -> VerifiedFinding[] -> report +
+predictions. Shared infra (Part 1, Bhaskar): config, schemas, HTTP gate, LLM factory,
+orchestration (LangGraph). Part 3 (Vijay): code agent + template checker, merged into
+main. Part 4 (Sudheera): verifier/report/evaluation, not started.
+
+## My part (P2) — from docs/team_plan.md
+
+- P2.1 Clients for arXiv, OpenAlex, Crossref, Semantic Scholar through the shared HTTP
+  client (`ctx.http`, allowlist already contains all four hosts).
+- P2.2 Reference resolution from DOI, arXiv ID, or title+authors; clear "not found" reason.
+- P2.3 Full-text retrieval for open-access sources (reuse Part 1 parser for PDFs, arXiv
+  HTML where available); fall back to abstract; record which level was used.
+- P2.4 Chunking + passage retrieval with exact character offsets; abstract-only mode for
+  the ablation; embedding model must run on all three OSes (use pure-Python BM25 instead).
+- P2.5 `check(task, ctx) -> TaskResult` in `auditor.agents.citation` for reference tasks
+  (existence, metadata) and citation tasks (support: supported/contradicted/insufficient;
+  number checks), with CandidateFindings + Evidence quotes. Unlinked markers resolved from
+  marker text where possible, else unverifiable (D6).
+- P2.6 Citation tools for B1 (D7): `make_tools(ctx)` in `auditor.agents.citation.tools`.
+- P2.7 HALLMARK test split loader + existence-check evaluation.
+- P2.8 Set B: 60 arXiv papers, ~600 claim-source pairs, injection scripts editing
+  ParsedPaper copies, GoldLabels incl. clean controls + gold evidence passage (Recall@5),
+  validated per D18.
+- P2.9 Citation module evaluation: Recall@5, P/R/F1, full text vs abstract only,
+  tool-call accuracy of reference lookups.
+
+## Key interfaces (verified in code)
+
+- `RunContext` (infra/context.py): settings, paper, http (HttpClient), llm
+  (StructuredLLM|None), review_llm, logger, repository, source_pdf, allowances/locks.
+  `require_llm()` raises LLMNotConfiguredError when None.
+- `HttpClient`: `get(url, params=, headers=, use_cache=, attempts=, max_bytes=)`,
+  `post(url, data=, files=, json=, request_timeout_s=, attempts=)`,
+  `download_to(url, destination, max_bytes=, sha256=)` -> Download(path,size,sha256).
+  HttpResponse: url, status_code, headers, content, .ok, .text, .json(). GETs cached
+  30 days. Constructor takes `transport=` (httpx.MockTransport) and `sleep=` for tests.
+- `StructuredLLM.generate(schema, messages, effort=, purpose=, max_output_tokens=)` ->
+  StructuredResult(value, attempts, usage, from_cache). Effort: minimal|low|medium|high.
+- `AuditTask`: task_id, paper_id, variant, kind, anchor, target, claim, setting,
+  repository, rule, claims. Built via AuditTask.create (id is a hash; hand-made ids
+  rejected). REFERENCE task: BibliographyAnchor + BibTarget, no claim. CITATION task:
+  SentenceAnchor + BibTarget|MarkerTarget, claim required.
+- `TaskResult.for_task(task, outcome, reason=, findings=)`; outcomes
+  checked|unverifiable|failed. Unverifiable needs a reason. Findings must belong to
+  the task.
+- `CandidateFinding.for_task(task, number, error_class=, summary=, anchor=,
+  explanation=, evidence=, uncertain=)` -> id `<task_id>-f<number>`.
+- `Evidence(kind=quote|code|rule|lookup, source=SourceRef(kind, id, title=, url=), text,
+  page=, char_start=, char_end=, path=, line_start=, line_end=)`. QUOTE needs verbatim
+  text; LOOKUP holds query+result. SourceKind: submission|cited_work|repository|
+  venue_rule|scholarly_index.
+- Parser: `parse_pdf(path, grobid=GrobidClient(http, base_url), cache_dir=, paper_id=)`
+  -> ParsedPaper; raises ParseError. GROBID must be running for PDF parsing.
+
+## Environment
+
+- Windows 11, Python 3.13.1 at C:\Python313. uv 0.10.12 installed via
+  `python -m pip install --user uv` (at %APPDATA%\Python\Python313\Scripts\uv.exe).
+- Project venv: `.venv` via `uv sync` (UV_HTTP_TIMEOUT=300 needed; network is slow).
+- IMPORTANT: in the Cline PowerShell session `uv` is NOT on PATH. Run everything via
+  the venv python directly: `.\.venv\Scripts\python.exe -m pytest`,
+  `.\.venv\Scripts\python.exe -m ruff check ...`, `.\.venv\Scripts\python.exe -m ruff
+  format ...`, `.\.venv\Scripts\python.exe -m mypy` (all from the repo root).
+- Full test suite: `.\.venv\Scripts\python.exe -m pytest tests/ -q` (~49 s).
+
+## Design decisions (mine, for P2)
+
+1. **Retrieval package** `src/auditor/retrieval/` holds P2.1-P2.4 (clients, resolve,
+   fulltext, passages) so both the citation agent and B1 tools share the same
+   functions (D7).
+2. **No new dependencies**: HTML-to-text via a small stdlib extractor; passage ranking
+   via pure-Python BM25 (no embedding model -> runs on all 3 OSes, satisfies P2.4).
+3. **Source levels** recorded as: `full_html` (arXiv HTML), `full_pdf` (arXiv PDF via
+   GROBID), `abstract`, `none`. Abstract-only ablation: `retrieve_source(abstract_only=)`
+   parameter exists and works; a `citation_abstract_only` Settings field is still TODO
+   (never added to config.py), so `check()` currently always fetches full text.
+4. **Support verdicts** (as implemented): supported / contradicted / insufficient.
+   contradicted -> CLAIM_NOT_SUPPORTED finding; insufficient -> checked, no finding;
+   supported -> no finding. Every finding carries LOOKUP evidence, plus QUOTE evidence
+   when the model's quote is >= MIN_QUOTE_CHARS (20); char offsets are recorded when the
+   quote is found verbatim in the source text, else offsets stay None (the Part 4
+   verifier re-checks verbatim quoting per P4.1).
+5. **Number checks**: numbers extracted from the claim deterministically; the model
+   locates each in the passages and returns the source value + quote; code compares
+   values (`numbers_agree`: 1% relative tolerance, % vs fraction equivalence).
+6. **Reference checks are deterministic** (no LLM): resolve -> not found => finding;
+   metadata compared field-wise => mismatch finding with LOOKUP evidence.
+7. **Caching**: retrieved source text cached on disk under cache_dir/citation/ keyed by
+   work id + level, so repeated runs do not re-download (proposal risk plan).
+8. **Unlinked markers**: author-year markers parsed and searched; numeric markers
+   unverifiable (cannot know the entry).
+
+## Progress log
+
+- [x] Read proposal, team plan, decisions, part1 plan, parser evaluation, bhaskar_website.
+- [x] Explored repo: schemas, infra, planner, orchestration, code agent pattern, testing
+      helpers, config, conftest, pyproject.
+- [x] Created branch `p2-citation-checker` from main (caca490); nothing committed yet.
+- [x] Installed uv (0.10.12, `python -m pip install --user uv`), ran `uv sync`
+      (UV_HTTP_TIMEOUT=300 needed; network is slow).
+- [x] Implemented retrieval package (P2.1-P2.4): clients.py, resolve.py, fulltext.py,
+      passages.py.
+- [x] Implemented citation agent check() (P2.5): __init__.py, reference.py, support.py,
+      lookup.py.
+- [x] Implemented citation tools (P2.6): tools.py (lookup_reference, retrieve_cited_text,
+      find_supporting_passages + make_tools for B1).
+- [x] ruff check --fix (11 auto-fixed: import order, unused imports, EOF newlines) +
+      ruff format (5 files reformatted). Clean now.
+- [x] Full test suite green: 1035 passed, 1 skipped (pyarrow optional dep, unrelated),
+      7 deselected (network/llm markers). No existing functionality broken.
+
+## Git state (exact, end of session)
+
+Branch `p2-citation-checker` (from main @ caca490). NOTHING committed or pushed yet.
+- Modified (tracked): `src/auditor/agents/citation/__init__.py` (was an empty tracked
+  file).
+- Untracked: `docs/p2_context.md`, `src/auditor/agents/citation/lookup.py`,
+  `reference.py`, `support.py`, `tools.py`, `src/auditor/retrieval/clients.py`,
+  `resolve.py`, `fulltext.py`, `passages.py`.
+
+## Files created (implemented, lint-clean; NO dedicated unit tests yet)
+
+- `src/auditor/retrieval/clients.py` — P2.1: `Work` dataclass; arXiv (Atom XML),
+  OpenAlex, Crossref, Semantic Scholar clients; `is_doi`/`is_arxiv_id`/`normalize_doi`.
+- `src/auditor/retrieval/resolve.py` — P2.2: `Resolution` dataclass; `resolve_entry`
+  (DOI -> arXiv id -> title search across openalex/crossref/arxiv/s2, filtered by
+  `_entry_matches`); `resolve_marker` (author-year marker -> bibliography match ->
+  resolve_entry); `titles_match`, `first_surname`, `parse_marker`,
+  `match_marker_to_bibliography`.
+- `src/auditor/retrieval/fulltext.py` — P2.3: `SourceLevel` (full_html|full_pdf|abstract|
+  none), `SourceText`, `retrieve_source(http, work, settings, grobid=None,
+  abstract_only=False)`; disk cache under `cache_dir/citation/`; stdlib HTML-to-text
+  extractor; arXiv `/html/<id>` full text; PDF via `parse_pdf` (needs GROBID).
+- `src/auditor/retrieval/passages.py` — P2.4: `Passage(text, char_start, char_end)`,
+  `chunk_text(size=1200, overlap=200)`, pure-Python BM25, `rank_passages(text, claim,
+  top=5)` (deterministic).
+- `src/auditor/agents/citation/__init__.py` — P2.5 entry point `check(task, ctx)`.
+- `src/auditor/agents/citation/reference.py` — `check_reference(task, ctx, resolution)`:
+  deterministic; REFERENCE_NOT_FOUND / REFERENCE_METADATA_MISMATCH findings with LOOKUP
+  evidence; missing entry -> unverifiable.
+- `src/auditor/agents/citation/support.py` — `check_citation(task, ctx, resolution,
+  source)`: LLM support judgement over top-5 passages; `SupportAnswer` schema
+  (verdict/quote/reason/numbers[]); code-side gates (verbatim quote with offsets,
+  `numbers_agree` value check); CLAIM_NOT_SUPPORTED + CLAIM_NUMBER_MISMATCH findings.
+  Constants: TOP_PASSAGES=5, MIN_QUOTE_CHARS=20. Also `extract_numbers`, `_parse_number`,
+  `numbers_agree`, `SupportVerdict`.
+- `src/auditor/agents/citation/lookup.py` — `lookup_citation(http, citation)` for raw
+  citation strings (identifier first, then title search); `LookupResult(work, reason,
+  queries)`.
+- `src/auditor/agents/citation/tools.py` — P2.6: shared functions `lookup_reference` /
+  `retrieve_cited_text` / `find_supporting_passages` + `make_tools(ctx)` -> 3
+  StructuredTools for B1; MAX_TOOL_CHARS=6000 clip; `resolution_record`/`source_record`
+  JSON helpers.
+
+## Session status after session 2 (updated as work proceeds)
+
+Done in session 2 (commit `citation: retrieval package, agent check, B1 tools and offline
+unit tests` on `p2-citation-checker`):
+
+- Offline unit tests EXIST now: `tests/retrieval/` (test_clients.py, test_resolve.py,
+  test_fulltext.py, test_passages.py — 39 tests) and `tests/agents/citation/` (test_check,
+  test_reference, test_support, test_lookup, test_tools — 20 tests). All pass. Pattern:
+  `httpx.MockTransport` handlers routing on URL substrings, `sleep=_no_sleep,
+  min_intervals={}` to dodge rate limits; `ScriptedChatModel` + `tool_reply(SupportAnswer,
+  ...)` for the support judgement; `monkeypatch.setattr("auditor.agents.citation.
+  resolve_entry"/"...retrieve_source", fake)` for agent-level `check()` tests.
+- Known issues 1-3 FIXED:
+  1. `_number_check` now decides from `numbers_agree(claimed, found)` only; the model's
+     `agrees` hint no longer suppresses a real mismatch. `found=None` still makes no
+     finding (not confirmable in code). Regression test exists.
+  2. Dead helpers `source_record` and `_best_work` removed from tools.py.
+  3. `citation_abstract_only: bool = False` added to Settings (next to
+     `citation_llm_enabled`) and wired: `check()` passes
+     `abstract_only=ctx.settings.citation_abstract_only` to `retrieve_source`.
+- Defects the new tests exposed and fixed in the P2.1-P2.6 code:
+  - clients.py: `_parse_arxiv_feed` passed the author Element (not `.text`) to `_clean`
+    -> TypeError on every arXiv reply with authors.
+  - lookup.py: both "nothing found" return paths built `LookupResult(reason=...)` without
+    the required first positional arg `work` -> TypeError.
+  - reference.py: findings used `explanation=entry.raw`, None for entries without raw
+    (e.g. example paper b1) -> ValidationError. Now `entry.raw or entry.title or entry.id`.
+  - reference.py + `check()`: `paper.bib_entry()` RAISES KeyError for unknown ids, so the
+    "entry not in the paper -> UNVERIFIABLE" branch was dead code. Both call sites now
+    catch KeyError and return UNVERIFIABLE (tested).
+  - fulltext.py: HTML-to-text did not collapse `&nbsp;` (U+00A0); quote-offset matching
+    against arXiv HTML would misalign. Whitespace collapse now includes \u00a0.
+  - tools.py: the three shared tool functions were NOT decorated with
+    `auditor.infra.tools.tracked_tool`, so B1's citation tool calls were never counted
+    (D8 requires counting). Now decorated; counted in UsageLog (tested).
+  - support.py `extract_numbers`: scientific notation is NOT handled ("3e-4" yields "3"
+    and "4" separately) — left as is, documented in the test; the number check compares
+    values so this mostly wastes a NumberCheck rather than producing a wrong one.
+- Known issue 5 (unlinked markers -> UNVERIFIABLE without a reference_not_found finding)
+  deliberately UNCHANGED (defensible; revisit when set B exists).
+
+## Known issues / TODOs in the implemented code
+
+1. RESOLVED (session 2): `_number_check` no longer short-circuits on `agrees=True`.
+2. RESOLVED: dead helpers removed from tools.py.
+3. RESOLVED: `citation_abstract_only` in Settings, wired into `check()`.
+4. RESOLVED: offline tests exist (65 citation+retrieval tests at the interruption point).
+5. UNCHANGED by decision: unlinked-marker citation tasks return UNVERIFIABLE with a
+   reason, no reference_not_found finding. Revisit against set B.
+6. NEW (minor, open): `extract_numbers` does not understand scientific notation ("3e-4"
+   -> "3", "4"). The value comparison then cannot confirm such a number. Acceptable for
+   now; revisit if set B shows claim_number_mismatch recall problems on learning rates.
+
+## In progress at the interruption point
+
+RESOLVED: the eval test was fixed by giving the test source three distinct topics (the
+irrelevant claim now ranks other chunks first; the miss case is asserted at k=2, since
+top-5 covers most of a short source and containment passes trivially).
+
+## Session 2 final state (all green)
+
+- ruff: clean (src, tests, scripts). mypy --strict: clean (211 files). pytest: 1141
+  passed, 1 skipped (optional pyarrow), 7 deselected (network/llm/grobid/docker).
+- P2.7 done: `src/auditor/agents/citation/hallmark.py` + `scripts/hallmark.py`
+  (download/run/score) + `tests/agents/citation/test_hallmark.py` (6 tests, incl. an
+  end-to-end MockTransport test through the agent's `check()`). HALLMARK = arXiv 2607.18360
+  (Kim, Brendel, Reizinger 2026), data at github.com/rpatrik96/hallmark data/v1.2/*.jsonl
+  (MIT). Record format verified from test_public.jsonl: bibtex_key, bibtex_type, fields
+  {title, author ("A and B"), year (str), doi, booktitle/journal, url}, label
+  VALID|HALLUCINATED, hallucination_type (14 types), difficulty_tier, explanation,
+  generation_method, source_conference, subtests{...bools}, raw_bibtex, schema_version.
+  Loader drops `__canary__` entries, rejects duplicate keys. `bib_entry_for` maps fields
+  to BibEntry and renders `raw` from the same fields (D1). `check_entry` builds a
+  one-entry ParsedPaper (dataclasses.replace(ctx, paper=...)) and runs the agent's
+  reference check; Flag = clean / reference_metadata_mismatch / reference_not_found /
+  unverifiable. `score` gives accuracy, flagging P/R/F1, FPR on VALID, per-type
+  breakdown; results round-trip JSONL. The real split run needs network (script's
+  `download`/`run`); machinery is offline tested.
+- P2.8 machinery done: `src/auditor/agents/citation/set_b.py` +
+  `tests/agents/citation/test_set_b.py` (14 tests) + `scripts/set_b.py` CLI
+  (candidates/inject/validate/score). InjectionKind {claim_number_mismatch,
+  claim_not_supported, reference_metadata_mismatch, reference_not_found} ->
+  CLASS_FOR_KIND. `inject_number`/`inject_claim` edit a SentenceAnchor span (shift later
+  citation markers, mark variant INJECTED — same mechanics as set_c inject_paper) and
+  produce GoldLabel(BibTarget, SentenceAnchor span of the new text) + InjectionRecord
+  carrying the gold evidence passage (text + char offsets in the cited work's source text
+  + source_text sha256). `gold_passage_for(source_text, claim)` = top-1 BM25 passage for
+  the ORIGINAL claim (the Recall@5 gold). `inject_metadata` (title/venue/year/doi) and
+  `inject_not_found` (title replaced, doi + arxiv_id cleared) edit the entry's `raw` with
+  the field (D1; `_replace_in_raw` is case-insensitive because GROBID raw text drifts in
+  case); entries WITHOUT raw just get the field edited. `clean_label`.
+  `validate(labels, records, papers=, sources=)` does the D18 checks (duplicate ids,
+  record present and kind matches class, gold passage must appear in the recorded source
+  text, clean controls not on injected sentences, injected text present in the injected
+  paper, raw edited for bib injections, 20% second review). `score_citation_module(labels,
+  predictions)` mirrors set_c's scorer for the 4 citation classes (one-to-one D3
+  matching, FPR on clean controls, unlabelled count, macro-F1).
+- P2.9 machinery done: `src/auditor/agents/citation/eval.py` +
+  `tests/agents/citation/test_eval.py` (6 tests) + `scripts/citation_eval.py` CLI
+  (fetch = network, recall/score/tool-accuracy = offline). `recall_at_k(source_text,
+  claim, gold_passage, k=5)` (whitespace-normalised containment, tolerant of
+  chunk-boundary drift) and `tool_call_accuracy(outcomes, golds)` with
+  `lookup_is_correct` (found/not-found must match; titles compared with `titles_match`).
+  The abstract-only comparison = run the same pipeline with
+  `AUDITOR_CITATION_ABSTRACT_ONLY=1` and score both runs (`score --abstract-only`).
+- Test file names are unique across agent dirs (mypy requirement): the agent-level tests
+  are `test_citation_check.py` and `test_citation_tools.py` (not test_check/test_tools).
+- docs/team_plan.md updated: P2.1-P2.7 ticked; P2.8/P2.9 annotated as machinery-done,
+  dataset build pending.
+
+## What is left for Anurag (needs his machine/network/say-so)
+
+1. Commit + push this branch (the session's second commit is uncommitted at report time;
+   see git status). NO merge to main, NO PR yet — his call.
+2. Build set B for real: parse 60 arXiv PDFs (GROBID), `citation_eval.py fetch` the cited
+   works' texts (network), pick pairs via `set_b.py candidates`, inject via
+   `set_b.py inject`, second-review 20% of labels (D18), `set_b.py validate`, freeze.
+3. Run the HALLMARK sanity check: `hallmark.py download` + `hallmark.py run` (network) +
+   `hallmark.py score`.
+4. Run the module eval on set B (full-text vs `AUDITOR_CITATION_ABSTRACT_ONLY=1`) and the
+   Recall@5 / tool-call-accuracy numbers.
+5. Open the PR when he is ready.
+
+## Still to do in session 2 (all done — kept for the record)
+
+- P2.7 HALLMARK: machinery `src/auditor/agents/citation/hallmark.py` +
+  `scripts/hallmark.py` (download/run/score) + tests — DONE and green (5 tests, incl. an
+  end-to-end MockTransport test through the agent's `check()`). HALLMARK = arXiv 2607.18360
+  (Kim, Brendel, Reizinger 2026), data at github.com/rpatrik96/hallmark data/v1.2/*.jsonl
+  (MIT). Record format verified from test_public.jsonl: bibtex_key, bibtex_type, fields
+  {title, author ("A and B"), year (str), doi, booktitle/journal, url}, label
+  VALID|HALLUCINATED, hallucination_type (14 types), difficulty_tier, explanation,
+  generation_method, source_conference, subtests{...bools}, raw_bibtex, schema_version.
+  Loader drops `__canary__` entries, rejects duplicate keys. `bib_entry_for` maps fields
+  to BibEntry and renders `raw` from the same fields (D1). `check_entry` builds a
+  one-entry ParsedPaper (dataclasses.replace(ctx, paper=...)) and runs the agent's
+  reference check; Flag = clean / reference_metadata_mismatch / reference_not_found /
+  unverifiable. `score` gives accuracy, flagging P/R/F1, FPR on VALID, per-type
+  breakdown; results round-trip JSONL. The real split run needs network (script's
+  `download`/`run`); machinery is offline tested.
+- P2.8 set B: machinery `src/auditor/agents/citation/set_b.py` + tests (13 passing).
+  InjectionKind {claim_number_mismatch, claim_not_supported, reference_metadata_mismatch,
+  reference_not_found} -> CLASS_FOR_KIND. `inject_number`/`inject_claim` edit a
+  SentenceAnchor span (shift later citation markers, mark variant INJECTED — same
+  mechanics as set_c inject_paper) and produce GoldLabel(BibTarget, SentenceAnchor span
+  of the new text) + InjectionRecord carrying the gold evidence passage (text + char
+  offsets in the cited work's source text + source_text sha256). `gold_passage_for(
+  source_text, claim)` = top-1 BM25 passage for the ORIGINAL claim (the Recall@5 gold).
+  `inject_metadata` (title/venue/year/doi) and `inject_not_found` (title replaced, doi +
+  arxiv_id cleared) edit the entry's `raw` with the field (D1; `_replace_in_raw` is
+  case-insensitive because GROBID raw text drifts in case); entries WITHOUT raw just get
+  the field edited. `clean_label`. `validate(labels, records, papers=, sources=)` does
+  the D18 checks (duplicate ids, record present and kind matches class, gold passage must
+  appear in the recorded source text, clean controls not on injected sentences, injected
+  text present in the injected paper, raw edited for bib injections, 20% second review).
+  `score_citation_module(labels, predictions)` mirrors set_c's scorer for the 4 citation
+  classes (one-to-one D3 matching, FPR on clean controls, unlabelled count, macro-F1).
+- P2.9 eval: machinery `src/auditor/agents/citation/eval.py` + tests (6 passing):
+  `recall_at_k(source_text, claim, gold_passage, k=5)` (whitespace-normalised containment,
+  tolerant of chunk-boundary drift) and `tool_call_accuracy(outcomes, golds)` with
+  `lookup_is_correct` (found/not-found must match; titles compared with `titles_match`).
+- STILL MISSING: `scripts/set_b.py` CLI (candidates / inject / validate / score, follow
+  scripts/set_c.py's shape; pair collection over 60 arXiv PDFs needs network+GROBID and
+  Anurag's say-so — machinery/CLI only this session) and `scripts/citation_eval.py` CLI
+  (recall / score / tool-accuracy offline; run = network+LLM, full-text vs abstract-only
+  via `citation_abstract_only`). Then: ruff, mypy, full pytest, update team_plan.md ticks
+  (P2.1-P2.7 done; P2.8/P2.9 machinery done, dataset build pending), commit, push p2
+  branch. NO merge to main, NO PR.
+
+## Reference facts (verified this session)
+
+- Error classes for P2: reference_not_found, reference_metadata_mismatch,
+  claim_not_supported, claim_number_mismatch (ErrorClass in schemas/findings.py).
+- `ParsedPaper`: paper_id, variant, sentences, bibliography (BibEntry: id, raw, title,
+  authors, year, venue, doi, arxiv_id, url), citations (CitationMention: id, sentence_id,
+  start/end span, marker, bib_ids, link_method); helpers `paper.sentence(id)`,
+  `paper.bib_entry(id)`.
+- Registry (orchestration/registry.py) finds `check` in `auditor.agents.citation` and
+  `make_tools` in `auditor.agents.citation.tools`; missing -> mock + reported in
+  manifest; exists-but-fails-to-import -> run stops.
+- Tests: pytest, asyncio_mode=auto; markers network/llm/grobid/docker excluded by
+  default; conftest `parts` fixture swaps agent modules with empty stand-ins;
+  `auditor.testing` has `offline_context(tmp_path)`, `ScriptedChatModel`, `tool_reply`,
+  `offline_http`, `checked_result`.
+- Config: Settings (AUDITOR_* env / .env). `citation_llm_enabled` exists (planner pass).
+  Allowed hosts already include arxiv.org, export.arxiv.org, api.openalex.org,
+  api.crossref.org, api.semanticscholar.org. Rate limits: arXiv 3 s, Crossref 0.2 s,
+  OpenAlex 0.1 s, S2 1 s.
+- Parser: `parse_pdf(path, grobid=GrobidClient(http, base_url), cache_dir=, paper_id=)`
+  -> ParsedPaper; raises ParseError; GROBID must be running (`docker compose up -d`).
+
+## User preferences (Anurag, stated this session)
+
+- Only implement P2; never other parts. Never touch main; work on `p2-citation-checker`;
+  committing/pushing allowed, no merging back to main.
+- Python deps only in the project venv (uv); nothing global except uv itself.
+- Do not assume — ask when non-trivial. Do not break existing functionality; test well.
+- Keep this context file updated before and after implementing or planning.
+- Final report at the end: what was done, what is left, what the user must do, plus
+  decisions and observations.
+
+## Next steps for a new session
+
+1. Read this file top to bottom; the "Session status after session 2" section and
+   "Still to do in session 2" are the live state.
+2. Finish the session-2 leftovers (see "Still to do"): fix the one RED eval test,
+   scripts/set_b.py, scripts/citation_eval.py, ruff+mypy+full pytest, team_plan ticks,
+   commit, push p2 branch (no merge, no PR).
+3. Run everything through `.venv\Scripts\python.exe -m ...` (uv is NOT on PATH in the
+   agent shell).
+
+## Session 2 (2026-10-21) — plan agreed with Anurag
+
+1. Offline unit tests for retrieval/ and agents/citation/ (MockTransport, ScriptedChatModel,
+   monkeypatched resolve/retrieve for agent-level tests), fixing the known issues 1-3 while
+   testing (issue 5 stays as is: defensible, revisit against set B).
+2. `citation_abstract_only` Settings field wired into `check()`.
+3. P2.7/P2.8/P2.9: machinery in `auditor/agents/citation/` (following the set C pattern:
+   `auditor.agents.code.set_c` holds machinery, `scripts/set_c.py` is a thin CLI), thin
+   CLIs in `scripts/`, offline tests on fixture papers. The full 60-paper set B run needs
+   GROBID + network + Anurag's say-so and is NOT part of this session.
+4. ruff + mypy + full pytest green; update this file and team_plan.md ticks; commit
+   (`citation: ...` style) and push the p2 branch; NO merge to main, NO PR yet.
+
+Progress: ALL items done (see "Session 2 final state" above for the full detail).
+Commits: "citation: retrieval package, agent check, B1 tools and offline unit tests",
+then "citation: HALLMARK loader, set B injection machinery and evaluation scripts".

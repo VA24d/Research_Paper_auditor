@@ -202,6 +202,7 @@ def _openalex_work(record: dict[str, object]) -> Work | None:
         if isinstance(landing, str):
             html_url = landing or None
     raw_title = record.get("title")
+    inverted = record.get("abstract_inverted_index")
     return Work(
         id=work_id,
         source="openalex",
@@ -210,11 +211,7 @@ def _openalex_work(record: dict[str, object]) -> Work | None:
         year=_first_int(record.get("publication_year")),
         venue=venue,
         doi=doi,
-        abstract=_openalex_abstract(
-            record.get("abstract_inverted_index")
-            if isinstance(record.get("abstract_inverted_index"), dict)
-            else None
-        ),
+        abstract=_openalex_abstract(inverted if isinstance(inverted, dict) else None),
         pdf_url=pdf_url,
         html_url=html_url,
     )
