@@ -446,6 +446,97 @@ the originals: a missing landmark loader, one-layer heads where the paper says M
 concatenation that doubles a dimension the paper gives. All three look real. Showing more
 of the right code and getting the model to report what it is shown are the remaining gaps.
 
+**Reading models and settings** (October 2026, the same 57 synthetic discrepancies in 21
+papers of the 25 pairs, findings counted after the evidence gate):
+
+| Change | Found | Findings | Cost |
+|---|---|---|---|
+| "rag", 3.8 Flash, 60k characters of code (baseline) | 17 / 57 | 25 | about $1 |
+| the same, chunks in reverse order | 16 / 57 | 24 | $0.96 |
+| the same, 120k characters (53 of 57 changed lines shown, from 43) | 16 / 57 | 27 | $1.02 |
+| union of the three runs above | 21 / 57 | | about $3 |
+| a prompt that goes statement by statement and counts stated values (2 calls failed) | 13 / 57 | 32 | $0.94 |
+| Gemini 3.1 Pro Preview, priced at $2 / $12 per million tokens | 19 / 57 | 57 | $3.60 |
+| DeepSeek V4.1 Flash, thinking on, JSON-schema output (2 calls timed out) | 19 / 57 | 63 | about $0.65 |
+| DeepSeek V4.1 Flash, thinking off | 12 to 14 / 57 | 77 to 106 | $0.17 to $0.33 |
+| Kimi K2 Thinking, forced tool call | 13 / 57 | 84 | $0.88 |
+| GLM-5, forced tool call | 11 / 57 | 78 | $0.86 |
+| 3.5 Flash-Lite | 7 / 57 | 18 | $0.19 |
+| each sentence with only its top 3 chunks, 4 sentences a call, DeepSeek, thinking off | 12 / 57 | 201 | $1.08 |
+| the same with 3.5 Flash-Lite | 4 / 57 | 57 | $1.35 |
+
+Costs come from the spend ledger. Partner-model prices there are set above the published
+rates, so their real cost is lower. MiniMax M2 returned no structured output and
+gpt-oss-120b refuses forced tool calls, so neither was scored. GLM 5.5 Flash and MiMo V2.6
+Flash are not served to this project on Vertex.
+
+DeepSeek V4.1 Flash on Vertex thinks only when `reasoning_effort` is set, and a forced tool
+call (the `function_calling` structured method) turns its thinking off. The first partner
+runs used forced tool calls with no effort set, so they measured DeepSeek without
+thinking. Kimi and GLM-5 were asked the same way and have not been run again. Partner
+models now get the call's effort as `reasoning_effort`, and should be run with
+`json_schema` output.
+
+A planted discrepancy counts as found above when a finding cites lines within 5 of its
+changed line, whatever the finding says. Both judges (3.8 Flash and DeepSeek with
+thinking) were therefore also asked, for each such pair, whether the finding describes
+the planted discrepancy. They agreed on all but a few pairs:
+
+| Run | Found by lines | Found by description | Papers by lines | Papers by description | Mean lines cited |
+|---|---|---|---|---|---|
+| 3.8 Flash | 17 | 17 (16 by DeepSeek) | 11 / 21 | 11 / 21 | 3.2 |
+| 3.1 Pro | 19 | 18 | 12 / 21 | 12 / 21 | 6.4 |
+| DeepSeek, thinking on | 19 | 17 | 14 / 21 | 13 / 21 | 8.2 |
+| DeepSeek, thinking off | 12 | 8 to 10 | 10 / 21 | 7 to 9 / 21 | 9.3 |
+
+Each finding of the 3.8 and DeepSeek runs was also judged on its own, given the method
+text, the report and the code around the cited lines:
+
+| Run | Real by 3.8 Flash | Real by DeepSeek | Real by both |
+|---|---|---|---|
+| 3.8 Flash | 22 / 25 | 21 / 25 | 21 / 25 |
+| DeepSeek, thinking on | 37 / 63 | 54 / 63 | 35 / 63 |
+| DeepSeek, thinking off | 23 / 77 | | |
+
+Each judge rates its own model's findings higher, so the column to read is "real by
+both". By description, DeepSeek with thinking finds as many planted discrepancies as 3.8
+Flash (17), in two more papers (13 against 11), and gives more findings both judges
+accept (35 against 21). It also cites wider line ranges and gives 28 findings that are
+disputed or wrong, against 4 for 3.8 Flash. Together the two models find something in
+15 of the 21 papers by lines. DeepSeek is also slow when it thinks: a call with 60k
+characters of code took about 20 minutes, and 2 of 21 ran past the 600 s timeout.
+
+- **A stronger model.** 3.1 Pro finds 2 more than 3.8 Flash (15 found by both, 21 by
+  either) for about 3.6 times the cost and more than twice the findings.
+- **Fewer chunks per sentence.** Showing each sentence only its top 3 chunks did worse than
+  one call with all the code, because the top 3 hold the changed line too rarely (below).
+- **More code.** Doubling the budget showed 10 more changed lines and found one fewer.
+- **Repeated looks.** Two or three looks with the chunks reordered add 2 to 4 discrepancies
+  and roughly double or triple the findings to check.
+- **A stricter reading order.** Asking the model to compare each method statement in
+  turn, and to count values the paper states, found fewer, even though the current prompt
+  tells it to skip hyperparameter values.
+
+"rag" with 3.8 Flash and 60k characters stays the default, for its precision and speed.
+DeepSeek with thinking matches its recall at lower cost, with about twice as many findings
+to check.
+
+Local retrieval models, scored on changed-line hits within the 60k budget, and on whether
+the chunk holding the line is in a sentence's top 3 or top 10 when the sentence is the one
+the discrepancy quotes (21 such cases):
+
+| Ranker | Within budget | Top 3 | Top 10 | Time |
+|---|---|---|---|---|
+| BM25 | 48 / 84 | 5 / 21 | 8 / 21 | 1 s |
+| nomic-embed-text v1.5 (LM Studio) | 62 / 84 | 7 / 21 | 12 / 21 | 136 s |
+| bge-base-en-v1.5 | 58 / 84 | 8 / 21 | 12 / 21 | 142 s |
+| BM25 and nomic fused | 56 / 84 | 5 / 21 | 8 / 21 | 6 s |
+| nomic, top 30 reranked by ettin-reranker-1b | 57 / 84 | 10 / 21 | 15 / 21 | about 4 h |
+
+The reranker puts the right chunk nearer the top, but it takes hours on a laptop and does
+worse within the budget, so nomic stays. This benchmark builds its cases separately from
+the table above, which is why nomic scores 62 here and 59 there.
+
 ## D12. PDF parsing stack — Agreed
 
 - GROBID 0.9.1 (Docker image `grobid/grobid:0.9.1-crf`) for structure, bibliography,
@@ -752,6 +843,20 @@ call sets its own thinking level, and the usage log records the level and the st
   four of them thought for 24k to 32k tokens, but the dev half's score stayed at 6 of 15
   errors in 5 of 13 papers (now from 11 reports, 5 matched), for $1.05 more. The cap
   stays at 16k.
+- **Deep-check model** (October 2026, SPOT dev half, two looks, Flash-Lite for the cheap
+  steps). Reported by the first judge, then by both judges:
+
+  | Review model | Errors found | Both judges | Reports | Cost |
+  |---|---|---|---|---|
+  | 3.8 Flash, 12 of 13 papers finished | 6 / 13 | 4 | 18 (6 matched) | $4.21 |
+  | DeepSeek V4.1 Flash, thinking off, 12 of 13 papers | 2 / 14 | 0 | 3 (3 matched) | under $1.50 |
+  | Kimi K2 Thinking, cap reached after 5 papers | 1 / 7 | 0 | 6 (1 matched) | $2.51 |
+
+  Both partner models were asked through forced tool calls, which turn DeepSeek's thinking
+  off (D11), so this is not yet a fair comparison. 3.8 Flash stays until DeepSeek has been
+  run with thinking on. An earlier 3.8 run with a run-wide limit of 600 model calls left 4 papers
+  unfinished and found 5 of 15; the call limit, not the model, was holding that run back.
+  Long runs should set `AUDITOR_LLM_MAX_COST_USD` and leave `AUDITOR_LLM_MAX_CALLS` unset.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its
