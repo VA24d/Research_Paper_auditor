@@ -455,6 +455,7 @@ of the 25 pairs, findings counted after the evidence gate):
 | the same, chunks in reverse order | 16 / 57 | 24 | $0.96 |
 | the same, 120k characters (53 of 57 changed lines shown, from 43) | 16 / 57 | 27 | $1.02 |
 | union of the three runs above | 21 / 57 | | about $3 |
+| a prompt that goes statement by statement and counts stated values (2 calls failed) | 13 / 57 | 32 | $0.94 |
 | DeepSeek V4.1 Flash (Vertex partner model) | 14 / 57 | 106 | $0.33 |
 | Kimi K2 Thinking | 13 / 57 | 84 | $0.88 |
 | GLM-5 | 11 / 57 | 78 | $0.86 |
@@ -474,6 +475,9 @@ Flash are not served to this project on Vertex.
 - **More code.** Doubling the budget showed 10 more changed lines and found one fewer.
 - **Repeated looks.** Two or three looks with the chunks reordered add 2 to 4 discrepancies
   and roughly double or triple the findings to check.
+- **A stricter reading order.** Asking the model to compare each method statement in
+  turn, and to count values the paper states, found fewer, even though the current prompt
+  tells it to skip hyperparameter values.
 
 The gap is the reading itself, so "rag" with 3.8 Flash and 60k characters stays the
 default.
