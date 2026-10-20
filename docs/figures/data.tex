@@ -1,0 +1,53 @@
+\documentclass[tikz,border=5pt,10pt]{standalone}
+\input{figstyle}
+% Data checker (figure*): stated data settings against evidence tiers, and the optional data
+% analysis. Labels follow agents/code/data_checks.py, extract/hf_card.py, agents/code/data/*.py
+% and infra/snapshots/data.py. No model call anywhere in this check.
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily\footnotesize]
+\node[dat=2.9cm] (ps) at (0,2.35) {Paper data setting\sub{split, examples per split,\\classes, balance, overlap}};
+\node[sto=2.3cm] (snap) at (0,-0.05) {\faBoxOpen\ Repository\\snapshot};
+
+% ---- evidence tiers, first one with values decides
+\node[gl=pBlueD, anchor=west] at (2.45,2.35) {\faLayerGroup\ Evidence tiers, in order; the first with a value decides};
+\foreach \i/\y/\t/\d in {
+  1/1.55/{Code}/{\f{train\_test\_split}, \f{random\_split}, \f{load\_dataset}},
+  2/0.75/{Split lists}/{\f{.txt} files of ids per split},
+  3/-0.05/{Dataset card}/{Hugging Face YAML: splits, sizes, class names},
+  4/-0.85/{Data report}/{counts from the data files (data mode, below)},
+  5/-1.65/{Size API}/{latest revision only, so at most \textit{unverifiable}}}{
+  \node[act=5.6cm, anchor=west, align=left, minimum height=6mm] (t\i) at (2.55,\y) {\textbf{\i\ \t}\quad{\scriptsize\color{black!70}\d}};
+}
+\draw[black!65, line width=0.6pt] (snap.east) -- ++(0.3,0) coordinate (sp);
+\foreach \i in {1,...,5} \draw[ar] (sp) |- (t\i.west);
+\node[rule=2.9cm] (cmp) at (10.35,-0.05) {\ic{\faEquals}{Compare}{split shares within 1 point\\on the same base; counts within\\rounding or 1\%; classes exact}};
+\coordinate (tb) at (8.45,0);
+\foreach \i in {1,...,5} \draw[black!65, line width=0.6pt] (t\i.east) -- (t\i.east -| tb);
+\draw[black!65, line width=0.6pt] (t1.east -| tb) -- (t5.east -| tb);
+\draw[ar] (tb |- cmp.west) -- (cmp.west);
+\draw[ar] (ps.north) -- ++(0,0.45) -| (cmp.north);
+
+\node[out=3.2cm, anchor=west] (f) at (12.3,1.35) {\textbf{data split / dataset size}\sub{quote, and the code line\\or the card field}};
+\node[out=3.2cm, anchor=west] (g) at (12.3,-0.05) {\textbf{label distribution / leakage}\sub{from the data report}};
+\node[act=3.2cm, anchor=west, draw=pGreyD, fill=pGrey] (u) at (12.3,-1.45) {\textbf{\textit{unverifiable}}\sub{no tier has a value; balance\\or overlap without data mode}};
+\draw[ar] (cmp.east) -- ++(0.25,0) |- (f.west);
+\draw[ar] (cmp.east) -- ++(0.25,0) |- (g.west);
+\draw[ar] (cmp.east) -- ++(0.25,0) |- (u.west);
+
+% ---- data mode
+\draw[black!30, line width=0.4pt] (-1.5,-2.55) -- (15.7,-2.55);
+\node[anchor=west, font=\sffamily\footnotesize\bfseries, text=black!75] (dm) at (-1.5,-3.05) {Data mode};
+\node[anchor=north west, font=\ttfamily\scriptsize, text=black!70, inner sep=0pt] at ($(dm.south west)+(0.05,0)$) {-{}-analyse-data};
+\def\yy{-3.75}
+\node[act=3.0cm] (dl) at (4.0,\yy) {\ic{\faDownload}{Download}{CSV, TSV, JSON(L), Parquet;\\200\,MB a file, 1\,GB in all}};
+\node[sto=2.6cm] (blob) at (7.25,\yy) {Blob store\sub{by SHA-256, checked\\against the host's hash}};
+\node[act=2.7cm] (an) at (10.4,\yy) {\ic{\faChartBar}{Count}{rows, columns and labels\\per split}};
+\node[act=3.1cm] (lk) at (13.75,\yy) {\ic{\faFingerprint}{Overlap}{inputs normalised and hashed;\\train streamed past held-out}};
+\node[dat=3.0cm] (rep) at (13.75,-5.05) {\f{DataReport}\sub{rows, label counts and\\overlap share per split pair}};
+\draw[ar] (dl) -- (blob);
+\draw[ar] (blob) -- (an);
+\draw[ar] (an) -- (lk);
+\draw[ar] (lk) -- (rep);
+\draw[ar, dashed] (rep.west) -- (2.2,-5.05) |- (t4.west);
+\end{tikzpicture}
+\end{document}

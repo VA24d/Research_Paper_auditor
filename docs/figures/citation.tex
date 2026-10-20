@@ -1,0 +1,40 @@
+\documentclass[tikz,border=5pt,10pt]{standalone}
+\input{figstyle}
+% Citation checker (Part 2), as planned in docs/team_plan.md P2.1-P2.5; the package
+% agents/citation is still empty, so this figure shows the design, not running code.
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily\footnotesize]
+% ---- reference tasks
+\node[gl=pPurpleD, anchor=west] at (-1.3,1.0) {\faBook\ Reference task, one per bibliography entry};
+\node[lab, anchor=east, text=black!60] at (16.3,1.0) {planned design (Part 2)};
+\node[dat=2.6cm] (bib) at (0,0) {\f{BibEntry}\sub{raw text, title, authors,\\year, DOI, arXiv id}};
+\node[act=3.1cm] (res) at (3.55,0) {\ic{\faSearch}{Resolve}{by DOI, arXiv id, or title\\and authors}};
+\node[sto=3.0cm] (idx) at (7.4,1.55) {\faUniversity\ Scholarly indexes\sub{arXiv, OpenAlex, Crossref,\\Semantic Scholar}};
+\node[rule=2.8cm] (meta) at (7.4,0) {\ic{\faEquals}{Compare metadata}{title, authors, year, venue}};
+\node[out=2.7cm] (nf) at (3.55,-1.45) {\textbf{reference not found}\sub{with the reason}};
+\node[out=2.7cm] (mm) at (10.9,0) {\textbf{metadata mismatch}\sub{field and both values}};
+\draw[ar] (bib) -- (res);
+\draw[<->, >={Latex[length=1.6mm]}, line width=0.6pt, black!65] (res.north) |- node[lab, above, pos=0.75] {HTTP client} (idx.west);
+\draw[ar] (res) -- node[lab, above] {found} (meta);
+\draw[ar] (res) -- node[lab, right] {no record} (nf);
+\draw[ar] (meta) -- (mm);
+
+% ---- citation tasks
+\draw[black!30, line width=0.4pt] (-1.3,-2.35) -- (16.3,-2.35);
+\node[gl=pPurpleD, anchor=west] at (-1.3,-2.75) {\faQuoteRight\ Citation task, one per citing sentence};
+\def\yc{-3.9}
+\node[dat=2.6cm] (cit) at (0,\yc) {Citing sentence\sub{marker, linked entries}};
+\node[act=3.1cm] (ft) at (3.55,\yc) {\ic{\faFilePdf}{Fetch the source}{open-access PDF through the\\parser, or arXiv HTML; else\\the abstract, and say so}};
+\node[act=2.8cm] (pas) at (7.4,\yc) {\ic{\faSortAmountDown}{Retrieve passages}{chunks with exact\\character offsets}};
+\node[llm=2.9cm] (jud) at (10.9,\yc) {\ic{\faRobot}{Judge support}{supported, contradicted\\or insufficient; numbers}};
+\node[out=2.7cm] (cns) at (14.5,-3.3) {\textbf{claim not supported}\sub{quote and source passage}};
+\node[out=2.7cm] (cnm) at (14.5,-4.5) {\textbf{claim number mismatch}\sub{both numbers}};
+\draw[ar] (cit) -- (ft);
+\draw[ar] (ft) -- (pas);
+\draw[ar] (pas) -- (jud);
+\draw[ar] (jud.east) -- ++(0.3,0) |- (cns.west);
+\draw[ar] (jud.east) -- ++(0.3,0) |- (cnm.west);
+\node[act=2.6cm, draw=pGreyD, fill=pGrey] (unv) at (0,-5.5) {\textbf{\textit{unverifiable}}\sub{marker links no entry}};
+\draw[ar] (cit) -- (unv);
+\end{tikzpicture}
+\end{document}
