@@ -16,42 +16,44 @@
 \draw[ar] (pp) -- (plan);
 \draw[ar] (plan) -- (task);
 
-\node[dat=2.2cm] (repo) at (16.7,0) {\faGithub\ Code repository\sub{URL from the paper}};
-\node[dat=2.2cm] (ven) at (16.7,-1.25) {\faRuler\ Venue profile\sub{page limit, template}};
+\node[dat=2.2cm] (repo) at (16.85,0) {\faGithub\ Code repository\sub{URL from the paper}};
+\node[dat=2.2cm] (ven) at (16.85,-1.25) {\faRuler\ Venue profile\sub{page limit, template}};
 
 % ---- row 2: the specialists, one LangGraph node per task kind
-\def\yy{-2.75}
-\node[act=2.45cm, dashed] (cite) at (0.15,\yy) {\ic{\faBookOpen}{Citations}{(Part 2) reference exists;\\cited work supports it}};
-\node[act=2.45cm] (code) at (3.2,\yy) {\ic{\faCode}{Code}{settings and method\\against the code; defects}};
-\node[act=2.45cm] (data) at (6.25,\yy) {\ic{\faDatabase}{Data}{splits, sizes, labels,\\leakage}};
-\node[act=2.45cm] (math) at (9.3,\yy) {\ic{\faSquareRoot*}{Math}{proofs, derivations,\\stated results}};
-\node[act=2.45cm] (res) at (12.35,\yy) {\ic{\faTable}{Results}{text against tables;\\placeholder text}};
-\node[act=2.45cm] (tpl) at (15.4,\yy) {\ic{\faRuler}{Template}{pages, fonts, margins,\\anonymity}};
+\def\yy{-3.15}
+\tikzset{spec/.style={act=2.45cm, minimum height=1.3cm}}
+\node[spec, dashed] (cite) at (0.15,\yy) {\ic{\faBookOpen}{Citations}{(Part 2) reference exists;\\cited work supports it}};
+\node[spec] (code) at (3.2,\yy) {\ic{\faCode}{Code}{settings and method\\against the code; defects}};
+\node[spec] (data) at (6.25,\yy) {\ic{\faDatabase}{Data}{splits, sizes, labels,\\leakage}};
+\node[spec] (math) at (9.3,\yy) {\ic{\faSquareRoot*}{Math}{proofs, derivations,\\stated results}};
+\node[spec] (res) at (12.35,\yy) {\ic{\faTable}{Results}{text against tables;\\placeholder text}};
+\node[spec] (tpl) at (15.4,\yy) {\ic{\faRuler}{Template}{pages, fonts, margins,\\anonymity}};
 
 \begin{scope}[on background layer]
   \node[grp=pBlueD, fit=(code)(data), inner sep=1.3mm] (cag) {};
 \end{scope}
-\node[lab, anchor=north east, text=pBlueD] at (cag.south east) {code agent, one snapshot};
+\node[lab, anchor=south west, text=pBlueD] at (cag.north west) {code agent};
 
 
 % tasks fan out to the specialists
-\coordinate (bus) at (0,-1.6);
+\coordinate (bus) at (0,-1.95);
 \draw[black!65, line width=0.6pt] (task.south) |- (cite.north |- bus) -- (tpl.north |- bus);
 \foreach \n in {cite, code, data, math, res, tpl} \draw[ar] (\n.north |- bus) -- (\n.north);
-\node[lab, anchor=north west] at ($(cite.north west |- bus)+(0,-0.02)$) {one LangGraph node per task kind};
+
 
 % the repository and the venue profile
-\draw[ar] (repo.south) -- ++(0,-0.35) -| (cag.north) node[lab, pos=0.08, above] {snapshot};
-\draw[ar] (ven.east) -- ++(0.3,0) |- ($(tpl.north east)+(0.3,0)$) -- ++(-0.3,0);
+\draw[ar, preaction={draw=white, line width=3.2pt, -}] (repo.west) -- (15.3,0) |- (4.72,-1.5)
+  node[lab, pos=0.62, above] {one snapshot for both} -- (cag.north);
+\draw[ar] (ven.south) |- (tpl.east);
 
 % ---- row 3: findings, verification, report
-\def\yz{-5.25}
+\def\yz{-5.35}
 \node[dat=3.6cm] (tr) at (3.2,\yz) {\f{TaskResult}s\sub{findings with an anchor and quoted\\evidence, or \textit{unverifiable}}};
 \node[act=2.9cm] (ver) at (7.55,\yz) {\ic{\faCheckDouble}{Verify and rank}{evidence check, math review,\\repeats merged, severity}};
 \node[dat=3.1cm] (rep) at (11.75,\yz) {\faClipboardList\ Report\sub{ranked findings in 16 classes,\\\f{predictions.jsonl}}};
 \node[sto=2.4cm] (store) at (15.4,\yz) {Run store\sub{checkpoints, JSONL,\\usage logs}};
 
-\coordinate (bus2) at (0,-4.15);
+\coordinate (bus2) at (0,-4.3);
 \draw[black!65, line width=0.6pt] (cite.south) |- (tpl.south |- bus2);
 \foreach \n in {code, data, math, res, tpl} \draw[black!65, line width=0.6pt] (\n.south) -- (\n.south |- bus2);
 \draw[ar] (tr.north |- bus2) -- (tr.north);
@@ -60,9 +62,9 @@
 \draw[ar] (rep) -- (store);
 
 % ---- shared services
-\draw[black!30, line width=0.4pt] (-1.25,-6.25) -- (17.95,-6.25);
-\node[anchor=west, font=\sffamily\footnotesize\bfseries, text=black!75] at (-1.25,-6.8) {Shared};
-\def\yv{-7.0}
+\draw[black!30, line width=0.4pt] (-1.25,-6.4) -- (17.95,-6.4);
+\node[anchor=west, font=\sffamily\footnotesize\bfseries, text=black!75] at (-1.25,-6.95) {Shared};
+\def\yv{-7.15}\tikzset{every node/.append style={minimum height=1.05cm}}
 \node[llm=2.6cm] (m) at (1.95,\yv) {\ic{\faRobot}{Model calls}{prompt and output schema;\\reply validated, cached}};
 \node[act=2.6cm, draw=pGreyD, fill=pGrey] (b) at (5.0,\yv) {\ic{\faDollarSign}{Budgets}{call limit, dollar cap,\\spend ledger}};
 \node[act=2.6cm, draw=pGreyD, fill=pGrey] (h) at (8.05,\yv) {\ic{\faGlobe}{HTTP client}{allowlisted hosts,\\rate limits, request log}};
