@@ -1232,9 +1232,10 @@ async def _number_pass(
 # How far after a row label a number may be and still be that row's ("BASE performs the
 # worst (68.76% in average ACC and 74.77% in average MF1)").
 CELL_WINDOW = 80
-# A table named in the sentence just before, in the same section, counts as named ("...,
-# Table 2). The other mismatch is ChatGPT against PPO, ... (51.4% vs 61.4%)").
-CELL_REACH = 1
+# A table named in one of the three sentences before, in the same section, counts as named
+# ("..., Table 2). The other mismatch is ChatGPT against PPO, ... (51.4% vs 61.4%)"). Three
+# finds 2 of set D's 10 number plants where one finds 1, with no new finding on 254 papers.
+CELL_REACH = 3
 # Labels that name no one row: they recur in tables of every kind and in plain prose.
 _GENERIC_LABELS = frozenset(
     {

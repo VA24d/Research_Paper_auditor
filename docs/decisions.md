@@ -1060,6 +1060,6 @@ gives 5 false alarms on the 254 papers, so the condition stays.
   of the other 9 fails one of the rule's conditions: no table named in the sentence or the
   one before, a count with a unit ("3.3797G FLOPs", "74.3% tokens"), "respectively", a
   change word between the label and the number, or a number another table also holds.
-  Letting the named table be up to 3 sentences back finds 2 of 10 and adds no
-  finding on the 254 papers; that change is not made here. On the old set D the code finds
-  2 of 7 before and after.
+  The table may now be named up to 3 sentences back in the same section
+  (`CELL_REACH`), which finds 2 of 10 and adds no finding on the 254 papers. On the old set
+  D the code finds 2 of 7 before and after.

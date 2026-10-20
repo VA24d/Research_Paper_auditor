@@ -895,6 +895,11 @@ def test_the_cell_rule_needs_the_table_named_and_a_prose_sentence() -> None:
     # The sentence before it may name the table.
     (summary,) = cells("Table 1 compares five models on the data.", worst)
     assert "74.77" in summary
+    # Or one of the three before it.
+    filler = ["All models use the same split.", "Each run uses five seeds."]
+    (summary,) = cells("Table 1 compares five models on the data.", *filler, worst)
+    assert "74.77" in summary
+    assert not cells("Table 1 compares five models.", *filler, "We train once.", worst)
     # A table the parser ran into the body text.
     assert not cells("Table 1 Model ACC MF1 BASE 74.77 63.34 SleepDG 75.03 69.64 MF1 ACC")
     # A spread written without a space.
