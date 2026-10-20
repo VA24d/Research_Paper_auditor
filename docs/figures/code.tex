@@ -1,0 +1,57 @@
+\documentclass[tikz,border=5pt,10pt]{standalone}
+\input{figstyle}
+% Code checker (figure*): three task kinds over one repository snapshot. Labels follow
+% agents/code/{settings_check,second_look,method_check,code_retrieval,defects}.py and extract/*.
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily\footnotesize]
+\node[sto=2.3cm] (snap) at (0,0) {\faBoxOpen\ Repository\\snapshot\sub{pinned commit; code,\\configs, docs; never run}};
+
+% ---- lane 1: stated settings
+\node[gl=pBlueD, anchor=west] at (1.6,2.55) {\faSlidersH\ Settings};
+\node[dat=2.85cm] (ps) at (3.15,1.75) {Paper setting\sub{from text, tables, or\\\f{table-read} (model)}};
+\node[act=2.85cm] (scan) at (3.15,0.45) {\ic{\faSearch}{Scan the code}{Python AST, YAML, JSON,\\TOML, notebooks, shell}};
+\node[dat=2.85cm] (es) at (6.6,0.45) {\f{ExtractedSetting}\sub{key, value, unit,\\path, line}};
+\node[rule=2.85cm] (cmp) at (10.05,1.1) {\ic{\faEquals}{Compare}{numbers to 1e-6, \% as\\fraction, metric families}};
+\node[llm=2.85cm] (sl) at (13.5,1.1) {\ic{\faRobot}{Second look}{sentence and $\pm$3 lines\\$\to$ yes / no / unsure}};
+\node[out=2.85cm] (f1) at (16.95,1.1) {\textbf{setting or metric}\\\textbf{mismatch}\sub{quote and code lines}};
+\draw[ar] (snap.east) ++(0,0.45) -- (scan.west);
+\draw[ar] (scan) -- (es);
+\draw[ar] (es.east) -- ++(0.35,0) |- ($(cmp.west)+(0,-0.2)$);
+\draw[ar] (ps.east) -- ++(2.75,0) |- ($(cmp.west)+(0,0.2)$);
+\draw[ar] (cmp) -- node[lab, above] {unsure} (sl);
+\node[lab, anchor=north] at (sl.south) {no: the candidate is dropped};
+\draw[ar] (sl) -- node[lab, above] {yes} (f1);
+\draw[ar] (cmp.north) -- ++(0,0.35) -| node[lab, above, pos=0.25] {clear mismatch} (f1.north);
+\node[lab, anchor=north, text width=3.4cm, align=center] at (cmp.south) {agree: \textit{checked}; values the\\text cannot tell apart: \textit{unverifiable}};
+
+% ---- lane 2: the method
+\def\ym{-2.35}
+\node[gl=pBlueD, anchor=west] at (1.6,-1.15) {\faProjectDiagram\ Method};
+\node[act=2.85cm] (chunk) at (3.15,\ym) {\ic{\faCut}{Chunk}{a function each; 80-line\\pieces; 60-line windows}};
+\node[dat=2.85cm] (msent) at (6.6,-1.15) {Method sentences\sub{6 words or more, $\le$120}};
+\node[act=2.85cm] (rank) at (6.6,\ym) {\ic{\faSortAmountDown}{Rank per sentence}{embeddings, or BM25\\without the server}};
+\node[act=2.85cm] (turn) at (10.05,\ym) {\ic{\faRandom}{Take turns}{each sentence adds its\\best chunk, to 60k chars}};
+\node[llm=2.85cm] (rev) at (13.5,\ym) {\ic{\faRobot}{Review model}{method text and\\numbered chunks}};
+\node[dat=2.85cm] (disc) at (16.95,\ym) {\f{Discrepancy}\sub{quote, path, lines,\\category, confidence}};
+\draw[ar] (snap.east) ++(0,-0.45) -| ($(chunk.north)+(-0.6,0)$);
+\draw[ar] (chunk) -- (rank);
+\draw[ar] (msent) -- (rank);
+\draw[ar] (rank) -- (turn);
+\draw[ar] (turn) -- (rev);
+\draw[ar] (rev) -- (disc);
+\node[rule=2.85cm] (gate) at (16.95,-3.75) {\ic{\faFilter}{Evidence check}{lines in a shown chunk; quote\\anchored by its first 12 words}};
+\node[out=2.85cm] (f2) at (13.5,-3.75) {\textbf{method mismatch}\sub{uncertain unless\\confidence is high}};
+\draw[ar] (disc) -- (gate);
+\draw[ar] (gate) -- node[lab, above] {kept} (f2);
+
+% ---- lane 3: defects
+\def\yd{-4.95}
+\node[gl=pBlueD, anchor=west] at (1.6,-3.75) {\faBug\ Defects};
+\node[act=2.85cm] (ex) at (3.15,\yd) {\ic{\faFileCode}{Experiment files}{entry points and the\\local modules they import}};
+\node[rule=2.85cm] (lint) at (6.6,\yd) {\ic{\faTerminal}{Static checks}{compile; Ruff F821, F822,\\F823; missing local imports}};
+\node[out=2.85cm] (f3) at (10.05,\yd) {\textbf{code defect}\sub{at most 20; one code line\\each}};
+\draw[ar] (snap.south) |- (ex.west);
+\draw[ar] (ex) -- (lint);
+\draw[ar] (lint) -- (f3);
+\end{tikzpicture}
+\end{document}

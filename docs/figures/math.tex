@@ -1,0 +1,40 @@
+\documentclass[tikz,border=5pt,10pt]{standalone}
+\input{figstyle}
+% Math checker (figure*): triage picks the claims, a deep check reads each with the whole
+% paper and may test it in the sandbox, a review call drops refuted findings. Labels follow
+% planner/theory.py (triage_tasks), agents/theory/__init__.py, agents/theory/review.py,
+% infra/sandbox.py and docker/math/Dockerfile.
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily\footnotesize]
+\node[dat=2.6cm] (pp) at (0,0) {\f{ParsedPaper}\sub{every sentence with its id;\\sent once, then cached}};
+\node[llm=2.8cm] (tri) at (3.35,0) {\ic{\faRobot}{Triage}{review model, medium thinking;\\two independent looks}};
+\node[dat=2.9cm] (tc) at (6.85,0) {\f{TheoryClaim}s\sub{reason, kind, sentence ids,\\what it depends on; 4 per look}};
+\node[llm=2.9cm] (deep) at (10.4,0) {\ic{\faRobot}{Deep check}{one claim, the whole paper\\as a cached prefix}};
+\node[dat=3.0cm] (dc) at (14.0,0) {\f{DeepCheck}\sub{has error, quote, explanation,\\witness, confidence, test code}};
+\draw[ar] (pp) -- (tri);
+\draw[ar] (tri) -- (tc);
+\draw[ar] (tc) -- (deep);
+\draw[ar] (deep) -- (dc);
+
+% the sandbox round
+\node[act=3.0cm] (box) at (10.4,-1.85) {\ic{\faDocker}{Math sandbox}{SymPy, NumPy, mpmath,\\NetworkX, z3; no network, 20\,s}};
+\draw[ar] ($(dc.south)+(-0.6,0)$) |- node[lab, below, pos=0.75] {test code} (box.east);
+\draw[ar] ($(box.north)+(-0.5,0)$) -- node[lab, left, align=right] {output; a\\second answer} ($(deep.south)+(-0.5,0)$);
+
+% the review, right to left
+\def\yr{-3.55}
+\node[out=2.6cm] (f) at (14.0,\yr) {\textbf{math error}\sub{quoted sentence,\\explanation, witness}};
+\node[llm=2.9cm] (rev) at (10.4,\yr) {\ic{\faRobot}{Review}{all of the paper's findings,\\with the whole paper}};
+\node[out=2.6cm] (kept) at (6.85,\yr) {\textbf{kept}\sub{to verify and rank}};
+\node[act=2.3cm, draw=pGreyD, fill=pGrey] (drop) at (3.35,-3.0) {\textbf{dropped}\sub{not an error}};
+\node[act=2.3cm, draw=pGreyD, fill=pGrey] (dup) at (3.35,-4.1) {\textbf{marked repeat}\sub{same as another}};
+\draw[ar] ($(dc.south)+(0.6,0)$) -- node[lab, right] {error found} ($(f.north)+(0.6,0)$);
+\draw[ar] (f) -- (rev);
+\draw[ar] (rev) -- node[lab, above] {error} (kept);
+\draw[ar] (rev.south) -- ++(0,-0.35) -| ($(dup.south)+(0.6,0)$) node[lab, pos=0.2, below] {same as};
+\draw[ar] (rev.north) -- ++(0,0.3) -| ($(drop.north)+(0.6,0)$) node[lab, pos=0.2, above] {not an error};
+
+\node[lab, anchor=north west, text width=4.6cm] at (-1.4,-1.1) {Claims the triage did not pick can get a
+  cheap screen on the main model first. A paper gets at most two attempts, 30 minutes and 40 model calls.};
+\end{tikzpicture}
+\end{document}

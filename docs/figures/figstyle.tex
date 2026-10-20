@@ -1,0 +1,44 @@
+% Shared style for the auditor figures, following the TSE/ALIGN papers: steps are rounded
+% blue boxes, data are slanted yellow boxes, stores are purple cylinders, model calls orange.
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{fontawesome5}
+\hyphenpenalty=10000\exhyphenpenalty=10000
+\usetikzlibrary{positioning,arrows.meta,calc,fit,backgrounds,shapes.geometric}
+\definecolor{pBlue}{HTML}{DAE8FC}\definecolor{pBlueD}{HTML}{6C8EBF}
+\definecolor{pGreen}{HTML}{D5E8D4}\definecolor{pGreenD}{HTML}{82B366}
+\definecolor{pOrange}{HTML}{FFE6CC}\definecolor{pOrangeD}{HTML}{D79B00}
+\definecolor{pYellow}{HTML}{FFF2CC}\definecolor{pYellowD}{HTML}{D6B656}
+\definecolor{pRed}{HTML}{F8CECC}\definecolor{pRedD}{HTML}{B85450}
+\definecolor{pPurple}{HTML}{E1D5E7}\definecolor{pPurpleD}{HTML}{9673A6}
+\definecolor{pGrey}{HTML}{F5F5F5}\definecolor{pGreyD}{HTML}{666666}
+% \ic{icon}{title}{subtitle}: a step's text, icon before the title, subtitle in grey.
+\newcommand{\ic}[3]{{\color{black!65}#1}\,\textbf{#2}\\[-0.2ex]{\scriptsize\color{black!70}#3}}
+\newcommand{\sub}[1]{\\[-0.2ex]{\scriptsize\color{black!70}#1}}
+\newcommand{\f}[1]{\texttt{#1}}
+\tikzset{
+  every node/.append style={execute at begin node=\setlength{\baselineskip}{1.0em}},
+  act/.style={draw=pBlueD, fill=pBlue, rounded corners=3pt, line width=0.6pt, align=center,
+    minimum height=9mm, inner sep=2pt, text width=#1},
+  act/.default=2.4cm,
+  llm/.style={act=#1, draw=pOrangeD, fill=pOrange},
+  llm/.default=2.4cm,
+  rule/.style={act=#1, draw=pGreenD, fill=pGreen},
+  rule/.default=2.4cm,
+  dat/.style={draw=pYellowD, fill=pYellow, trapezium, trapezium left angle=75,
+    trapezium right angle=105, trapezium stretches=true, align=center, minimum height=9mm,
+    inner sep=1pt, text width=#1},
+  dat/.default=2.5cm,
+  sto/.style={draw=pPurpleD, fill=pPurple, cylinder, shape border rotate=90, aspect=0.2,
+    align=center, minimum height=9.5mm, inner sep=1pt, text width=#1},
+  sto/.default=2.2cm,
+  out/.style={act=#1, draw=pRedD, fill=pRed},
+  out/.default=2.4cm,
+  grp/.style={draw=#1, dashed, rounded corners=4pt, line width=0.5pt, inner sep=1.6mm},
+  ar/.style={-{Latex[length=1.6mm]}, line width=0.6pt, black!65},
+  st/.style={black!55, densely dotted, line width=0.7pt},
+  lab/.style={font=\sffamily\scriptsize, text=black!75, inner sep=1.5pt},
+  gl/.style={font=\sffamily\scriptsize\bfseries, text=#1, inner sep=1pt},
+}
