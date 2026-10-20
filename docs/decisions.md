@@ -456,6 +456,7 @@ of the 25 pairs, findings counted after the evidence gate):
 | the same, 120k characters (53 of 57 changed lines shown, from 43) | 16 / 57 | 27 | $1.02 |
 | union of the three runs above | 21 / 57 | | about $3 |
 | a prompt that goes statement by statement and counts stated values (2 calls failed) | 13 / 57 | 32 | $0.94 |
+| Gemini 3.1 Pro Preview, priced at $2 / $12 per million tokens | 19 / 57 | 57 | $3.60 |
 | DeepSeek V4.1 Flash (Vertex partner model) | 14 / 57 | 106 | $0.33 |
 | Kimi K2 Thinking | 13 / 57 | 84 | $0.88 |
 | GLM-5 | 11 / 57 | 78 | $0.86 |
@@ -470,6 +471,8 @@ Flash are not served to this project on Vertex.
 
 - **Cheaper models.** They find fewer discrepancies and report three to four times as many
   findings.
+- **A stronger model.** 3.1 Pro finds 2 more than 3.8 Flash (15 found by both, 21 by
+  either) for about 3.6 times the cost and more than twice the findings.
 - **Fewer chunks per sentence.** Showing each sentence only its top 3 chunks did worse than
   one call with all the code, because the top 3 hold the changed line too rarely (below).
 - **More code.** Doubling the budget showed 10 more changed lines and found one fewer.
