@@ -292,6 +292,18 @@ def test_a_review_model_is_built_next_to_the_main_one(tmp_path: Path) -> None:
         ("google_genai", "gemini-2.5-flash", "minimal", {"thinking_budget": 0}),
         ("google_genai", "gemini-2.5-flash", "high", {"thinking_budget": 12288}),
         ("openai", "gpt-test", "low", {"reasoning_effort": "low"}),
+        (
+            "vertex_maas",
+            "deepseek-ai/deepseek-v4.1-flash-maas",
+            "high",
+            {"reasoning_effort": "high"},
+        ),
+        (
+            "vertex_maas",
+            "deepseek-ai/deepseek-v4.1-flash-maas",
+            "minimal",
+            {"reasoning_effort": "low"},
+        ),
         ("ollama", "qwen3:8b", "low", {}),
     ],
 )
@@ -485,3 +497,27 @@ def test_vertex_partner_models_use_the_openai_compatible_endpoint(
         getattr(model, "openai_api_base", "")
     )
     assert getattr(model, "max_tokens", None) == 512
+
+
+def test_a_partner_model_call_can_ask_for_thinking_and_an_output_cap(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import auditor.infra.llm as module
+
+    class FakeAuth(module._GoogleBearer):
+        def __init__(self) -> None:
+            pass
+
+    monkeypatch.setattr(module, "_GoogleBearer", FakeAuth)
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="vertex_maas",
+        llm_model="deepseek-ai/deepseek-v4.1-flash-maas",
+        llm_options={"project": "p", "location": "global", "max_output_tokens": 512},
+    )
+    llm = StructuredLLM.from_settings(settings)
+    thinking = llm.model_for("high", max_output_tokens=16_000)
+    assert getattr(thinking, "reasoning_effort", None) == "high"
+    assert getattr(thinking, "max_tokens", None) == 16_000
+    assert getattr(llm.model, "reasoning_effort", None) is None

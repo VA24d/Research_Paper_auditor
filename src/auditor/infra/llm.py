@@ -169,7 +169,11 @@ Effort = Literal["minimal", "low", "medium", "high"]
 # `reasoning_effort`).
 _FIELD_NAMES = {"thinking_level": "reasoning_effort"}
 # The chat model field that caps the output, by provider.
-_OUTPUT_FIELDS = {"google_genai": "max_output_tokens", "openai": "max_tokens"}
+_OUTPUT_FIELDS = {
+    "google_genai": "max_output_tokens",
+    "openai": "max_tokens",
+    VERTEX_MAAS: "max_tokens",
+}
 # Gemini 2.5 takes a token budget instead of a level.
 _GEMINI_25_BUDGETS: dict[str, int] = {"minimal": 0, "low": 1024, "medium": 4096, "high": 12288}
 
@@ -183,6 +187,10 @@ def effort_options(provider: str | None, model: str | None, effort: Effort) -> d
         return {"thinking_level": effort}
     if provider == "openai":
         return {"reasoning_effort": effort}
+    if provider == VERTEX_MAAS:
+        # Partner models such as DeepSeek V4.1 Flash do not think unless asked to, and know
+        # no "minimal" level.
+        return {"reasoning_effort": "low" if effort == "minimal" else effort}
     return {}
 
 
