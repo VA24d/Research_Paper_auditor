@@ -477,22 +477,34 @@ thinking. Kimi and GLM-5 were asked the same way and have not been run again. Pa
 models now get the call's effort as `reasoning_effort`, and should be run with
 `json_schema` output.
 
-Each finding of the two strongest cheap runs was judged by 3.8 Flash and by DeepSeek with
-thinking, given the method text, the report and the code around the cited lines:
+A planted discrepancy counts as found above when a finding cites lines within 5 of its
+changed line, whatever the finding says. Both judges (3.8 Flash and DeepSeek with
+thinking) were therefore also asked, for each such pair, whether the finding describes
+the planted discrepancy. They agreed on all but a few pairs:
 
-| Run | Papers with a find | Real by 3.8 Flash | Real by DeepSeek | Real by both |
-|---|---|---|---|---|
-| 3.8 Flash | 11 / 21 | 22 / 25 | 21 / 25 | 21 / 25 |
-| DeepSeek, thinking on | 14 / 21 | 37 / 63 | 54 / 63 | 35 / 63 |
-| DeepSeek, thinking off | 10 / 21 | 23 / 77 | | |
-| 3.8 Flash and DeepSeek thinking together | 15 / 21 | | | |
+| Run | Found by lines | Found by description | Papers by lines | Papers by description | Mean lines cited |
+|---|---|---|---|---|---|
+| 3.8 Flash | 17 | 17 (16 by DeepSeek) | 11 / 21 | 11 / 21 | 3.2 |
+| 3.1 Pro | 19 | 18 | 12 / 21 | 12 / 21 | 6.4 |
+| DeepSeek, thinking on | 19 | 17 | 14 / 21 | 13 / 21 | 8.2 |
+| DeepSeek, thinking off | 12 | 8 to 10 | 10 / 21 | 7 to 9 / 21 | 9.3 |
+
+Each finding of the 3.8 and DeepSeek runs was also judged on its own, given the method
+text, the report and the code around the cited lines:
+
+| Run | Real by 3.8 Flash | Real by DeepSeek | Real by both |
+|---|---|---|---|
+| 3.8 Flash | 22 / 25 | 21 / 25 | 21 / 25 |
+| DeepSeek, thinking on | 37 / 63 | 54 / 63 | 35 / 63 |
+| DeepSeek, thinking off | 23 / 77 | | |
 
 Each judge rates its own model's findings higher, so the column to read is "real by
-both". DeepSeek with thinking finds discrepancies in more papers and gives more findings
-both judges accept (35 against 21), and 28 of its findings are disputed or wrong against 4
-for 3.8 Flash. Keeping only the DeepSeek findings 3.8 Flash calls real leaves 16 of the 57,
-so a 3.8 filter does not beat 3.8 alone. DeepSeek is also slow when it thinks: a call with
-60k characters of code took about 20 minutes, and 2 of 21 ran past the 600 s timeout.
+both". By description, DeepSeek with thinking finds as many planted discrepancies as 3.8
+Flash (17), in two more papers (13 against 11), and gives more findings both judges
+accept (35 against 21). It also cites wider line ranges and gives 28 findings that are
+disputed or wrong, against 4 for 3.8 Flash. Together the two models find something in
+15 of the 21 papers by lines. DeepSeek is also slow when it thinks: a call with 60k
+characters of code took about 20 minutes, and 2 of 21 ran past the 600 s timeout.
 
 - **A stronger model.** 3.1 Pro finds 2 more than 3.8 Flash (15 found by both, 21 by
   either) for about 3.6 times the cost and more than twice the findings.
@@ -505,9 +517,9 @@ so a 3.8 filter does not beat 3.8 alone. DeepSeek is also slow when it thinks: a
   turn, and to count values the paper states, found fewer, even though the current prompt
   tells it to skip hyperparameter values.
 
-"rag" with 3.8 Flash and 60k characters stays the default for now, for its precision and
-speed. DeepSeek with thinking is the cheaper choice when recall matters more than the
-number of findings to check.
+"rag" with 3.8 Flash and 60k characters stays the default, for its precision and speed.
+DeepSeek with thinking matches its recall at lower cost, with about twice as many findings
+to check.
 
 Local retrieval models, scored on changed-line hits within the 60k budget, and on whether
 the chunk holding the line is in a sentence's top 3 or top 10 when the sentence is the one
