@@ -214,6 +214,9 @@ class Settings(BaseSettings):
     # The planner's model pass over citation candidates (Part 2's checks). Runs that only
     # evaluate other parts can leave it out; it was a quarter of the cost of a full run.
     citation_llm_enabled: bool = True
+    # The abstract-only ablation (P2.4, P2.9): the citation agent never fetches a cited
+    # work's full text, so it judges claims against the abstract alone.
+    citation_abstract_only: bool = False
     # Check the mathematics of the paper's formal claims with the LLM (decision D21). The
     # planner lists the claims in one call and groups them into at most `theory_max_tasks`
     # tasks of `theory_batch_size` claims; each task screens its claims in one cheap call,

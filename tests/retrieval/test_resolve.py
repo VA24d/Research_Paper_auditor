@@ -1,0 +1,186 @@
+"""Offline tests for reference resolution (P2.2): canned API replies, no network."""
+
+from pathlib import Path
+
+import httpx
+
+from auditor.config import Settings
+from auditor.infra.http import HttpClient
+from auditor.retrieval.resolve import (
+    first_surname,
+    match_marker_to_bibliography,
+    parse_marker,
+    resolve_entry,
+    resolve_marker,
+    title_tokens,
+    titles_match,
+)
+from auditor.schemas import BibEntry
+
+CROSSREF_HIT = {
+    "message": {
+        "DOI": "10.18653/V1/D16-1264",
+        "title": ["SQuAD: 100,000+ Questions for Machine Comprehension of Text"],
+        "container-title": ["EMNLP"],
+        "author": [{"given": "Pranav", "family": "Rajpurkar"}],
+        "issued": {"date-parts": [[2016]]},
+    }
+}
+
+OPENALEX_HITS = {
+    "results": [
+        {
+            "id": "https://openalex.org/W123",
+            "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+            "publication_year": 2016,
+            "authorships": [{"author": {"display_name": "Pranav Rajpurkar"}}],
+        }
+    ]
+}
+
+
+async def _no_sleep(_seconds: float) -> None:
+    return None
+
+
+def api_client(tmp_path: Path, routes: dict[str, httpx.Response]) -> HttpClient:
+    def handler(request: httpx.Request) -> httpx.Response:
+        for pattern, response in routes.items():
+            if pattern in str(request.url):
+                return response
+        return httpx.Response(404)
+
+    settings = Settings(cache_dir=tmp_path / "cache")
+    return HttpClient(settings, transport=httpx.MockTransport(handler), sleep=_no_sleep)
+
+
+def test_titles_match_ignores_case_punctuation_and_stopwords() -> None:
+    assert titles_match("Attention Is All You Need", "attention is all you need!")
+    assert titles_match("A Study of Transformers", "Study Transformers")
+    assert not titles_match("Attention Is All You Need", "BERT: Pre-training of Transformers")
+    assert not titles_match("Attention", None)
+    assert not titles_match(None, None)
+
+
+def test_title_tokens_drop_stopwords_and_single_letters() -> None:
+    assert title_tokens("A Study of the Transformer") == frozenset({"study", "transformer"})
+
+
+def test_first_surname_handles_both_name_orders() -> None:
+    assert first_surname("Vaswani, Ashish") == "vaswani"
+    assert first_surname("Ashish Vaswani") == "vaswani"
+    assert first_surname("  ") == ""
+
+
+def test_parse_marker_pulls_surnames_and_year() -> None:
+    parsed = parse_marker("(Smith et al., 2020; Jones and Lee, 2019a)")
+    assert parsed.surnames == ("smith", "jones", "lee")
+    assert parsed.year == 2020
+    numeric = parse_marker("[7]")
+    assert numeric.surnames == ()
+    assert numeric.year is None
+
+
+def test_match_marker_to_bibliography_prefers_the_matching_year() -> None:
+    entries = (
+        BibEntry(id="b0", raw="Smith 2018", authors=("Adam Smith",), year=2018),
+        BibEntry(id="b1", raw="Smith 2020", authors=("Jane Smith",), year=2020),
+    )
+    assert match_marker_to_bibliography(entries, "(Smith et al., 2020)").id == "b1"
+    # A year that matches no entry within one year rejects the marker.
+    assert match_marker_to_bibliography(entries, "(Smith et al., 2001)") is None
+
+
+async def test_resolve_entry_tries_the_doi_first(tmp_path: Path) -> None:
+    routes = {"api.crossref.org": httpx.Response(200, json=CROSSREF_HIT)}
+    entry = BibEntry(id="b1", title="SQuAD", doi="10.18653/v1/D16-1264")
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert resolution.found
+    assert resolution.work is not None
+    assert resolution.work.source == "crossref"
+    assert resolution.queries == (("crossref doi:10.18653/v1/d16-1264", "found"),)
+
+
+async def test_resolve_entry_falls_back_to_openalex_on_a_doi_miss(tmp_path: Path) -> None:
+    routes = {"api.openalex.org": httpx.Response(200, json=OPENALEX_HITS)}
+    entry = BibEntry(id="b1", title="SQuAD", doi="10.18653/v1/D16-1264")
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert resolution.found
+    assert resolution.work is not None
+    assert resolution.work.source == "openalex"
+    assert resolution.queries[0] == ("crossref doi:10.18653/v1/d16-1264", "not found")
+    assert resolution.queries[1] == ("openalex doi:10.18653/v1/d16-1264", "found")
+
+
+async def test_resolve_entry_uses_the_arxiv_id_when_the_doi_is_unknown(tmp_path: Path) -> None:
+    feed = (
+        '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'
+        "<entry><id>http://arxiv.org/abs/1706.03762</id>"
+        "<title>Attention Is All You Need</title></entry></feed>"
+    )
+    routes = {"export.arxiv.org": httpx.Response(200, text=feed)}
+    entry = BibEntry(id="b0", title="Attention Is All You Need", arxiv_id="1706.03762")
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert resolution.found
+    assert resolution.work is not None
+    assert resolution.work.arxiv_id == "1706.03762"
+
+
+async def test_resolve_entry_searches_by_title(tmp_path: Path) -> None:
+    routes = {"api.openalex.org": httpx.Response(200, json=OPENALEX_HITS)}
+    entry = BibEntry(
+        id="b1",
+        title="SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+        authors=("Pranav Rajpurkar",),
+        year=2016,
+    )
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert resolution.found
+    assert resolution.work is not None
+    assert resolution.work.id == "https://openalex.org/W123"
+    assert resolution.queries[0] == ("openalex title search", "1 hits")
+
+
+async def test_resolve_entry_reports_why_nothing_was_found(tmp_path: Path) -> None:
+    entry = BibEntry(id="b9", title="No Such Work Anywhere At All")
+    resolution = await resolve_entry(api_client(tmp_path, {}), entry)
+    assert not resolution.found
+    assert resolution.reason == "no work with this title was found in the scholarly indexes"
+    assert len(resolution.queries) == 4  # openalex, crossref, arxiv and s2 were all tried
+
+
+async def test_resolve_entry_without_any_identifier(tmp_path: Path) -> None:
+    resolution = await resolve_entry(api_client(tmp_path, {}), BibEntry(id="b9"))
+    assert not resolution.found
+    assert resolution.reason == "the entry has no DOI, arXiv id or title to look up"
+
+
+async def test_resolve_marker_matches_the_bibliography_first(tmp_path: Path) -> None:
+    routes = {"api.crossref.org": httpx.Response(200, json=CROSSREF_HIT)}
+    entries = (
+        BibEntry(id="b1", title="SQuAD", doi="10.18653/v1/D16-1264", authors=("Pranav Rajpurkar",)),
+    )
+    resolution = await resolve_marker(
+        api_client(tmp_path, routes), "(Rajpurkar et al., 2016)", entries
+    )
+    assert resolution.found
+
+    # A numeric marker cannot be resolved this way, and says so.
+    resolution = await resolve_marker(api_client(tmp_path, routes), "[7]", entries)
+    assert not resolution.found
+    assert resolution.reason is not None
+    assert "author names" in resolution.reason
+
+    # An author-year marker with no matching entry says so too.
+    resolution = await resolve_marker(
+        api_client(tmp_path, routes), "(Nobody et al., 2020)", entries
+    )
+    assert not resolution.found
+    assert resolution.reason is not None
+    assert "no bibliography entry matches" in resolution.reason
+
+
+def test_match_marker_to_bibliography_falls_back_to_the_raw_text() -> None:
+    entries = (BibEntry(id="b0", raw="J. Smith and K. Lee 2019"),)
+    assert match_marker_to_bibliography(entries, "Smith and Lee 2019") is not None
+    assert match_marker_to_bibliography(entries, "[7]") is None
