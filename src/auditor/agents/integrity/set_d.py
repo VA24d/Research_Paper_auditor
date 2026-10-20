@@ -32,6 +32,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from auditor.agents.code.defects import experiment_files
+from auditor.agents.integrity.results import quoted_cells, table_text
+from auditor.parser.table_crops import add_crop_tables
 from auditor.planner.integrity import RESULTS_RULE_ID, RULE_ID
 from auditor.schemas import (
     CELL_SEPARATOR,
@@ -181,11 +183,15 @@ def _shifted(value: str, rng: random.Random, avoid: set[str]) -> str | None:
     return None
 
 
-def plan_paper(paper: ParsedPaper) -> list[Plant]:
+def plan_paper(paper: ParsedPaper, pdf: Path | None = None) -> list[Plant]:
     """The paper-side plants for one paper; some kinds are skipped when the paper has no
-    place for them (no table rows with numbers, say)."""
+    place for them (no table rows with numbers, say). With the paper's `pdf`, the tables
+    read from the PDF's boxes count too, as in the results check. No plant goes into a
+    body sentence that is a table's text run into the body by the parser."""
     pid = paper.paper_id
-    body = _body(paper)
+    checked = add_crop_tables(paper, pdf) if pdf is not None else paper
+    tabular = table_text(checked)
+    body = [s for s in _body(paper) if s.id not in tabular]
     if not body:
         return []
     plants: list[Plant] = []
@@ -206,14 +212,19 @@ def plan_paper(paper: ParsedPaper) -> list[Plant]:
     )
 
     rows = _table_rows(paper)
-    in_tables = {v for row in rows for v in row.values}
+    in_tables = {v for row in rows for v in row.values} | {
+        m.group()
+        for table in checked.tables
+        for row_id in table.row_ids
+        for m in _DECIMAL.finditer(checked.sentence(row_id).text)
+    }
     # A number the text quotes from one row of one table, in a prose sentence that names
     # that table or that row, so the planted change is checkable from the paper.
     holders: dict[str, list[_Row]] = {}
     for row in rows:
         for value in row.values:
             holders.setdefault(value, []).append(row)
-    numbered = []
+    numbered: list[tuple[Sentence, int, int, str]] = []
     for s in body:
         if s.id == anchor.id or not _prose(s.text):
             continue
@@ -224,11 +235,19 @@ def plan_paper(paper: ParsedPaper) -> list[Plant]:
                 if _names_table(s.text, row.table) or row.label in s.text
             ]
             if len({(row.table, row.label) for row in named}) == 1:
-                numbered.append((s, m))
+                numbered.append((s, m.start(), m.end(), m.group()))
+    # Also any prose sentence that writes a row's label as the cell rule reads labels (in
+    # any case, without generic words at the end, or a unique first few words) and quotes
+    # one of that row's numbers.
+    seen = {(s.id, start) for s, start, _, _ in numbered}
+    for s, start, end, _, _ in quoted_cells(checked, tabular | {anchor.id}):
+        if (s.id, start) not in seen and _prose(s.text):
+            numbered.append((s, start, end, s.text[start:end]))
+            seen.add((s.id, start))
     if numbered:
         rng = _rng(pid, "number")
-        sentence, match = rng.choice(numbered)
-        new = _shifted(match.group(), rng, in_tables)
+        sentence, start, end, original = rng.choice(numbered)
+        new = _shifted(original, rng, in_tables)
         if new is not None:
             plants.append(
                 Plant(
@@ -236,9 +255,9 @@ def plan_paper(paper: ParsedPaper) -> list[Plant]:
                     paper_id=pid,
                     kind="number",
                     sentence_id=sentence.id,
-                    start=match.start(),
-                    end=match.end(),
-                    original=match.group(),
+                    start=start,
+                    end=end,
+                    original=original,
                     text=new,
                 )
             )

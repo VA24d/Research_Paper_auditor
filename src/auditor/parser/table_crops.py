@@ -418,9 +418,30 @@ def _figure(info: _PageInfo, x0: float, top: float, x1: float, bottom: float) ->
     return False
 
 
-def _caption_start(line: _Line, gutter: float | None = None) -> list[tuple[int, str]]:
+def _blank_band(lines: Sequence[_Line], line: _Line, x0: float, x1: float) -> bool:
+    """Whether the two printed lines after `line` have words on both sides of the band
+    from x0 to x1 and none inside it: the band is a column border, as beside a table set
+    into running text (a wrapped float), not a wide space between two words."""
+    after = [other for other in lines if other.top > line.bottom - 0.3 * line.height][:2]
+    if len(after) < 2:
+        return False
+    for other in after:
+        if any(w.x1 > x0 + 1 and w.x0 < x1 - 1 for w in other.words):
+            return False
+        if not any(w.x1 <= x0 + 1 for w in other.words) or not any(
+            w.x0 >= x1 - 1 for w in other.words
+        ):
+            return False
+    return True
+
+
+def _caption_start(
+    line: _Line, gutter: float | None = None, lines: Sequence[_Line] = ()
+) -> list[tuple[int, str]]:
     """(index of the first word, label) of each caption that starts in the line: at its
-    start, after a wide gap, or after a gap over the `gutter` wider than a space."""
+    start, after a wide gap, after a gap over the `gutter` wider than a space, or after a
+    gap wider than a cell border that runs on as a blank band through the next two of the
+    page's `lines` (a table set beside running text on a one-column page)."""
     found = []
     words = line.words
     for i, word in enumerate(words):
@@ -430,7 +451,10 @@ def _caption_start(line: _Line, gutter: float | None = None) -> list[tuple[int, 
         if i > 0:
             gap = word.x0 - words[i - 1].x1
             across = gutter is not None and words[i - 1].x1 <= gutter <= word.x0
-            if gap < 1.5 * word.height and not (across and gap > 0.6 * word.height):
+            beside = gap > CELL_GAP_RATIO * word.height and _blank_band(
+                lines, line, words[i - 1].x1, word.x0
+            )
+            if gap < 1.5 * word.height and not (across and gap > 0.6 * word.height) and not beside:
                 continue  # inside a sentence: "as Table 2: shows" is a reference
         number, mark = match.group(3), match.group(4) or match.group(2)
         after = i + 1
@@ -457,7 +481,7 @@ def _captions(info: _PageInfo) -> list[_Caption]:
     to it (tables side by side)."""
     raw: list[tuple[str, _Line, _Line]] = []  # label, printed line, the caption's words
     for line in info.lines:
-        for i, label in _caption_start(line, info.gutter):
+        for i, label in _caption_start(line, info.gutter, info.lines):
             run = [line.words[i]]
             for word in line.words[i + 1 :]:
                 gap = word.x0 - run[-1].x1
@@ -474,7 +498,7 @@ def _captions(info: _PageInfo) -> list[_Caption]:
         scope = _scope(info, first)
         lo, hi = scope
         for word in line.words:
-            if word in first.words or not lo <= word.cx <= hi:
+            if word in first.words or not scope[0] <= word.cx <= scope[1]:
                 continue
             if word.x1 <= first.x0:
                 lo = max(lo, (word.x1 + first.x0) / 2)
@@ -522,7 +546,8 @@ def _caption_region(
         wrapped = previous.x1 - previous.x0 >= 0.7 * (hi - lo) or (
             previous is first and len(first.words) <= 2
         )
-        row = _table_like(part) and not _prose(part, info.columns)
+        # Prose fills the caption's scope, which is narrower than a column beside text.
+        row = _table_like(part) and not _prose(part, [*info.columns, scope])
         ruled = any(
             bottom - 1 <= r.y <= part.top + 1 and min(r.x1, hi) - max(r.x0, lo) > 0
             for r in info.rules
@@ -766,7 +791,7 @@ def _page_info(page: Page, number: int) -> _PageInfo | None:
     if not any(_CAPTION_WORD.match(w.text) for w in words):
         return info
     info.gutter = _gutter(lines, x0, x1)
-    if not any(_caption_start(line, info.gutter) for line in lines):
+    if not any(_caption_start(line, info.gutter, lines) for line in lines):
         return info
     info.rules = _rules(page)
     info.drawings = _drawings(page)
@@ -925,10 +950,24 @@ def table_crops(pdf: Path, dpi: int = 300) -> list[TableCrop]:
 
 def _caption_line(text: str, label: str) -> bool:
     """A line of the caption: it starts with the label, or it is prose (many words and
-    no wide gap between them)."""
+    no wide gap between them, or one wide gap after a full stop, as justified text can
+    leave: "audio sources. | Higher is")."""
     if text.casefold().startswith(label.casefold()):
         return True
-    return " | " not in text and len(text.split()) >= 6
+    cells = text.split(" | ")
+    if (
+        len(cells) == 2
+        and re.search(r"[a-z][.;:]$", cells[0])
+        and re.match(r"[A-Z][a-z]", cells[1])
+    ):
+        return len(text.split()) - 1 >= 6
+    return len(cells) == 1 and len(text.split()) >= 6
+
+
+def _caption_end(text: str) -> bool:
+    """The short last line of a caption: a sentence's end, with no cell border or digit
+    ("means across items.")."""
+    return re.fullmatch(r"[^|]*[a-z][.)]", text) is not None and len(text.split()) <= 6
 
 
 def box_rows(text: str, label: str, caption: Side) -> list[str]:
@@ -936,9 +975,15 @@ def box_rows(text: str, label: str, caption: Side) -> list[str]:
     cell borders (CELL_SEPARATOR), with the caption's lines taken off the side it is on."""
     lines = [line for line in text.splitlines() if line.strip()]
     if caption == "above":
-        while lines and _caption_line(lines[0], label):
-            lines = lines[1:]
+        taken = 0
+        while taken < len(lines) and _caption_line(lines[taken], label):
+            taken += 1
+        if taken and taken < len(lines) and _caption_end(lines[taken]):
+            taken += 1
+        lines = lines[taken:]
     else:
+        if len(lines) >= 2 and _caption_end(lines[-1]) and _caption_line(lines[-2], label):
+            lines = lines[:-1]
         while lines and _caption_line(lines[-1], label):
             lines = lines[:-1]
         if lines and lines[0].casefold().startswith(label.casefold()):

@@ -68,6 +68,51 @@ def test_labels_name_the_planted_sentence_and_class() -> None:
     assert number.sentence_id == "s2"
 
 
+def with_body(*texts: str, rows: list[str] = ROWS) -> ParsedPaper:
+    """A paper with Table 1 (`rows`) and the body sentences `texts`, the first naming the
+    table."""
+    table_rows = [
+        Sentence(id=f"t{i}", section_id="exp", kind=SentenceKind.TABLE, text=row)
+        for i, row in enumerate(rows)
+    ]
+    body = [Sentence(id=f"s{i}", section_id="exp", text=t) for i, t in enumerate(texts)]
+    return ParsedPaper(
+        paper_id="p2",
+        parser=ParserInfo(name="test", version="1"),
+        sections=(Section(id="exp", title="Experiments"),),
+        sentences=(*table_rows, *body),
+        tables=(Table(id="tab1", label="Table 1", row_ids=tuple(s.id for s in table_rows)),),
+    )
+
+
+def test_a_number_is_planted_where_the_text_writes_a_label_in_its_own_way() -> None:
+    rows = ["Source | Mean rating | Spread", "Simulation dataset audio | 6.30 | 1.25"]
+    p = with_body(
+        "Table 1 gives the mean ratings of the rationales.",
+        "The rationales for simulation were rated 6.30 on average by the five raters.",
+        rows=rows,
+    )
+    (number,) = [plant for plant in plan_paper(p) if plant.kind == "number"]
+    assert (number.sentence_id, number.original) == ("s1", "6.30")
+
+
+def test_nothing_is_planted_in_table_text_run_into_the_body() -> None:
+    rows = [
+        "Model | Data | Labels | Acc",
+        "Baseline | all of the data | yes | 71.40",
+        "Ours | the source domains | no | 75.90",
+    ]
+    run_in = (
+        "Table 1 Model Data Labels Acc Baseline all of the data yes 71.40 "
+        "Ours the source domains no 75.90"
+    )
+    p = with_body(run_in, "The method is simple to train and fast to run.", rows=rows)
+    plants = plan_paper(p)
+    assert not [plant for plant in plants if plant.kind == "number"]
+    # The inserted sentences go after prose, not after the table text.
+    assert all(plant.after != "s0" for plant in plants)
+
+
 def test_a_code_defect_is_planted_in_a_file_the_experiment_runs(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
