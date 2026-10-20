@@ -1018,8 +1018,48 @@ than the reports in Table 1", and an average over five rows of one model. On set
 the 66 gain and comparison plants. Of the other 6, three are in table text the parser ran
 into the body, two name no table, and one gives a row whose label the text does not
 write. Dropping the table condition finds 3 of 7, but it
-gives 5 false alarms on the 254 papers, so the condition stays. For arXiv 2512.21706 no
-reader without a model gets Table 6, so the rule cannot see the 8.93. With that table typed
-in, it reports Moshi's 4.25 in the same sentence against the table's 6.85. It misses the
-8.93, because the text writes the label in lower case ("simulation"). The rule stays off
-until it has been run on papers with more prose quoting tables.
+gives 5 false alarms on the 254 papers, so the condition stays.
+
+**Cell pairing changes** (October 2026, no model calls):
+
+- **Table text in the body.** `table_text` marks a body or abstract sentence as a table
+  that GROBID ran into the text when at least 80% of its words follow one table's words in
+  the table's order (pairs of neighbouring words), or 10 words in a row do, or a number
+  runs straight into a caption label ("31.36 25.73 Table 4: ..."). Only rows of two or more
+  cells that are not prose count, because a box cut too large holds lines of running text.
+  A first version that counted single words marked 305 prose sentences on the 254 papers.
+  The comparison rule, the cell rule, the extraction units and the number pass skip these
+  sentences, and set D plants nothing in them. On the 254 papers, 753 sentences are marked.
+  Of the 124 that the older prose test passes, 48 hold a decimal number. By hand, 45 of
+  those are tables or captions run into a sentence and 3 are prose. Skipping them cuts the numbers the cell rule
+  compares from 99 to 15, since most of the 99 were a run-in table matched with itself.
+- **Row labels.** The cell rule matches labels in any case, drops "dataset", "audio",
+  "model" and "method" (and plurals) from the end of a table's label, and accepts the first
+  two or more words of a label when no other label of the table starts with them. A number
+  at the end of a sentence ("of 7.31.") is now read too. Each step was run over the 254
+  papers, and none gave a false alarm. The rule's only finding there is the real error in
+  arXiv 2512.21706. With exact labels it reports Moshi's 4.25, where Table 6 gives 6.85.
+  With the tail words dropped it reports the sentence's first number, 8.93 for
+  "simulation", where the table gives 6.30. The comparison rule still gives its 3 findings, all the known
+  error in arXiv 2312.11580.
+- **Tables set beside text.** A caption that follows prose on its line after a gap of one
+  line height (LaTeX's wraptable) was read as a reference inside a sentence, so no reader
+  found Table 6 of arXiv 2512.21706. A caption may now start after a gap wider than a cell
+  border when the next two lines leave the same band blank. The caption's lines are judged
+  against the caption's own width, and the short last line of a caption is taken off the
+  rows. Over the 252 local PDFs this gives 1,079 table boxes against 1,066, with 738 on the
+  169 set C PDFs against 735. On the 39-paper benchmark the crop text still recalls 95.8% of
+  the LaTeX numbers.
+- **Set D2.** `plan_paper` now also plants a changed number in any prose sentence that
+  writes a row's label as the cell rule reads it and quotes one of that row's numbers.
+  Numbers that are a change or the other side of a comparison ("by 18.9%", "vs. 61.4")
+  are left out. The rebuild (`datasets/set_d`, data in `data/set_d2`; the old data stay in
+  `data/set_d`) has 10 number plants instead of 7, and the other kinds as before (33
+  comparisons, 33 gains, 40 placeholders, 40 GRIM, 39 code). Without a model, the cell rule
+  finds 1 of the 10 (51.4 for PPO), the same count as the code before these changes. Each
+  of the other 9 fails one of the rule's conditions: no table named in the sentence or the
+  one before, a count with a unit ("3.3797G FLOPs", "74.3% tokens"), "respectively", a
+  change word between the label and the number, or a number another table also holds.
+  Letting the named table be up to 3 sentences back finds 2 of 10 and adds no
+  finding on the 254 papers; that change is not made here. On the old set D the code finds
+  2 of 7 before and after.

@@ -83,10 +83,13 @@ async def _build(args: argparse.Namespace) -> int:
         for entry in _originals(args.set_c):
             paper = _load(entry.paper)
             # Planted against the tables the checks will see: the layout tables of the PDF
-            # when there is one, as in `run`.
+            # when there is one, and the tables read from its boxes, as in `run`.
             pdf = args.set_c / "pdfs" / f"{paper.paper_id}.pdf"
             pages = layout_pages(pdf) if pdf.exists() else None
-            paper_plants = plan_paper(add_layout_tables(paper, pages) if pages else paper)
+            paper_plants = plan_paper(
+                add_layout_tables(paper, pages) if pages else paper,
+                pdf if pdf.exists() else None,
+            )
             injected = apply_plants(paper, paper_plants)
             (data / "injected" / f"{paper.paper_id}.json").write_text(
                 injected.model_dump_json(), encoding="utf-8"

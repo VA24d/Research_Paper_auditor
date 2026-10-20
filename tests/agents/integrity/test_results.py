@@ -13,8 +13,11 @@ from auditor.agents.integrity.results import (
     cell_findings,
     grim_findings,
     number_candidates,
+    quoted_cells,
     repeated_spreads,
     table_findings,
+    table_text,
+    text_comparisons,
     wrong_aggregates,
 )
 from auditor.infra.context import RunContext
@@ -917,3 +920,90 @@ async def test_the_challenge_step_reviews_the_cell_rule_findings(tmp_path: Path)
     assert "74.77" in challenge
     assert "BASE | 68.76 | 63.34" in challenge
     assert CELL_WRONG in challenge
+
+
+WORDED_ROWS = [
+    "Model | Data | Labels | MF1",
+    "BASE | all of the data | yes | 63.34",
+    "SleepDG | the source domains | no | 69.64",
+]
+# Table 1 run into the body by the parser, with words enough to pass for prose.
+RUN_IN = (
+    "Table 1 Model Data Labels MF1 BASE all of the data yes 74.77 SleepDG the source "
+    "domains no 69.64"
+)
+
+
+def test_table_text_in_the_body_is_found_by_its_words() -> None:
+    near = "In Table 1, BASE is trained on less data than SleepDG and reaches 63.34 in MF1."
+    p = cell_paper(RUN_IN, near, CELL_WRONG, rows=WORDED_ROWS)
+    assert table_text(p) == {"s1"}
+    # Short sentences are left alone.
+    assert not table_text(cell_paper("BASE 63.34 SleepDG 69.64", rows=WORDED_ROWS))
+    # The last cells of a table run together with its caption.
+    caption = "31.36 25.73 Table 4: Performance of the networks with fewer latent layers."
+    assert table_text(cell_paper(caption, near, rows=WORDED_ROWS)) == {"s1"}
+
+
+async def test_no_rule_reads_table_text_in_the_body(tmp_path: Path) -> None:
+    p = cell_paper(RUN_IN, rows=WORDED_ROWS)
+    task = results_task(p)
+    # Read as prose, the run-in table gives BASE a number its row does not hold.
+    assert cell_findings(task, p)
+    assert not (await check(task, offline_context(tmp_path, paper=p))).findings
+    reversed_ = cell_paper("In Table 1, BASE reaches 68.76, higher than SleepDG (75.03).")
+    assert text_comparisons(results_task(reversed_), reversed_)
+    assert not text_comparisons(results_task(reversed_), reversed_, skip={"s1"})
+
+
+def test_the_cell_rule_reads_labels_in_any_case_and_without_generic_tails() -> None:
+    rows = [
+        "Audio Source | Mean Rating",
+        "GPT-4 (full-duplex) | 7.07",
+        "Moshi (full-duplex) | 6.85",
+        "Simulation dataset audio | 6.30",
+    ]
+    # arXiv 2512.21706: Table 6 gives 6.30 for simulated audio, the text 8.93.
+    text = "As Table 1 shows, rationales on simulation were rated highest (mean 8.93)."
+    (summary,) = cells(text, rows=rows)
+    assert "8.93" in summary
+    assert "6.30" in summary
+    assert not cells("As Table 1 shows, rationales on simulation were rated 6.30.", rows=rows)
+
+
+def test_the_cell_rule_reads_a_unique_first_part_of_a_label() -> None:
+    rows = [
+        "Model | Score",
+        "GPT-4o mini 2024-07 | 7.07",
+        "GPT-4o large 2024-05 | 7.52",
+        "Ours w/o A | 6.85",
+        "Ours w/o B | 6.12",
+    ]
+    (summary,) = cells("In Table 1, GPT-4o mini reaches a mean score of 7.31.", rows=rows)
+    assert "7.31" in summary
+    # One word is not enough, and a first part two labels share names neither.
+    assert not cells("In Table 1, GPT-4o reaches a mean score of 7.31.", rows=rows)
+    assert not cells("In Table 1, Ours w/o reaches a mean score of 6.47.", rows=rows)
+
+
+def test_quoted_cells_are_the_numbers_prose_quotes_from_a_named_row() -> None:
+    rows = ["Audio Source | Mean Rating", "Moshi | 6.85", "Simulation dataset audio | 6.30"]
+    p = cell_paper(
+        "Rationales on simulation were rated 6.30 on average by the five raters.",
+        "Both Moshi and the other source were rated 6.85 by the raters.",
+        RUN_IN,
+        rows=rows,
+    )
+    found = [(s.id, s.text[a:b], t.id, label) for s, a, b, t, label in quoted_cells(p)]
+    assert found == [
+        ("s1", "6.30", "tab1", "Simulation"),
+        ("s2", "6.85", "tab1", "Moshi"),
+    ]
+    assert [s.id for s, *_ in quoted_cells(p, {"s1"})] == ["s2"]
+    # A change that happens to equal a cell is not a quoted value.
+    changes = cell_paper(
+        "On new sources, Moshi exceeds the simulation by 6.30 on the mean rating.",
+        "Moshi is rated 6.85 points higher than the simulation by the raters.",
+        rows=rows,
+    )
+    assert not quoted_cells(changes)

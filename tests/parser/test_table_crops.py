@@ -5,6 +5,7 @@ from pathlib import Path
 
 from auditor.parser.table_crops import (
     TableBox,
+    box_rows,
     crop_boxes,
     table_captions,
     table_crops,
@@ -233,3 +234,95 @@ def test_an_ieee_caption_with_its_title_on_the_next_line(tmp_path: Path) -> None
     (box,) = crop_boxes(pdf)
     assert (box.label, box.method, box.caption) == ("Table II", "rules", "above")
     assert inside(box, 170, top + 12, 450, rules_top + 60)
+
+
+def wrapped_table_page() -> Page:
+    """A one-column page with a ruled table set into the running text on the right, as
+    LaTeX's wraptable sets it: each line holds a column of prose on the left and, a little
+    more than a space away, a caption line or a table row on the right."""
+    page = Page()
+    top = page.prose(72, 72, 6, 78)
+    left = [
+        "the method reads every table in every",
+        "paper and checks it again and the",
+        "method reads every table in the paper",
+        "and checks it again and the method",
+        "reads every table in the paper and it",
+        "checks it again and the method reads",
+        "every table in the paper and checks",
+        "it again and the method reads every",
+        "table in the paper and checks it and",
+        "the method reads every table in it",
+    ]
+    right = [
+        "Table 6: Human ratings of the rationales",
+        "from three audio sources. Higher scores",
+        "are better. Rubric: 1-3 poor; 4-6 fair;",
+        "7-8 good; 9-10 precise and grounded.",
+        "Means over items.",
+    ]
+    for k, text in enumerate(left):
+        page.text(72, top + 12 * k, text)
+    for k, text in enumerate(right):
+        page.text(72 + 39 * CHAR, top + 12 * k, text)
+    rules_top = top + 12 * len(right) + 4
+    page.rule(320, 520, rules_top)
+    page.row(330, rules_top + 4, ["Source", "Mean"], width=20)
+    page.rule(320, 520, rules_top + 17)
+    rows = [("GPT-4", "7.07"), ("Moshi", "6.85"), ("Simulation audio", "6.30")]
+    for k, (name, mean) in enumerate(rows):
+        page.row(330, rules_top + 20 + 11 * k, [name, mean], width=20)
+    page.rule(320, 520, rules_top + 54)
+    page.prose(72, top + 12 * len(left) + 12, 6, 78)
+    return page
+
+
+def test_a_table_set_beside_running_text_is_found(tmp_path: Path) -> None:
+    # arXiv 2512.21706 Table 6: the caption follows the prose on its line after a gap of
+    # one line height, which was taken for a reference inside a sentence.
+    pdf = write_pdf(tmp_path / "wrapped.pdf", [wrapped_table_page()])
+    (crop,) = table_crops(pdf, dpi=72)
+    assert (crop.label, crop.method, crop.caption) == ("Table 6", "rules", "above")
+    assert crop.bbox[0] > 72 + 37 * CHAR  # the prose on the left is left out
+    assert box_rows(crop.text, crop.label, crop.caption) == [
+        "Source | Mean",
+        "GPT-4 | 7.07",
+        "Moshi | 6.85",
+        "Simulation audio | 6.30",
+    ]
+
+
+def test_a_wide_space_in_a_sentence_does_not_start_a_caption(tmp_path: Path) -> None:
+    page = Page()
+    top = page.prose(72, 72, 4, 78)
+    # The gap before "Table" is wider than a space, but the lines below have none there.
+    page.text(72, top, "the method reads every table in the")
+    page.text(72 + 37 * CHAR, top, "Table 1: shows it again and the method")
+    page.prose(72, top + 12, 4, 78)
+    pdf = write_pdf(tmp_path / "gap.pdf", [page])
+    assert table_captions(pdf) == []
+
+
+def test_the_short_last_line_of_a_caption_is_not_a_row() -> None:
+    above = [
+        "Table 2: Scores of the three systems on the test set, with the",
+        "mean over five runs and the spread over the five seeds.",
+        "Means across items.",
+        "System | Score",
+        "Base | 70.1",
+    ]
+    assert box_rows("\n".join(above), "Table 2", "above") == ["System | Score", "Base | 70.1"]
+    below = [
+        "System | Score",
+        "Base | 70.1",
+        "Table 2: Scores of the three systems on the test set, with the",
+        "mean over five runs of the same amount (15%) of tokens.",
+        "over five seeds.",
+    ]
+    assert box_rows("\n".join(below), "Table 2", "below") == ["System | Score", "Base | 70.1"]
+    # A line of justified caption text with a wide space after a full stop.
+    wide = ["Table 4: Ratings of the sources.", "Means across all items. | Higher is better."]
+    assert box_rows("\n".join([*wide, "Source | Mean"]), "Table 4", "above") == ["Source | Mean"]
+    # Rows of words with one wide gap are rows, not caption lines.
+    rows = ["Table 3: Layers.", "Input: 28 x 28 vectors | Input: 128 noise"]
+    assert box_rows("\n".join(rows), "Table 3", "above") == [rows[1]]

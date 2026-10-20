@@ -19,6 +19,7 @@ row holds (the cell rule).
 import asyncio
 import base64
 import io
+import itertools
 import logging
 import math
 import re
@@ -503,17 +504,20 @@ _LEAD_NUMBER = re.compile(r"(?<![<>=\u00b1\w.])[-\u2212]?\d+\.\d+(?=\)?,\s*$)")
 _STATED = re.compile(r"(?<![<>=\u00b1\w.])[-\u2212]?\d+\.\d+")
 
 
-def text_comparisons(task: AuditTask, paper: ParsedPaper, first: int = 0) -> list[CandidateFinding]:
+def text_comparisons(
+    task: AuditTask, paper: ParsedPaper, first: int = 0, skip: AbstractSet[str] = frozenset()
+) -> list[CandidateFinding]:
     """A sentence that says one stated number is higher or lower than another, when the
     numbers say the opposite: "higher IoU (0.73 \u00b1 0.13) than U-Net (0.78 \u00b1 0.01)".
 
     Only numbers with a decimal point are compared, the first after the comparative word
     and the first after "than", so counts and bounds ("more than 10 layers") are left out.
     "Better" and "worse" are left out too, since which way is better depends on the
-    metric. On 252 real papers this found one error, in three versions of one paper."""
+    metric. On 252 real papers this found one error, in three versions of one paper.
+    Sentences in `skip` (table text in the body) are not read."""
     findings: list[CandidateFinding] = []
     for sentence in paper.sentences:
-        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY):
+        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY) or sentence.id in skip:
             continue
         for match in _COMPARATIVE.finditer(sentence.text):
             before, after = _STATED.search(match.group(2)), _STATED.search(match.group(3))
@@ -556,11 +560,86 @@ def _names_table(table: Table, text: str) -> bool:
     )
 
 
-def _units(paper: ParsedPaper) -> list[str]:
+# A body sentence is a table the parser ran into the text when at least this share of
+# its words follow one table's words in order, and it has at least TABLE_TEXT_MIN_WORDS
+# words.
+TABLE_TEXT_OVERLAP = 0.8
+TABLE_TEXT_MIN_WORDS = 6
+# A sentence of prose with a table run into its end ("... the diversity of HDN
+# Unsupervised Supervised N2V PN2V ... 29.33 29.43"): this many words in a row in the
+# table's order.
+TABLE_TEXT_RUN = 10
+# A number just before a table's caption label: the end of a table and its caption.
+_RUN_IN_CAPTION = re.compile(r"\d\s+(?:Table|TABLE|Tab\.)\s*(?:\d+|[IVX]+)\s*[:.]\s+[A-Z]")
+_WORD = re.compile(r"\w+(?:[.'\u2019-]\w+)*")
+
+
+def _words_of(text: str) -> list[str]:
+    return _WORD.findall(text.replace(_MINUS, "-").casefold())
+
+
+def table_text(paper: ParsedPaper) -> frozenset[str]:
+    """The ids of the body and abstract sentences that are a table's text rather than
+    prose: GROBID sometimes runs a table's cells into the body ("Model ACC MF1 BASE 74.77
+    63.34 ..."). Such a sentence repeats one table's words in the table's order: nearly
+    all its words are in pairs of neighbouring words that a row of the table also has (the
+    rows the PDF's text gives inside its box, when the crop tables were added). A sentence
+    of prose next to the table shares its names and numbers but not their neighbours.
+    Only rows of two or more cells that are not prose count, since a box cut too large
+    holds lines of the running text."""
+    pairs = []
+    for table in paper.tables:
+        sequence: list[str] = []
+        for row in _rows(paper, table):
+            if CELL_SEPARATOR not in row.text:
+                continue
+            if _prose_sentence(row.text.replace(CELL_SEPARATOR, " ")):
+                continue
+            sequence += _words_of(row.text)
+        if len(sequence) > 1:
+            pairs.append(set(itertools.pairwise(sequence)))
+    if not pairs:
+        return frozenset()
+    out: set[str] = set()
+    for sentence in paper.sentences:
+        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY):
+            continue
+        words = _words_of(sentence.text)
+        if len(words) < TABLE_TEXT_MIN_WORDS:
+            continue
+        # Cells and a caption run together: "31.36 25.73 Table 4: Performance of ...".
+        if _RUN_IN_CAPTION.search(sentence.text):
+            out.add(sentence.id)
+            continue
+        for found in pairs:
+            covered = {
+                k
+                for i, pair in enumerate(itertools.pairwise(words))
+                if pair in found
+                for k in (i, i + 1)
+            }
+            if len(covered) >= TABLE_TEXT_OVERLAP * len(words) or _longest_run(covered) >= (
+                TABLE_TEXT_RUN
+            ):
+                out.add(sentence.id)
+                break
+    return frozenset(out)
+
+
+def _longest_run(places: AbstractSet[int]) -> int:
+    longest = run = 0
+    for k in sorted(places):
+        run = run + 1 if k - 1 in places else 1
+        longest = max(longest, run)
+    return longest
+
+
+def _units(paper: ParsedPaper, skip: AbstractSet[str] = frozenset()) -> list[str]:
     """The paper cut into listings for the plan step, one per section that can state a
     table's numbers: the section's sentences with digits, and the tables it names or
     quotes. One listing for the whole paper made cheap models skip most claims; a section
-    with its own tables keeps the model's attention on them."""
+    with its own tables keeps the model's attention on them. Sentences in `skip` (table
+    text in the body) are left out."""
     tables = [t for t in _tables(paper) if _rows(paper, t)]
     numbers = {
         t.id: {m.group() for row in _rows(paper, t) for m in _TABLE_NUMBER.finditer(row.text)}
@@ -569,7 +648,7 @@ def _units(paper: ParsedPaper) -> list[str]:
 
     sections: dict[str, list[Sentence]] = {}
     for sentence in paper.sentences:
-        if sentence.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY):
+        if sentence.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY) and sentence.id not in skip:
             key = "abstract" if sentence.kind is SentenceKind.ABSTRACT else sentence.section_id
             sections.setdefault(key or "body", []).append(sentence)
     units: list[tuple[int, str]] = []
@@ -1186,9 +1265,10 @@ _GENERIC_LABELS = frozenset(
         "validation",
     }
 )
-# A decimal number in prose, with the sign or bound written before it.
+# A decimal number in prose, with the sign or bound written before it; a full stop after
+# it may end the sentence ("a mean score of 7.31.").
 _CELL_TEXT_NUMBER = re.compile(
-    r"(?<![\w.,])([-\u2212+\u00b1~\u2248<>\u2264\u2265\u0394])?\s?(\d+\.\d+)(?![\d.]|,\d)"
+    r"(?<![\w.,])([-\u2212+\u00b1~\u2248<>\u2264\u2265\u0394])?\s?(\d+\.\d+)(?!\d|\.\d|,\d)"
 )
 # Words between a label and a number that make the number another row's, a change, a
 # bound or a number from elsewhere.
@@ -1236,18 +1316,47 @@ def _prose_sentence(text: str) -> bool:
     return (small >= 2 and len(words) >= 0.5 * len(tokens)) or len(words) >= 0.6 * len(tokens)
 
 
-def _label_forms(label: str) -> list[str]:
-    """The ways the text may write a row's label: as the table writes it, and without a
+# Words a table writes after a row's name that the text often leaves out ("Simulation
+# dataset audio" for "simulation", "HDN model" for "HDN").
+_LABEL_TAILS = frozenset({"dataset", "datasets", "audio", "model", "models", "method", "methods"})
+
+
+def _bare(label: str) -> str:
+    """The label without a citation, a footnote mark or a note in brackets after it."""
+    bare = re.sub(r"\s*\[[^\]]*\]\s*$", "", label.strip())
+    bare = re.sub(r"[\s*\u2020\u2021\u00a7\u00b6#\u2217]+$", "", bare)
+    return re.sub(r"\s*\([^)]*\)\s*$", "", bare).strip()
+
+
+def _label_forms(label: str, others: Sequence[str] = ()) -> list[str]:
+    """The ways the text may write a row's label: as the table writes it; without a
     citation, a footnote mark or a note in brackets after it ("BERT [2]", "ChatGPT*\u2020",
-    "HDN (Ours)")."""
+    "HDN (Ours)"); without generic words at its end ("Simulation dataset audio"); and as
+    its first two or more words when no other label of its table (`others`) starts with
+    them ("GPT-4o mini" for "GPT-4o mini 2024-07"). The text is matched without regard to
+    case, so "simulation" names the row "Simulation dataset audio"."""
     forms = [label.strip()]
     bare = re.sub(r"\s*\[[^\]]*\]\s*$", "", forms[0])
     bare = re.sub(r"[\s*\u2020\u2021\u00a7\u00b6#\u2217]+$", "", bare)
     forms.append(bare)
-    forms.append(re.sub(r"\s*\([^)]*\)\s*$", "", bare).strip())
-    out = []
+    bare = _bare(label)
+    forms.append(bare)
+    words = bare.split()
+    while len(words) > 1 and words[-1].casefold() in _LABEL_TAILS:
+        words = words[:-1]
+        forms.append(" ".join(words))
+    words = bare.split()
+    rivals = [_bare(o).casefold().split() for o in others if o.strip() != label.strip()]
+    for k in range(len(words) - 1, 1, -1):
+        head = [w.casefold() for w in words[:k]]
+        if head[-1] in _STOPWORDS or any(rival[:k] == head for rival in rivals):
+            continue
+        forms.append(" ".join(words[:k]))
+    out: list[str] = []
     for form in forms:
-        if form in out or form.casefold() in _GENERIC_LABELS or len(form) < 2:
+        if form.casefold() in {o.casefold() for o in out}:
+            continue
+        if form.casefold() in _GENERIC_LABELS or len(form) < 2:
             continue
         # A label in small letters only ("random", "train") is too often a plain word.
         if not re.search(r"[A-Z0-9+/]", form) or not re.search(r"[A-Za-z]{2}", form):
@@ -1388,6 +1497,98 @@ def _table_numbers(paper: ParsedPaper) -> list[_Number]:
     return out
 
 
+_Labelled = dict[str, list[tuple[str, Sentence, int]]]
+
+
+def _labelled(paper: ParsedPaper, tables: Sequence[Table]) -> _Labelled:
+    """For each table, the forms of its row labels with their row and the place of the
+    label's cell."""
+    labelled: _Labelled = {}
+    for table in tables:
+        found = [(label, row, at) for row in _rows(paper, table) for label, at in _row_labels(row)]
+        names = [label for label, _, _ in found]
+        for label, row, at in found:
+            for form in _label_forms(label, names):
+                labelled.setdefault(table.id, []).append((form, row, at))
+    return labelled
+
+
+def _label_mentions(
+    text: str, tables: Sequence[Table], labelled: _Labelled
+) -> list[tuple[int, int, str, Table]]:
+    """(start, end, form, table) of each row label of `tables` that `text` writes, in any
+    case; a mention inside a longer one ("MPNet" in "MPNet-300K") is the longer one's."""
+    mentions: list[tuple[int, int, str, Table]] = []
+    for table in tables:
+        for form, _, _ in labelled.get(table.id, []):
+            pattern = rf"(?<![\w-]){re.escape(form)}(?![\w-])"
+            for m in re.finditer(pattern, text, re.IGNORECASE):
+                mentions.append((m.start(), m.end(), form, table))
+    return [
+        m
+        for m in mentions
+        if not any(o[0] <= m[0] and m[1] <= o[1] and o[1] - o[0] > m[1] - m[0] for o in mentions)
+    ]
+
+
+_QUOTE_CHANGE_BEFORE = re.compile(
+    r"\b(?:by|vs\.?|versus|than|over|from|to|margin of|up to)\s*\(?\s*$", re.IGNORECASE
+)
+_QUOTE_CHANGE_AFTER = re.compile(
+    r"^\s*%?\s*(?:points?\b|pts?\b|pp\b|percentage|higher|lower|better|worse|more|less|"
+    r"improvement|gain|increase|decrease|drop|reduction|times|fold|x\b|\u00d7)",
+    re.IGNORECASE,
+)
+
+
+def quoted_cells(
+    paper: ParsedPaper, skip: AbstractSet[str] = frozenset()
+) -> list[tuple[Sentence, int, int, Table, str]]:
+    """(sentence, start, end, table, label form) of each decimal number a prose sentence
+    quotes from a row whose label it writes, as the cell rule reads labels, when exactly
+    one row of one table among those the sentence names holds the number as written.
+    Sentences in `skip` are left out. Set D plants its changed numbers here."""
+    tables = [t for t in _tables(paper) if _rows(paper, t)]
+    labelled = _labelled(paper, tables)
+    by_row = {
+        (table.id, row.id): {
+            m.group()
+            for cell in row.text.split(CELL_SEPARATOR)[at + 1 :]
+            for m in _DECIMAL.finditer(cell)
+        }
+        for table in tables
+        for _, row, at in labelled.get(table.id, [])
+    }
+    out = []
+    for sentence in paper.sentences:
+        if sentence.kind not in (SentenceKind.ABSTRACT, SentenceKind.BODY):
+            continue
+        if sentence.id in skip or not _prose_sentence(sentence.text):
+            continue
+        mentions = _label_mentions(sentence.text, tables, labelled)
+        if not mentions:
+            continue
+        rows = {
+            (table.id, row.id): (table, form)
+            for _, _, form, table in mentions
+            for f, row, _ in labelled[table.id]
+            if f.casefold() == form.casefold()
+        }
+        for m in _CELL_TEXT_NUMBER.finditer(sentence.text):
+            start, end = m.span(2)
+            if m.group(1) or any(a <= start < b for a, b, _, _ in mentions):
+                continue  # a sign or a bound before it, or a number in a name ("GPT-3.5")
+            # A change or the other side of a comparison, not a quoted value ("by 18.9%").
+            text = sentence.text
+            if _QUOTE_CHANGE_BEFORE.search(text[:start]) or _QUOTE_CHANGE_AFTER.match(text[end:]):
+                continue
+            holders = [held for key, held in rows.items() if m.group(2) in by_row[key]]
+            if len(holders) == 1:
+                table, form = holders[0]
+                out.append((sentence, start, end, table, form))
+    return out
+
+
 def _cell_matches(
     paper: ParsedPaper,
     skip: AbstractSet[str] = frozenset(),
@@ -1398,12 +1599,7 @@ def _cell_matches(
     one of the `reach` sentences before it in its section does; with `need_table` false,
     a sentence naming no table is checked against every table."""
     tables = [t for t in _tables(paper) if _rows(paper, t)]
-    labelled: dict[str, list[tuple[str, Sentence, int]]] = {}
-    for table in tables:
-        for row in _rows(paper, table):
-            for label, at in _row_labels(row):
-                for form in _label_forms(label):
-                    labelled.setdefault(table.id, []).append((form, row, at))
+    labelled = _labelled(paper, tables)
     known: list[_Number] | None = None
     body = [s for s in paper.sentences if s.kind in (SentenceKind.ABSTRACT, SentenceKind.BODY)]
     out: list[_CellMatch] = []
@@ -1430,19 +1626,7 @@ def _cell_matches(
         read = {_label_key(t) for t in tables}
         if any(_label_key(t) not in read for t in paper.tables if _names_table(t, naming)):
             continue
-        mentions: list[tuple[int, int, str, Table]] = []
-        for table in used:
-            for form, _, _ in labelled.get(table.id, []):
-                for m in re.finditer(rf"(?<![\w-]){re.escape(form)}(?![\w-])", text):
-                    mentions.append((m.start(), m.end(), form, table))
-        # A mention inside a longer one ("MPNet" in "MPNet-300K") is the longer one's.
-        mentions = [
-            m
-            for m in mentions
-            if not any(
-                o[0] <= m[0] and m[1] <= o[1] and o[1] - o[0] > m[1] - m[0] for o in mentions
-            )
-        ]
+        mentions = _label_mentions(text, used, labelled)
         if not mentions:
             continue
         for number in _CELL_TEXT_NUMBER.finditer(text):
@@ -1481,7 +1665,7 @@ def _cell_matches(
                 (table, row, at)
                 for table in used
                 for f, row, at in labelled.get(table.id, [])
-                if f == form
+                if f.casefold() == form.casefold()
             ]
             held = [(table, row, n) for table, row, at in rows for n in _results(row.text, at)]
             if not held or any(_same(stated, n) for _, _, n in held):
@@ -1534,8 +1718,16 @@ def cell_findings(
 
 async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     paper = ctx.paper
+    cells_on = ctx.settings.results_cell_rule_enabled
+    # Without a model the crops are read only for the cell rule.
+    crops = ctx.settings.results_crop_tables and (ctx.llm is not None or cells_on)
+    cropped = paper
+    if ctx.source_pdf is not None and crops:
+        cropped = await asyncio.to_thread(add_crop_tables, paper, ctx.source_pdf)
+    # Table text the parser ran into the body is not prose: no rule or extraction reads it.
+    tabular = table_text(cropped)
     findings = table_findings(task, paper)
-    comparisons = text_comparisons(task, paper, len(findings))
+    comparisons = text_comparisons(task, paper, len(findings), tabular)
     rules: list[CandidateFinding] = []
     for rule in (repeated_spreads, wrong_aggregates):
         rules += rule(task, paper, len(findings) + len(comparisons) + len(rules))
@@ -1544,15 +1736,11 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
     # findings stay uncertain without a second look.
     findings += grim_findings(task, paper, len(findings) + len(comparisons) + len(rules))
     compared = {f.anchor.sentence_id for f in comparisons if isinstance(f.anchor, SentenceAnchor)}
-    cells_on = ctx.settings.results_cell_rule_enabled
-    # Without a model the crops are read only for the cell rule.
-    crops = ctx.settings.results_crop_tables and (ctx.llm is not None or cells_on)
-    if ctx.source_pdf is not None and crops:
-        paper = await asyncio.to_thread(add_crop_tables, paper, ctx.source_pdf)
+    paper = cropped
     if ctx.llm is None:
         findings += comparisons + rules
         if cells_on:
-            findings += cell_findings(task, paper, len(findings), compared)
+            findings += cell_findings(task, paper, len(findings), compared | tabular)
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
     paper = await _read_unread_tables(paper, ctx)
     llm = ctx.llm
@@ -1565,7 +1753,7 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
                 purpose="results-plan",
                 max_output_tokens=MAX_PLAN_TOKENS,
             )
-            for unit in _units(paper)
+            for unit in _units(paper, tabular)
         )
     )
     claims = [claim for plan in plans for claim in plan.value.claims]
@@ -1585,8 +1773,8 @@ async def check_results(task: AuditTask, ctx: RunContext) -> TaskResult:
         rows_text = _rule_table(paper, finding) or "\n".join(evidence) or "(numbers from the text)"
         candidates.append(_Candidate(finding, _around(body, order, finding), rows_text))
     # The cell rule's findings are uncertain too: a sentence may quote another setting.
-    flagged = set(compared)
-    for m in _cell_matches(paper, compared) if cells_on else []:
+    flagged = compared | tabular
+    for m in _cell_matches(paper, flagged) if cells_on else []:
         number = len(findings) + len(candidates)
         finding = _finding(task, number, m.sentence, m.span, m.summary, m.lookup, True)
         shown = f"{m.table.label or m.table.id} {_caption(paper, m.table)}".strip()
