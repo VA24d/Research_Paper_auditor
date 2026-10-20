@@ -446,8 +446,8 @@ the originals: a missing landmark loader, one-layer heads where the paper says M
 concatenation that doubles a dimension the paper gives. All three look real. Showing more
 of the right code and getting the model to report what it is shown are the remaining gaps.
 
-**What did not close the reading gap** (October 2026, the same 57 synthetic discrepancies
-of the 25 pairs, findings counted after the evidence gate):
+**Reading models and settings** (October 2026, the same 57 synthetic discrepancies in 21
+papers of the 25 pairs, findings counted after the evidence gate):
 
 | Change | Found | Findings | Cost |
 |---|---|---|---|
@@ -457,11 +457,12 @@ of the 25 pairs, findings counted after the evidence gate):
 | union of the three runs above | 21 / 57 | | about $3 |
 | a prompt that goes statement by statement and counts stated values (2 calls failed) | 13 / 57 | 32 | $0.94 |
 | Gemini 3.1 Pro Preview, priced at $2 / $12 per million tokens | 19 / 57 | 57 | $3.60 |
-| DeepSeek V4.1 Flash (Vertex partner model) | 14 / 57 | 106 | $0.33 |
-| Kimi K2 Thinking | 13 / 57 | 84 | $0.88 |
-| GLM-5 | 11 / 57 | 78 | $0.86 |
+| DeepSeek V4.1 Flash, thinking on, JSON-schema output (2 calls timed out) | 19 / 57 | 63 | about $0.65 |
+| DeepSeek V4.1 Flash, thinking off | 12 to 14 / 57 | 77 to 106 | $0.17 to $0.33 |
+| Kimi K2 Thinking, forced tool call | 13 / 57 | 84 | $0.88 |
+| GLM-5, forced tool call | 11 / 57 | 78 | $0.86 |
 | 3.5 Flash-Lite | 7 / 57 | 18 | $0.19 |
-| each sentence with only its top 3 chunks, 4 sentences a call, DeepSeek V4.1 Flash | 12 / 57 | 201 | $1.08 |
+| each sentence with only its top 3 chunks, 4 sentences a call, DeepSeek, thinking off | 12 / 57 | 201 | $1.08 |
 | the same with 3.5 Flash-Lite | 4 / 57 | 57 | $1.35 |
 
 Costs come from the spend ledger. Partner-model prices there are set above the published
@@ -469,8 +470,30 @@ rates, so their real cost is lower. MiniMax M2 returned no structured output and
 gpt-oss-120b refuses forced tool calls, so neither was scored. GLM 5.5 Flash and MiMo V2.6
 Flash are not served to this project on Vertex.
 
-- **Cheaper models.** They find fewer discrepancies and report three to four times as many
-  findings.
+DeepSeek V4.1 Flash on Vertex thinks only when `reasoning_effort` is set, and a forced tool
+call (the `function_calling` structured method) turns its thinking off. The first partner
+runs used forced tool calls with no effort set, so they measured DeepSeek without
+thinking. Kimi and GLM-5 were asked the same way and have not been run again. Partner
+models now get the call's effort as `reasoning_effort`, and should be run with
+`json_schema` output.
+
+Each finding of the two strongest cheap runs was judged by 3.8 Flash and by DeepSeek with
+thinking, given the method text, the report and the code around the cited lines:
+
+| Run | Papers with a find | Real by 3.8 Flash | Real by DeepSeek | Real by both |
+|---|---|---|---|---|
+| 3.8 Flash | 11 / 21 | 22 / 25 | 21 / 25 | 21 / 25 |
+| DeepSeek, thinking on | 14 / 21 | 37 / 63 | 54 / 63 | 35 / 63 |
+| DeepSeek, thinking off | 10 / 21 | 23 / 77 | | |
+| 3.8 Flash and DeepSeek thinking together | 15 / 21 | | | |
+
+Each judge rates its own model's findings higher, so the column to read is "real by
+both". DeepSeek with thinking finds discrepancies in more papers and gives more findings
+both judges accept (35 against 21), and 28 of its findings are disputed or wrong against 4
+for 3.8 Flash. Keeping only the DeepSeek findings 3.8 Flash calls real leaves 16 of the 57,
+so a 3.8 filter does not beat 3.8 alone. DeepSeek is also slow when it thinks: a call with
+60k characters of code took about 20 minutes, and 2 of 21 ran past the 600 s timeout.
+
 - **A stronger model.** 3.1 Pro finds 2 more than 3.8 Flash (15 found by both, 21 by
   either) for about 3.6 times the cost and more than twice the findings.
 - **Fewer chunks per sentence.** Showing each sentence only its top 3 chunks did worse than
@@ -482,8 +505,9 @@ Flash are not served to this project on Vertex.
   turn, and to count values the paper states, found fewer, even though the current prompt
   tells it to skip hyperparameter values.
 
-The gap is the reading itself, so "rag" with 3.8 Flash and 60k characters stays the
-default.
+"rag" with 3.8 Flash and 60k characters stays the default for now, for its precision and
+speed. DeepSeek with thinking is the cheaper choice when recall matters more than the
+number of findings to check.
 
 Local retrieval models, scored on changed-line hits within the 60k budget, and on whether
 the chunk holding the line is in a sentence's top 3 or top 10 when the sentence is the one
@@ -813,11 +837,12 @@ call sets its own thinking level, and the usage log records the level and the st
   | Review model | Errors found | Both judges | Reports | Cost |
   |---|---|---|---|---|
   | 3.8 Flash, 12 of 13 papers finished | 6 / 13 | 4 | 18 (6 matched) | $4.21 |
-  | DeepSeek V4.1 Flash, 12 of 13 papers | 2 / 14 | 0 | 3 (3 matched) | under $1.50 |
+  | DeepSeek V4.1 Flash, thinking off, 12 of 13 papers | 2 / 14 | 0 | 3 (3 matched) | under $1.50 |
   | Kimi K2 Thinking, cap reached after 5 papers | 1 / 7 | 0 | 6 (1 matched) | $2.51 |
 
-  The cheaper models found fewer errors, and none that the second judge accepted, so 3.8
-  Flash stays. An earlier 3.8 run with a run-wide limit of 600 model calls left 4 papers
+  Both partner models were asked through forced tool calls, which turn DeepSeek's thinking
+  off (D11), so this is not yet a fair comparison. 3.8 Flash stays until DeepSeek has been
+  run with thinking on. An earlier 3.8 run with a run-wide limit of 600 model calls left 4 papers
   unfinished and found 5 of 15; the call limit, not the model, was holding that run back.
   Long runs should set `AUDITOR_LLM_MAX_COST_USD` and leave `AUDITOR_LLM_MAX_CALLS` unset.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
