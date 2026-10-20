@@ -25,14 +25,16 @@
 \def\yr{-3.55}
 \node[out=2.6cm] (f) at (14.0,\yr) {\textbf{math error}\sub{quoted sentence,\\explanation, witness}};
 \node[llm=2.9cm] (rev) at (10.4,\yr) {\ic{\faRobot}{Review}{all of the paper's findings,\\with the whole paper}};
-\node[out=2.6cm] (kept) at (6.85,\yr) {\textbf{kept}\sub{to verify and rank}};
-\node[act=2.3cm, draw=pGreyD, fill=pGrey] (drop) at (3.35,-3.0) {\textbf{dropped}\sub{not an error}};
-\node[act=2.3cm, draw=pGreyD, fill=pGrey] (dup) at (3.35,-4.1) {\textbf{marked repeat}\sub{same as another}};
+\node[out=2.9cm] (kept) at (5.7,\yr) {\textbf{kept}\sub{to verify and rank}};
+\node[act=2.9cm, draw=pGreyD, fill=pGrey] (drop) at (5.7,\yr+1.15) {\textbf{dropped}\sub{not an error}};
+\node[act=2.9cm, draw=pGreyD, fill=pGrey] (dup) at (5.7,\yr-1.15) {\textbf{marked repeat}\sub{same as another finding}};
 \draw[ar] ($(dc.south)+(0.6,0)$) -- node[lab, right] {error found} ($(f.north)+(0.6,0)$);
 \draw[ar] (f) -- (rev);
-\draw[ar] (rev) -- node[lab, above] {error} (kept);
-\draw[ar] (rev.south) -- ++(0,-0.35) -| ($(dup.south)+(0.6,0)$) node[lab, pos=0.2, below] {same as};
-\draw[ar] (rev.north) -- ++(0,0.3) -| ($(drop.north)+(0.6,0)$) node[lab, pos=0.2, above] {not an error};
+\coordinate (sp) at (8.45,\yr);
+\draw[black!65, line width=0.6pt] (rev.west) -- (sp);
+\draw[ar] (sp) |- node[lab, right, pos=0.25] {not an error} (drop.east);
+\draw[ar] (sp) -- node[lab, above] {error} (kept.east);
+\draw[ar] (sp) |- node[lab, right, pos=0.25] {same as} (dup.east);
 
 \node[lab, anchor=north west, text width=4.6cm] at (-1.4,-1.1) {Claims the triage did not pick can get a
   cheap screen on the main model first. A paper gets at most two attempts, 30 minutes and 40 model calls.};

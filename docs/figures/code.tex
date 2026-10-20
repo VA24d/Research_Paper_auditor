@@ -22,7 +22,7 @@
 \node[lab, anchor=north] at (sl.south) {no: the candidate is dropped};
 \draw[ar] (sl) -- node[lab, above] {yes} (f1);
 \draw[ar] (cmp.north) -- ++(0,0.35) -| node[lab, above, pos=0.25] {clear mismatch} (f1.north);
-\node[lab, anchor=north, text width=3.4cm, align=center] at (cmp.south) {agree: \textit{checked}; values the\\text cannot tell apart: \textit{unverifiable}};
+\node[lab, anchor=north, text width=2.9cm, align=center] at (cmp.south) {agree: \textit{checked}; values the\\text cannot tell apart: \textit{unverifiable}};
 
 % ---- lane 2: the method
 \def\ym{-2.35}
@@ -42,7 +42,7 @@
 \node[rule=2.85cm] (gate) at (16.95,-3.75) {\ic{\faFilter}{Evidence check}{lines in a shown chunk; quote\\anchored by its first 12 words}};
 \node[out=2.85cm] (f2) at (13.5,-3.75) {\textbf{method mismatch}\sub{uncertain unless\\confidence is high}};
 \draw[ar] (disc) -- (gate);
-\draw[ar] (gate) -- node[lab, above] {kept} (f2);
+\draw[ar] (gate) -- node[lab, above, pos=0.4] {kept} (f2);
 
 % ---- lane 3: defects
 \def\yd{-4.95}
