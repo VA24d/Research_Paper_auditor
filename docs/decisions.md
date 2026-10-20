@@ -804,6 +804,19 @@ call sets its own thinking level, and the usage log records the level and the st
   four of them thought for 24k to 32k tokens, but the dev half's score stayed at 6 of 15
   errors in 5 of 13 papers (now from 11 reports, 5 matched), for $1.05 more. The cap
   stays at 16k.
+- **Deep-check model** (October 2026, SPOT dev half, two looks, Flash-Lite for the cheap
+  steps). Reported by the first judge, then by both judges:
+
+  | Review model | Errors found | Both judges | Reports | Cost |
+  |---|---|---|---|---|
+  | 3.8 Flash, 12 of 13 papers finished | 6 / 13 | 4 | 18 (6 matched) | $4.21 |
+  | DeepSeek V4.1 Flash, 12 of 13 papers | 2 / 14 | 0 | 3 (3 matched) | under $1.50 |
+  | Kimi K2 Thinking, cap reached after 5 papers | 1 / 7 | 0 | 6 (1 matched) | $2.51 |
+
+  The cheaper models found fewer errors, and none that the second judge accepted, so 3.8
+  Flash stays. An earlier 3.8 run with a run-wide limit of 600 model calls left 4 papers
+  unfinished and found 5 of 15; the call limit, not the model, was holding that run back.
+  Long runs should set `AUDITOR_LLM_MAX_COST_USD` and leave `AUDITOR_LLM_MAX_CALLS` unset.
 - **Opt-in.** Theory checks cost model calls on every formal paper, so they run only with
   `AUDITOR_THEORY_CHECK_ENABLED`, which is part of the run fingerprint. B0 and B1 learn the
   class from the class guide. B1 gets no extra tools, since the paper is already in its
