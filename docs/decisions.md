@@ -446,6 +446,54 @@ the originals: a missing landmark loader, one-layer heads where the paper says M
 concatenation that doubles a dimension the paper gives. All three look real. Showing more
 of the right code and getting the model to report what it is shown are the remaining gaps.
 
+**What did not close the reading gap** (October 2026, the same 57 synthetic discrepancies
+of the 25 pairs, findings counted after the evidence gate):
+
+| Change | Found | Findings | Cost |
+|---|---|---|---|
+| "rag", 3.8 Flash, 60k characters of code (baseline) | 17 / 57 | 25 | about $1 |
+| the same, chunks in reverse order | 16 / 57 | 24 | $0.96 |
+| the same, 120k characters (53 of 57 changed lines shown, from 43) | 16 / 57 | 27 | $1.02 |
+| union of the three runs above | 21 / 57 | | about $3 |
+| DeepSeek V4.1 Flash (Vertex partner model) | 14 / 57 | 106 | $0.33 |
+| Kimi K2 Thinking | 13 / 57 | 84 | $0.88 |
+| GLM-5 | 11 / 57 | 78 | $0.86 |
+| 3.5 Flash-Lite | 7 / 57 | 18 | $0.19 |
+| each sentence with only its top 3 chunks, 4 sentences a call, DeepSeek V4.1 Flash | 12 / 57 | 201 | $1.08 |
+| the same with 3.5 Flash-Lite | 4 / 57 | 57 | $1.35 |
+
+Costs come from the spend ledger. Partner-model prices there are set above the published
+rates, so their real cost is lower. MiniMax M2 returned no structured output and
+gpt-oss-120b refuses forced tool calls, so neither was scored. GLM 5.5 Flash and MiMo V2.6
+Flash are not served to this project on Vertex.
+
+- **Cheaper models.** They find fewer discrepancies and report three to four times as many
+  findings.
+- **Fewer chunks per sentence.** Showing each sentence only its top 3 chunks did worse than
+  one call with all the code, because the top 3 hold the changed line too rarely (below).
+- **More code.** Doubling the budget showed 10 more changed lines and found one fewer.
+- **Repeated looks.** Two or three looks with the chunks reordered add 2 to 4 discrepancies
+  and roughly double or triple the findings to check.
+
+The gap is the reading itself, so "rag" with 3.8 Flash and 60k characters stays the
+default.
+
+Local retrieval models, scored on changed-line hits within the 60k budget, and on whether
+the chunk holding the line is in a sentence's top 3 or top 10 when the sentence is the one
+the discrepancy quotes (21 such cases):
+
+| Ranker | Within budget | Top 3 | Top 10 | Time |
+|---|---|---|---|---|
+| BM25 | 48 / 84 | 5 / 21 | 8 / 21 | 1 s |
+| nomic-embed-text v1.5 (LM Studio) | 62 / 84 | 7 / 21 | 12 / 21 | 136 s |
+| bge-base-en-v1.5 | 58 / 84 | 8 / 21 | 12 / 21 | 142 s |
+| BM25 and nomic fused | 56 / 84 | 5 / 21 | 8 / 21 | 6 s |
+| nomic, top 30 reranked by ettin-reranker-1b | 57 / 84 | 10 / 21 | 15 / 21 | about 4 h |
+
+The reranker puts the right chunk nearer the top, but it takes hours on a laptop and does
+worse within the budget, so nomic stays. This benchmark builds its cases separately from
+the table above, which is why nomic scores 62 here and 59 there.
+
 ## D12. PDF parsing stack — Agreed
 
 - GROBID 0.9.1 (Docker image `grobid/grobid:0.9.1-crf`) for structure, bibliography,
