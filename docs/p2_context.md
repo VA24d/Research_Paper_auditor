@@ -272,18 +272,62 @@ top-5 covers most of a short source and containment passes trivially).
 - docs/team_plan.md updated: P2.1-P2.7 ticked; P2.8/P2.9 annotated as machinery-done,
   dataset build pending.
 
-## What is left for Anurag (needs his machine/network/say-so)
+## Session 3 (2026-10-23) — in progress
 
-1. Commit + push this branch (the session's second commit is uncommitted at report time;
-   see git status). NO merge to main, NO PR yet — his call.
-2. Build set B for real: parse 60 arXiv PDFs (GROBID), `citation_eval.py fetch` the cited
-   works' texts (network), pick pairs via `set_b.py candidates`, inject via
-   `set_b.py inject`, second-review 20% of labels (D18), `set_b.py validate`, freeze.
-3. Run the HALLMARK sanity check: `hallmark.py download` + `hallmark.py run` (network) +
-   `hallmark.py score`.
-4. Run the module eval on set B (full-text vs `AUDITOR_CITATION_ABSTRACT_ONLY=1`) and the
-   Recall@5 / tool-call-accuracy numbers.
-5. Open the PR when he is ready.
+Anurag asked for:
+1. A markdown doc explaining exactly how P2 works and is implemented, with execution flow
+   (file names), capabilities and shortcomings -> being written to `docs/p2_how_it_works.md`.
+2. An exact list of what is left for P2 and how to do it (Docker/GROBID available on his
+   machine; he authorises using it if needed).
+3. Keep this context file updated regularly.
+
+Nothing else in this session changes code; the doc is documentation only. Verification of
+facts done for the doc: read retrieval/, agents/citation/, hallmark.py, set_b.py, eval.py,
+the three scripts, config fields, planner/tasks.py (citation_candidates -> citation_tasks),
+orchestration NODE_FOR_KIND mapping (REFERENCE and CITATION both -> "citation" node),
+registry (finds `check` and `make_tools`). Also verified live: `Settings()` defaults
+(grobid_url http://localhost:8070, cache_dir data/cache), `auditor parse/batch` CLI flags,
+compose.yaml (grobid service on 127.0.0.1:8070, auditor service under the "run" profile),
+fetch_arxiv.py manifest format, datasets/parser_fixtures/arxiv_ids.txt (13 parser papers,
+not a set B pool). Test counts: 106 offline tests in tests/retrieval (39) +
+tests/agents/citation (67).
+
+## Session 3 result
+
+- `docs/p2_how_it_works.md` WRITTEN (429 lines): role in the pipeline, module map,
+  execution flows 3.1-3.9 (reference check, citation support check, B1 tools, resolution,
+  fulltext, passages, HALLMARK, set B, module eval) with file/function names,
+  configuration, 9 capabilities, 11 numbered shortcomings, and an 10-step set B build
+  guide with exact commands (docker compose up -d for GROBID, fetch_arxiv.py manifest,
+  `auditor parse` per PDF, `citation_eval.py fetch` per paper, `set_b.py
+  candidates/inject/validate`, second review, `auditor batch` full vs
+  AUDITOR_CITATION_ABSTRACT_ONLY=1, scoring/recall/tool-accuracy).
+- No code changed; docs only. The context doc and the how-it-works doc are uncommitted at
+  the time of this note (commit them as `citation: document how the citation checker
+  works`).
+
+## What is left for Anurag (updated for session 3)
+
+Code is DONE and pushed (both commits on origin/p2-citation-checker). Remaining work is
+all dataset execution + annotation, none of it code:
+
+1. Set A (HALLMARK, network only): hallmark.py download/run/score (commands in
+   docs/p2_how_it_works.md section 8 bottom). No GROBID needed.
+2. Set B build (network + GROBID + curation), the 10 steps in
+   docs/p2_how_it_works.md section 8: curate 60 arXiv ids -> fetch_arxiv.py -> `auditor
+   parse` each (docker compose up -d first) -> `citation_eval.py fetch` each -> pick ~10
+   pairs/paper via `set_b.py candidates` -> `set_b.py inject` per injection + hand-written
+   clean-control labels -> second-review 20% -> `set_b.py validate` -> build the
+   DatasetEntry JSONL (injected copies + originals).
+3. Module eval numbers: `auditor batch --systems b1` full and with
+   AUDITOR_CITATION_ABSTRACT_ONLY=1, then citation_eval.py score (both) / recall /
+   tool-accuracy.
+4. Open the PR when the numbers are in. Nothing to merge until then.
+5. Optional code improvements he may want before the PR (his call, all small):
+   scientific-notation support in extract_numbers; a code-side scan of the source text
+   for the claimed number (removes shortcoming 2); venue-normalisation for the metadata
+   comparison (removes most of shortcoming 3); pass citation_abstract_only through the
+   B1 tools (removes shortcoming 9).
 
 ## Still to do in session 2 (all done — kept for the record)
 
