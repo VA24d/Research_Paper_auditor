@@ -52,9 +52,13 @@ async def _fetch_paper(
         logger=None,  # type: ignore[arg-type]
     )
     rows: list[dict[str, object]] = []
+    number = 0
     for entry in paper.bibliography:
         if entry.id in done:
             continue
+        number += 1
+        if number % 5 == 0:
+            print(f"{paper.paper_id}: {number} fetched", flush=True)
         resolution = await resolve_entry(ctx.http, entry)
         if not resolution.found or resolution.work is None:
             rows.append(
