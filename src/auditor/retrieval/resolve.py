@@ -218,15 +218,13 @@ def _venue_variants(venue: str) -> list[str]:
     the same venue appears without them.
     """
     normal = re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", venue.strip().lower())).strip()
-    variants = {normal}
-    without_year = re.sub(r"^(19|20)\d{4}\s+", "", normal)
-    variants.add(without_year)
-    without_paren = re.sub(r"\b\w+\s*$", "", without_year).strip()
-    variants.add(without_paren)
-    without_proceedings = re.sub(r"^proceedings of the ", "", normal)
-    variants.add(without_proceedings)
-    without_proceedings = re.sub(r"^proceedings of the ", "", without_year)
-    variants.add(re.sub(r"\b\w+\s*$", "", without_proceedings).strip())
+    bases = {normal, re.sub(r"^proceedings of the ", "", normal)}
+    variants: set[str] = set()
+    for base in bases:
+        without_year = re.sub(r"^(19|20)\d{2}\s+", "", base)
+        variants.add(base)
+        variants.add(without_year)
+        variants.add(re.sub(r"\b\w+\s*$", "", without_year).strip())
     return [v for v in variants if v]
 
 
