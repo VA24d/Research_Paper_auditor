@@ -13,7 +13,7 @@
 import re
 from dataclasses import dataclass
 
-from auditor.retrieval.passages import rank_passages
+from auditor.retrieval.passages import Embedder, rank_passages
 from auditor.retrieval.resolve import titles_match
 
 _WHITESPACE = re.compile(r"\s+")
@@ -23,17 +23,25 @@ def _normalise(text: str) -> str:
     return _WHITESPACE.sub(" ", text).strip().lower()
 
 
-def recall_at_k(source_text: str, claim: str, gold_passage: str, *, k: int = 5) -> bool:
+def recall_at_k(
+    source_text: str,
+    claim: str,
+    gold_passage: str,
+    *,
+    k: int = 5,
+    embedder: Embedder | None = None,
+) -> bool:
     """Whether the gold passage's text is inside one of the top-k passages for the claim.
 
     The gold passage was cut from this same source text at build time, but the chunking
-    may differ, so the test is containment (or a majority overlap) after whitespace
-    normalisation, not exact equality.
+    may differ, so the test is containment (after whitespace normalisation), not exact
+    equality. Pass the SAME embedder the agent runs with, or the number measures a
+    different ranker than the one under test.
     """
     gold = _normalise(gold_passage)
     if not gold:
         return False
-    for passage in rank_passages(source_text, claim, top=k):
+    for passage in rank_passages(source_text, claim, top=k, embedder=embedder):
         candidate = _normalise(passage.text)
         if gold in candidate or candidate in gold:
             return True

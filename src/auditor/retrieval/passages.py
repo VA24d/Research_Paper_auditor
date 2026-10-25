@@ -6,10 +6,14 @@ system. Each passage keeps the exact `char_start`/`char_end` offsets of its text
 the source, so an Evidence quote can point at the place it came from.
 """
 
+import logging
 import math
 import re
 from dataclasses import dataclass
 from hashlib import sha256
+from typing import Protocol
+
+logger = logging.getLogger(__name__)
 
 _TOKEN = re.compile(r"[a-z0-9]+")
 
@@ -21,6 +25,19 @@ class Passage:
     text: str
     char_start: int
     char_end: int  # exclusive
+
+
+class Embedder(Protocol):
+    """A semantic ranker: cosine similarity of each chunk against a claim.
+
+    Implementations may be expensive or unavailable; `rank_passages` falls back to BM25
+    when the embedder raises or returns None, so an Embedder never has to degrade
+    gracefully itself.
+    """
+
+    def score(self, chunks: list["Passage"], claim: str) -> list[float] | None:
+        """One similarity per chunk (same order), or None when it cannot score."""
+        ...
 
 
 def chunk_text(text: str, *, size: int = 1200, overlap: int = 200) -> list[Passage]:
@@ -95,17 +112,37 @@ def _query_tokens(claim: str) -> list[str]:
 
 
 def rank_passages(
-    text: str, claim: str, *, size: int = 1200, overlap: int = 200, top: int = 5
+    text: str,
+    claim: str,
+    *,
+    size: int = 1200,
+    overlap: int = 200,
+    top: int = 5,
+    embedder: Embedder | None = None,
 ) -> list[Passage]:
     """The `top` chunks of `text` most relevant to `claim`, best first.
 
-    Deterministic: equal scores keep the text order, so the same claim and source always
-    give the same passages.
+    With `embedder`, the chunks are ranked by cosine similarity against the claim; when
+    the embedder is unavailable or fails, BM25 is used instead (logged), so the same
+    call never fails because of the ranker. Deterministic: equal scores keep the text
+    order, so the same claim and source always give the same passages.
     """
     chunks = chunk_text(text, size=size, overlap=overlap)
     if not chunks:
         return []
-    scores = _BM25(chunks).score(_query_tokens(claim))
+    scores: list[float] | None = None
+    if embedder is not None:
+        try:
+            scores = embedder.score(chunks, claim)
+        except Exception:
+            logger.warning("the embedding ranker failed; falling back to BM25", exc_info=True)
+        if scores is not None and len(scores) != len(chunks):
+            logger.warning(
+                "the embedding ranker scored %d of %d chunks; using BM25", len(scores), len(chunks)
+            )
+            scores = None
+    if scores is None:
+        scores = _BM25(chunks).score(_query_tokens(claim))
     order = sorted(range(len(chunks)), key=lambda i: (-scores[i], i))
     return [chunks[i] for i in order[:top]]
 

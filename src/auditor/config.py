@@ -217,6 +217,11 @@ class Settings(BaseSettings):
     # The abstract-only ablation (P2.4, P2.9): the citation agent never fetches a cited
     # work's full text, so it judges claims against the abstract alone.
     citation_abstract_only: bool = False
+    # How passages are ranked against a claim: "bm25" (pure Python, no model, the team's
+    # default) or "minilm" (all-MiniLM-L6-v2 as a ~23 MB quantised ONNX model on the CPU,
+    # better for paraphrases; needs the `embed` extra, `uv sync --extra embed`, and
+    # gracefully falls back to BM25 when it is not installed or the model is offline).
+    citation_embedder: Literal["bm25", "minilm"] = "bm25"
     # Check the mathematics of the paper's formal claims with the LLM (decision D21). The
     # planner lists the claims in one call and groups them into at most `theory_max_tasks`
     # tasks of `theory_batch_size` claims; each task screens its claims in one cheap call,

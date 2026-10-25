@@ -25,6 +25,12 @@ auditor = "auditor.cli:main"
 data = [
     "pyarrow>=17",
 ]
+# The optional embedding ranker for the citation agent's passage retrieval
+# (AUDITOR_CITATION_EMBEDDER=minilm); without it BM25 is used.
+embed = [
+    "onnxruntime>=1.17,<2",
+    "tokenizers>=0.15,<1",
+]
 
 [dependency-groups]
 dev = [
@@ -83,6 +89,11 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 # pyarrow is the optional `data` extra and ships no type information.
 module = ["pyarrow", "pyarrow.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# onnxruntime and tokenizers are the optional `embed` extra and ship no type information.
+module = ["onnxruntime", "onnxruntime.*", "tokenizers", "tokenizers.*", "numpy"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

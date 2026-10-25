@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from auditor.infra.context import RunContext
 from auditor.infra.llm import LLMNotConfiguredError
+from auditor.retrieval.embeddings import get_embedder
 from auditor.retrieval.fulltext import SourceLevel, SourceText
 from auditor.retrieval.passages import Passage, rank_passages
 from auditor.retrieval.resolve import Resolution
@@ -303,7 +304,12 @@ async def check_citation(
             findings=findings,
         )
 
-    passages = rank_passages(source.text, task.claim, top=TOP_PASSAGES)
+    passages = rank_passages(
+        source.text,
+        task.claim,
+        top=TOP_PASSAGES,
+        embedder=await get_embedder(ctx.settings, ctx.http),
+    )
     if not passages:
         return TaskResult.for_task(
             task,

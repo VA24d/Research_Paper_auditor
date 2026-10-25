@@ -28,7 +28,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from auditor.retrieval.passages import Passage, rank_passages
+from auditor.retrieval.passages import Embedder, Passage, rank_passages
 from auditor.schemas import (
     BibliographyAnchor,
     BibTarget,
@@ -108,10 +108,11 @@ def _label_id(paper_id: str, kind: InjectionKind, bib_id: str, detail: str) -> s
     return f"b-{digest[:12]}"
 
 
-def gold_passage_for(source_text: str, claim: str) -> Passage:
+def gold_passage_for(source_text: str, claim: str, embedder: Embedder | None = None) -> Passage:
     """The passage of the cited work's text the claim rests on: the best-ranked passage
-    for the original (uninjected) claim. Stored with the label for Recall@5."""
-    passages = rank_passages(source_text, claim, top=1)
+    for the original (uninjected) claim. Stored with the label for Recall@5. Pass the
+    SAME embedder the agent will run with, so the gold and the agent's ranking agree."""
+    passages = rank_passages(source_text, claim, top=1, embedder=embedder)
     if not passages:
         raise ValueError("the source text has no passages to rank")
     return passages[0]

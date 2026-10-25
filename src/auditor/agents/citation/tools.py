@@ -11,6 +11,7 @@ from langchain_core.tools import BaseTool
 
 from auditor.infra.context import RunContext
 from auditor.infra.tools import tracked_tool
+from auditor.retrieval.embeddings import get_embedder
 from auditor.retrieval.fulltext import SourceLevel, retrieve_source
 from auditor.retrieval.passages import rank_passages
 from auditor.retrieval.resolve import Resolution, resolve_entry
@@ -96,7 +97,9 @@ async def find_supporting_passages(
     )
     if source.level is SourceLevel.NONE or not source.text:
         return f"No text of the cited work was available ({source.reason})."
-    passages = rank_passages(source.text, claim)
+    passages = rank_passages(
+        source.text, claim, embedder=await get_embedder(ctx.settings, ctx.http)
+    )
     if not passages:
         return "The retrieved text has no passages to judge the claim against."
     block = "\n\n".join(
