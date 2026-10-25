@@ -76,6 +76,168 @@ def first_surname(author: str) -> str:
     return parts[-1].strip().lower() if parts else ""
 
 
+# Venue spellings that name the same venue. An index usually gives the proceedings' full
+# name and a bibliography its short name, so an exact comparison would report a mismatch
+# that is not one. Keys are the group's ids; every value lists acceptable spellings.
+_VENUE_GROUPS: tuple[tuple[str, frozenset[str]], ...] = (
+    (
+        "neurips",
+        frozenset(
+            {
+                "neurips",
+                "nips",
+                "neural information processing systems",
+                "advances in neural information processing systems",
+                "conference on neural information processing systems",
+                "advances in neural information processing systems 2026",
+            }
+        ),
+    ),
+    ("icml", frozenset({"icml", "international conference on machine learning"})),
+    ("iclr", frozenset({"iclr", "international conference on learning representations"})),
+    (
+        "cvpr",
+        frozenset(
+            {
+                "cvpr",
+                "computer vision and pattern recognition",
+                "ieee conference on computer vision and pattern recognition",
+                "ieee cvf conference on computer vision and pattern recognition",
+                "cvf conference on computer vision and pattern recognition",
+            }
+        ),
+    ),
+    (
+        "iccv",
+        frozenset(
+            {
+                "iccv",
+                "international conference on computer vision",
+                "ieee international conference on computer vision",
+                "ieee cvf international conference on computer vision",
+            }
+        ),
+    ),
+    ("eccv", frozenset({"eccv", "european conference on computer vision"})),
+    (
+        "acl",
+        frozenset(
+            {
+                "acl",
+                "annual meeting of the association for computational linguistics",
+                "meeting of the association for computational linguistics",
+                "association for computational linguistics",
+            }
+        ),
+    ),
+    (
+        "emnlp",
+        frozenset(
+            {
+                "emnlp",
+                "empirical methods in natural language processing",
+                "conference on empirical methods in natural language processing",
+                "empirical methods in natural language processing (emnlp)",
+            }
+        ),
+    ),
+    (
+        "naacl",
+        frozenset(
+            {
+                "naacl",
+                "north american chapter of the association for computational linguistics",
+                "conference of the north american chapter of the association for "
+                "computational linguistics",
+                "human language technologies",
+                "conference on human language technologies",
+            }
+        ),
+    ),
+    ("aaai", frozenset({"aaai", "aaai conference on artificial intelligence"})),
+    ("ijcai", frozenset({"ijcai", "international joint conference on artificial intelligence"})),
+    (
+        "kdd",
+        frozenset(
+            {
+                "kdd",
+                "knowledge discovery and data mining",
+                "acm sigkdd international conference on knowledge discovery and data mining",
+                "acm sigkdd conference on knowledge discovery and data mining",
+            }
+        ),
+    ),
+    ("jmlr", frozenset({"jmlr", "journal of machine learning research"})),
+    ("tmlr", frozenset({"tmlr", "transactions on machine learning research"})),
+    ("icra", frozenset({"icra", "international conference on robotics and automation"})),
+    (
+        "interspeech",
+        frozenset(
+            {"interspeech", "conference of the international speech communication association"}
+        ),
+    ),
+)
+
+_VENUE_STOPWORDS = frozenset(
+    [
+        "conference",
+        "international",
+        "proceedings",
+        "annual",
+        "the",
+        "of",
+        "on",
+        "and",
+        "for",
+        "in",
+        "journal",
+        "transactions",
+        "ieee",
+        "cvf",
+        "acm",
+        "sigkdd",
+        "meeting",
+        "chapter",
+        "north",
+        "american",
+        "european",
+    ]
+)
+
+
+def _venue_tokens(venue: str) -> frozenset[str]:
+    words = re.findall(r"[a-z0-9]+", venue.lower())
+    return frozenset(w for w in words if w not in _VENUE_STOPWORDS and len(w) > 1)
+
+
+def venues_match(a: str | None, b: str | None) -> bool:
+    """Whether two venue strings name the same venue.
+
+    Exact after normalisation, membership in a shared alias group (an index gives the
+    proceedings' full name, a bibliography the short one), or token containment (each
+    side keeps at least three content words, so "empirical methods natural language
+    processing" matches "conference on empirical methods in natural language
+    processing" without matching a different conference).
+    """
+    if not a or not b:
+        return False
+
+    def normalise(venue: str) -> str:
+        return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", venue.strip().lower())).strip()
+
+    normal_a, normal_b = normalise(a), normalise(b)
+    if normal_a == normal_b:
+        return True
+    groups_a = {name for name, spellings in _VENUE_GROUPS if normal_a in spellings}
+    groups_b = {name for name, spellings in _VENUE_GROUPS if normal_b in spellings}
+    if groups_a & groups_b:
+        return True
+    tokens_a, tokens_b = _venue_tokens(normal_a), _venue_tokens(normal_b)
+    if len(tokens_a) < 3 or len(tokens_b) < 3:
+        return False
+    return tokens_a <= tokens_b or tokens_b <= tokens_a
+
+
 @dataclass(frozen=True)
 class Resolution:
     """The outcome of resolving one reference."""

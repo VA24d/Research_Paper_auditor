@@ -8,7 +8,7 @@ different work is a `reference_metadata_mismatch` finding.
 
 from auditor.infra.context import RunContext
 from auditor.retrieval.clients import Work
-from auditor.retrieval.resolve import Resolution, titles_match
+from auditor.retrieval.resolve import Resolution, titles_match, venues_match
 from auditor.schemas import (
     AuditTask,
     BibEntry,
@@ -49,7 +49,7 @@ def _metadata_findings(task: AuditTask, entry: BibEntry, work: Work) -> list[Can
         problems.append(f"title: the entry says '{entry.title}', the index says '{work.title}'")
     if entry.year and work.year and entry.year != work.year:
         problems.append(f"year: the entry says {entry.year}, the index says {work.year}")
-    if entry.venue and work.venue and entry.venue.lower() != work.venue.lower():
+    if entry.venue and work.venue and not venues_match(entry.venue, work.venue):
         problems.append(f"venue: the entry says '{entry.venue}', the index says '{work.venue}'")
 
     if not problems:

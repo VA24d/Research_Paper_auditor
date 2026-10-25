@@ -1,5 +1,6 @@
 """Offline tests for the citation tools for B1 (P2.6): canned API replies, no network."""
 
+import dataclasses
 import json
 from pathlib import Path
 
@@ -125,3 +126,56 @@ async def test_tool_calls_are_counted(tmp_path: Path) -> None:
     with enter_scope(Scope(run_id="r", usage=usage)):
         await tools["lookup_reference"].ainvoke({"entry_json": ENTRY.model_dump_json()})
     assert [record.tool for record in usage.tool_calls] == ["lookup_reference"]
+
+
+ARXIV_ENTRY = BibEntry(
+    id="b0",
+    raw="Vaswani et al. Attention is all you need. NeurIPS 2017.",
+    title="Attention Is All You Need",
+    authors=("Ashish Vaswani",),
+    year=2017,
+    arxiv_id="1706.03762",
+)
+
+ARXIV_ROUTES = {
+    "export.arxiv.org": httpx.Response(
+        200,
+        text=(
+            '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'
+            "<entry><id>http://arxiv.org/abs/1706.03762</id>"
+            "<title>Attention Is All You Need</title>"
+            "<summary>The dominant sequence models are based on recurrence.</summary>"
+            "<author><name>Ashish Vaswani</name></author>"
+            "<published>2017-06-12T00:00:00Z</published></entry></feed>"
+        ),
+    ),
+    "arxiv.org/html/1706.03762": httpx.Response(
+        200,
+        text="<html><body><p>"
+        + "Self-attention replaces recurrence entirely. " * 80
+        + "</p></body></html>",
+    ),
+}
+
+
+async def test_the_abstract_only_setting_reaches_the_tools(tmp_path: Path) -> None:
+    """The tools follow the setting unless the call passes its own value (shortcoming 9)."""
+    base = context(tmp_path, ARXIV_ROUTES)
+    settings = base.settings.model_copy(update={"citation_abstract_only": True})
+    ctx = dataclasses.replace(base, settings=settings)
+    text = await tools_by_name(ctx)["retrieve_cited_text"].ainvoke(
+        {"entry_json": ARXIV_ENTRY.model_dump_json()}
+    )
+    assert text.startswith("source level: abstract")
+
+    # An explicit argument overrides the setting, both ways.
+    full = await tools_by_name(ctx)["retrieve_cited_text"].ainvoke(
+        {"entry_json": ARXIV_ENTRY.model_dump_json(), "abstract_only": False}
+    )
+    assert full.startswith("source level: full_html")
+
+    default_ctx = context(tmp_path, ARXIV_ROUTES)
+    text = await tools_by_name(default_ctx)["retrieve_cited_text"].ainvoke(
+        {"entry_json": ARXIV_ENTRY.model_dump_json()}
+    )
+    assert text.startswith("source level: full_html")

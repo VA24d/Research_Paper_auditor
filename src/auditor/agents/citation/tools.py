@@ -58,13 +58,20 @@ async def lookup_reference(ctx: RunContext, entry: BibEntry) -> str:
 
 
 @tracked_tool()
-async def retrieve_cited_text(ctx: RunContext, entry: BibEntry, abstract_only: bool = False) -> str:
+async def retrieve_cited_text(
+    ctx: RunContext, entry: BibEntry, abstract_only: bool | None = None
+) -> str:
     """The text of the work an entry cites, at the best level available."""
     resolution = await resolve_entry(ctx.http, entry)
     if not resolution.found or resolution.work is None:
         return f"Could not resolve the reference: {resolution.reason}"
     source = await retrieve_source(
-        ctx.http, resolution.work, ctx.settings, abstract_only=abstract_only
+        ctx.http,
+        resolution.work,
+        ctx.settings,
+        abstract_only=(
+            ctx.settings.citation_abstract_only if abstract_only is None else abstract_only
+        ),
     )
     if source.level is SourceLevel.NONE or not source.text:
         return f"No text of the cited work was available ({source.reason})."
@@ -73,14 +80,19 @@ async def retrieve_cited_text(ctx: RunContext, entry: BibEntry, abstract_only: b
 
 @tracked_tool()
 async def find_supporting_passages(
-    ctx: RunContext, entry: BibEntry, claim: str, abstract_only: bool = False
+    ctx: RunContext, entry: BibEntry, claim: str, abstract_only: bool | None = None
 ) -> str:
     """The passages of a cited work's text most relevant to a claim."""
     resolution = await resolve_entry(ctx.http, entry)
     if not resolution.found or resolution.work is None:
         return f"Could not resolve the reference: {resolution.reason}"
     source = await retrieve_source(
-        ctx.http, resolution.work, ctx.settings, abstract_only=abstract_only
+        ctx.http,
+        resolution.work,
+        ctx.settings,
+        abstract_only=(
+            ctx.settings.citation_abstract_only if abstract_only is None else abstract_only
+        ),
     )
     if source.level is SourceLevel.NONE or not source.text:
         return f"No text of the cited work was available ({source.reason})."
@@ -100,12 +112,12 @@ def make_tools(ctx: RunContext) -> list[BaseTool]:
     async def lookup(entry_json: str) -> str:
         return await lookup_reference(ctx, BibEntry.model_validate_json(entry_json))
 
-    async def retrieve(entry_json: str, abstract_only: bool = False) -> str:
+    async def retrieve(entry_json: str, abstract_only: bool | None = None) -> str:
         return await retrieve_cited_text(
             ctx, BibEntry.model_validate_json(entry_json), abstract_only=abstract_only
         )
 
-    async def passages(entry_json: str, claim: str, abstract_only: bool = False) -> str:
+    async def passages(entry_json: str, claim: str, abstract_only: bool | None = None) -> str:
         return await find_supporting_passages(
             ctx, BibEntry.model_validate_json(entry_json), claim, abstract_only=abstract_only
         )

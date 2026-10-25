@@ -86,11 +86,16 @@ class SupportAnswer(BaseModel):
     )
 
 
-_NUMBER = re.compile(r"(?<![\w.])(?:\d+\.\d+|\d+)(?![\w])")
+_NUMBER = re.compile(r"(?<![\w.])(?:\d+\.\d+|\d+)(?:[eE][+-]?\d+)?(?![\w])")
 
 
 def extract_numbers(text: str) -> list[str]:
-    """The plain numbers a claim states, as written (percentages and units kept out)."""
+    """The plain numbers a claim or a source states, as written.
+
+    Scientific notation is kept whole (`3e-4`, `1.5e10`); percentages and units stay
+    attached to the number (`92.1%` -> `92.1`). Sections ("section 3.2") are numbers
+    too; the value comparison decides whether one matters.
+    """
     return _NUMBER.findall(text)
 
 
@@ -182,6 +187,27 @@ def _evidence_for(
     return (lookup, cited)
 
 
+def _scan_confident(claimed: str) -> bool:
+    """Whether `claimed` is specific enough to scan the source text for.
+
+    A specific number is one with a decimal point or at least three digits ("92.1",
+    "100,000"); a bare small number ("3", "4x") is often a derived quantity ("4x fewer
+    parameters") the source states in another form, so scanning for it would produce
+    false mismatches.
+    """
+    digits = claimed.replace(",", "").replace(".", "").strip("% ")
+    return "." in claimed or len(digits) >= 3
+
+
+def _source_states(source_text: str, claimed: str) -> bool:
+    """Whether any number the claim states appears (by value) in the source's text."""
+    source_values = extract_numbers(source_text)
+    return any(
+        any(numbers_agree(number, stated) for stated in source_values)
+        for number in extract_numbers(claimed)
+    )
+
+
 def _number_check(
     task: AuditTask,
     resolution: Resolution,
@@ -192,23 +218,51 @@ def _number_check(
 
     The code-side value comparison decides, not the model's `agrees` hint: a model that
     says the values agree when they do not is exactly the failure this check exists for.
-    A number the model could not find in the source is not confirmed either way, so it
-    makes no finding here.
+    When the model gives no value (`found` empty) and the source is a FULL text, the
+    code scans the text itself: a specific number the claim attributes to the work that
+    the work's text nowhere states is a mismatch. Against an abstract-only source no
+    scan is made (the number may be in the unread full text).
     """
-    if not check.found:
+    if check.found:
+        if not numbers_agree(check.claimed, check.found):
+            return _mismatch_finding(
+                task,
+                resolution,
+                source,
+                check,
+                f"The claim gives '{check.claimed}' but the cited work's text gives "
+                f"'{check.found}'",
+            )
         return None
-    if not numbers_agree(check.claimed, check.found):
-        return CandidateFinding.for_task(
+    if source.level not in (SourceLevel.FULL_HTML, SourceLevel.FULL_PDF):
+        return None
+    if _scan_confident(check.claimed) and not _source_states(source.text, check.claimed):
+        return _mismatch_finding(
             task,
-            0,
-            error_class=ErrorClass.CLAIM_NUMBER_MISMATCH,
-            summary=(
-                f"The claim gives '{check.claimed}' but the cited work's text gives '{check.found}'"
-            ),
-            explanation=check.quote,
-            evidence=_evidence_for(task, resolution, source, check.quote),
+            resolution,
+            source,
+            check,
+            f"The claim gives '{check.claimed}' for the cited work, but the work's full "
+            "text nowhere states a matching number",
         )
     return None
+
+
+def _mismatch_finding(
+    task: AuditTask,
+    resolution: Resolution,
+    source: SourceText,
+    check: NumberCheck,
+    summary: str,
+) -> CandidateFinding:
+    return CandidateFinding.for_task(
+        task,
+        0,
+        error_class=ErrorClass.CLAIM_NUMBER_MISMATCH,
+        summary=summary,
+        explanation=check.quote,
+        evidence=_evidence_for(task, resolution, source, check.quote),
+    )
 
 
 async def check_citation(

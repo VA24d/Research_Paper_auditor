@@ -71,15 +71,16 @@ def llm_with(reply: SupportAnswer) -> StructuredLLM:
 
 
 def test_extract_numbers_finds_plain_numbers_only() -> None:
-    # Scientific notation is not handled: `3e-4` gives the digits 3 and 4 separately.
+    # Scientific notation stays whole; percentages and units keep the numeric part.
     assert extract_numbers("accuracy of 92.1% on 12,500 examples (3e-4 lr)") == [
         "92.1",
         "12",
         "500",
-        "4",
+        "3e-4",
     ]
     assert extract_numbers("no numbers here") == []
     assert extract_numbers("section 3.2 and table 4") == ["3.2", "4"]
+    assert extract_numbers("a 1.5e10 parameter model with 1e-3 lr") == ["1.5e10", "1e-3"]
 
 
 def test_numbers_agree_by_value_with_tolerance() -> None:
@@ -122,6 +123,66 @@ async def test_contradicted_claim_is_a_finding_with_a_verbatim_quote(tmp_path: P
     assert quote.char_start is not None
     assert quote.char_end is not None
     assert SOURCE_TEXT[quote.char_start : quote.char_end] == CONTRA_QUOTE
+
+
+async def test_a_number_nowhere_in_a_full_text_is_a_mismatch(tmp_path: Path) -> None:
+    """The code scans the full text itself when the model found nothing (known issue 6)."""
+    numbers = [NumberCheck(claimed="28.4", found=None, quote="", agrees=True)]
+    task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
+    other = SourceText(
+        work=WORK,
+        level=SourceLevel.FULL_HTML,
+        text="The model attains an error rate of 2.7 percent on the translation tasks. " * 40,
+    )
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        other,  # a full text that nowhere states 28.4
+    )
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.CLAIM_NUMBER_MISMATCH
+    assert "nowhere states" in finding.summary
+
+
+async def test_a_number_stated_by_the_source_makes_no_finding(tmp_path: Path) -> None:
+    numbers = [
+        NumberCheck(claimed="28.4 BLEU", found=None, quote="", agrees=True),
+    ]
+    task = citation_task("The Transformer reaches 28.4 BLEU. [1]")
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        source(),  # the full text states 28.4 BLEU
+    )
+    assert result.findings == ()
+
+
+async def test_the_source_scan_is_not_run_against_an_abstract(tmp_path: Path) -> None:
+    """The number may live in the full text an abstract-only source does not hold."""
+    numbers = [NumberCheck(claimed="28.4", found=None, quote="", agrees=True)]
+    task = citation_task("The Transformer reaches 28.4 BLEU. [1]")
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        source(level=SourceLevel.ABSTRACT),
+    )
+    assert result.findings == ()
+
+
+async def test_a_derived_small_number_is_not_scanned(tmp_path: Path) -> None:
+    """`4x fewer parameters` states a derived quantity; scanning would misfire."""
+    numbers = [NumberCheck(claimed="4", found=None, quote="", agrees=True)]
+    task = citation_task("The model has 4x fewer parameters. [1]")
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        source(),  # the text has no bare "4"
+    )
+    assert result.findings == ()
 
 
 async def test_a_quote_not_in_the_source_keeps_no_offsets(tmp_path: Path) -> None:

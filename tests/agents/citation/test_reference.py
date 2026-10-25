@@ -92,6 +92,33 @@ async def test_metadata_that_the_index_does_not_give_is_not_a_mismatch(tmp_path:
     assert result.findings == ()
 
 
+async def test_a_venue_alias_is_not_a_mismatch(tmp_path: Path) -> None:
+    work = dataclasses.replace(
+        MATCHING_WORK, venue="Annual Meeting of the Association for Computational Linguistics"
+    )
+    entry_with_short_venue = example_paper().model_copy(
+        update={
+            "bibliography": tuple(
+                b.model_copy(update={"venue": "ACL"}) if b.id == "b1" else b
+                for b in example_paper().bibliography
+            )
+        }
+    )
+    task = AuditTask.create(
+        paper_id=entry_with_short_venue.paper_id,
+        variant=entry_with_short_venue.variant,
+        kind=TaskKind.REFERENCE,
+        anchor=BibliographyAnchor(bib_id="b1"),
+        target=BibTarget(bib_id="b1"),
+    )
+    result = await check_reference(
+        task,
+        offline_context(tmp_path, paper=entry_with_short_venue),
+        Resolution(work=work, queries=(("q", "found"),)),
+    )
+    assert result.findings == ()
+
+
 async def test_an_entry_missing_from_the_paper_is_unverifiable(tmp_path: Path) -> None:
     paper = example_paper()
     without_b1 = ParsedPaper.model_validate(

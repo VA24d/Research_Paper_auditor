@@ -14,6 +14,7 @@ from auditor.retrieval.resolve import (
     resolve_marker,
     title_tokens,
     titles_match,
+    venues_match,
 )
 from auditor.schemas import BibEntry
 
@@ -52,6 +53,24 @@ def api_client(tmp_path: Path, routes: dict[str, httpx.Response]) -> HttpClient:
 
     settings = Settings(cache_dir=tmp_path / "cache")
     return HttpClient(settings, transport=httpx.MockTransport(handler), sleep=_no_sleep)
+
+
+def test_venues_match_normalises_proceedings_names() -> None:
+    assert venues_match("NeurIPS", "Advances in Neural Information Processing Systems")
+    assert venues_match("NIPS", "NeurIPS")
+    assert venues_match("EMNLP", "Conference on Empirical Methods in Natural Language Processing")
+    assert venues_match("CVPR", "IEEE/CVF Conference on Computer Vision and Pattern Recognition")
+    assert venues_match("JMLR", "Journal of Machine Learning Research")
+    assert venues_match(
+        "empirical methods natural language processing",
+        "conference on empirical methods in natural language processing",
+    )
+    assert venues_match(None, "NeurIPS") is False
+    assert venues_match("NeurIPS", None) is False
+    # Different venues never match, however similar the wording.
+    assert not venues_match("ICML", "International Conference on Learning Representations")
+    assert not venues_match("NeurIPS", "ICLR")
+    assert not venues_match("ACL", "EMNLP")
 
 
 def test_titles_match_ignores_case_punctuation_and_stopwords() -> None:

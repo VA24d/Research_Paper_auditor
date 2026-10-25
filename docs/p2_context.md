@@ -272,7 +272,45 @@ top-5 covers most of a short source and containment passes trivially).
 - docs/team_plan.md updated: P2.1-P2.7 ticked; P2.8/P2.9 annotated as machinery-done,
   dataset build pending.
 
-## Session 3 (2026-10-23) — in progress
+## Session 4 (2026-10-25) — in progress
+
+Anurag authorised: implement the small fixes, build BOTH datasets (network + Docker OK),
+pick the 60 set B papers myself (full leeway), run tests, record results/observations in
+this file, commit and push (NO PR, NO merge). He also asked whether a small embedding
+model can replace BM25 for retrieval (answer below).
+
+Plan (in order, context updated before and after each block):
+1. FIXES (each with tests, ruff+mypy+pytest green, then commit):
+   a. `extract_numbers` reads scientific notation (3e-4 -> one number "3e-4").
+   b. `_number_check`: code-side scan of the source text for the claimed number when the
+      model gives found=None; a value present in the source that disagrees with the claim
+      now yields CLAIM_NUMBER_MISMATCH without trusting the model.
+   c. venue normalisation in reference metadata comparison (common aliases: conference
+      full names vs short names; "Transactions on ..." vs "TMLR"-style abbreviations kept
+      simple: a shared-token/abbreviation table).
+   d. B1 tools read `citation_abstract_only` by default (per-call arg still overrides).
+2. EMBEDDING RETRIEVER (opt-in, default stays BM25 per team decision P2.4):
+   `auditor.retrieval.embeddings.MiniLMEmbedder` — quantised ONNX all-MiniLM-L6-v2
+   (~23 MB, CPU, onnxruntime + tokenizers as an optional extra `embed`), model downloaded
+   through the allowlisted HF host and cached under cache_dir/embeddings; Settings field
+   `citation_embedder: "bm25"|"minilm"`; rank_passages/gold_passage_for/recall_at_k take
+   an optional embedder so the gold passage and the agent's ranking always use the SAME
+   ranker; graceful fallback to BM25 when the extra is not installed or the model is
+   unavailable (logged, never raises).
+3. SET A: hallmark download -> run (background, network) -> score; results recorded here.
+4. SET B (the long pole, run in background jobs, resumable, cache makes re-runs cheap):
+   curate 60 arXiv ids (arXiv API, cs.LG/cs.CL recent, deterministic) -> commit manifest to
+   datasets/set_b/arxiv_ids.txt -> docker compose up -d (GROBID) -> fetch_arxiv.py ->
+   `auditor parse` each -> `citation_eval.py fetch` each (also fix the sources keying to
+   (paper_id, bib_id) first — the per-paper file has one line per ENTRY) -> deterministic
+   pair picking + injections via new machinery in set_b.py (number perturbations,
+   direction-swap claim rewrites, metadata edits, not_found fabrications with build-time
+   network verification; clean controls sampled) -> validate -> dataset.jsonl.
+5. Test runs + full suite; record results/observations/failures here. Commit + push.
+   The LLM-consuming `auditor batch` eval runs are NOT part of this session unless keys
+   turn out to be configured and cheap; the dataset build itself needs no LLM.
+
+## Session 3 (2026-10-23) — done
 
 Anurag asked for:
 1. A markdown doc explaining exactly how P2 works and is implemented, with execution flow
