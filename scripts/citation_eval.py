@@ -46,9 +46,34 @@ def _sources(folder: Path) -> dict[tuple[str, str], str]:
     return sources
 
 
+def _original_claim(record: InjectionRecord, originals: Path) -> str | None:
+    """The claim sentence as it stood before the injection.
+
+    A number injection's `original` is only the number span; the sentence is rebuilt
+    from the kept original paper (papers/original/<id>.json) with the original value
+    spliced back in.
+    """
+    from auditor.schemas import ParsedPaper
+
+    if record.sentence_id is None:
+        return None
+    path = originals / f"{record.paper_id}.json"
+    if not path.exists():
+        return None
+    paper = ParsedPaper.model_validate_json(path.read_bytes())
+    try:
+        text = paper.sentence(record.sentence_id).text
+    except KeyError:
+        return None
+    if record.start is None or record.end is None:
+        return text
+    return text[: record.start] + record.original + text[record.end :]
+
+
 def _recall(args: argparse.Namespace) -> int:
     records = read_jsonl(args.injections, InjectionRecord)
     sources = _sources(args.sources)
+    originals = args.originals
     hits = misses = no_passage = 0
     for record in records:
         if not record.gold_passage:
@@ -58,7 +83,10 @@ def _recall(args: argparse.Namespace) -> int:
         if source_text is None:
             print(f"{record.label_id}: no recorded source text", file=sys.stderr)
             continue
-        claim = record.original  # the claim as it stood before the injection
+        claim = _original_claim(record, originals)
+        if claim is None:
+            print(f"{record.label_id}: no original claim", file=sys.stderr)
+            continue
         if recall_at_k(source_text, claim, record.gold_passage, k=args.k):
             hits += 1
         else:
@@ -180,6 +208,7 @@ def main() -> int:
     recall = commands.add_parser("recall", help="Recall@k of the gold passages (offline)")
     recall.add_argument("--injections", type=Path, required=True)
     recall.add_argument("--sources", type=Path, required=True)
+    recall.add_argument("--originals", type=Path, default=Path("datasets/set_b/papers/original"))
     recall.add_argument("--k", type=int, default=5)
     recall.set_defaults(func=_recall)
 

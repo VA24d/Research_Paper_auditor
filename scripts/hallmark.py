@@ -60,9 +60,7 @@ async def _run(args: argparse.Namespace) -> int:
     total = len([e for e in entries if e.bibtex_key not in done])
     async with HttpClient(settings) as http:
         ctx = RunContext(settings=settings, paper=None, http=http, llm=None, logger=None)  # type: ignore[arg-type]
-        for number, entry in enumerate(
-            [e for e in entries if e.bibtex_key not in done], start=1
-        ):
+        for number, entry in enumerate([e for e in entries if e.bibtex_key not in done], start=1):
             try:
                 result = await check_entry(ctx, entry)
             except Exception as exc:

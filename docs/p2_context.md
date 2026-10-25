@@ -344,7 +344,57 @@ Plan (in order, context updated before and after each block):
 - Answer to Anurag's question: yes — implemented opt-in; BM25 stays the default (team
   decision P2.4), MiniLM helps on paraphrases, ~23 MB + CPU-only, graceful fallback.
 
-Next: SET A (hallmark download/run/score in background), then SET B build.
+## Session 4 progress 2 (build machinery + pipeline started)
+
+- COMMITTED `9e1dbdd citation: set B build driver (propose, verify, inject) and per-entry
+  source keying`:
+  - sources are keyed (paper_id, bib_id) everywhere (validate + scripts) — the per-paper
+    fetch file has one line per ENTRY, so per-paper keying silently lost all but the last
+    entry's text.
+  - set_b.py machinery: `swap_direction` (15 direction-word pairs), `perturb_number`
+    (+-15-35%, same decimals), `Proposal`, `propose(paper, sources, pairs, controls, rng)`
+    — deterministic round-robin over number/claim/metadata/not_found queues; number pairs
+    need a specific number the source also states; claim swaps need a direction word;
+    clean controls sampled from the verified pairs. 4 new tests (18 total in test_set_b).
+  - `scripts/set_b_build.py`: the one-pass driver — propose -> VERIFY (perturbed value
+    must not be stated by the source; the source must state the claim's original
+    direction word; metadata edits must disagree with the work the index resolves;
+    fabricated titles must resolve to nothing) -> inject -> append labels/records ->
+    write injected paper + copy the original to <out>/papers/original/ (D14).
+  - `scripts/hallmark.py run` is now resumable: checkpoints every 25 entries and skips
+    already-checked keys on rerun.
+- Verified live: 1157 passed + ruff + mypy strict clean after each commit.
+
+PIPELINE STATE (background jobs):
+- Set A: data/hallmark/test_public.jsonl downloaded (831 entries: 524 HALLUCINATED, 307
+  VALID). Foreground smoke run of 10 entries: 69 s (~7 s/entry -> ~96 min for all),
+  results sane (fabricated dois/titles flagged). FULL RUN started in background
+  (PID 31592), resumable, checkpoint every 25.
+- Docker: daemon was down; started Docker Desktop, engine up (28.2.2), `docker compose
+  up -d` pulling GROBID in background (PID 23376).
+- Set B: manifest COMMITTED at datasets/set_b/arxiv_ids.txt — 60 arXiv ids picked
+  deterministically (cs.LG+cs.CL submitted Jan-Mar 2025, first 60 by submission date).
+  PDF downloads running in background (PID 2920, ~3 min).
+## Session 4 progress 3 (pipeline hiccups fixed)
+
+- HALLMARK run crashed twice: first (PID 31592/9840) on a transient S2 ConnectError that
+  killed the process (no per-entry tolerance), then relaunched before the fix landed.
+  Fix: `scripts/hallmark.py _run` catches ANY per-entry exception -> Flag.UNVERIFIABLE
+  with the reason, run continues; checkpoint every 25 entries. Relaunched as PID 27816
+  with the fixed code (831 entries, ~7-10 s each, ~90-120 min). At last check 85 done.
+- Parse loop first failed on EVERY pdf: `parser/layout_tables.py` (Part 1's module)
+  calls `pdftotext -enc UTF-8 ... capture_output=True, text=True` WITHOUT an encoding —
+  on Windows `text=True` decodes with the locale (cp1252), the reader thread dies on
+  UTF-8 bytes and `stdout` becomes None -> AttributeError at `done.stdout.strip()`
+  (decision D1 says a missing pdftotext should degrade, and pdftotext IS installed here
+  via MiKTeX). Fix (one-liner, cross-part bugfix, flagged for Bhaskar):
+  `encoding="utf-8", errors="replace"` in the subprocess.run call. Parser tests: 87
+  passed. Verified: 2501.00712 parsed (31 pages, 908 sentences, 120 references,
+  165/174 markers linked, 19 tables). Parse loop relaunched (PID 11764).
+- PDFs: all 60 downloaded to data/papers/. GROBID container running.
+- LLM check: NO .env file exists -> `auditor batch` (b1) eval runs and the support
+  judgement need AUDITOR_LLM_PROVIDER/MODEL; they are NOT runnable this session. The
+  dataset build needs no LLM.
 
 ## Session 3 (2026-10-23) — done
 

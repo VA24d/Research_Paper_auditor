@@ -26,7 +26,13 @@ from auditor.schemas import ParsedPaper
 
 
 async def _fetch_paper(
-    paper_path: Path, out_dir: Path, http: HttpClient, grobid: GrobidClient, settings: Settings
+    paper_path: Path,
+    out_dir: Path,
+    http: HttpClient,
+    grobid: GrobidClient,
+    settings: Settings,
+    *,
+    with_pdf: bool,
 ) -> tuple[str, int, int]:
     paper = ParsedPaper.model_validate_json(
         await asyncio.to_thread(paper_path.read_bytes)
@@ -60,7 +66,15 @@ async def _fetch_paper(
                 }
             )
             continue
-        source = await retrieve_source(ctx.http, resolution.work, settings, grobid=grobid)
+        if not with_pdf and resolution.work.pdf_url is not None:
+            # The PDF level downloads and GROBID-parses the whole PDF, far too slow for
+            # a build; HTML and the abstract cover most arXiv works. Recorded as-is.
+            work = resolution.work.__class__(**{**resolution.work.__dict__, "pdf_url": None})
+            source = await retrieve_source(ctx.http, work, settings, grobid=grobid)
+        else:
+            source = await retrieve_source(
+                ctx.http, resolution.work, settings, grobid=grobid
+            )
         rows.append(
             {
                 "paper_id": paper.paper_id,
@@ -87,7 +101,7 @@ async def _main(args: argparse.Namespace) -> int:
         async def one(paper_path: Path) -> None:
             async with gate:
                 paper_id, new, done = await _fetch_paper(
-                    paper_path, out_dir, http, grobid, settings
+                    paper_path, out_dir, http, grobid, settings, with_pdf=args.with_pdf
                 )
                 print(f"{paper_id}: {new} new, {done} skipped", flush=True)
 
@@ -104,6 +118,11 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--concurrency", type=int, default=3)
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument(
+        "--with-pdf",
+        action="store_true",
+        help="also try the PDF level (slow: full download + GROBID parse per work)",
+    )
     args = parser.parse_args()
     return asyncio.run(_main(args))
 
