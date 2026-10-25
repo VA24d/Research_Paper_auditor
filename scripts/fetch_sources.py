@@ -34,9 +34,7 @@ async def _fetch_paper(
     *,
     with_pdf: bool,
 ) -> tuple[str, int, int]:
-    paper = ParsedPaper.model_validate_json(
-        await asyncio.to_thread(paper_path.read_bytes)
-    )
+    paper = ParsedPaper.model_validate_json(await asyncio.to_thread(paper_path.read_bytes))
     out_path = out_dir / f"{paper.paper_id}.jsonl"
     done: dict[str, dict[str, object]] = {}
     if out_path.exists():
@@ -76,9 +74,7 @@ async def _fetch_paper(
             work = resolution.work.__class__(**{**resolution.work.__dict__, "pdf_url": None})
             source = await retrieve_source(ctx.http, work, settings, grobid=grobid)
         else:
-            source = await retrieve_source(
-                ctx.http, resolution.work, settings, grobid=grobid
-            )
+            source = await retrieve_source(ctx.http, resolution.work, settings, grobid=grobid)
         rows.append(
             {
                 "paper_id": paper.paper_id,

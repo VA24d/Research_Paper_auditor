@@ -106,8 +106,7 @@ async def check_reference(task: AuditTask, ctx: RunContext, resolution: Resoluti
                 task,
                 0,
                 error_class=ErrorClass.REFERENCE_NOT_FOUND,
-                summary=f"The entry's DOI ({entry.doi}) does not resolve in Crossref or "
-                "OpenAlex",
+                summary=f"The entry's DOI ({entry.doi}) does not resolve in Crossref or OpenAlex",
                 explanation=entry.raw or entry.title or entry.id,
                 evidence=(_lookup_evidence(entry, resolution),),
             )

@@ -592,8 +592,6 @@ def propose(
     return picked, clean[:controls]
 
 
-
-
 def validate(
     labels: list[GoldLabel],
     records: list[InjectionRecord],

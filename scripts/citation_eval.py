@@ -40,8 +40,10 @@ def _sources(folder: Path) -> dict[tuple[str, str], str]:
     sources: dict[tuple[str, str], str] = {}
     for path in sorted(folder.glob("*.jsonl")):
         for line in path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                row = json.loads(line)
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if row.get("source_text"):
                 sources[(row["paper_id"], row["bib_id"])] = row["source_text"]
     return sources
 

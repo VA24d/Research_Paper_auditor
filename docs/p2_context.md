@@ -375,7 +375,75 @@ PIPELINE STATE (background jobs):
 - Set B: manifest COMMITTED at datasets/set_b/arxiv_ids.txt — 60 arXiv ids picked
   deterministically (cs.LG+cs.CL submitted Jan-Mar 2025, first 60 by submission date).
   PDF downloads running in background (PID 2920, ~3 min).
+
 ## Session 4 progress 5 (SET A COMPLETE — results)
+
+HALLMARK test_public: 831/831 entries checked (524 HALLUCINATED / 307 VALID), 4
+unverifiable (network), final score with all fixes applied
+(`scripts/hallmark.py score --results runs/hallmark/results.jsonl`):
+
+- accuracy 0.726; flagging precision 0.732, recall 0.891, F1 0.804
+- false-positive rate on VALID entries 0.557 (170 of 305)
+- Weakest types: partial_author_list F1 0.735 (R 0.581 — resolution matches on FIRST
+  author, and a partial author list keeps the first author), near_miss_title 0.841,
+  wrong_venue 0.889, placeholder_authors 0.881; the other ten types 0.94-1.0.
+
+Three passes over the split drove three rounds of fixes (all committed):
+1. FPR 0.892 -> 0.557: venues_match folding (Crossref's "2023 IEEE/CVF ... (CVPR)";
+   "Proceedings of the AAAI ..."; arXiv placeholder venues never contradict) + the
+   resolver PREFERS the candidate whose venue agrees with the entry.
+2. Recall 0.777 -> 0.891: Resolution.doi_unresolved — a DOI that Crossref AND OpenAlex
+   both reject is a reference_not_found even when a title search finds the real work
+   (fabricated_doi recall had crashed to 0.448 when the fake DOI was silently forgotten).
+3. Speed: ~1.5 s/entry with AUDITOR_HTTP_MAX_ATTEMPTS=1 (S2/OpenAlex Retry-After waits
+   made single entries take 185 s at the default 4 attempts); runs resumable.
+
+Honest shortcoming: the remaining 0.557 FPR comes from the metadata comparison — DBLP
+venue spellings the alias table does not cover (PMLR, workshop names) and title-search
+resolutions to different records. Reported as measured.
+
+Set A artifacts: data/hallmark/test_public.jsonl, runs/hallmark/results.jsonl (831 rows).
+
+
+- SET B COMPLETE (to the extent possible without an LLM and without a second reviewer):
+  - 60 papers parsed into data/set_b/papers/<id>.json (GROBID).
+  - Cited works' texts fetched for all 2,743 bibliography entries into
+    data/set_b/sources/<paper_id>.jsonl ({paper_id, bib_id, level, source_text|reason}).
+    The PDF level was skipped (too slow for a build; --with-pdf enables it); levels are
+    recorded. One truncated file (2501.00773) repaired by dropping malformed lines.
+  - `scripts/set_b_build.py` ran over all 60 papers: 201 gold labels = 154 injected
+    (reference_not_found 96, reference_metadata_mismatch 38, claim_number_mismatch 15,
+    claim_not_supported 5) + 47 clean controls. Every proposal was verified at build
+    time (see progress 2). Injected copies written to datasets/set_b/papers/ (gitignored,
+    local only), originals under datasets/set_b/papers/original/.
+  - `scripts/set_b.py validate datasets/set_b --sources data/set_b/sources`: exit 1 with
+    EXACTLY ONE problem — "only 0 of 201 labels have a second review; D18 asks for 20%"
+    — by design: the second review is Anurag's job. Everything else validates clean.
+  - dataset.jsonl (119 entries: 59 injected copies with injections + 60 originals)
+    written by `scripts/set_b_build.py dataset`.
+  - Offline sanity: `citation_eval.py recall` -> Recall@5 = 1.000 (20/20 of the records
+    that carry gold passages — the bibliography injections carry none by design). The
+    real Recall@5 measurement happens when the agent runs (its runtime retrieval vs
+    these recorded gold passages).
+- Set B shortfalls (documented in datasets/set_b/README.md):
+  - The claim classes are thin (15 number + 5 claim of 154): most claim sentences don't
+    state a source-confirmed specific number, and few have a direction phrase the source
+    contradicts. Grow with hand-written claim injections (`set_b.py inject`) or more
+    papers.
+  - The D18 20% second review is outstanding — Anurag must review ~40 labels and add
+    `reviewed_by` before the set is frozen.
+- The module eval runs (auditor batch full-text vs abstract-only) are NOT runnable: no
+  .env / no LLM keys. Commands are in docs/p2_how_it_works.md section 8.
+
+FINAL VALIDATION: ruff clean, mypy --strict clean (215 files), pytest 1157 passed /
+1 skipped (pyarrow) / 8 deselected. Everything committed and pushed to
+origin/p2-citation-checker. NO PR, NO merge (as instructed).
+
+Commits this session: 5daac67 (four small fixes), 06cc9a8 (embedding ranker), 9e1dbdd
+(build driver + source keying), a9aae1c (pdftotext decode + hallmark tolerance),
+[fetch/recall fixes], 4211afa + 1edfc61 (venue folding + resolver preference),
+6e4f500 (doi_unresolved), 53c1853 (injection caps), c6f472c (papers local),
+plus the final dataset commit.
 
 HALLMARK test_public: 831/831 entries checked (524 HALLUCINATED / 307 VALID), 4
 unverifiable (network), scored with `scripts/hallmark.py score --results

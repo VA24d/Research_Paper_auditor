@@ -141,8 +141,10 @@ def _validate(args: argparse.Namespace) -> int:
     if args.sources and args.sources.exists():
         for path in sorted(args.sources.glob("*.jsonl")):
             for line in path.read_text(encoding="utf-8").splitlines():
-                if line.strip():
-                    row = json.loads(line)
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                if row.get("source_text"):
                     sources[(row["paper_id"], row["bib_id"])] = row["source_text"]
     problems = validate(labels, records, sources=sources or None)
     for problem in problems:

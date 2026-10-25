@@ -226,6 +226,7 @@ async def _build(args: argparse.Namespace) -> int:
                 paper, sources_by_bib, pairs=args.pairs, controls=args.controls, rng=rng
             )
             injected_paper = paper
+            applied_sentences: list[str | None] = []
             applied = 0
             for proposal in proposals:
                 source_text = sources_by_bib.get(proposal.bib_id)
@@ -254,8 +255,12 @@ async def _build(args: argparse.Namespace) -> int:
                     continue
                 append_jsonl(labels_path, label)
                 append_jsonl(records_path, record)
+                applied_sentences.append(proposal.sentence_id)
                 applied += 1
             for bib_id, anchor in clean_pairs:
+                # A clean control must not sit on a sentence an injection edits (D18).
+                if anchor.sentence_id in applied_sentences:
+                    continue
                 gold = gold_passage_for(
                     sources_by_bib[bib_id], paper.sentence(anchor.sentence_id).text
                 )
@@ -277,15 +282,37 @@ async def _build(args: argparse.Namespace) -> int:
     return 0
 
 
+def _dataset(args: argparse.Namespace) -> int:
+    """Write the experiment dataset file: every injected copy and every kept original."""
+    import json
+
+    out = args.out / "dataset.jsonl"
+    rows: list[str] = []
+    papers_dir = args.out / "papers"
+    for injected in sorted(papers_dir.glob("*.json")):
+        if injected.parent.name == "original":
+            continue
+        rows.append(json.dumps({"paper": f"papers/{injected.name}"}, ensure_ascii=False))
+    for original in sorted((papers_dir / "original").glob("*.json")):
+        rows.append(json.dumps({"paper": f"papers/original/{original.name}"}, ensure_ascii=False))
+    out.write_text("".join(row + "\n" for row in rows), encoding="utf-8", newline="\n")
+    print(f"wrote {out} ({len(rows)} entries)")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--papers", type=Path, required=True)
-    parser.add_argument("--sources", type=Path, required=True)
+    parser.add_argument("--papers", type=Path, default=Path("data/set_b/papers"))
+    parser.add_argument("--sources", type=Path, default=Path("data/set_b/sources"))
     parser.add_argument("--out", type=Path, default=Path("datasets/set_b"))
     parser.add_argument("--pairs", type=int, default=10, help="injections per paper")
     parser.add_argument("--controls", type=int, default=3, help="clean pairs per paper")
     parser.add_argument("--seed", type=int, default=20260101)
+    sub = parser.add_subparsers(dest="command")
+    sub.add_parser("dataset", help="write the experiment dataset file")
     args = parser.parse_args()
+    if args.command == "dataset":
+        return _dataset(args)
     return asyncio.run(_build(args))
 
 

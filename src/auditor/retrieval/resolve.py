@@ -230,9 +230,7 @@ def _venue_variants(venue: str) -> list[str]:
 
 # Venue strings an index gives for an arXiv preprint record; they say nothing about
 # where the work was published, so they never contradict an entry's venue.
-_ARXIV_PLACEHOLDER_VENUES = frozenset(
-    {"arxiv", "arxiv cornell university", "corr", "arxiv org"}
-)
+_ARXIV_PLACEHOLDER_VENUES = frozenset({"arxiv", "arxiv cornell university", "corr", "arxiv org"})
 
 
 def venues_match(a: str | None, b: str | None) -> bool:
