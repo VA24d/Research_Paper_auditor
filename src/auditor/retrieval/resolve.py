@@ -280,6 +280,9 @@ class Resolution:
     reason: str | None = None
     # What was looked up, for LOOKUP evidence: ("crossref doi:10.1234/x", "found"), ...
     queries: tuple[tuple[str, str], ...] = ()
+    # The entry gave a DOI and neither Crossref nor OpenAlex knew it: on its face a
+    # fabricated identifier, reported even when a title search later found a work.
+    doi_unresolved: bool = False
 
     @property
     def found(self) -> bool:
@@ -303,6 +306,7 @@ def _entry_matches(entry: BibEntry, work: Work) -> bool:
 async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
     """Resolve one bibliography entry to a work, trying identifiers before search."""
     queries: list[tuple[str, str]] = []
+    doi_unresolved = False
 
     if entry.doi and is_doi(entry.doi):
         doi = normalize_doi(entry.doi)
@@ -313,6 +317,7 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
             queries.append((f"openalex doi:{doi}", "found" if work else "not found"))
         if work is not None:
             return Resolution(work=work, queries=tuple(queries))
+        doi_unresolved = True
 
     if entry.arxiv_id and is_arxiv_id(entry.arxiv_id):
         work = await arxiv_by_id(http, entry.arxiv_id)
@@ -350,10 +355,11 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
                 entry.year is not None and work.year == entry.year,
             ),
         )
-        return Resolution(work=best, queries=tuple(queries))
+        return Resolution(work=best, queries=tuple(queries), doi_unresolved=doi_unresolved)
     return Resolution(
         reason="no work with this title was found in the scholarly indexes",
         queries=tuple(queries),
+        doi_unresolved=doi_unresolved,
     )
 
 

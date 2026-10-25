@@ -98,6 +98,20 @@ async def check_reference(task: AuditTask, ctx: RunContext, resolution: Resoluti
                 evidence=(_lookup_evidence(entry, resolution),),
             )
         )
+    elif resolution.doi_unresolved:
+        # The entry cites a DOI that neither Crossref nor OpenAlex knows; even if a
+        # title search then found the real work, the identifier as printed is fabricated.
+        findings.append(
+            CandidateFinding.for_task(
+                task,
+                0,
+                error_class=ErrorClass.REFERENCE_NOT_FOUND,
+                summary=f"The entry's DOI ({entry.doi}) does not resolve in Crossref or "
+                "OpenAlex",
+                explanation=entry.raw or entry.title or entry.id,
+                evidence=(_lookup_evidence(entry, resolution),),
+            )
+        )
     else:
         assert resolution.work is not None
         findings.extend(_metadata_findings(task, entry, resolution.work))
