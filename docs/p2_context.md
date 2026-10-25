@@ -375,7 +375,49 @@ PIPELINE STATE (background jobs):
 - Set B: manifest COMMITTED at datasets/set_b/arxiv_ids.txt — 60 arXiv ids picked
   deterministically (cs.LG+cs.CL submitted Jan-Mar 2025, first 60 by submission date).
   PDF downloads running in background (PID 2920, ~3 min).
-## Session 4 progress 4 (pipeline running)
+## Session 4 progress 5 (SET A COMPLETE — results)
+
+HALLMARK test_public: 831/831 entries checked (524 HALLUCINATED / 307 VALID), 4
+unverifiable (network), scored with `scripts/hallmark.py score --results
+runs/hallmark/results.jsonl`:
+
+- accuracy 0.726; flagging precision 0.732, recall 0.891, F1 0.804
+- false-positive rate on VALID entries 0.557 (170 of 305 flagged: 90-ish
+  reference_not_found + the rest reference_metadata_mismatch)
+- per-type F1: perfect (1.000) on arxiv_version_mismatch... (see below), weakest:
+  partial_author_list 0.735 (R 0.581 — our resolution matches on FIRST author, a
+  partial author list keeps the first author and often the same title, so it looks
+  clean), near_miss_title 0.841 (R 0.725 — token overlap 0.7 borderline),
+  wrong_venue 0.889 (R 0.800), placeholder_authors 0.881, swapped_authors 0.950.
+
+Fixes that GOT the numbers here (three full passes over the split):
+1. FPR 0.892 -> 0.557: `venues_match` folding — Crossref's "2023 IEEE/CVF ... (CVPR)"
+   (leading year + bracketed short name), "Proceedings of the AAAI ..." (leading
+   "proceedings of the"), and arXiv placeholder venues ("arXiv (Cornell University)")
+   never contradict; the resolver now PREFERS the candidate whose venue agrees with the
+   entry over the first search hit (OpenAlex keeps both the preprint and proceedings
+   records; it used to hand back the preprint and the check flagged a false mismatch).
+2. Recall recovered 0.777 -> 0.891: `Resolution.doi_unresolved` — an entry whose DOI
+   neither Crossref nor OpenAlex knows is a `reference_not_found` finding even when the
+   subsequent title search finds the (real) work; previously the fake DOI was silently
+   forgotten and the real work resolved CLEAN (fabricated_doi recall had crashed to
+   0.448).
+3. Speed: the runs take ~1.5 s/entry with `AUDITOR_HTTP_MAX_ATTEMPTS=1` (the S2/OpenAlex
+   rate limits give long Retry-After waits, 60 s x 4 attempts by default -> 185 s for a
+   single entry observed); the runs are resumable with 25-entry checkpoints.
+
+Honest shortcoming found by set A: the remaining 0.557 FPR is the metadata comparison —
+DBLP-style venue spellings our alias table does not cover (PMLR, workshop names,
+journal subtleties) and entries whose title search resolves to a *different* record.
+The benchmark itself says venues disagree on what counts as a hallucination; our numbers
+are reported as measured.
+
+Set A artifacts: data/hallmark/test_public.jsonl (downloaded), runs/hallmark/
+results.jsonl (831 rows: flag + per-type). data/ and runs/ are untracked working files.
+
+Set B progress: 60 papers parsed into data/set_b/papers/*.json; fetch_sources (PID 996)
+at ~32/60 papers of cited-work texts (multi-hour; resumable). Next: set_b_build ->
+validate -> dataset.jsonl.
 
 - Fetch driver committed with per-entry progress. State at 18:10:
   - HALLMARK (PID 38304): resumable, was at 260/831, restarted cleanly.

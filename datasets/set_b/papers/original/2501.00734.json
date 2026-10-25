@@ -1,0 +1,9722 @@
+{
+ "schema_version": 1,
+ "paper_id": "2501.00734",
+ "variant": "original",
+ "parser": {
+  "name": "grobid",
+  "version": "0.9.1",
+  "pdf_sha256": "dd8760709d36e9866959039b442f312dc1cb099e0b308e0631baa55179cf1766"
+ },
+ "metadata": {
+  "title": "DDD: Discriminative Difficulty Distance for plant disease diagnosis",
+  "authors": [
+   "Yuji Arima",
+   "Satoshi Kagiwada",
+   "Hitoshi Iyatomi"
+  ],
+  "year": 2025,
+  "venue": null,
+  "doi": null,
+  "arxiv_id": "2501.00734"
+ },
+ "sections": [
+  {
+   "id": "sec0",
+   "title": "Introduction",
+   "number": null
+  },
+  {
+   "id": "sec1",
+   "title": "Related Works",
+   "number": null
+  },
+  {
+   "id": "sec2",
+   "title": "Metric learning",
+   "number": null
+  },
+  {
+   "id": "sec3",
+   "title": "Contrastive Learning",
+   "number": null
+  },
+  {
+   "id": "sec4",
+   "title": "Distance between datasets",
+   "number": null
+  },
+  {
+   "id": "sec5",
+   "title": "Discriminative Difficulty Distance (DDD) Significance",
+   "number": null
+  },
+  {
+   "id": "sec6",
+   "title": "Implementation Policy",
+   "number": null
+  },
+  {
+   "id": "sec7",
+   "title": "Notes",
+   "number": null
+  },
+  {
+   "id": "sec8",
+   "title": "Experiments Dataset",
+   "number": null
+  },
+  {
+   "id": "sec9",
+   "title": "Implementation",
+   "number": null
+  },
+  {
+   "id": "sec10",
+   "title": "Comparison Methods",
+   "number": null
+  },
+  {
+   "id": "sec11",
+   "title": "Result",
+   "number": null
+  },
+  {
+   "id": "sec12",
+   "title": "Discussion",
+   "number": null
+  },
+  {
+   "id": "sec13",
+   "title": "Validity Evaluation",
+   "number": null
+  },
+  {
+   "id": "sec14",
+   "title": "Parameter Analysis",
+   "number": null
+  },
+  {
+   "id": "sec15",
+   "title": "Limitation of study",
+   "number": null
+  },
+  {
+   "id": "sec16",
+   "title": "Conclusion",
+   "number": null
+  },
+  {
+   "id": "sec17",
+   "title": "Acknowledgments",
+   "number": null
+  }
+ ],
+ "sentences": [
+  {
+   "id": "s0",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "Recent studies on plant disease diagnosis using machine learning (ML) have highlighted concerns about the overestimated diagnostic performance due to inappropriate data partitioning, where training and test datasets are derived from the same source (domain).",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 238.99,
+     "width": 218.42,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 248.95,
+     "width": 218.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 258.91,
+     "width": 218.63,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 268.87,
+     "width": 218.54,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 278.83,
+     "width": 97.64,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s1",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "Plant disease diagnosis presents a challenging classification task, characterized by its finegrained nature, vague symptoms, and the extensive variability of image features within each domain.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 165.0,
+     "y": 278.83,
+     "width": 117.49,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 288.79,
+     "width": 218.63,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 298.75,
+     "width": 218.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 308.71,
+     "width": 154.16,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s2",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "In this study, we propose the concept of Discriminative Difficulty Distance (DDD), a novel metric designed to quantify the domain gap between training and test datasets while assessing the classification difficulty of test data.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 221.28,
+     "y": 308.71,
+     "width": 61.22,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 318.67,
+     "width": 218.54,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 328.63,
+     "width": 218.56,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 338.59,
+     "width": 218.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 348.55,
+     "width": 118.4,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "DDD provides a valuable tool for identifying insufficient diversity in training data, thus supporting the development of more diverse and robust datasets.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 186.36,
+     "y": 348.55,
+     "width": 96.02,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 358.51,
+     "width": 218.48,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 368.47,
+     "width": 218.49,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 378.43,
+     "width": 30.56,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "We investigated multiple image encoders trained on different datasets and examined whether the distances between datasets, measured using low-dimensional representations generated by the encoders, are suitable as a DDD metric.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 96.84,
+     "y": 378.43,
+     "width": 185.68,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 388.39,
+     "width": 218.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 398.35,
+     "width": 218.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 408.31,
+     "width": 218.63,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 418.27,
+     "width": 11.72,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "The study utilized 244,063 plant disease images spanning four crops and 34 disease classes collected from 27 domains.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 77.64,
+     "y": 418.27,
+     "width": 204.76,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 428.23,
+     "width": 218.48,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "As a result, we demonstrated that even if the test images are from different crops or diseases than those used to train the encoder, incorporating them allows the construction of a distance measure for a dataset that strongly correlates with the difficulty of diagnosis indicated by the disease classifier developed independently.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 438.19,
+     "width": 218.54,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 448.15,
+     "width": 218.54,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 458.11,
+     "width": 218.5,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 468.07,
+     "width": 218.54,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 478.03,
+     "width": 218.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 487.99,
+     "width": 83.6,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "Compared to the base encoder, pretrained only on ImageNet21K, the correlation higher by 0.106 to 0.485, reaching a maximum of 0.909.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 150.96,
+     "y": 487.99,
+     "width": 131.51,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 497.95,
+     "width": 218.44,
+     "height": 8.12
+    },
+    {
+     "page": 1,
+     "x": 63.96,
+     "y": 507.91,
+     "width": 143.84,
+     "height": 8.12
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Numerous machine learning (ML)-based diagnostic models for plant diseases and pests have been proposed, achieving impressive numerical results in various studies (Mohanty, Hughes, and Salathé 2016;Atila et al. 2021;Elfatimi, Eryigit, and Elfatimi 2022;Fujita et al. 2018;Hughes, Salathé et al. 2015;Kawasaki et al. 2015;Narayanan et al. 2022;Ramcharan et al. 2017;Toda and Okura 2019;Wang, Sun, and Wang 2017).",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 555.23,
+     "width": 238.72,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 566.15,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 577.07,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 588.11,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 599.03,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 609.95,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 620.99,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 631.91,
+     "width": 88.17,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s9",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "However, many of these models were evaluated on improper data partitioning practices, wherein the training and validation datasets originate from the same photographing environment.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 144.24,
+     "y": 631.91,
+     "width": 148.3,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 642.83,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 653.87,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 54.0,
+     "y": 664.79,
+     "width": 113.13,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s10",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "This improper data partitioning has led to overestimation of diagnostic performance, as recent studies have highlighted that the actual diagnostic accuracy of even state-of-art models is significantly lower than that reported (Kanno et al. 2021;Iwano et al. 2024;Cap et al. 2022;Shibuya et al. 2021).",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 168.84,
+     "y": 664.79,
+     "width": 123.9,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 219.11,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 230.03,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 241.07,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 251.99,
+     "width": 238.38,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 262.91,
+     "width": 127.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s11",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Plant disease diagnosis represents a highly challenging fine-grained classification task, as the diagnostic cues -disease symptoms-are often ambiguous and subtle.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 448.8,
+     "y": 262.91,
+     "width": 109.28,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 273.95,
+     "width": 238.41,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 284.87,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 295.79,
+     "width": 78.93,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s12",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The significant image diversity caused by variations in composition, background, plant variety, disease progression, and other domain-specific factors, further complicates the task.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 401.76,
+     "y": 295.79,
+     "width": 156.3,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 306.83,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 317.75,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 328.67,
+     "width": 85.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s13",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Moreover, disease lesions frequently occupy a small portion of the overall image, making it challenging for ML models to generalize effectively.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 408.72,
+     "y": 328.67,
+     "width": 149.58,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 339.71,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 350.63,
+     "width": 196.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s14",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "When the variety of the training data is limited, as observed in previously reported studies, ML models tend to overfit to a narrow set of training patterns, resulting in suboptimal generalization performances.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 518.88,
+     "y": 350.63,
+     "width": 39.22,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 361.55,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 372.59,
+     "width": 238.67,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 383.51,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 394.43,
+     "width": 75.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s15",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "This inherent limitation arises from the inability of the training data to adequately capture the diversity of classification targets.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 398.28,
+     "y": 394.43,
+     "width": 159.82,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 405.47,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 416.39,
+     "width": 111.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s16",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "In particular, constructing a diagnostic model capable of achieving high classification performance on data with unseen characteristics is especially difficult when there is significant variation between the domains of the training and evaluation datasets.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 433.92,
+     "y": 416.39,
+     "width": 124.16,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 427.31,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 438.35,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 449.27,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 460.19,
+     "width": 183.33,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s17",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "For instance, in a plant disease diagnosis study by Shibuya et al., utiliz-ing a large dataset of more than 221,000 images spanning four crops (Shibuya et al. 2021), even the utilization of advanced classification algorithms failed to achieve satisfactory accuracy for the diseases exhibiting significant domain gaps.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 506.04,
+     "y": 460.19,
+     "width": 52.05,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 471.11,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 482.15,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 493.07,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 503.99,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 515.03,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 525.95,
+     "width": 20.85,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s18",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The result of that study underscores the critical need for robust methodologies to address domain variability and enhance the diagnostic capabilities of ML models for plant diseases.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 343.44,
+     "y": 525.95,
+     "width": 214.62,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 536.87,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 547.91,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 558.83,
+     "width": 35.13,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s19",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "In most ML tasks, the critical challenge consists of obtaining a low-dimensional representation that captures domain-independent and task-relevant features.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 329.52,
+     "y": 574.55,
+     "width": 228.56,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 585.59,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 596.51,
+     "width": 193.05,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s20",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Two wellestablished methods for achieving this goal are metric learning and contrastive learning.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 516.24,
+     "y": 596.51,
+     "width": 41.72,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 607.43,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 618.47,
+     "width": 111.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s21",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Both methods aim to train models that bring the low-dimensional representations of data from the same class closer together while pushing apart representations of data from different classes.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 432.96,
+     "y": 618.47,
+     "width": 125.24,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 629.39,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 640.31,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 651.35,
+     "width": 172.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s22",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Metric learning is a supervised learning approach that utilizes class labels to guide the representation learning process.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 495.48,
+     "y": 651.35,
+     "width": 62.7,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 662.27,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 673.19,
+     "width": 177.09,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s23",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "In contrast, researchers often implement contrastive learning as a selfsupervised learning method.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 499.2,
+     "y": 673.19,
+     "width": 58.88,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 684.23,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 1,
+     "x": 319.56,
+     "y": 695.15,
+     "width": 114.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s24",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "It relies on constructing posi-tive and negative pairs, typically through data augmentations or clustering-based pseudo-labeling, to learn representations without explicit class annotations.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 437.4,
+     "y": 695.15,
+     "width": 120.68,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 57.11,
+     "width": 238.84,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 68.03,
+     "width": 238.84,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 79.07,
+     "width": 138.45,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s25",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Models employing contrastive learning have demonstrated notable success in tasks characterized by significant domain variations, showcasing their effectiveness in depicting generalizable features across diverse datasets.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 195.6,
+     "y": 79.07,
+     "width": 97.04,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 89.99,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 100.91,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 111.95,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 122.87,
+     "width": 64.89,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s26",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "However, when dealing with problems that have a narrow range of difficulty and a significant domain gap between training and test data, limited training data becomes insufficient for effective harmonization, rendering it ineffective in bridging the gap.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 63.96,
+     "y": 134.99,
+     "width": 228.56,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 146.03,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 156.95,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 167.87,
+     "width": 238.78,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 178.91,
+     "width": 79.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s27",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "In such cases, one may relax the problem into a typical semi-supervised learning framework (i.e., transductive learning), where the model observes only the test data, or adopt a setting where both the data and labels are visible, albeit only for a portion of the test data.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 136.44,
+     "y": 178.91,
+     "width": 156.32,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 189.83,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 200.75,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 211.79,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 222.7,
+     "width": 203.49,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s28",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The former approach has shown success in a variety of general ML tasks (Xie et al. 2020).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 259.8,
+     "y": 222.7,
+     "width": 32.84,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 233.63,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 244.67,
+     "width": 96.33,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s29",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "However, it is less effective in domains such as plant disease diagnosis, where there are substantial discrepancies in the training and test data trends because the accuracy of pseudo-teacher labels estimated for the test data is poor.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 153.24,
+     "y": 244.67,
+     "width": 139.4,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 255.58,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 266.5,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 277.55,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 288.46,
+     "width": 81.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s30",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "On the other hand, the latter approach provides a more realistic solution for fine-grained problems exhibiting significant domain gaps.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 138.6,
+     "y": 288.46,
+     "width": 154.14,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 299.38,
+     "width": 238.72,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 310.43,
+     "width": 142.05,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s31",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Key research questions in this context include determining the minimal number of data points required to achieve a specific performance level for each task and optimizing the use of the limited available data.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 199.08,
+     "y": 310.43,
+     "width": 93.64,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 321.34,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 332.26,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 343.3,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 354.22,
+     "width": 19.17,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s32",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Ultimately, the success of these approaches heavily depends on the magnitude of the domain gap.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 75.24,
+     "y": 354.22,
+     "width": 217.28,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 365.14,
+     "width": 172.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s33",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Therefore, from a ML perspective, quantifying the size of the domain gap is crucial.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 228.84,
+     "y": 365.14,
+     "width": 63.79,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 376.18,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 387.1,
+     "width": 39.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s34",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Although some previous studies have attempted to measure the distance between datasets, they have only investigated the transferability of knowledge by measuring the distance between datasets, and more research is needed on indicators to guide effective measures for addressing problems with fine-grained domain gaps.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 97.08,
+     "y": 387.1,
+     "width": 195.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 398.03,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 408.95,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 419.99,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 430.91,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 441.83,
+     "width": 145.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s35",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "In light of this context, this paper proposes the concept of Discriminative Difficulty Distance (DDD) as a novel metric for quantifying the domain-gap differences between image datasets in fine-grained tasks.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 63.96,
+     "y": 454.07,
+     "width": 228.56,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 464.99,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 476.03,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 486.95,
+     "width": 117.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s36",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The paper also reports on initial investigations into practical methods for the application of DDD, with a particular focus on plant disease diagnosis.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 174.24,
+     "y": 486.95,
+     "width": 118.28,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 497.87,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 508.79,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 519.83,
+     "width": 12.93,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s37",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The proposed DDD is a pseudo-measure, designed to quantitatively capture the divergence between training and test datasets to indicate the difficulty in diagnosing test data using a ML model trained on the training dataset.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 70.8,
+     "y": 519.83,
+     "width": 221.7,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 530.75,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 541.67,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 552.7,
+     "width": 204.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s38",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "A large DDD between the training and test datasets suggests that the training data lacks sufficient diversity, highlighting an opportunity for intervention, such as adding or generating more training data.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 262.08,
+     "y": 552.7,
+     "width": 30.58,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 563.62,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 574.54,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 585.58,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 596.5,
+     "width": 76.05,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s39",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Furthermore, when constructing a training dataset using data from multiple domains, DDD can be valuable for understanding the diversity within each domain, thereby facilitating the creation of a more varied and robust training dataset.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 132.6,
+     "y": 596.5,
+     "width": 160.04,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 607.42,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 618.46,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 629.38,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 640.3,
+     "width": 64.29,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s40",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Additionally, the DDD for each classification label may offer insights into the difficulty of the classification task, providing a helpful trigger for taking appropriate action.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 121.32,
+     "y": 640.3,
+     "width": 171.2,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 651.34,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 662.26,
+     "width": 238.78,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 673.18,
+     "width": 26.97,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s41",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "When implemented effectively, the DDD has the potential to substantially contribute to developing more robust ML models.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 83.28,
+     "y": 673.18,
+     "width": 209.36,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 684.22,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 54.0,
+     "y": 695.14,
+     "width": 48.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s42",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "In this paper, we evaluate the validity of S (distance L) as an indicator of DDD by calculating the similarity between two datasets obtained using multiple ML models in the plant disease diagnosis task.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 329.52,
+     "y": 56.93,
+     "width": 228.56,
+     "height": 9.2
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 68.02,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 79.06,
+     "width": 238.38,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 89.98,
+     "width": 131.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s43",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Specifically, we calculate the confusion matrix P of the classification results of different datasets using the discriminator trained on one dataset, and measure the correlation between S and P as an evaluation metric.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 454.8,
+     "y": 89.98,
+     "width": 103.3,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 100.73,
+     "width": 238.64,
+     "height": 9.2
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 111.94,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 122.69,
+     "width": 238.64,
+     "height": 9.2
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 133.78,
+     "width": 45.93,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s44",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The main contributions of this paper can be summarized as follows.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 329.52,
+     "y": 144.82,
+     "width": 228.66,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 155.74,
+     "width": 42.93,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s45",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "1) The proposal of the DDD as a novel metric for quantifying the domain gap between datasets, specifically in terms of the difficulty associated with classification tasks, along with a detailed method for its calculation.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 319.2,
+     "y": 169.9,
+     "width": 239.0,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 332.4,
+     "y": 180.82,
+     "width": 225.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 332.4,
+     "y": 191.86,
+     "width": 225.57,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 332.4,
+     "y": 202.78,
+     "width": 190.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s46",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "2) In the plant disease diagnosis task, it was discovered that image encoders trained on images of crops other than the target crop can also be a powerful method for obtaining DDD.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 319.2,
+     "y": 215.86,
+     "width": 238.81,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 332.4,
+     "y": 226.78,
+     "width": 225.7,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 332.4,
+     "y": 237.7,
+     "width": 225.78,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 332.4,
+     "y": 248.74,
+     "width": 24.09,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s47",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Metric learning has emerged as a prominent research area in recent years, particularly in computer vision.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 299.38,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 310.3,
+     "width": 195.21,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s48",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Computer vision has gained significant attention due to the considerable variation in visual features observed among data samples from the same class.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 518.16,
+     "y": 310.3,
+     "width": 40.04,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 321.34,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 332.26,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 343.18,
+     "width": 100.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s49",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Wang et al. introduced the Triplet loss (Wang et al. 2014), a loss function designed to learn similarity distances from images directly.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 423.0,
+     "y": 343.18,
+     "width": 135.13,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 354.22,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 365.14,
+     "width": 166.29,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s50",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "The main goal of this approach is to construct a separable embedding space that effectively captures subtle visual similarities between images within the same category.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 488.52,
+     "y": 365.14,
+     "width": 69.56,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 376.06,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 387.1,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 398.02,
+     "width": 135.57,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s51",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Building on this foundation, Sohn et al. expanded the Triplet loss by introducing the multi-class N-pair loss (Sohn 2016), offering a more flexible framework for learning representations.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 458.04,
+     "y": 398.02,
+     "width": 100.28,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 408.94,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 419.86,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 430.9,
+     "width": 159.57,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s52",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Additionally, Chen et al. developed baseline++ (Chen et al. 2019), a method that reduces intra-class variation by leveraging the cosine distance between input features and the weight vectors of each class.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 481.8,
+     "y": 430.9,
+     "width": 76.26,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 441.82,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 452.74,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 463.78,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 474.7,
+     "width": 42.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s53",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "These approaches share a common focus on designing loss functions to optimize feature space distances, thereby enhancing discrimination and improving model performance.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 365.16,
+     "y": 474.7,
+     "width": 192.92,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 485.62,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 496.66,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 507.58,
+     "width": 40.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s54",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "Researchers have widely adopted contrastive learning to automate the expensive manual annotation of large amounts of data and to investigate the relationships between different forms of data for multi-modal applications.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 541.66,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 552.7,
+     "width": 238.71,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 563.62,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 574.54,
+     "width": 170.85,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s55",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "In addition, contrastive learning has achieved state-of-the-art results through its discriminative learning framework.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 492.48,
+     "y": 574.54,
+     "width": 65.6,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 585.58,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 596.5,
+     "width": 150.57,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s56",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "Chen et al. introduced SimCLR (Chen et al. 2020), a self-supervised learning approach that integrates certain supervised elements.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 471.72,
+     "y": 596.5,
+     "width": 86.58,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 607.42,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 618.46,
+     "width": 202.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s57",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "Chechik et al. trained a large-scale image similarity model for retrieval using triplet loss (Wang et al. 2014), based on the concept of invariant mapping and its application to metric learning (Chechik et al. 2009).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 524.76,
+     "y": 618.46,
+     "width": 33.3,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 629.38,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 640.3,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 651.34,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 662.26,
+     "width": 124.77,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s58",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "Similarly, Radford et al. developed CLIP (Radford et al. 2021), which utilizes contrastive learning to model the relationship between images and text.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 446.64,
+     "y": 662.26,
+     "width": 111.44,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 673.18,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 684.22,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 2,
+     "x": 319.56,
+     "y": 695.14,
+     "width": 35.37,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s59",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "These contrastive learning methods focus on the distances within the latent space, similar to distance learning, and these distances are optimized and used as part of the learning objective to improve the representation.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 358.56,
+     "y": 695.14,
+     "width": 199.54,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 57.11,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 68.03,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 79.07,
+     "width": 207.93,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s60",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "Measuring the distance between datasets is an essential indicator of the transferability of knowledge.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 114.35,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 125.27,
+     "width": 193.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s61",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "Calderon-Ramirez et al. introduced DeDiM (Calderon-Ramirez, Saul and Oala, Luis and Torrents-Barrena, Jordina and Yang, Shengxiang and Elizondo, David and Moemeni, Armaghan and Colreavy-Donnelly, Simon and Samek, Wojciech and Molina-Cabello, Miguel A. and López-Rubio, Ezequiel 2023), a metric designed to assess dataset similarity to evaluate semi-supervised learning in the context of distributional discrepancies between labeled and unlabeled datasets.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 252.6,
+     "y": 125.27,
+     "width": 40.04,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 136.19,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 147.23,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 158.15,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 169.07,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 180.11,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 191.03,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 201.95,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 212.99,
+     "width": 214.17,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s62",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "Similarly, Alvarez-Melis et al. developed OTDD (Alvarez-Melis and Fusi 2020), a method that utilizes optimal transport to compute the distance between datasets.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 270.36,
+     "y": 212.99,
+     "width": 22.16,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 223.91,
+     "width": 238.72,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 234.82,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 245.86,
+     "width": 172.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s63",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "While both approaches effectively quantify the distance between datasets, they fall short in providing targeted improvements for tasks that require handling fine-grained features or addressing significant domain gaps.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 230.28,
+     "y": 245.86,
+     "width": 62.24,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 256.78,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 267.7,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 278.74,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 289.66,
+     "width": 85.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s64",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "In this paper, we propose the concept of Discriminative Difficulty Distance (DDD) as a new metric for objectively quantifying the differences between image data or image datasets using ML models.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 342.1,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 353.02,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 363.95,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 374.98,
+     "width": 71.73,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s65",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "DDD is a pseudo-distance metric between datasets calculated based on low-dimensional representations (embeddings) of data.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 127.56,
+     "y": 374.98,
+     "width": 165.06,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 385.91,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 396.83,
+     "width": 107.97,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s66",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "It aims to quantify the classification difficulty of one dataset relative to another, as perceived by a ML model trained on the first dataset.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 164.04,
+     "y": 396.83,
+     "width": 128.48,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 407.87,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 418.79,
+     "width": 169.89,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s67",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "As a specific application, we explore effective implementation strategies for plant disease diagnosis, a fine-grained task characterized by a significant domain gap.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 226.32,
+     "y": 418.79,
+     "width": 66.2,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 429.71,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 440.75,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 451.67,
+     "width": 100.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s68",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "Calculating the DDD between the training and evaluation datasets serves as a crucial measure for assessing the diversity of the training dataset and aids in identifying challenging-to-classify classes.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 157.08,
+     "y": 451.67,
+     "width": 135.46,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 462.59,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 473.63,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 484.55,
+     "width": 171.45,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s69",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "Moreover, it facilitates the construction of a more desirable, broader, and robust training dataset necessary for the task.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 228.6,
+     "y": 484.55,
+     "width": 63.92,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 495.47,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 506.39,
+     "width": 179.37,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s70",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "In this paper, we consider a more appropriate method for calculating DDD.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 541.67,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 552.71,
+     "width": 70.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s71",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Specifically, we propose that the distance between two datasets, calculated using low-dimensional representations generated by a suitably designed image encoder (M E ), serves as a viable candidate for DDD.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 127.2,
+     "y": 552.71,
+     "width": 165.34,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 563.63,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 574.55,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 585.59,
+     "width": 190.17,
+     "height": 9.72
+    }
+   ]
+  },
+  {
+   "id": "s72",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "We further evaluate its effectiveness in this same context.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 248.28,
+     "y": 585.59,
+     "width": 44.48,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 596.51,
+     "width": 183.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s73",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "When we assume that the ML model M C has been adequately trained for the target task, its ability to correctly identify disease a with high probability suggests that diagnosing disease a is relatively straightforward for M C .",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 240.24,
+     "y": 596.51,
+     "width": 52.28,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 607.26,
+     "width": 238.62,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 618.47,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 629.22,
+     "width": 238.54,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 640.14,
+     "width": 149.97,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s74",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "This implies that the characteristics of disease a in the training data are similar to those in the test data.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 207.6,
+     "y": 640.31,
+     "width": 84.94,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 651.18,
+     "width": 238.52,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 662.27,
+     "width": 94.29,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s75",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Conversely, if M C frequently missclassifies disease a as disease b, it suggests that the characteristics of disease a in the training data are similar to those of disease b in the test data.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 150.72,
+     "y": 662.1,
+     "width": 141.8,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 673.02,
+     "width": 238.64,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 684.06,
+     "width": 238.54,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 54.0,
+     "y": 694.98,
+     "width": 113.97,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s76",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Based on this assumption, we can verify whether the diagnostic similarity S ij between disease i in one dataset and disease j in the other, as calculated using M E , reflects the confusion matrix P ij which can be calculated from the estimated probability of data classification by the ML model.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 171.12,
+     "y": 695.15,
+     "width": 121.42,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 56.94,
+     "width": 238.4,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 67.86,
+     "width": 238.5,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 78.9,
+     "width": 238.54,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 89.98,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 100.91,
+     "width": 90.57,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s77",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "If these values are highly consistent, we can determine that the distance calculated using the lowdimensional representation constructed by M E is an effective DDD.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 412.56,
+     "y": 100.91,
+     "width": 145.53,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 111.94,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 122.7,
+     "width": 238.64,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 133.78,
+     "width": 41.01,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s78",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Implementation and evaluation of a reasonable distance as DDD in the plant disease diagnosis task Let X t (t = train, test) be the dataset to be used to calculate the similarity between datasets, M E be the image encoder that converts images into low-dimensional representations, and M C be the plant disease identifier constructed by training on a sufficiently large X train (a total of 244,063 images in Table 1 below).",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 157.09,
+     "width": 218.32,
+     "height": 9.8
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 169.09,
+     "width": 236.23,
+     "height": 9.8
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 186.3,
+     "width": 26.65,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 346.68,
+     "y": 185.85,
+     "width": 211.42,
+     "height": 9.96
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 197.34,
+     "width": 238.64,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 208.42,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 219.18,
+     "width": 238.52,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 230.22,
+     "width": 238.6,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 241.3,
+     "width": 73.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s79",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The objective is to devise a construction strategy for the image encoder M E that yields a dataset distance closely aligned with the probability distribution of the predictions made by M C for each disease in X test .",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 395.64,
+     "y": 241.3,
+     "width": 162.66,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 252.06,
+     "width": 238.4,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 263.26,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 274.02,
+     "width": 203.37,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s80",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The following are the steps we propose for implementation.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 525.48,
+     "y": 274.18,
+     "width": 32.6,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 285.1,
+     "width": 209.25,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s81",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "(step 1) Acquisition of a low-dimensional representation for each dataset Each data in the datasets X train and X test is converted into a low-dimensional representation, z i and z j , using an image encoder M E (e.g., a CNN model pre-trained on ImageNet21k (Deng et al. 2009)).",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 304.86,
+     "width": 238.82,
+     "height": 8.95
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 315.66,
+     "width": 238.5,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 326.7,
+     "width": 237.98,
+     "height": 9.87
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 337.62,
+     "width": 238.57,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 348.7,
+     "width": 197.25,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s82",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Here, i, j represent the indices of the classification classes (i.e., disease types) of the training and test data, respectively (i, j = 1, 2, • • • , C).",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 519.48,
+     "y": 348.53,
+     "width": 37.93,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 359.74,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 370.05,
+     "width": 238.38,
+     "height": 9.96
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 380.97,
+     "width": 51.81,
+     "height": 9.96
+    }
+   ]
+  },
+  {
+   "id": "s83",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The number of data in classes i and j are represented as N i and N j , respectively.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 374.04,
+     "y": 381.41,
+     "width": 184.04,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 392.34,
+     "width": 144.21,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s84",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "(step 2) Calculation of the average class vectors of test data Compute the mean vector",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 412.26,
+     "width": 238.52,
+     "height": 8.95
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 423.19,
+     "width": 131.36,
+     "height": 9.07
+    }
+   ]
+  },
+  {
+   "id": "s85",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "of the low-dimensional representation of each data in class j of the test dataset.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 484.19,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 494.94,
+     "width": 79.05,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s86",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "(step 3) Calculation of the diagnostic distance L ij and the diagnostic similarity S ij The diagnostic distance L ij between each vector for class i in the training dataset and class j in the test dataset is computed as follows:",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 514.74,
+     "width": 238.46,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 525.66,
+     "width": 237.53,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 536.7,
+     "width": 238.5,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 547.62,
+     "width": 194.65,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s87",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The diagnostic similarity is defined as",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 607.79,
+     "width": 151.36,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s88",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "where α is an adjustable hyperparameter.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 662.1,
+     "width": 168.69,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s89",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "S ij is calculated based on the diagnostic distance L ij and is the similarity between class i of the training dataset and class j of the test data in the range [0,1].",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 491.16,
+     "y": 662.1,
+     "width": 66.9,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 673.02,
+     "width": 238.5,
+     "height": 9.89
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 684.06,
+     "width": 238.45,
+     "height": 9.2
+    },
+    {
+     "page": 3,
+     "x": 319.56,
+     "y": 695.15,
+     "width": 90.33,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s90",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "(step 4) Validation of diagnostic similarity S Based on our hypothesis described in the \"Implementation Policy\" section, we will verify whether the diagnostic similarity S obtained using M E reflects the difficulty of data classification by the ML model.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 404.94,
+     "width": 238.5,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 416.15,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 426.9,
+     "width": 237.95,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 437.82,
+     "width": 238.52,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 448.91,
+     "width": 91.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s91",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "First, we use the classifier M C built using the training data X train to obtain the confusion matrix P when the test data is diagnosed.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 147.96,
+     "y": 448.74,
+     "width": 144.61,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 459.78,
+     "width": 238.62,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 470.7,
+     "width": 138.33,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s92",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Each element P ab of the confusion matrix P represents the proportion of instances where disease a is miss-classified as b.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 194.76,
+     "y": 470.7,
+     "width": 97.78,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 481.62,
+     "width": 238.6,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 492.66,
+     "width": 157.05,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s93",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The values are normalized such that the total proportion of all classifications for disease a sums to 1.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 214.08,
+     "y": 492.83,
+     "width": 78.56,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 503.75,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 514.67,
+     "width": 93.33,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s94",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "At this time, P a=i,b=j and the diagnostic similarity S ij are compared across all combinations of i, j, and the correlation R is calculated as R = r( P , S), where P = {P a=i,b=j } and S = {S ij } ∈ R C 2 .",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 149.76,
+     "y": 514.5,
+     "width": 142.88,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 525.54,
+     "width": 238.84,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 536.46,
+     "width": 175.95,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 144.84,
+     "y": 554.81,
+     "width": 56.76,
+     "height": 11.8
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 576.53,
+     "width": 69.76,
+     "height": 11.92
+    },
+    {
+     "page": 4,
+     "x": 123.72,
+     "y": 582.5,
+     "width": 28.49,
+     "height": 6.33
+    },
+    {
+     "page": 4,
+     "x": 153.12,
+     "y": 578.49,
+     "width": 67.67,
+     "height": 9.96
+    },
+    {
+     "page": 4,
+     "x": 220.8,
+     "y": 582.5,
+     "width": 6.05,
+     "height": 6.33
+    },
+    {
+     "page": 4,
+     "x": 227.64,
+     "y": 578.49,
+     "width": 31.79,
+     "height": 9.96
+    },
+    {
+     "page": 4,
+     "x": 259.44,
+     "y": 575.92,
+     "width": 9.63,
+     "height": 7.74
+    },
+    {
+     "page": 4,
+     "x": 270.0,
+     "y": 579.1,
+     "width": 2.49,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s95",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The function r() calculates the similarity between two vectors, and cosine similarity was utilized in this experiment.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 276.96,
+     "y": 579.1,
+     "width": 15.58,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 589.86,
+     "width": 238.65,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 600.95,
+     "width": 220.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s96",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "Importantly,this correlation accounts not only for the model's accuracy but also for the patterns in its error-making tendencies.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 278.16,
+     "y": 600.95,
+     "width": 14.48,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 611.98,
+     "width": 238.72,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 622.9,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 633.83,
+     "width": 17.97,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s97",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "Suppose M C and M E use the same architecture and share the training data.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 673.02,
+     "width": 238.54,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 684.23,
+     "width": 67.17,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s98",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "In that case, R is necessarily higher, as the low-dimensional representations obtained for a given image will be very similar for both M E and M C .",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 123.6,
+     "y": 684.06,
+     "width": 168.94,
+     "height": 9.2
+    },
+    {
+     "page": 4,
+     "x": 54.0,
+     "y": 695.15,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 404.94,
+     "width": 167.37,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s99",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "Therefore, ensuring that the training data for M E differs from that of M C is crucial.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 489.24,
+     "y": 405.11,
+     "width": 68.84,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 415.98,
+     "width": 237.55,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 427.06,
+     "width": 38.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s100",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "For comparison and discussion, we also evaluated under these conditions in this experiment.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 360.36,
+     "y": 427.06,
+     "width": 197.82,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 437.98,
+     "width": 168.33,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s101",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "These results are marked with † in the Results column, as described below.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 490.44,
+     "y": 437.98,
+     "width": 67.66,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 448.9,
+     "width": 230.73,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s102",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "Table 1 shows an overview of the training and test data, which consists of 244,063 leaf images from 34 classes of the four crops used in this experiment.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 504.34,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 515.38,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 526.3,
+     "width": 137.73,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s103",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "Between 2016 and 2020, experts individually cultivated the plants, inoculated them with pathogens, photographed them, and labeled the images under strict disease control at 27 agricultural experiment stations across 24 prefectures in Japan.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 459.36,
+     "y": 526.3,
+     "width": 98.85,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 537.22,
+     "width": 238.51,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 548.26,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 559.18,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 570.1,
+     "width": 147.93,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s104",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "The images generally focus on a single leaf near the center, although many also feature multiple leaves at various distances from the subject.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 470.64,
+     "y": 570.1,
+     "width": 87.54,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 581.14,
+     "width": 238.38,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 592.06,
+     "width": 238.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s105",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "In our experimental setup, we separated the training and test images by ensuring they came from different locations, and we strictly evaluated the test data as entirely unknown.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 602.98,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 614.02,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 624.94,
+     "width": 217.89,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s106",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "In this study, we adopted EfficientNetV2-m (Efficient-NetV2) (Tan and Le 2021), which was pre-trained on Ima-geNet21k (Deng et al. 2009), for M C and M E with primitive data augmentation techniques including random rota-  tion, flipping, cropping, and rectangular masking for data augmentation.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 662.26,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 673.18,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 684.05,
+     "width": 238.64,
+     "height": 9.89
+    },
+    {
+     "page": 4,
+     "x": 319.56,
+     "y": 695.14,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 486.95,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 497.87,
+     "width": 57.09,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s107",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "As an optimizer, SGD with a learning rate of 1.0 × 10 -4 and a momentum of 0.9 was used.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 114.6,
+     "y": 497.87,
+     "width": 177.94,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 508.17,
+     "width": 48.3,
+     "height": 9.96
+    },
+    {
+     "page": 5,
+     "x": 102.36,
+     "y": 507.13,
+     "width": 10.21,
+     "height": 6.4
+    },
+    {
+     "page": 5,
+     "x": 116.4,
+     "y": 508.17,
+     "width": 142.65,
+     "height": 9.96
+    }
+   ]
+  },
+  {
+   "id": "s108",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "As will be introduced later, M C trained all the Training data for all four crops, whereas each of the four M E s trained the training data for one crop.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 262.44,
+     "y": 508.79,
+     "width": 30.01,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 519.66,
+     "width": 238.45,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 530.58,
+     "width": 238.64,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 541.67,
+     "width": 85.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s109",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "In this study, we discussed and evaluated the optimal configuration of the encoder M E , which acquires low-dimensional representations that calculate the distance between images to achieve DDD.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 579.47,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 590.22,
+     "width": 238.93,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 601.31,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 612.35,
+     "width": 56.13,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s110",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "To do this, we compared five models that used the same ML model as mentioned above but were trained on different images.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 112.08,
+     "y": 612.35,
+     "width": 180.42,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 623.27,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 634.19,
+     "width": 67.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s111",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "For the evaluation of M E , we used R and R d defined in \"Implementation and evaluation of a reasonable distance as DDD in the plant disease diagnosis task\" according to the policy described in \"Implementation Policy\".",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 124.32,
+     "y": 634.02,
+     "width": 168.3,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 645.06,
+     "width": 238.64,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 656.15,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 667.07,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 678.11,
+     "width": 19.05,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s112",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "baseline is pre-trained by large open dataset Ima-geNet21k.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 66.96,
+     "y": 695.11,
+     "width": 225.68,
+     "height": 9.07
+    },
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 486.95,
+     "width": 41.49,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s113",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "+cucumber has been additionally trained using the baseline cucumber training image dataset.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 500.59,
+     "width": 225.68,
+     "height": 9.07
+    },
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 511.55,
+     "width": 149.85,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s114",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "+tomato has been additionally trained using the baseline tomato training image dataset.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 525.19,
+     "width": 225.7,
+     "height": 9.07
+    },
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 536.15,
+     "width": 120.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s115",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "+eggplant has been additionally trained using the baseline eggplant training image dataset.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 549.79,
+     "width": 225.68,
+     "height": 9.07
+    },
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 560.75,
+     "width": 144.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s116",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "+strawberry has been additionally trained using the baseline strawberry training image dataset.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 574.39,
+     "width": 225.7,
+     "height": 9.07
+    },
+    {
+     "page": 5,
+     "x": 332.4,
+     "y": 585.35,
+     "width": 170.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s117",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Figure 1 shows a comparison of the confusion matrix (P : leftmost column) for each crop diagnosis by M C and the diagnostic similarity (S ij : remaining columns) between both datasets generated by each M E .",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 628.07,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 638.82,
+     "width": 238.52,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 649.9,
+     "width": 238.5,
+     "height": 9.72
+    },
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 660.78,
+     "width": 131.49,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s118",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Table 2 is a summary table of the correlation (R) between the probability of disease diagnosis by M C ( P ) and the diagnostic similarity (S i j: remaining columns) between both datasets estimated by each M E .",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 454.68,
+     "y": 660.95,
+     "width": 103.28,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 671.87,
+     "width": 238.42,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 681.09,
+     "width": 238.52,
+     "height": 12.85
+    },
+    {
+     "page": 5,
+     "x": 319.56,
+     "y": 695.15,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 308.58,
+     "width": 18.93,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s119",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Table 3 shows a breakdown of the results from Table 2 by disease.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 75.36,
+     "y": 308.75,
+     "width": 217.14,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 319.67,
+     "width": 43.89,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s120",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Figure 2 shows the dependence of correlation R on hyperparameter α.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 100.44,
+     "y": 319.5,
+     "width": 192.0,
+     "height": 9.2
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 330.54,
+     "width": 85.89,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s121",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "The results marked with † in Tables 2 and 3 and the part of Figure 1 enclosed by the dotted line are reference results because the training data for M E and M C were shared.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 142.2,
+     "y": 330.71,
+     "width": 150.3,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 341.63,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 352.38,
+     "width": 237.55,
+     "height": 9.89
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 363.59,
+     "width": 50.49,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s122",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "Table 2, 3 shows that the M E fine-tuned for each plant has achieved higher R than the baseline for unknown crops.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 417.3,
+     "width": 238.59,
+     "height": 9.89
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 428.34,
+     "width": 218.85,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s123",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "This result means that in plant disease diagnosis, even for unknown crops, it is possible to obtain low-dimensional representations that show more accurate diagnostic potential than the baseline from the M E fine-tuned for each plant.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 274.8,
+     "y": 428.51,
+     "width": 17.8,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 439.43,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 450.35,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 461.39,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 472.14,
+     "width": 238.65,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s124",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "These results suggest there are clues to plant image diagnosis other than the universal image features learned using large-scale data.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 483.23,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 494.15,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 505.19,
+     "width": 65.13,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s125",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "Furthermore, even when a researcher finetunes the model on other crops,this knowledge can still be partially leveraged, serving as a valuable tool that provides an effective indicator for seeking diagnostic potential.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 121.92,
+     "y": 505.19,
+     "width": 170.6,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 516.11,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 527.03,
+     "width": 238.84,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 538.07,
+     "width": 214.53,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s126",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "Let us compare the S values for eggplant, obtained by +cucumber, which showed a high R in Figure 1, to the P values for eggplant alone.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 63.96,
+     "y": 549.06,
+     "width": 228.54,
+     "height": 9.2
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 559.98,
+     "width": 237.16,
+     "height": 9.2
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 571.19,
+     "width": 104.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s127",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "The areas with a significant tendency for diagnostic errors, beyond just the diagonal components, align closely.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 161.64,
+     "y": 571.19,
+     "width": 130.88,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 582.11,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 593.03,
+     "width": 79.17,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s128",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "This result suggests that DDD can also help address bottlenecks in diagnostic ability.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 135.84,
+     "y": 593.03,
+     "width": 156.66,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 604.07,
+     "width": 181.05,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s129",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "Figure 2 shows that almost all M E models reach their maximum R when α is between 0.1 and 5.0.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 640.14,
+     "width": 238.64,
+     "height": 9.89
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 651.18,
+     "width": 167.85,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s130",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "This observation suggests that the most suitable similarity measure S for DDD can be achieved by appropriately adjusting α.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 225.12,
+     "y": 651.35,
+     "width": 67.62,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 662.1,
+     "width": 238.64,
+     "height": 9.2
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 673.02,
+     "width": 217.41,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s131",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "It is worth noting that the R for the +cucumber dataset is exceptionally high in the case of strawberry.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 275.64,
+     "y": 673.19,
+     "width": 16.84,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 684.06,
+     "width": 238.64,
+     "height": 9.2
+    },
+    {
+     "page": 6,
+     "x": 54.0,
+     "y": 695.15,
+     "width": 179.01,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s132",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "Strawberry is a relatively simple task with a smaller domain-gap than other crops.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 237.24,
+     "y": 695.15,
+     "width": 55.24,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 308.75,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 319.67,
+     "width": 47.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s133",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "So, the knowledge used to identify the disease class in the cucumber training dataset encompasses much of the knowledge used to identify the disease class in strawberry.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 370.08,
+     "y": 319.67,
+     "width": 187.9,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 330.7,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 341.63,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 352.55,
+     "width": 23.13,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s134",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "As a result, the knowledge from the cucumber training dataset is highly transferable to the strawberry dataset, leading to a higher R for the +cucumber dataset when applied to strawberry.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 344.4,
+     "y": 352.55,
+     "width": 213.78,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 363.59,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 374.34,
+     "width": 238.38,
+     "height": 9.2
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 385.43,
+     "width": 44.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s135",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "To evaluate whether the similarity (S) obtained in this study is appropriate as DDD, we measure correlation (R) at α = 1.0 between P , calculated based on P obtained using M C , and S, calculated from M E .",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 430.07,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 440.37,
+     "width": 238.38,
+     "height": 9.96
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 450.21,
+     "width": 238.41,
+     "height": 12.85
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 464.1,
+     "width": 113.13,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s136",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "Therefore, it can only evaluate data within the same class (disease) in a dataset.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 435.48,
+     "y": 464.27,
+     "width": 122.74,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 475.19,
+     "width": 190.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s137",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "In addition, its validity is affected by the performance of the classifier M C .",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 512.28,
+     "y": 475.19,
+     "width": 45.93,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 486.23,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 496.98,
+     "width": 18.81,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s138",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "In this experiment, we only compared the use of a single crop type for training M E , but there is significant potential for improvement by incorporating tuning with more diverse data from multiple crop types.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 340.92,
+     "y": 497.15,
+     "width": 217.04,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 507.9,
+     "width": 238.52,
+     "height": 9.89
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 519.1,
+     "width": 238.54,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 530.02,
+     "width": 151.29,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s139",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "This study introduces a novel metric, to quantitatively assess the domain gap between training and test datasets.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 574.54,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 585.58,
+     "width": 214.89,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s140",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "DDD represents the distance between datasets and reveals the lack of diversity in the training data.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 536.4,
+     "y": 585.58,
+     "width": 21.59,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 596.5,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 607.42,
+     "width": 128.97,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s141",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "The aim is to promote the rapid implementation of strategies to improve the robustness of models, such as incorporating more diverse data based on the results of DDD.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 451.68,
+     "y": 607.42,
+     "width": 106.42,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 618.46,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 629.38,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 640.3,
+     "width": 79.65,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s142",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "As a result of experiments in the plant disease diagnosis task, the distance using low-dimensional representations derived from models trained on additional plant disease datasets that differ from the target crop and disease is more appropriate as a DDD than when only large datasets are used.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 402.24,
+     "y": 640.3,
+     "width": 155.89,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 651.34,
+     "width": 238.81,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 662.26,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 673.18,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 684.22,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 6,
+     "x": 319.56,
+     "y": 695.14,
+     "width": 69.45,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s143",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "Table 3: Details of the correlations between the probability of disease diagnosis by M C ( P ) and the diagnostic similarity (S ij : remaining columns) between both datasets estimated by each M E (at α = 1.0).",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 54.0,
+     "y": 86.85,
+     "width": 504.01,
+     "height": 12.85
+    },
+    {
+     "page": 7,
+     "x": 54.0,
+     "y": 100.29,
+     "width": 316.53,
+     "height": 10.33
+    }
+   ]
+  },
+  {
+   "id": "s144",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "Target Crop ID Name M E baseline +cucumber +tomato +eggplant +strawberry cucumber 00 HEALTHY 0.069 0.987 † 0.471 0.505 0.395 01 Powdery Mildew 0.089 0.992 † 0.706 0.495 0.438 02 Gray Mold 0.115 0.972 † 0.757 0.558 0.689 03 Anthracnose 0.747 0.956 † 0.973 0.862 0.876 08 Downy Mildew 0.456 0.999 † 0.662 0.552 0.467 09 Corynespora Leaf Spot 0.260 0.981 † 0.736 0.519 0.562 17 Gummy Stem Blight 0.502 0.863 † 0.558 0.388 0.601 20 Bacterial Spot 0.452 0.836 † 0.595 0.359 0.470 22 CCYV 0.238 0.921 † 0.924 0.795 0.645 23 Mosaic diseases 0.178 0.889 † 0.718 0.698 0.631 24 MYSV 0.211 0.980 † 0.734 0.511 0.492 R 0.232 0.944 † 0.717 0.564 0.553 tomato 00 HEALTHY 0.422 0.749 0.996 † 0.743 0.609 01 Powdery Mildew 0.542 0.699 0.998 † 0.658 0.457 02 Gray Mold 0.448 0.707 0.999 † 0.844 0.489 05 Cercospora Leaf Mold 0.585 0.902 0.992 † 0.784 0.705 06 Leaf Mold 0.374 0.828 0.943 † 0.833 0.736 07 Late Blight 0.452 0.436 0.985 † 0.654 0.462 10 Corynespora Target Spot 0.394 0.427 0.823 † 0.556 0.471 19 Bacterial Wilt 0.158 0.922 0.999 † 0.780 0.503 21 Bacterial Canker 0.744 0.954 0.987 † 0.949 0.815 27 ToMV 0.610 0.793 0.823 † 0.780 0.637 28 ToCV 0.514 0.736 0.968 † 0.584 0.487 29 Yellow Leaf Curl 0.451 0.665 0.990 † 0.715 0.613 R 0.468 0.743 0.966 † 0.745 0.574 eggplant 00 HEALTHY 0.483 0.936 0.931 0.997 † 0.675 01 Powdery Mildew 0.312 0.979 0.937 0.948 † 0.663 02 Gray Mold 0.819 0.686 0.883 0.917 † 0.809 06 Leaf Mold 0.904 0.873 0.756 0.757 † 0.556 11 Leaf Spot 0.447 0.940 0.948 0.994 † 0.958 18 Verticillium Wilt 0.640 0.897 0.868 0.914 † 0.693 19 Bacterial Wilt 0.469 0.951 0.767 0.962 † 0.489 R 0.544 0.909 0.876 0.932 † 0.704 strawberry 00 HEALTHY 0.585 0.792 0.668 0.707 0.880 † 01 Powdery Mildew 0.968 0.977 0.973 0.933 0.978 † 03 Anthracnose 0.652 0.838 0.945 0.932 0.956 † 15 Fusarium Wilt 0.641 0.975 0.913 0.940 0.948 † R 0.714 0.896 0.864 0.868 0.925 † † The results are for reference only, as the training data for M E includes some of the training data for M C .",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 130.91,
+     "width": 47.58,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 130.91,
+     "width": 38.02,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 414.72,
+     "y": 125.34,
+     "width": 15.56,
+     "height": 9.89
+    },
+    {
+     "page": 7,
+     "x": 297.36,
+     "y": 136.43,
+     "width": 134.94,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 448.56,
+     "y": 136.43,
+     "width": 100.02,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 213.47,
+     "width": 39.56,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 153.23,
+     "width": 59.75,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 153.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 153.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 151.45,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 153.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 153.19,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 153.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 164.87,
+     "width": 83.15,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 164.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 164.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 163.21,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 164.83,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 164.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 164.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 176.63,
+     "width": 58.74,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 176.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 176.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 174.97,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 176.59,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 176.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 176.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 188.39,
+     "width": 64.18,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 188.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 188.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 186.73,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 188.35,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 188.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 188.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 200.15,
+     "width": 76.91,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 200.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 200.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 198.49,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 200.11,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 200.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 200.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 211.91,
+     "width": 108.25,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 211.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 211.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 210.25,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 211.87,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 211.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 211.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 223.67,
+     "width": 98.89,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 223.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 223.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 222.01,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 223.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 223.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 223.63,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 235.43,
+     "width": 71.53,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 235.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 235.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 233.77,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 235.39,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 235.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 235.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 247.19,
+     "width": 41.15,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 247.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 247.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 245.53,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 247.15,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 247.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 247.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 258.95,
+     "width": 79.12,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 258.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 258.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 257.17,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 258.91,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 258.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 258.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 270.59,
+     "width": 42.35,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 270.59,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 270.59,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 268.93,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 270.55,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 270.59,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 270.59,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 211.68,
+     "y": 286.98,
+     "width": 7.56,
+     "height": 9.07
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 287.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 360.36,
+     "y": 287.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 383.04,
+     "y": 285.49,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 287.11,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 287.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 287.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 369.71,
+     "width": 27.78,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 303.95,
+     "width": 59.75,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 303.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 303.91,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 303.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 302.29,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 303.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 303.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 315.71,
+     "width": 83.15,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 315.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 315.67,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 315.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 314.05,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 315.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 315.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 327.47,
+     "width": 58.74,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 327.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 327.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 327.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 325.81,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 327.43,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 327.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 339.23,
+     "width": 106.02,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 339.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 339.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 339.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 337.45,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 339.19,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 339.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 350.87,
+     "width": 57.06,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 350.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 350.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 350.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 349.21,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 350.83,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 350.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 362.63,
+     "width": 59.77,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 362.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 362.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 362.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 360.97,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 362.59,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 362.63,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 374.39,
+     "width": 115.09,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 374.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 374.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 374.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 372.73,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 374.35,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 374.39,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 386.15,
+     "width": 70.45,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 386.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 386.11,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 386.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 384.49,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 386.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 386.15,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 397.91,
+     "width": 81.92,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 397.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 397.87,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 397.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 396.25,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 397.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 397.91,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 409.67,
+     "width": 39.95,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 409.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 409.63,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 409.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 408.01,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 409.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 409.67,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 421.43,
+     "width": 37.67,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 421.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 421.39,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 421.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 419.77,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 421.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 421.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 433.19,
+     "width": 84.85,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 433.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 433.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 433.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 431.41,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 433.15,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 433.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 211.68,
+     "y": 449.58,
+     "width": 7.56,
+     "height": 9.07
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 449.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 449.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 405.6,
+     "y": 449.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 428.28,
+     "y": 447.97,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 449.71,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 449.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 504.83,
+     "width": 34.45,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 466.43,
+     "width": 59.75,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 466.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 466.39,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 466.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 466.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 464.77,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 466.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 478.19,
+     "width": 83.15,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 478.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 478.15,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 478.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 478.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 476.53,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 478.19,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 489.95,
+     "width": 58.74,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 489.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 489.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 489.91,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 489.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 488.29,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 489.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 501.71,
+     "width": 57.06,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 501.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 501.67,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 501.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 501.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 500.05,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 501.71,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 513.47,
+     "width": 53.77,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 513.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 513.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 513.43,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 513.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 511.69,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 513.47,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 525.23,
+     "width": 82.09,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 525.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 525.19,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 525.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 525.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 523.45,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 525.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 536.87,
+     "width": 70.45,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 536.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 536.83,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 536.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 536.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 535.21,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 536.87,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 211.68,
+     "y": 553.26,
+     "width": 7.56,
+     "height": 9.07
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 553.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 553.39,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 553.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 461.76,
+     "y": 553.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 484.44,
+     "y": 551.77,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 525.96,
+     "y": 553.43,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 592.19,
+     "width": 42.66,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 570.23,
+     "width": 59.75,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 570.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 570.19,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 570.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 570.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 521.76,
+     "y": 570.23,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 544.44,
+     "y": 568.57,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 581.99,
+     "width": 83.15,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 581.99,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 581.95,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 581.99,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 581.99,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 521.76,
+     "y": 581.99,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 544.44,
+     "y": 580.33,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 593.75,
+     "width": 64.18,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 593.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 593.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 593.71,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 593.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 521.76,
+     "y": 593.75,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 544.44,
+     "y": 591.97,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 145.44,
+     "y": 605.51,
+     "width": 72.13,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 605.51,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 605.47,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 605.51,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 605.51,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 521.76,
+     "y": 605.51,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 544.44,
+     "y": 603.73,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 211.68,
+     "y": 621.78,
+     "width": 7.56,
+     "height": 9.07
+    },
+    {
+     "page": 7,
+     "x": 307.68,
+     "y": 621.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 364.44,
+     "y": 621.91,
+     "width": 22.62,
+     "height": 8.95
+    },
+    {
+     "page": 7,
+     "x": 409.8,
+     "y": 621.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 465.96,
+     "y": 621.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 521.76,
+     "y": 621.95,
+     "width": 22.62,
+     "height": 9.03
+    },
+    {
+     "page": 7,
+     "x": 544.44,
+     "y": 620.29,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 645.49,
+     "width": 3.65,
+     "height": 6.4
+    },
+    {
+     "page": 7,
+     "x": 70.32,
+     "y": 647.1,
+     "width": 418.05,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s145",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "Bolded values indicate the best values excluding reference results.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 63.6,
+     "y": 658.19,
+     "width": 263.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s146",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Figure 1: Comparison of the confusion matrix (P : left-most column) for each crop diagnosis by M C and the diagnostic similarity (S ij : remaining columns) between both data sets generated by each M E .",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 265.86,
+     "width": 503.96,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 276.9,
+     "width": 315.33,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s147",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Dark-color indicate high values.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 372.0,
+     "y": 277.07,
+     "width": 128.85,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s148",
+   "section_id": null,
+   "kind": "caption",
+   "text": "The results in the dashed boxed area are for reference only, as the part of training data for M C and M E are shared.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 503.4,
+     "y": 277.07,
+     "width": 54.54,
+     "height": 9.03
+    },
+    {
+     "page": 5,
+     "x": 54.0,
+     "y": 287.82,
+     "width": 399.81,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s149",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Figure 2: The dependence of correlation R on hyperparameter α.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 176.4,
+     "y": 270.42,
+     "width": 259.05,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s150",
+   "section_id": null,
+   "kind": "caption",
+   "text": "DETAILS OF THE DATASET.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 260.88,
+     "y": 54.83,
+     "width": 125.01,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s151",
+   "section_id": null,
+   "kind": "table",
+   "text": "ID Name | cucumber | train | test | ID Name | tomato | train | test",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s152",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY 01 Powdery Mildew 02 Gray Mold 03 Anthracnose 08 Downy Mildew 09 Corynespora Leaf Spot 17 Gummy Stem Blight 20 Bacterial Spot 22 CCYV 23 Mosaic diseases 24 MYSV |  | 16,023 7,764 643 3,038 6,953 7,565 1,483 4,362 5,969 26,861 17,239 | 5,576 1,898 167 77 2,579 1,813 374 2,648 179 1,626 1,004 | 00 HEALTHY 01 Powdery Mildew 02 Gray Mold 05 Cercospora Leaf Mold 06 Leaf Mold 07 Late Blight 10 Corynespora Target Spot 19 Bacterial Wilt 21 Bacterial Canker 27 ToMV 28 ToCV 29 Yellow Leaf Curl | 8,120 4,490 9,327 4,078 2,761 2,049 1,732 2,259 4,369 3,453 4,320 4,513 | 2,994 4,250 571 1,809 151 808 1,350 412 128 49 871 1,746",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s153",
+   "section_id": null,
+   "kind": "table",
+   "text": "Total |  |  | 97,900 17,941 | Total |  | 51,471 15,139",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s154",
+   "section_id": null,
+   "kind": "table",
+   "text": " | eggplant |  |  |  |  | ",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s155",
+   "section_id": null,
+   "kind": "table",
+   "text": "ID Name |  | train | test |  | strawberry",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s156",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 12,431 1,122 | ID Name |  | train | test",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s157",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew 02 Gray Mold 06 Leaf Mold 11 Leaf Spot 18 Verticillium Wilt |  | 7,936 1,024 3,188 5,510 3,176 | 938 166 732 118 354 | 00 HEALTHY 01 Powdery Mildew 03 Anthracnose 15 Fusarium Wilt | 10,472 1,952 3,701 2,608 | 578 893 609 227",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s158",
+   "section_id": null,
+   "kind": "table",
+   "text": "19 Bacterial Wilt |  | 3,415 | 462 | Total |  | 18,733 2,307",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s159",
+   "section_id": null,
+   "kind": "table",
+   "text": "Total |  | 36,680 3,892 |  |  | ",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 78.96,
+     "y": 75.71,
+     "width": 457.62,
+     "height": 302.79
+    }
+   ]
+  },
+  {
+   "id": "s160",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Summary of correlations (R) between the probability of disease diagnosis by MThe results are for reference only, as the training data for M E includes some of the training data for M C .",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 89.64,
+     "y": 317.22,
+     "width": 324.42,
+     "height": 9.2
+    },
+    {
+     "page": 5,
+     "x": 162.36,
+     "y": 431.7,
+     "width": 281.32,
+     "height": 9.89
+    },
+    {
+     "page": 5,
+     "x": 165.72,
+     "y": 442.62,
+     "width": 134.49,
+     "height": 9.89
+    }
+   ]
+  },
+  {
+   "id": "s161",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Bolded values indicate the best values excluding reference results.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 453.71,
+     "width": 263.61,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "s162",
+   "section_id": null,
+   "kind": "table",
+   "text": "M E | Target Crop cucumber tomato eggplant strawberry",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s163",
+   "section_id": null,
+   "kind": "table",
+   "text": "baseline | 0.232 | 0.468 | 0.544 | 0.714",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s164",
+   "section_id": null,
+   "kind": "table",
+   "text": "+cucumber | 0.944 † 0.743 | 0.909 | 0.896",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s165",
+   "section_id": null,
+   "kind": "table",
+   "text": "+tomato | 0.717 | 0.966 † | 0.876 | 0.864",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s166",
+   "section_id": null,
+   "kind": "table",
+   "text": "+eggplant | 0.564 | 0.745 | 0.932 † | 0.868",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s167",
+   "section_id": null,
+   "kind": "table",
+   "text": "+strawberry | 0.553 | 0.574 | 0.704 | 0.925 †",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s168",
+   "section_id": null,
+   "kind": "table",
+   "text": "† |  |  |  | ",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 155.76,
+     "y": 349.67,
+     "width": 302.8,
+     "height": 86.83
+    }
+   ]
+  },
+  {
+   "id": "s169",
+   "section_id": "sec17",
+   "kind": "body",
+   "text": "This work was supported by the Ministry of Agriculture, Forestry and Fisheries (MAFF) Japan Commissioned project study on \"Development of pest diagnosis technology using AI\" (JP17935051) and by the Cabinet Office, Public / Private R&D Investment Strategic Expansion Program (PRISM).",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 70.31,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 81.35,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 92.27,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 103.19,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 114.23,
+     "width": 238.75,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 125.15,
+     "width": 39.09,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "lt4-0-0",
+   "section_id": null,
+   "kind": "table",
+   "text": "ID Name | train | test",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-1",
+   "section_id": null,
+   "kind": "table",
+   "text": "ID Name | train | test",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-2",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 8,120 | 2,994",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-3",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 16,023 | 5,576",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-4",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 4,490 | 4,250",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-5",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 7,764 | 1,898",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-6",
+   "section_id": null,
+   "kind": "table",
+   "text": "02 Gray Mold | 9,327 | 571",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-7",
+   "section_id": null,
+   "kind": "table",
+   "text": "02 Gray Mold | 643 | 167",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-8",
+   "section_id": null,
+   "kind": "table",
+   "text": "05 Cercospora Leaf Mold | 4,078 | 1,809",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-9",
+   "section_id": null,
+   "kind": "table",
+   "text": "03 Anthracnose | 3,038 | 77",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-10",
+   "section_id": null,
+   "kind": "table",
+   "text": "06 Leaf Mold | 2,761 | 151",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-11",
+   "section_id": null,
+   "kind": "table",
+   "text": "08 Downy Mildew | 6,953 | 2,579",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-12",
+   "section_id": null,
+   "kind": "table",
+   "text": "07 Late Blight | 2,049 | 808",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-13",
+   "section_id": null,
+   "kind": "table",
+   "text": "09 Corynespora Leaf Spot | 7,565 | 1,813",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-14",
+   "section_id": null,
+   "kind": "table",
+   "text": "10 Corynespora Target Spot | 1,732 | 1,350",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-15",
+   "section_id": null,
+   "kind": "table",
+   "text": "17 Gummy Stem Blight | 1,483 | 374",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-16",
+   "section_id": null,
+   "kind": "table",
+   "text": "19 Bacterial Wilt | 2,259 | 412",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-17",
+   "section_id": null,
+   "kind": "table",
+   "text": "20 Bacterial Spot | 4,362 | 2,648",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-18",
+   "section_id": null,
+   "kind": "table",
+   "text": "21 Bacterial Canker | 4,369 | 128",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-19",
+   "section_id": null,
+   "kind": "table",
+   "text": "22 CCYV | 5,969 | 179",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-20",
+   "section_id": null,
+   "kind": "table",
+   "text": "27 ToMV | 3,453 | 49",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-21",
+   "section_id": null,
+   "kind": "table",
+   "text": "23 Mosaic diseases | 26,861 | 1,626",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-22",
+   "section_id": null,
+   "kind": "table",
+   "text": "28 ToCV | 4,320 | 871",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-23",
+   "section_id": null,
+   "kind": "table",
+   "text": "24 MYSV | 17,239 | 1,004",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-24",
+   "section_id": null,
+   "kind": "table",
+   "text": "29 Yellow Leaf Curl | 4,513 | 1,746",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-25",
+   "section_id": null,
+   "kind": "table",
+   "text": "Total | 97,900 | 17,941",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-26",
+   "section_id": null,
+   "kind": "table",
+   "text": "Total | 51,471 | 15,139",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-27",
+   "section_id": null,
+   "kind": "table",
+   "text": "eggplant",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-28",
+   "section_id": null,
+   "kind": "table",
+   "text": "ID Name | train | test | strawberry",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-29",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 12,431 | 1,122 | ID Name | train | test",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-30",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 7,936 | 938",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-31",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 10,472 | 578",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-32",
+   "section_id": null,
+   "kind": "table",
+   "text": "02 Gray Mold | 1,024 | 166",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-33",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 1,952 | 893",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-34",
+   "section_id": null,
+   "kind": "table",
+   "text": "06 Leaf Mold | 3,188 | 732",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-35",
+   "section_id": null,
+   "kind": "table",
+   "text": "03 Anthracnose | 3,701 | 609",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-36",
+   "section_id": null,
+   "kind": "table",
+   "text": "11 Leaf Spot | 5,510 | 118",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-37",
+   "section_id": null,
+   "kind": "table",
+   "text": "15 Fusarium Wilt | 2,608 | 227",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-38",
+   "section_id": null,
+   "kind": "table",
+   "text": "18 Verticillium Wilt | 3,176 | 354",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-39",
+   "section_id": null,
+   "kind": "table",
+   "text": "19 Bacterial Wilt | 3,415 | 462 | Total | 18,733 | 2,307",
+   "boxes": []
+  },
+  {
+   "id": "lt4-0-40",
+   "section_id": null,
+   "kind": "table",
+   "text": "Total | 36,680 | 3,892",
+   "boxes": []
+  },
+  {
+   "id": "lt5-0-0",
+   "section_id": null,
+   "kind": "table",
+   "text": "baseline | 0.232 | 0.468 | 0.544 | 0.714",
+   "boxes": []
+  },
+  {
+   "id": "lt5-0-1",
+   "section_id": null,
+   "kind": "table",
+   "text": "+cucumber | 0.944† 0.743 | 0.909 | 0.896",
+   "boxes": []
+  },
+  {
+   "id": "lt5-0-2",
+   "section_id": null,
+   "kind": "table",
+   "text": "+tomato | 0.717 | 0.966† | 0.876 | 0.864",
+   "boxes": []
+  },
+  {
+   "id": "lt5-0-3",
+   "section_id": null,
+   "kind": "table",
+   "text": "+eggplant | 0.564 | 0.745 | 0.932† | 0.868",
+   "boxes": []
+  },
+  {
+   "id": "lt5-0-4",
+   "section_id": null,
+   "kind": "table",
+   "text": "+strawberry | 0.553 | 0.574 | 0.704 | 0.925†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-0",
+   "section_id": null,
+   "kind": "table",
+   "text": "Target Crop | ID Name",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-1",
+   "section_id": null,
+   "kind": "table",
+   "text": "baseline | +cucumber | +tomato | +eggplant | +strawberry",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-2",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 0.069 | 0.987† | 0.471 | 0.505 | 0.395",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-3",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 0.089 | 0.992† | 0.706 | 0.495 | 0.438",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-4",
+   "section_id": null,
+   "kind": "table",
+   "text": "02 Gray Mold | 0.115 | 0.972† | 0.757 | 0.558 | 0.689",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-5",
+   "section_id": null,
+   "kind": "table",
+   "text": "03 Anthracnose | 0.747 | 0.956† | 0.973 | 0.862 | 0.876",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-6",
+   "section_id": null,
+   "kind": "table",
+   "text": "08 Downy Mildew | 0.456 | 0.999† | 0.662 | 0.552 | 0.467",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-7",
+   "section_id": null,
+   "kind": "table",
+   "text": "cucumber | 09 Corynespora Leaf Spot | 0.260 | 0.981† | 0.736 | 0.519 | 0.562",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-8",
+   "section_id": null,
+   "kind": "table",
+   "text": "17 Gummy Stem Blight | 0.502 | 0.863† | 0.558 | 0.388 | 0.601",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-9",
+   "section_id": null,
+   "kind": "table",
+   "text": "20 Bacterial Spot | 0.452 | 0.836† | 0.595 | 0.359 | 0.470",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-10",
+   "section_id": null,
+   "kind": "table",
+   "text": "22 CCYV | 0.238 | 0.921† | 0.924 | 0.795 | 0.645",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-11",
+   "section_id": null,
+   "kind": "table",
+   "text": "23 Mosaic diseases | 0.178 | 0.889† | 0.718 | 0.698 | 0.631",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-12",
+   "section_id": null,
+   "kind": "table",
+   "text": "24 MYSV | 0.211 | 0.980† | 0.734 | 0.511 | 0.492",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-13",
+   "section_id": null,
+   "kind": "table",
+   "text": "R | 0.232 | 0.944† | 0.717 | 0.564 | 0.553",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-14",
+   "section_id": null,
+   "kind": "table",
+   "text": "†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-15",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 0.422 | 0.749 | 0.996 | 0.743 | 0.609",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-16",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 0.542 | 0.699 | 0.998† | 0.658 | 0.457",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-17",
+   "section_id": null,
+   "kind": "table",
+   "text": "02 Gray Mold | 0.448 | 0.707 | 0.999† | 0.844 | 0.489",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-18",
+   "section_id": null,
+   "kind": "table",
+   "text": "05 Cercospora Leaf Mold | 0.585 | 0.902 | 0.992† | 0.784 | 0.705",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-19",
+   "section_id": null,
+   "kind": "table",
+   "text": "06 Leaf Mold | 0.374 | 0.828 | 0.943† | 0.833 | 0.736",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-20",
+   "section_id": null,
+   "kind": "table",
+   "text": "07 Late Blight | 0.452 | 0.436 | 0.985† | 0.654 | 0.462",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-21",
+   "section_id": null,
+   "kind": "table",
+   "text": "tomato | 10 Corynespora Target Spot | 0.394 | 0.427 | 0.823† | 0.556 | 0.471",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-22",
+   "section_id": null,
+   "kind": "table",
+   "text": "19 Bacterial Wilt | 0.158 | 0.922 | 0.999† | 0.780 | 0.503",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-23",
+   "section_id": null,
+   "kind": "table",
+   "text": "21 Bacterial Canker | 0.744 | 0.954 | 0.987† | 0.949 | 0.815",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-24",
+   "section_id": null,
+   "kind": "table",
+   "text": "27 ToMV | 0.610 | 0.793 | 0.823† | 0.780 | 0.637",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-25",
+   "section_id": null,
+   "kind": "table",
+   "text": "28 ToCV | 0.514 | 0.736 | 0.968† | 0.584 | 0.487",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-26",
+   "section_id": null,
+   "kind": "table",
+   "text": "29 Yellow Leaf Curl | 0.451 | 0.665 | 0.990† | 0.715 | 0.613",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-27",
+   "section_id": null,
+   "kind": "table",
+   "text": "R | 0.468 | 0.743 | 0.966† | 0.745 | 0.574",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-28",
+   "section_id": null,
+   "kind": "table",
+   "text": "†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-29",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 0.483 | 0.936 | 0.931 | 0.997 | 0.675",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-30",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 0.312 | 0.979 | 0.937 | 0.948† | 0.663",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-31",
+   "section_id": null,
+   "kind": "table",
+   "text": "02 Gray Mold | 0.819 | 0.686 | 0.883 | 0.917† | 0.809",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-32",
+   "section_id": null,
+   "kind": "table",
+   "text": "eggplant | 06 Leaf Mold | 0.904 | 0.873 | 0.756 | 0.757† | 0.556",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-33",
+   "section_id": null,
+   "kind": "table",
+   "text": "11 Leaf Spot | 0.447 | 0.940 | 0.948 | 0.994† | 0.958",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-34",
+   "section_id": null,
+   "kind": "table",
+   "text": "18 Verticillium Wilt | 0.640 | 0.897 | 0.868 | 0.914† | 0.693",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-35",
+   "section_id": null,
+   "kind": "table",
+   "text": "19 Bacterial Wilt | 0.469 | 0.951 | 0.767 | 0.962† | 0.489",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-36",
+   "section_id": null,
+   "kind": "table",
+   "text": "R | 0.544 | 0.909 | 0.876 | 0.932† | 0.704",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-37",
+   "section_id": null,
+   "kind": "table",
+   "text": "00 HEALTHY | 0.585 | 0.792 | 0.668 | 0.707 | 0.880†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-38",
+   "section_id": null,
+   "kind": "table",
+   "text": "01 Powdery Mildew | 0.968 | 0.977 | 0.973 | 0.933 | 0.978†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-39",
+   "section_id": null,
+   "kind": "table",
+   "text": "strawberry | 03 Anthracnose | 0.652 | 0.838 | 0.945 | 0.932 | 0.956†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-40",
+   "section_id": null,
+   "kind": "table",
+   "text": "15 Fusarium Wilt | 0.641 | 0.975 | 0.913 | 0.940 | 0.948†",
+   "boxes": []
+  },
+  {
+   "id": "lt7-0-41",
+   "section_id": null,
+   "kind": "table",
+   "text": "R | 0.714 | 0.896 | 0.864 | 0.868 | 0.925†",
+   "boxes": []
+  }
+ ],
+ "bibliography": [
+  {
+   "id": "b0",
+   "raw": "Alvarez-Melis, D.; and Fusi, N. 2020. Geometric Dataset Distances via Optimal Transport.",
+   "title": "Geometric Dataset Distances via Optimal Transport",
+   "authors": [
+    "D Alvarez-Melis",
+    "N Fusi"
+   ],
+   "year": 2020,
+   "venue": null,
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 160.67,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 171.59,
+     "width": 132.21,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b1",
+   "raw": "Atila, Ü.; Uc ¸ar, M.; Akyol, K.; and Uc ¸ar, E. 2021. Plant leaf disease classification using EfficientNet deep learning model. Ecological Informatics, 61: 101182.",
+   "title": "Plant leaf disease classification using EfficientNet deep learning model",
+   "authors": [
+    "Ü Atila",
+    "M Uc ¸ar",
+    "K Akyol",
+    "E Uc ¸ar"
+   ],
+   "year": 2021,
+   "venue": "Ecological Informatics",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 182.15,
+     "width": 238.57,
+     "height": 11.19
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 195.23,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 206.27,
+     "width": 175.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b2",
+   "raw": "Calderon-Ramirez, Saul and Oala, Luis and Torrents- Barrena, Jordina and Yang, Shengxiang and Elizondo, David and Moemeni, Armaghan and Colreavy-Donnelly, Simon and Samek, Wojciech and Molina-Cabello, Miguel A. and López-Rubio, Ezequiel. 2023. Dataset Similarity to Assess Semisupervised Learning Under Distribution Mismatch Be- tween the Labeled and Unlabeled Datasets. IEEE Transac- tions on Artificial Intelligence, 4(2): 282-291.",
+   "title": "Dataset Similarity to Assess Semisupervised Learning Under Distribution Mismatch Between the Labeled and Unlabeled Datasets",
+   "authors": [
+    "Saul Calderon-Ramirez",
+    "Luis Oala",
+    "Jordina Torrents-Barrena",
+    "Shengxiang Yang",
+    "David Elizondo",
+    "Armaghan Moemeni",
+    "Simon Colreavy-Donnelly",
+    "Wojciech Samek",
+    "Miguel A Molina-Cabello",
+    "Ezequiel López-Rubio"
+   ],
+   "year": 2023,
+   "venue": "IEEE Transactions on Artificial Intelligence",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 218.99,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 229.91,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 240.82,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 251.86,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 262.78,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 273.7,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 284.74,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 295.66,
+     "width": 183.81,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b3",
+   "raw": "Cap, Q. H.; Uga, H.; Kagiwada, S.; and Iyatomi, H. 2022. LeafGAN: An Effective Data Augmentation Method for Practical Plant Disease Diagnosis. IEEE Transactions on Automation Science and Engineering, 19(2): 1258-1267.",
+   "title": "LeafGAN: An Effective Data Augmentation Method for Practical Plant Disease Diagnosis",
+   "authors": [
+    "Q H Cap",
+    "H Uga",
+    "S Kagiwada",
+    "H Iyatomi"
+   ],
+   "year": 2022,
+   "venue": "IEEE Transactions on Automation Science and Engineering",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 308.38,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 319.3,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 330.34,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 341.26,
+     "width": 228.09,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b4",
+   "raw": "Chechik, G.; Sharma, V.; Shalit, U.; and Bengio, S. 2009. Large Scale Online Learning of Image Similarity through Ranking. In Araujo, H.; Mendonc ¸a, A. M.; Pinho, A. J.; and Torres, M. I., eds., Pattern Recognition and Image Analy- sis, 11-14. Berlin, Heidelberg: Springer Berlin Heidelberg. ISBN 978-3-642-02172-5.",
+   "title": "Large Scale Online Learning of Image Similarity through Ranking",
+   "authors": [
+    "G Chechik",
+    "V Sharma",
+    "U Shalit",
+    "S Bengio"
+   ],
+   "year": 2009,
+   "venue": "Pattern Recognition and Image Analysis",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 353.98,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 364.9,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 375.94,
+     "width": 238.62,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 386.86,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 397.78,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 408.82,
+     "width": 106.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b5",
+   "raw": "Chen, T.; Kornblith, S.; Norouzi, M.; and Hinton, G. 2020. A simple framework for contrastive learning of visual repre- sentations. In International conference on machine learning, 1597-1607. PMLR.",
+   "title": "A simple framework for contrastive learning of visual representations",
+   "authors": [
+    "T Chen",
+    "S Kornblith",
+    "M Norouzi",
+    "G Hinton"
+   ],
+   "year": 2020,
+   "venue": "International conference on machine learning",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 421.54,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 432.46,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 443.38,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 454.42,
+     "width": 79.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b6",
+   "raw": "Chen, W.-Y.; Liu, Y.-C.; Kira, Z.; Wang, Y.-C.; and Huang, J.-B. 2019. A Closer Look at Few-shot Classification. In International Conference on Learning Representations.",
+   "title": "A Closer Look at Few-shot Classification",
+   "authors": [
+    "W.-Y Chen",
+    "Y.-C Liu",
+    "Z Kira",
+    "Y.-C Wang",
+    "J.-B Huang"
+   ],
+   "year": 2019,
+   "venue": "International Conference on Learning Representations",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 467.14,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 478.06,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 489.18,
+     "width": 221.13,
+     "height": 8.72
+    }
+   ]
+  },
+  {
+   "id": "b7",
+   "raw": "Deng, J.; Dong, W.; Socher, R.; Li, L.-J.; Li, K.; and Fei- Fei, L. 2009. ImageNet: A large-scale hierarchical image database. In 2009 IEEE Conference on Computer Vision and Pattern Recognition, 248-255.",
+   "title": "ImageNet: A large-scale hierarchical image database",
+   "authors": [
+    "J Deng",
+    "W Dong",
+    "R Socher",
+    "L.-J Li",
+    "K Li",
+    "L Fei-Fei"
+   ],
+   "year": 2009,
+   "venue": "2009 IEEE Conference on Computer Vision and Pattern Recognition",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 501.82,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 512.74,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 523.66,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 534.58,
+     "width": 139.77,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b8",
+   "raw": "Elfatimi, E.; Eryigit, R.; and Elfatimi, L. 2022. Beans leaf diseases classification using mobilenet models. IEEE Ac- cess, 10: 9471-9482.",
+   "title": "Beans leaf diseases classification using mobilenet models",
+   "authors": [
+    "E Elfatimi",
+    "R Eryigit",
+    "L Elfatimi"
+   ],
+   "year": 2022,
+   "venue": "IEEE Access",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 547.42,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 558.34,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 569.26,
+     "width": 84.69,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b9",
+   "raw": "Fujita, E. E.; Uga, H.; Kagiwada, S.; and Iyatomi, H. 2018. A Practical Plant Diagnosis System for Field Leaf Images and Feature Visualization. International Journal of Engi- neering & Technology.",
+   "title": "A Practical Plant Diagnosis System for Field Leaf Images and Feature Visualization",
+   "authors": [
+    "E E Fujita",
+    "H Uga",
+    "S Kagiwada",
+    "H Iyatomi"
+   ],
+   "year": 2018,
+   "venue": "International Journal of Engineering & Technology",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 581.98,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 593.02,
+     "width": 238.72,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 603.94,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 615.06,
+     "width": 91.29,
+     "height": 8.72
+    }
+   ]
+  },
+  {
+   "id": "b10",
+   "raw": "Hughes, D.; Salathé, M.; et al. 2015. An open access repository of images on plant health to enable the de- velopment of mobile disease diagnostics. arXiv preprint arXiv:1511.08060.",
+   "title": "An open access repository of images on plant health to enable the development of mobile disease diagnostics",
+   "authors": [
+    "D Hughes",
+    "M Salathé"
+   ],
+   "year": 2015,
+   "venue": null,
+   "doi": null,
+   "arxiv_id": "1511.08060",
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 627.58,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 638.62,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 649.54,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 660.66,
+     "width": 75.93,
+     "height": 8.72
+    }
+   ]
+  },
+  {
+   "id": "b11",
+   "raw": "Iwano, K.; Shibuya, S.; Kagiwada, S.; and Iyatomi, H. 2024. Hierarchical Object Detection and Recognition Framework for Practical Plant Disease Diagnosis. arXiv:2407.17906. Kanno, S.; Nagasawa, S.; Cap, Q. H.; Shibuya, S.; Uga, H.; Kagiwada, S.; and Iyatomi, H. 2021. PPIG: Productive and Pathogenic Image Generation for Plant Disease Diagnosis. In 2020 IEEE-EMBS Conference on Biomedical Engineer- ing and Sciences (IECBES), 554-559.",
+   "title": "Hierarchical Object Detection and Recognition Framework for Practical Plant Disease Diagnosis",
+   "authors": [
+    "K Iwano",
+    "S Shibuya",
+    "S Kagiwada",
+    "H Iyatomi",
+    "S Kanno",
+    "S Nagasawa",
+    "Q H Cap",
+    "S Shibuya",
+    "H Uga",
+    "S Kagiwada",
+    "H Iyatomi"
+   ],
+   "year": 2020,
+   "venue": "IEEE-EMBS Conference on Biomedical Engineering and Sciences (IECBES)",
+   "doi": null,
+   "arxiv_id": "2407.17906",
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 673.18,
+     "width": 238.77,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 684.22,
+     "width": 238.74,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 54.0,
+     "y": 695.14,
+     "width": 229.53,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 57.1,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 68.02,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 79.06,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 89.98,
+     "width": 238.64,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 100.9,
+     "width": 152.01,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b12",
+   "raw": "Kawasaki, Y.; Uga, H.; Kagiwada, S.; and Iyatomi, H. 2015. Basic study of automated diagnosis of viral plant diseases using convolutional neural networks. In Advances in Visual Computing: 11th International Symposium, ISVC 2015, Las Vegas, NV, USA, December 14-16, 2015, Proceedings, Part II 11, 638-645. Springer.",
+   "title": "Basic study of automated diagnosis of viral plant diseases using convolutional neural networks",
+   "authors": [
+    "Y Kawasaki",
+    "H Uga",
+    "S Kagiwada",
+    "H Iyatomi"
+   ],
+   "year": 2015,
+   "venue": "Advances in Visual Computing: 11th International Symposium",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 113.98,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 124.9,
+     "width": 238.48,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 135.82,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 147.06,
+     "width": 238.48,
+     "height": 8.72
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 157.98,
+     "width": 238.45,
+     "height": 8.72
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 168.7,
+     "width": 100.29,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b13",
+   "raw": "Mohanty, S. P.; Hughes, D. P.; and Salathé, M. 2016. Us- ing deep learning for image-based plant disease detection. Frontiers in plant science, 7: 1419.",
+   "title": "Using deep learning for image-based plant disease detection",
+   "authors": [
+    "S P Mohanty",
+    "D P Hughes",
+    "M Salathé"
+   ],
+   "year": 2016,
+   "venue": "Frontiers in plant science",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 181.66,
+     "width": 238.4,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 192.7,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 203.62,
+     "width": 139.41,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b14",
+   "raw": "Narayanan, K. L.; Krishnan, R. S.; Robinson, Y. H.; Julie, E. G.; Vimal, S.; Saravanan, V.; and Kaliappan, M. 2022. Banana plant disease classification using hybrid convolu- tional neural network. Computational Intelligence and Neu- roscience, 2022(1): 9153699.",
+   "title": "Banana plant disease classification using hybrid convolutional neural network",
+   "authors": [
+    "K L Narayanan",
+    "R S Krishnan",
+    "Y H Robinson",
+    "E G Julie",
+    "S Vimal",
+    "V Saravanan",
+    "M Kaliappan"
+   ],
+   "year": 2022,
+   "venue": "Computational Intelligence and Neuroscience",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 216.58,
+     "width": 238.41,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 227.62,
+     "width": 238.65,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 238.54,
+     "width": 238.76,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 249.46,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 260.5,
+     "width": 117.21,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b15",
+   "raw": "Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; et al. 2021. Learning transferable visual models from nat- ural language supervision. In International conference on machine learning, 8748-8763. PMLR.",
+   "title": "Learning transferable visual models from natural language supervision",
+   "authors": [
+    "A Radford",
+    "J W Kim",
+    "C Hallacy",
+    "A Ramesh",
+    "G Goh",
+    "S Agarwal",
+    "G Sastry",
+    "A Askell",
+    "P Mishkin",
+    "J Clark"
+   ],
+   "year": 2021,
+   "venue": "International conference on machine learning",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 273.46,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 284.38,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 295.3,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 306.34,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 317.26,
+     "width": 154.17,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b16",
+   "raw": "Ramcharan, A.; Baranowski, K.; McCloskey, P.; Ahmed, B.; Legg, J.; and Hughes, D. P. 2017. Deep learning for image- based cassava disease detection. Frontiers in plant science, 8: 1852.",
+   "title": "Deep learning for imagebased cassava disease detection",
+   "authors": [
+    "A Ramcharan",
+    "K Baranowski",
+    "P Mccloskey",
+    "B Ahmed",
+    "J Legg",
+    "D P Hughes"
+   ],
+   "year": 2017,
+   "venue": "Frontiers in plant science",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 330.22,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 341.26,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 352.18,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 363.1,
+     "width": 32.85,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b17",
+   "raw": "Shibuya, S.; Cap, Q. H.; Nagasawa, S.; Kagiwada, S.; Uga, H.; and Iyatomi, H. 2021. Validation of prerequisites for correct performance evaluation of image-based plant disease diagnosis using reliable 221k images collected from actual fields. In AI for Agriculture and Food Systems.",
+   "title": "Validation of prerequisites for correct performance evaluation of image-based plant disease diagnosis using reliable 221k images collected from actual fields",
+   "authors": [
+    "S Shibuya",
+    "Q H Cap",
+    "S Nagasawa",
+    "S Kagiwada",
+    "H Uga",
+    "H Iyatomi"
+   ],
+   "year": 2021,
+   "venue": "AI for Agriculture and Food Systems",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 376.18,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 387.1,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 398.02,
+     "width": 238.42,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 408.94,
+     "width": 238.57,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 419.98,
+     "width": 186.45,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b18",
+   "raw": "Sohn, K. 2016. Improved deep metric learning with multi- class N-pair loss objective. In Proceedings of the 30th Inter- national Conference on Neural Information Processing Sys- tems, NIPS'16, 1857-1865. Red Hook, NY, USA: Curran Associates Inc. ISBN 9781510838819.",
+   "title": "Improved deep metric learning with multiclass N-pair loss objective",
+   "authors": [
+    "K Sohn"
+   ],
+   "year": 2016,
+   "venue": "Proceedings of the 30th International Conference on Neural Information Processing Systems, NIPS'16",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 432.94,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 443.86,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 455.1,
+     "width": 238.52,
+     "height": 8.72
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 465.82,
+     "width": 238.5,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 476.74,
+     "width": 157.05,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b19",
+   "raw": "Tan, M.; and Le, Q. 2021. Efficientnetv2: Smaller models and faster training. In International conference on machine learning, 10096-10106. PMLR.",
+   "title": "Efficientnetv2: Smaller models and faster training",
+   "authors": [
+    "M Tan",
+    "Q Le"
+   ],
+   "year": 2021,
+   "venue": "International conference on machine learning",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 489.82,
+     "width": 238.6,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 500.74,
+     "width": 238.66,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 511.66,
+     "width": 128.13,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b20",
+   "raw": "Toda, Y.; and Okura, F. 2019. How convolutional neural networks diagnose plant disease. Plant Phenomics. Wang, G.; Sun, Y.; and Wang, J. 2017. Automatic image- based plant disease severity estimation using deep learn- ing. Computational intelligence and neuroscience, 2017(1): 2917536.",
+   "title": "Automatic imagebased plant disease severity estimation using deep learning",
+   "authors": [
+    "Y Toda",
+    "F Okura",
+    "G Wang",
+    "Y Sun",
+    "J Wang"
+   ],
+   "year": 2017,
+   "venue": "Computational intelligence and neuroscience",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 524.62,
+     "width": 238.69,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 535.66,
+     "width": 204.57,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 548.62,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 559.54,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 570.58,
+     "width": 238.81,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 581.5,
+     "width": 37.77,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b21",
+   "raw": "Wang, J.; Song, Y.; Leung, T.; Rosenberg, C.; Wang, J.; Philbin, J.; Chen, B.; and Wu, Y. 2014. Learning Fine- Grained Image Similarity with Deep Ranking. In Proceed- ings of the 2014 IEEE Conference on Computer Vision and Pattern Recognition, CVPR '14, 1386-1393. USA: IEEE Computer Society. ISBN 9781479951185.",
+   "title": "Learning Fine-Grained Image Similarity with Deep Ranking",
+   "authors": [
+    "J Wang",
+    "Y Song",
+    "T Leung",
+    "C Rosenberg",
+    "J Wang",
+    "J Philbin",
+    "B Chen",
+    "Y Wu"
+   ],
+   "year": 2014,
+   "venue": "Proceedings of the 2014 IEEE Conference on Computer Vision and Pattern Recognition, CVPR '14",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 594.46,
+     "width": 238.45,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 605.5,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 616.42,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 627.54,
+     "width": 238.5,
+     "height": 8.72
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 638.26,
+     "width": 238.53,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 649.3,
+     "width": 170.73,
+     "height": 9.03
+    }
+   ]
+  },
+  {
+   "id": "b22",
+   "raw": "Xie, Q.; Luong, M.-T.; Hovy, E.; and Le, Q. V. 2020. Self- Training With Noisy Student Improves ImageNet Classifica- tion. In Proceedings of the IEEE/CVF Conference on Com- puter Vision and Pattern Recognition (CVPR).",
+   "title": "Self-Training With Noisy Student Improves ImageNet Classification",
+   "authors": [
+    "Q Xie",
+    "M.-T Luong",
+    "E Hovy",
+    "Q V Le"
+   ],
+   "year": 2020,
+   "venue": "Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)",
+   "doi": null,
+   "arxiv_id": null,
+   "url": null,
+   "boxes": [
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 662.26,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 673.18,
+     "width": 238.28,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 684.22,
+     "width": 238.52,
+     "height": 9.03
+    },
+    {
+     "page": 8,
+     "x": 319.56,
+     "y": 695.34,
+     "width": 184.41,
+     "height": 8.72
+    }
+   ]
+  }
+ ],
+ "citations": [
+  {
+   "id": "c0",
+   "sentence_id": "s8",
+   "start": 162,
+   "end": 409,
+   "marker": "(Mohanty, Hughes, and Salathé 2016;Atila et al. 2021;Elfatimi, Eryigit, and Elfatimi 2022;Fujita et al. 2018;Hughes, Salathé et al. 2015;Kawasaki et al. 2015;Narayanan et al. 2022;Ramcharan et al. 2017;Toda and Okura 2019;Wang, Sun, and Wang 2017)",
+   "bib_ids": [
+    "b13",
+    "b1",
+    "b8",
+    "b9",
+    "b10",
+    "b12",
+    "b14",
+    "b16",
+    "b20"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c1",
+   "sentence_id": "s10",
+   "start": 226,
+   "end": 299,
+   "marker": "(Kanno et al. 2021;Iwano et al. 2024;Cap et al. 2022;Shibuya et al. 2021)",
+   "bib_ids": [
+    "b11",
+    "b3",
+    "b17"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c2",
+   "sentence_id": "s17",
+   "start": 52,
+   "end": 75,
+   "marker": "Shibuya et al., utiliz-",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c3",
+   "sentence_id": "s17",
+   "start": 143,
+   "end": 164,
+   "marker": "(Shibuya et al. 2021)",
+   "bib_ids": [
+    "b17"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c4",
+   "sentence_id": "s28",
+   "start": 71,
+   "end": 87,
+   "marker": "(Xie et al. 2020",
+   "bib_ids": [
+    "b22"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c5",
+   "sentence_id": "s49",
+   "start": 40,
+   "end": 58,
+   "marker": "(Wang et al. 2014)",
+   "bib_ids": [
+    "b21"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c6",
+   "sentence_id": "s51",
+   "start": 110,
+   "end": 121,
+   "marker": "(Sohn 2016)",
+   "bib_ids": [
+    "b18"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c7",
+   "sentence_id": "s52",
+   "start": 47,
+   "end": 65,
+   "marker": "(Chen et al. 2019)",
+   "bib_ids": [
+    "b6"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c8",
+   "sentence_id": "s56",
+   "start": 30,
+   "end": 47,
+   "marker": "(Chen et al. 2020",
+   "bib_ids": [
+    "b5"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c9",
+   "sentence_id": "s57",
+   "start": 93,
+   "end": 111,
+   "marker": "(Wang et al. 2014)",
+   "bib_ids": [
+    "b21"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c10",
+   "sentence_id": "s57",
+   "start": 194,
+   "end": 214,
+   "marker": "(Chechik et al. 2009",
+   "bib_ids": [
+    "b4"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c11",
+   "sentence_id": "s58",
+   "start": 41,
+   "end": 62,
+   "marker": "(Radford et al. 2021)",
+   "bib_ids": [
+    "b15"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c12",
+   "sentence_id": "s81",
+   "start": 258,
+   "end": 276,
+   "marker": "(Deng et al. 2009)",
+   "bib_ids": [
+    "b7"
+   ],
+   "link_method": "parser"
+  },
+  {
+   "id": "c13",
+   "sentence_id": "s106",
+   "start": 118,
+   "end": 135,
+   "marker": "(Deng et al. 2009",
+   "bib_ids": [
+    "b7"
+   ],
+   "link_method": "parser"
+  }
+ ],
+ "tables": [
+  {
+   "id": "t0",
+   "label": "Table 1",
+   "row_ids": [
+    "s151",
+    "s152",
+    "s153",
+    "s154",
+    "s155",
+    "s156",
+    "s157",
+    "s158",
+    "s159"
+   ],
+   "page": null
+  },
+  {
+   "id": "t1",
+   "label": "Table 2",
+   "row_ids": [
+    "s162",
+    "s163",
+    "s164",
+    "s165",
+    "s166",
+    "s167",
+    "s168"
+   ],
+   "page": null
+  },
+  {
+   "id": "layout-p4-0",
+   "label": "Table 1",
+   "row_ids": [
+    "lt4-0-0",
+    "lt4-0-1",
+    "lt4-0-2",
+    "lt4-0-3",
+    "lt4-0-4",
+    "lt4-0-5",
+    "lt4-0-6",
+    "lt4-0-7",
+    "lt4-0-8",
+    "lt4-0-9",
+    "lt4-0-10",
+    "lt4-0-11",
+    "lt4-0-12",
+    "lt4-0-13",
+    "lt4-0-14",
+    "lt4-0-15",
+    "lt4-0-16",
+    "lt4-0-17",
+    "lt4-0-18",
+    "lt4-0-19",
+    "lt4-0-20",
+    "lt4-0-21",
+    "lt4-0-22",
+    "lt4-0-23",
+    "lt4-0-24",
+    "lt4-0-25",
+    "lt4-0-26",
+    "lt4-0-27",
+    "lt4-0-28",
+    "lt4-0-29",
+    "lt4-0-30",
+    "lt4-0-31",
+    "lt4-0-32",
+    "lt4-0-33",
+    "lt4-0-34",
+    "lt4-0-35",
+    "lt4-0-36",
+    "lt4-0-37",
+    "lt4-0-38",
+    "lt4-0-39",
+    "lt4-0-40"
+   ],
+   "page": 4
+  },
+  {
+   "id": "layout-p5-0",
+   "label": "Table 2",
+   "row_ids": [
+    "lt5-0-0",
+    "lt5-0-1",
+    "lt5-0-2",
+    "lt5-0-3",
+    "lt5-0-4"
+   ],
+   "page": 5
+  },
+  {
+   "id": "layout-p7-0",
+   "label": "Table 3",
+   "row_ids": [
+    "lt7-0-0",
+    "lt7-0-1",
+    "lt7-0-2",
+    "lt7-0-3",
+    "lt7-0-4",
+    "lt7-0-5",
+    "lt7-0-6",
+    "lt7-0-7",
+    "lt7-0-8",
+    "lt7-0-9",
+    "lt7-0-10",
+    "lt7-0-11",
+    "lt7-0-12",
+    "lt7-0-13",
+    "lt7-0-14",
+    "lt7-0-15",
+    "lt7-0-16",
+    "lt7-0-17",
+    "lt7-0-18",
+    "lt7-0-19",
+    "lt7-0-20",
+    "lt7-0-21",
+    "lt7-0-22",
+    "lt7-0-23",
+    "lt7-0-24",
+    "lt7-0-25",
+    "lt7-0-26",
+    "lt7-0-27",
+    "lt7-0-28",
+    "lt7-0-29",
+    "lt7-0-30",
+    "lt7-0-31",
+    "lt7-0-32",
+    "lt7-0-33",
+    "lt7-0-34",
+    "lt7-0-35",
+    "lt7-0-36",
+    "lt7-0-37",
+    "lt7-0-38",
+    "lt7-0-39",
+    "lt7-0-40",
+    "lt7-0-41"
+   ],
+   "page": 7
+  }
+ ],
+ "links": [
+  {
+   "url": "http://arxiv.org/abs/2501.00734v1",
+   "page": 1,
+   "sentence_id": null,
+   "source": "annotation"
+  }
+ ],
+ "layout": {
+  "pages": [
+   {
+    "number": 1,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 97.45,
+    "text_right": 558.3,
+    "text_bottom": 704.17
+   },
+   {
+    "number": 2,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 56.04,
+    "text_right": 558.32,
+    "text_bottom": 704.17
+   },
+   {
+    "number": 3,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 56.04,
+    "text_right": 558.38,
+    "text_bottom": 704.17
+   },
+   {
+    "number": 4,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 53.89,
+    "text_right": 558.21,
+    "text_bottom": 704.17
+   },
+   {
+    "number": 5,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 264.96,
+    "text_right": 558.1,
+    "text_bottom": 704.17
+   },
+   {
+    "number": 6,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 269.52,
+    "text_right": 558.37,
+    "text_bottom": 704.17
+   },
+   {
+    "number": 7,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 86.85,
+    "text_right": 558.01,
+    "text_bottom": 667.21
+   },
+   {
+    "number": 8,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 54.0,
+    "text_top": 54.47,
+    "text_right": 558.37,
+    "text_bottom": 704.17
+   }
+  ],
+  "fonts": [
+   {
+    "name": "NimbusRomNo9L-Regu",
+    "size": 10.0,
+    "chars": 25654
+   },
+   {
+    "name": "NimbusRomNo9L-Regu",
+    "size": 9.0,
+    "chars": 1511
+   },
+   {
+    "name": "NimbusRomNo9L-ReguItal",
+    "size": 10.0,
+    "chars": 1038
+   },
+   {
+    "name": "NimbusRomNo9L-Medi",
+    "size": 10.0,
+    "chars": 484
+   },
+   {
+    "name": "NimbusRomNo9L-Medi",
+    "size": 10.9,
+    "chars": 248
+   },
+   {
+    "name": "NimbusRomNo9L-Medi",
+    "size": 12.0,
+    "chars": 179
+   },
+   {
+    "name": "CMMI10",
+    "size": 10.0,
+    "chars": 177
+   },
+   {
+    "name": "CMMI7",
+    "size": 7.0,
+    "chars": 112
+   },
+   {
+    "name": "NimbusRomNo9L-Medi",
+    "size": 14.3,
+    "chars": 59
+   },
+   {
+    "name": "CMR10",
+    "size": 10.0,
+    "chars": 56
+   },
+   {
+    "name": "CMSY7",
+    "size": 7.0,
+    "chars": 41
+   },
+   {
+    "name": "CMR7",
+    "size": 7.0,
+    "chars": 34
+   },
+   {
+    "name": "CMSY10",
+    "size": 10.0,
+    "chars": 16
+   },
+   {
+    "name": "CMMIB10",
+    "size": 10.0,
+    "chars": 10
+   },
+   {
+    "name": "CMMIB7",
+    "size": 7.0,
+    "chars": 8
+   },
+   {
+    "name": "CMBX10",
+    "size": 10.0,
+    "chars": 4
+   },
+   {
+    "name": "NimbusSanL-Regu",
+    "size": 7.0,
+    "chars": 4
+   },
+   {
+    "name": "NimbusRomNo9L-Regu",
+    "size": 8.0,
+    "chars": 3
+   },
+   {
+    "name": "CMEX10",
+    "size": 10.0,
+    "chars": 3
+   },
+   {
+    "name": "NimbusRomNo9L-Regu",
+    "size": 7.0,
+    "chars": 2
+   },
+   {
+    "name": "CMMI5",
+    "size": 5.0,
+    "chars": 2
+   },
+   {
+    "name": "MSBM10",
+    "size": 10.0,
+    "chars": 1
+   },
+   {
+    "name": "CMR5",
+    "size": 5.0,
+    "chars": 1
+   }
+  ]
+ }
+}

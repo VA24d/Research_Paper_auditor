@@ -541,7 +541,7 @@ def propose(
                     )
 
     for entry in paper.bibliography:
-        if entry.year and entry.raw and str(entry.year) in entry.raw:
+        if entry.year:
             metadata_props.append(
                 Proposal(
                     kind=InjectionKind.REFERENCE_METADATA_MISMATCH,
@@ -552,7 +552,7 @@ def propose(
                     field_name="year",
                 )
             )
-        if entry.title and entry.raw and entry.title.lower() in entry.raw.lower():
+        if entry.title:
             words = sorted(title_tokens(entry.title))[-4:]
             fabricated = "An Empirical Study of " + " ".join(words)
             if fabricated.lower() != entry.title.lower():
@@ -568,6 +568,10 @@ def propose(
 
     picked: list[Proposal] = []
     seen: set[tuple[str, str, str]] = set()
+    # The bibliography kinds verify almost always, so they would drown the claim kinds
+    # (the point of the set); each is capped at two picks per paper.
+    caps: dict[int, int] = {id(metadata_props): 2, id(not_found_props): 2}
+    used: dict[int, int] = {}
     queues = [number_props, claim_props, metadata_props, not_found_props]
     index = 0
     while len(picked) < pairs and any(queues):
@@ -575,11 +579,15 @@ def propose(
         index += 1
         if not queue:
             continue
+        if id(queue) in caps and used.get(id(queue), 0) >= caps[id(queue)]:
+            queue.clear()
+            continue
         proposal = queue.pop(0)
         key = (proposal.kind.value, proposal.bib_id, str(proposal.sentence_id))
         if key in seen:
             continue
         seen.add(key)
+        used[id(queue)] = used.get(id(queue), 0) + 1
         picked.append(proposal)
     return picked, clean[:controls]
 

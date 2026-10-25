@@ -127,6 +127,17 @@ async def _verify(
     return "unknown proposal kind"
 
 
+def _bib_evidence(text: str, bib_id: str) -> tuple[Evidence, ...]:
+    """The LOOKUP evidence of a bibliography injection: the verification outcome."""
+    return (
+        Evidence(
+            kind=EvidenceKind.LOOKUP,
+            source=SourceRef(kind=SourceKind.SCHOLARLY_INDEX, id=bib_id),
+            text=text,
+        ),
+    )
+
+
 async def _apply(
     proposal: Proposal,
     paper: ParsedPaper,
@@ -172,14 +183,22 @@ async def _apply(
                 f"the {proposal.field_name} was changed to {proposal.new_value}; "
                 "the index says otherwise"
             ),
-            evidence=(),
+            evidence=_bib_evidence(
+                "the index's record of this work disagrees with the injected field "
+                "(verified against Crossref/OpenAlex at build time)",
+                proposal.bib_id,
+            ),
         )
     return inject_not_found(
         paper,
         proposal.bib_id,
         new_title=proposal.new_value,
         rationale=("the entry's title was replaced and its identifiers cleared; nothing resolves"),
-        evidence=(),
+        evidence=_bib_evidence(
+            "no work resolves for the entry as injected (verified against "
+            "Crossref/OpenAlex/arXiv/S2 at build time)",
+            proposal.bib_id,
+        ),
     )
 
 
@@ -210,7 +229,11 @@ async def _build(args: argparse.Namespace) -> int:
             applied = 0
             for proposal in proposals:
                 source_text = sources_by_bib.get(proposal.bib_id)
-                if await _verify(proposal, injected_paper, source_text, http) is not None:
+                try:
+                    problem = await _verify(proposal, injected_paper, source_text, http)
+                except Exception as exc:
+                    problem = f"verification network error: {exc}"
+                if problem is not None:
                     continue
                 sentence_text = (
                     injected_paper.sentence(proposal.sentence_id or "").text
@@ -247,7 +270,7 @@ async def _build(args: argparse.Namespace) -> int:
             originals_dir.mkdir(parents=True, exist_ok=True)
             (originals_dir / paper_path.name).write_bytes(paper_path.read_bytes())
             if applied:
-                write_paper(injected_paper, args.out_dir)
+                write_paper(injected_paper, args.out)
             applied_total += applied
             print(f"{paper.paper_id}: {applied} injections, {len(clean_pairs)} clean")
     print(f"total: {applied_total} injections")
