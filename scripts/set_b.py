@@ -137,12 +137,13 @@ def _inject(args: argparse.Namespace) -> int:
 def _validate(args: argparse.Namespace) -> int:
     labels = read_jsonl(args.folder / "labels.jsonl", GoldLabel)
     records = read_jsonl(args.folder / "injections.jsonl", InjectionRecord)
-    sources: dict[str, str] = {}
+    sources: dict[tuple[str, str], str] = {}
     if args.sources and args.sources.exists():
-        for line in args.sources.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                row = json.loads(line)
-                sources[row["paper_id"]] = row["source_text"]
+        for path in sorted(args.sources.glob("*.jsonl")):
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    row = json.loads(line)
+                    sources[(row["paper_id"], row["bib_id"])] = row["source_text"]
     problems = validate(labels, records, sources=sources or None)
     for problem in problems:
         print(problem)

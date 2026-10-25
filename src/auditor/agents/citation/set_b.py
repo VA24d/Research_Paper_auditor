@@ -18,8 +18,10 @@ Recall@5). The four citation error classes (D4) are injected:
 scores a run's predictions against the labels.
 """
 
+import random
 import re
 from collections import Counter
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from hashlib import sha256
@@ -28,7 +30,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from auditor.agents.citation.support import _scan_confident, extract_numbers, numbers_agree
 from auditor.retrieval.passages import Embedder, Passage, rank_passages
+from auditor.retrieval.resolve import title_tokens
 from auditor.schemas import (
     BibliographyAnchor,
     BibTarget,
@@ -390,18 +394,210 @@ def clean_label(
     )
 
 
+# --- proposing set B pairs (the deterministic part of the build) ------------------------
+
+# Direction words whose reversal makes a supported claim unsupported. Used by the
+# `claim` injection's deterministic rewrites; the build only keeps a swap when the
+# source text states the ORIGINAL direction word, so the source really says the opposite.
+_DIRECTION_SWAPS: tuple[tuple[str, str], ...] = (
+    ("improves", "degrades"),
+    ("outperforms", "underperforms"),
+    ("increases", "decreases"),
+    ("higher", "lower"),
+    ("better", "worse"),
+    ("faster", "slower"),
+    ("reduces", "increases"),
+    ("gains", "loses"),
+    ("surpasses", "trails"),
+    ("enhances", "diminishes"),
+    ("boosts", "harms"),
+    ("stronger", "weaker"),
+    ("superior", "inferior"),
+    ("more accurate", "less accurate"),
+    ("more effective", "less effective"),
+)
+
+
+def swap_direction(sentence: str) -> str | None:
+    """The sentence with its first direction phrase swapped to the opposite, or None."""
+    for old, new in _DIRECTION_SWAPS:
+        match = re.search(rf"\b{old}\b", sentence, re.IGNORECASE)
+        if match is None:
+            continue
+        replacement = new.capitalize() if match.group(0)[0].isupper() else new
+        swapped = sentence[: match.start()] + replacement + sentence[match.end() :]
+        return swapped if swapped != sentence else None
+    return None
+
+
+def perturb_number(value: str, rng: random.Random) -> str | None:
+    """A nearby but clearly different value: +-15-35 percent, same decimal places."""
+    parsed = value.replace(",", "").strip("% ")
+    try:
+        number = float(parsed)
+    except ValueError:
+        return None
+    if number == 0:
+        return None
+    decimals = len(parsed.rsplit(".", 1)[1]) if "." in parsed else 0
+    factor = 1.0 + rng.choice((-0.35, -0.25, -0.15, 0.15, 0.25, 0.35))
+    new_value = f"{number * factor:.{decimals}f}" if decimals else str(round(number * factor))
+    return None if numbers_agree(value, new_value) else new_value
+
+
+@dataclass(frozen=True)
+class Proposal:
+    """One injection the deterministic picker proposes, ready to be applied."""
+
+    kind: InjectionKind
+    bib_id: str
+    sentence_id: str | None
+    anchor: SentenceAnchor | None  # None for a bibliography injection
+    new_value: str
+    field_name: str | None = None  # metadata injections only
+
+
+def propose(
+    paper: ParsedPaper,
+    sources: Mapping[str, str],
+    *,
+    pairs: int,
+    controls: int,
+    rng: random.Random,
+) -> tuple[list[Proposal], list[tuple[str, SentenceAnchor]]]:
+    """The pairs to inject and the clean pairs to sample, chosen deterministically.
+
+    `sources` maps a bibliography id to the text retrieved for it (any level; the level
+    is the taker's business). A number injection is proposed when the claim states a
+    specific number the source also states (so the original claim is supported and the
+    perturbed one is not); a claim rewrite when the sentence has a direction phrase the
+    source states. The caller decides which proposals survive its own checks.
+    """
+    number_props: list[Proposal] = []
+    claim_props: list[Proposal] = []
+    metadata_props: list[Proposal] = []
+    not_found_props: list[Proposal] = []
+    clean: list[tuple[str, SentenceAnchor]] = []
+
+    for mention in paper.citations:
+        if not mention.is_linked:
+            continue
+        sentence = paper.sentence(mention.sentence_id)
+        for bib_id in mention.bib_ids:
+            source_text = sources.get(bib_id)
+            if not source_text:
+                continue
+            specific = [
+                number for number in extract_numbers(sentence.text) if _scan_confident(number)
+            ]
+            stated = [
+                number
+                for number in specific
+                if any(numbers_agree(number, w) for w in extract_numbers(source_text))
+            ]
+            if stated:
+                number = stated[0]
+                start = sentence.text.index(number)
+                anchor = SentenceAnchor(
+                    sentence_id=mention.sentence_id, start=start, end=start + len(number)
+                )
+                new_value = perturb_number(number, rng)
+                if new_value is not None:
+                    number_props.append(
+                        Proposal(
+                            kind=InjectionKind.CLAIM_NUMBER_MISMATCH,
+                            bib_id=bib_id,
+                            sentence_id=mention.sentence_id,
+                            anchor=anchor,
+                            new_value=new_value,
+                        )
+                    )
+                clean.append((bib_id, anchor))
+            else:
+                swapped = swap_direction(sentence.text)
+                if swapped is not None:
+                    claim_props.append(
+                        Proposal(
+                            kind=InjectionKind.CLAIM_NOT_SUPPORTED,
+                            bib_id=bib_id,
+                            sentence_id=mention.sentence_id,
+                            anchor=SentenceAnchor(
+                                sentence_id=mention.sentence_id,
+                                start=0,
+                                end=len(sentence.text),
+                            ),
+                            new_value=swapped,
+                        )
+                    )
+                    clean.append(
+                        (
+                            bib_id,
+                            SentenceAnchor(
+                                sentence_id=mention.sentence_id,
+                                start=0,
+                                end=len(sentence.text),
+                            ),
+                        )
+                    )
+
+    for entry in paper.bibliography:
+        if entry.year and entry.raw and str(entry.year) in entry.raw:
+            metadata_props.append(
+                Proposal(
+                    kind=InjectionKind.REFERENCE_METADATA_MISMATCH,
+                    bib_id=entry.id,
+                    sentence_id=None,
+                    anchor=None,
+                    new_value=str(entry.year + 1),
+                    field_name="year",
+                )
+            )
+        if entry.title and entry.raw and entry.title.lower() in entry.raw.lower():
+            words = sorted(title_tokens(entry.title))[-4:]
+            fabricated = "An Empirical Study of " + " ".join(words)
+            if fabricated.lower() != entry.title.lower():
+                not_found_props.append(
+                    Proposal(
+                        kind=InjectionKind.REFERENCE_NOT_FOUND,
+                        bib_id=entry.id,
+                        sentence_id=None,
+                        anchor=None,
+                        new_value=fabricated,
+                    )
+                )
+
+    picked: list[Proposal] = []
+    seen: set[tuple[str, str, str]] = set()
+    queues = [number_props, claim_props, metadata_props, not_found_props]
+    index = 0
+    while len(picked) < pairs and any(queues):
+        queue = queues[index % len(queues)]
+        index += 1
+        if not queue:
+            continue
+        proposal = queue.pop(0)
+        key = (proposal.kind.value, proposal.bib_id, str(proposal.sentence_id))
+        if key in seen:
+            continue
+        seen.add(key)
+        picked.append(proposal)
+    return picked, clean[:controls]
+
+
+
+
 def validate(
     labels: list[GoldLabel],
     records: list[InjectionRecord],
     *,
     papers: dict[str, ParsedPaper] | None = None,
-    sources: dict[str, str] | None = None,
+    sources: dict[tuple[str, str], str] | None = None,
 ) -> list[str]:
     """Problems that stop set B from being frozen (decision D18).
 
     `papers` maps a paper id to the injected copy the labels were built from; `sources`
-    maps a paper id to the cited work's text a label's gold passage came from. Both are
-    optional; the checks that need them run only when they are given.
+    maps a (paper_id, bib_id) pair to the cited work's text a label's gold passage came
+    from. Both are optional; the checks that need them run only when they are given.
     """
     problems: list[str] = []
     by_id = {record.label_id: record for record in records}
@@ -423,7 +619,7 @@ def validate(
             elif (
                 record.gold_passage
                 and sources
-                and record.gold_passage not in sources.get(label.paper_id, "")
+                and record.gold_passage not in sources.get((label.paper_id, record.bib_id), "")
             ):
                 problems.append(
                     f"{label.label_id}: the gold passage is not in the recorded source text"

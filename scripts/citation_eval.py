@@ -36,12 +36,13 @@ from auditor.config import Settings
 from auditor.schemas import GoldLabel, Prediction
 
 
-def _sources(path: Path) -> dict[str, str]:
-    sources: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            row = json.loads(line)
-            sources[row["paper_id"]] = row["source_text"]
+def _sources(folder: Path) -> dict[tuple[str, str], str]:
+    sources: dict[tuple[str, str], str] = {}
+    for path in sorted(folder.glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                row = json.loads(line)
+                sources[(row["paper_id"], row["bib_id"])] = row["source_text"]
     return sources
 
 
@@ -53,7 +54,7 @@ def _recall(args: argparse.Namespace) -> int:
         if not record.gold_passage:
             no_passage += 1
             continue
-        source_text = sources.get(record.paper_id)
+        source_text = sources.get((record.paper_id, record.bib_id))
         if source_text is None:
             print(f"{record.label_id}: no recorded source text", file=sys.stderr)
             continue

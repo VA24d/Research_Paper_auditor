@@ -214,7 +214,7 @@ def test_validate_passes_a_consistent_set() -> None:
         [label],
         [record],
         papers={label.paper_id: injected},
-        sources={label.paper_id: SOURCE_TEXT},
+        sources={(label.paper_id, record.bib_id): SOURCE_TEXT},
     )
     assert problems == []
 
@@ -245,7 +245,9 @@ def test_validate_reports_broken_labels() -> None:
     assert any("the record plants" in problem for problem in problems)
 
     # A gold passage that is not in the recorded source text.
-    problems = validate([label], [record], sources={label.paper_id: "unrelated text"})
+    problems = validate(
+        [label], [record], sources={(label.paper_id, record.bib_id): "unrelated text"}
+    )
     assert any("gold passage is not in" in problem for problem in problems)
 
 
@@ -272,6 +274,74 @@ def test_validate_against_papers_checks_the_injected_copy() -> None:
 def test_gold_passage_for_needs_passages() -> None:
     with pytest.raises(ValueError, match="no passages"):
         gold_passage_for("", "claim")
+
+
+def test_swap_direction_reverses_the_first_direction_word() -> None:
+    from auditor.agents.citation.set_b import swap_direction
+
+    assert swap_direction("Method A improves over the baseline [1].") == (
+        "Method A degrades over the baseline [1]."
+    )
+    assert swap_direction("Accuracy is higher on SQuAD [2].") == ("Accuracy is lower on SQuAD [2].")
+    assert swap_direction("The dataset holds 100,000 questions [3].") is None
+
+
+def test_perturb_number_moves_the_value_and_keeps_its_shape() -> None:
+    import random
+
+    from auditor.agents.citation.set_b import perturb_number
+
+    rng = random.Random(0)
+    assert perturb_number("92.1", rng) is not None
+    value = perturb_number("92.1", rng)
+    assert value is not None
+    assert "." in value
+    assert value != "92.1"
+    assert perturb_number("0", rng) is None
+    assert perturb_number("not-a-number", rng) is None
+
+
+def test_propose_picks_pairs_and_controls_deterministically() -> None:
+    import random
+
+    from auditor.agents.citation.set_b import InjectionKind, propose
+
+    data = paper().model_dump()
+    data["sentences"][1]["text"] = (
+        "Transformers [1] improves over recurrent networks for most sequence tasks."
+    )
+    p = ParsedPaper.model_validate(data)
+    sources = {"b1": SOURCE_TEXT, "b0": "The Transformer improves over recurrence. " * 20}
+    rng = random.Random(0)
+    proposals, clean = propose(p, sources, pairs=6, controls=3, rng=rng)
+    kinds = [proposal.kind for proposal in proposals]
+    assert InjectionKind.CLAIM_NUMBER_MISMATCH in kinds
+    assert InjectionKind.CLAIM_NOT_SUPPORTED in kinds
+    assert InjectionKind.REFERENCE_METADATA_MISMATCH in kinds  # b0/b1 have a year in raw
+    assert InjectionKind.REFERENCE_NOT_FOUND in kinds
+    assert len(proposals) <= 6
+    assert len(clean) <= 3
+    # Deterministic: the same seed gives the same pick.
+    again, clean_again = propose(p, sources, pairs=6, controls=3, rng=random.Random(0))
+    assert [(pr.kind, pr.bib_id, pr.new_value) for pr in proposals] == [
+        (pr.kind, pr.bib_id, pr.new_value) for pr in again
+    ]
+    assert clean == clean_again
+
+
+def test_propose_only_uses_pairs_with_a_source(tmp_path: Path) -> None:
+    import random
+
+    from auditor.agents.citation.set_b import propose
+
+    p = paper()
+    proposals, _ = propose(p, {"b1": SOURCE_TEXT}, pairs=6, controls=2, rng=random.Random(0))
+    assert all(proposal.bib_id in {"b1", "b0", "b2"} for proposal in proposals)
+    # b2 has no source text: never proposed, never a clean pair with a b2 target.
+    assert all(
+        proposal.bib_id != "b2" or proposal.kind.value.startswith("reference")
+        for proposal in proposals
+    )
 
 
 def test_score_citation_module_counts_matches_one_to_one() -> None:

@@ -306,9 +306,45 @@ Plan (in order, context updated before and after each block):
    pair picking + injections via new machinery in set_b.py (number perturbations,
    direction-swap claim rewrites, metadata edits, not_found fabrications with build-time
    network verification; clean controls sampled) -> validate -> dataset.jsonl.
-5. Test runs + full suite; record results/observations/failures here. Commit + push.
-   The LLM-consuming `auditor batch` eval runs are NOT part of this session unless keys
-   turn out to be configured and cheap; the dataset build itself needs no LLM.
+## Session 4 progress 1 (code blocks done)
+
+- COMMITTED `5daac67 citation: scientific notation, code-side number scan, venue aliases,
+  abstract-only in B1 tools`:
+  - `extract_numbers` keeps scientific notation whole (3e-4, 1.5e10); test updated.
+  - `_number_check` scans the FULL text itself when the model gives found=None: a specific
+    number (has a "." or >= 3 digits — `_scan_confident`) the work's text nowhere states
+    (by value, via `_source_states`, which extracts numbers from BOTH the claim and the
+    source) -> CLAIM_NUMBER_MISMATCH. Never run against abstract-only sources; bare small
+    numbers ("4x") are not scanned (derived quantities). 4 new tests.
+  - `retrieval.resolve.venues_match`: normalisation (punctuation -> spaces), a 15-group
+    alias table (neurips/nips, icml, iclr, cvpr, iccv, eccv, acl, emnlp, naacl/hlt, aaai,
+    ijcai, kdd, jmlr, tmlr, icra, interspeech) and a >=3-token containment rule;
+    `reference._metadata_findings` uses it. 2 new tests.
+  - B1 tools: `retrieve_cited_text`/`find_supporting_passages` (and their StructuredTool
+    wrappers) take `abstract_only: bool | None = None`; None follows
+    `settings.citation_abstract_only`, an explicit value overrides. 1 new test.
+- COMMITTED `06cc9a8 citation: optional MiniLM embedding ranker...`:
+  - `retrieval/passages.py`: `Embedder` Protocol (`score(chunks, claim) -> list[float] |
+    None`); `rank_passages(..., embedder=None)` uses cosine scores when the embedder works,
+    falls back to BM25 on failure/wrong width (logged).
+  - `retrieval/embeddings.py`: `MiniLMEmbedder` (quantised ONNX all-MiniLM-L6-v2 ~23 MB,
+    CPU, mean-pool + L2-normalise, tokenizer.json from the same HF repo, cached under
+    `cache_dir/embeddings/`, downloads via the shared HttpClient) and
+    `await get_embedder(settings, http)` which never raises (missing `embed` extra or
+    failed download -> logged warning + None).
+  - Settings: `citation_embedder: Literal["bm25","minilm"] = "bm25"`; pyproject: optional
+    extra `embed = [onnxruntime, tokenizers]` + mypy overrides for them and numpy.
+  - Wired into `support.check_citation`, `tools.find_supporting_passages`,
+    `set_b.gold_passage_for(embedder=)`, `eval.recall_at_k(embedder=)` — the gold passage
+    and the agent's ranking always use the SAME ranker.
+  - Tests: FakeEmbedder ranking/fallback/width tests + missing-extra test + a
+    network-marked real-model test (deselected by default; needs `uv sync --extra embed`
+    — uv is NOT available in the agent shell, so the extra is NOT installed here; the
+    code degrades to BM25 cleanly until Anurag runs the sync).
+- Answer to Anurag's question: yes — implemented opt-in; BM25 stays the default (team
+  decision P2.4), MiniLM helps on paraphrases, ~23 MB + CPU-only, graceful fallback.
+
+Next: SET A (hallmark download/run/score in background), then SET B build.
 
 ## Session 3 (2026-10-23) — done
 
