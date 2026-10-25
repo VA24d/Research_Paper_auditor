@@ -21,6 +21,7 @@ from auditor.agents.citation.hallmark import (
     DATA_URL,
     SPLITS,
     ExistenceResult,
+    Flag,
     check_entry,
     load_split,
     read_results,
@@ -51,15 +52,36 @@ async def _run(args: argparse.Namespace) -> int:
     entries = load_split(args.file)
     if args.limit:
         entries = entries[: args.limit]
+    done: dict[str, ExistenceResult] = {}
+    if args.out.exists():  # resumable: entries already checked are skipped
+        for result in read_results(args.out):
+            done[result.bibtex_key] = result
     results: list[ExistenceResult] = []
+    total = len([e for e in entries if e.bibtex_key not in done])
     async with HttpClient(settings) as http:
         ctx = RunContext(settings=settings, paper=None, http=http, llm=None, logger=None)  # type: ignore[arg-type]
-        for number, entry in enumerate(entries, start=1):
-            results.append(await check_entry(ctx, entry))
-            if number % 50 == 0:
-                print(f"{number}/{len(entries)} checked", file=sys.stderr)
-    write_results(results, args.out)
-    print(f"wrote {args.out} ({len(results)} results)")
+        for number, entry in enumerate(
+            [e for e in entries if e.bibtex_key not in done], start=1
+        ):
+            try:
+                result = await check_entry(ctx, entry)
+            except Exception as exc:
+                print(f"{entry.bibtex_key}: {type(exc).__name__}", file=sys.stderr)
+                result = ExistenceResult(
+                    bibtex_key=entry.bibtex_key,
+                    label=entry.label,
+                    hallucination_type=entry.hallucination_type,
+                    difficulty_tier=entry.difficulty_tier,
+                    flag=Flag.UNVERIFIABLE,
+                    reason=f"{type(exc).__name__}: {exc}",
+                )
+            results.append(result)
+            if number % 25 == 0 or number == total:
+                # Periodic checkpoint: a crash loses at most the last 25 entries.
+                write_results([*done.values(), *results], args.out)
+                print(f"{number}/{total} checked", file=sys.stderr)
+    write_results([*done.values(), *results], args.out)
+    print(f"wrote {args.out} ({len(results)} new, {len(done)} skipped)")
     return 0
 
 
