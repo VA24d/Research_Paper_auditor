@@ -210,29 +210,65 @@ def _venue_tokens(venue: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _VENUE_STOPWORDS and len(w) > 1)
 
 
+def _venue_variants(venue: str) -> list[str]:
+    """The normalised venue and a few folded forms an index or bibliography may use.
+
+    Crossref gives "2023 IEEE/CVF Conference on ... (CVPR)" (a year in front, the short
+    name in brackets behind); DBLP-style bibliographies write "Proceedings of the ...";
+    the same venue appears without them.
+    """
+    normal = re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", venue.strip().lower())).strip()
+    variants = {normal}
+    without_year = re.sub(r"^(19|20)\d{4}\s+", "", normal)
+    variants.add(without_year)
+    without_paren = re.sub(r"\b\w+\s*$", "", without_year).strip()
+    variants.add(without_paren)
+    without_proceedings = re.sub(r"^proceedings of the ", "", normal)
+    variants.add(without_proceedings)
+    without_proceedings = re.sub(r"^proceedings of the ", "", without_year)
+    variants.add(re.sub(r"\b\w+\s*$", "", without_proceedings).strip())
+    return [v for v in variants if v]
+
+
+# Venue strings an index gives for an arXiv preprint record; they say nothing about
+# where the work was published, so they never contradict an entry's venue.
+_ARXIV_PLACEHOLDER_VENUES = frozenset(
+    {"arxiv", "arxiv cornell university", "corr", "arxiv org"}
+)
+
+
 def venues_match(a: str | None, b: str | None) -> bool:
     """Whether two venue strings name the same venue.
 
-    Exact after normalisation, membership in a shared alias group (an index gives the
-    proceedings' full name, a bibliography the short one), or token containment (each
-    side keeps at least three content words, so "empirical methods natural language
-    processing" matches "conference on empirical methods in natural language
-    processing" without matching a different conference).
+    Exact after normalisation and folding (a leading year, a trailing short name in
+    brackets, a leading "proceedings of the" are dropped), membership in a shared alias
+    group (an index gives the proceedings' full name, a bibliography the short one), or
+    token containment (each side keeps at least three content words, so "empirical
+    methods natural language processing" matches "conference on empirical methods in
+    natural language processing" without matching a different conference). An arXiv
+    placeholder venue says nothing and never contradicts.
     """
     if not a or not b:
         return False
-
-    def normalise(venue: str) -> str:
-        return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", venue.strip().lower())).strip()
-
-    normal_a, normal_b = normalise(a), normalise(b)
-    if normal_a == normal_b:
+    variants_a, variants_b = _venue_variants(a), _venue_variants(b)
+    for variants in (variants_a, variants_b):
+        if any(variant in _ARXIV_PLACEHOLDER_VENUES for variant in variants):
+            return True
+    if variants_a and variants_b and set(variants_a) & set(variants_b):
         return True
-    groups_a = {name for name, spellings in _VENUE_GROUPS if normal_a in spellings}
-    groups_b = {name for name, spellings in _VENUE_GROUPS if normal_b in spellings}
+    groups_a = {
+        name
+        for name, spellings in _VENUE_GROUPS
+        if any(variant in spellings for variant in variants_a)
+    }
+    groups_b = {
+        name
+        for name, spellings in _VENUE_GROUPS
+        if any(variant in spellings for variant in variants_b)
+    }
     if groups_a & groups_b:
         return True
-    tokens_a, tokens_b = _venue_tokens(normal_a), _venue_tokens(normal_b)
+    tokens_a, tokens_b = _venue_tokens(variants_a[0]), _venue_tokens(variants_b[0])
     if len(tokens_a) < 3 or len(tokens_b) < 3:
         return False
     return tokens_a <= tokens_b or tokens_b <= tokens_a
@@ -306,7 +342,17 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
             break
 
     if candidates:
-        return Resolution(work=candidates[0], queries=tuple(queries))
+        # A search can return the arXiv preprint record of the proceedings paper the
+        # entry cites (OpenAlex keeps both); prefer the candidate whose venue agrees
+        # with the entry, then one whose year does, then the first that matched.
+        best = max(
+            candidates,
+            key=lambda work: (
+                venues_match(entry.venue, work.venue),
+                entry.year is not None and work.year == entry.year,
+            ),
+        )
+        return Resolution(work=best, queries=tuple(queries))
     return Resolution(
         reason="no work with this title was found in the scholarly indexes",
         queries=tuple(queries),

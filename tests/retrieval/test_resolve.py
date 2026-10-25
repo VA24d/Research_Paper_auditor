@@ -61,6 +61,14 @@ def test_venues_match_normalises_proceedings_names() -> None:
     assert venues_match("EMNLP", "Conference on Empirical Methods in Natural Language Processing")
     assert venues_match("CVPR", "IEEE/CVF Conference on Computer Vision and Pattern Recognition")
     assert venues_match("JMLR", "Journal of Machine Learning Research")
+    # Crossref writes the year in front and the short name in brackets behind.
+    assert venues_match(
+        "CVPR", "2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)"
+    )
+    assert venues_match("AAAI", "Proceedings of the AAAI Conference on Artificial Intelligence")
+    # An arXiv preprint record's venue says nothing about the publication venue.
+    assert venues_match("ICML", "arXiv (Cornell University)")
+    assert venues_match("NeurIPS", "arXiv")
     assert venues_match(
         "empirical methods natural language processing",
         "conference on empirical methods in natural language processing",

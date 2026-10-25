@@ -375,7 +375,25 @@ PIPELINE STATE (background jobs):
 - Set B: manifest COMMITTED at datasets/set_b/arxiv_ids.txt — 60 arXiv ids picked
   deterministically (cs.LG+cs.CL submitted Jan-Mar 2025, first 60 by submission date).
   PDF downloads running in background (PID 2920, ~3 min).
-## Session 4 progress 3 (pipeline hiccups fixed)
+## Session 4 progress 4 (pipeline running)
+
+- Fetch driver committed with per-entry progress. State at 18:10:
+  - HALLMARK (PID 38304): resumable, was at 260/831, restarted cleanly.
+  - fetch_sources (PID 21080, 3 papers concurrently, PDF level SKIPPED by default
+    (--with-pdf to enable) because a whole PDF download + GROBID parse per entry made
+    the build ~20x slower; HTML + abstract covers most arXiv works and the level is
+    recorded per entry).
+- Throughput reality (measured): resolve+fulltext is ~8-20 s per bibliography entry
+  (title-only entries search four indexes; arXiv HTML pages are multi-MB and the arXiv
+  rate limit is 3 s per request). A 60-paper set with ~60-100 entries per paper is a
+  multi-hour build. Both scripts are RESUMABLE (hallmark skips checked keys; fetch
+  skips fetched bib ids) and checkpoint/append as they go.
+- Also fixed in `scripts/citation_eval.py recall`: the original claim is rebuilt from
+  the kept original paper (papers/original/<id>.json) — a number injection's `original`
+  is only the number span, not the sentence.
+- Cross-part bugfix committed (`a9aae1c`): parser/layout_tables.py decodes pdftotext
+  output as utf-8 (was the Windows locale; cp1252 died on UTF-8 bytes and left stdout
+  None -> AttributeError in EVERY parse on Windows). Flagged for Bhaskar.
 
 - HALLMARK run crashed twice: first (PID 31592/9840) on a transient S2 ConnectError that
   killed the process (no per-entry tolerance), then relaunched before the fix landed.
