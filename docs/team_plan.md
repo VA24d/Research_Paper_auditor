@@ -131,10 +131,10 @@ Integration and baselines:
 ### Part 2 — Anurag: citation agent and retrieval
 
 Status: P2.1-P2.7 are implemented and tested on the `p2-citation-checker` branch (not yet
-merged). P2.8 and P2.9 have their machinery (`auditor.agents.citation.set_b`,
-`auditor.agents.citation.eval`, `scripts/set_b.py`, `scripts/citation_eval.py`) and
-offline tests; building the actual 60-paper dataset (downloads, GROBID parsing, source
-text fetching, injections, second review) still needs to run and be annotated.
+merged). P2.8's dataset is BUILT and validated (201 labels; awaiting the D18 20% second
+review and the LLM-backed module runs); P2.9's offline machinery is done and set A was
+measured (HALLMARK test_public: accuracy 0.726, flagging P 0.732 / R 0.891 / F1 0.804,
+FPR on valid 0.557).
 
 - [x] **P2.1** Clients for arXiv, OpenAlex, Crossref and Semantic Scholar, all through the
   shared HTTP client (P1.4).
@@ -156,14 +156,16 @@ text fetching, injections, second review) still needs to run and be annotated.
   that edit `ParsedPaper` copies (the unchanged originals are kept too), `GoldLabel`s
   including clean controls, and the gold evidence passage for each pair (needed for
   Recall@5). Every label is validated against its source and a sample is reviewed by a
-  second person before freezing (D18). *(Machinery, injection functions, gold labels with
-  gold evidence passages, D18 validation and the CLI are done and tested; the dataset
-  itself still needs to be built and annotated.)*
+  second person before freezing (D18). *(DONE except the second review: 60 papers built,
+  201 labels (154 injected: 96 reference_not_found, 38 reference_metadata_mismatch,
+  15 claim_number_mismatch, 5 claim_not_supported; 47 clean) validated by
+  `scripts/set_b.py validate` — the only open D18 item is the 20% second review
+  (`reviewed_by`), and the claim classes are thin and can be grown by hand.)*
 - [ ] **P2.9** Citation module evaluation: Recall@5, precision, recall and F1, full text
-  against abstract only, and tool-call accuracy of reference lookups (D8). *(Recall@5,
-  module scores and tool-call accuracy are implemented and tested; the abstract-only
-  comparison runs the same code with `AUDITOR_CITATION_ABSTRACT_ONLY=1`; measured numbers
-  wait for the set B build.)*
+  against abstract only, and tool-call accuracy of reference lookups (D8). *(Machinery
+  done and set A measured (HALLMARK test_public, 831 entries: accuracy 0.726, P 0.732 /
+  R 0.891 / F1 0.804, FPR 0.557). The set B module runs (full-text vs abstract-only)
+  need an LLM configured (AUDITOR_LLM_*) and are the last step.)*
 
 ### Part 3 — Vijay: code agent and template checker
 
