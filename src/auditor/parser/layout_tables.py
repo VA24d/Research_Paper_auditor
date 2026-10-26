@@ -55,6 +55,10 @@ def layout_pages(path: Path) -> list[str] | None:
             ["pdftotext", "-layout", "-enc", "UTF-8", str(path), "-"],
             capture_output=True,
             text=True,
+            # pdftotext -enc UTF-8 writes UTF-8; decoding with the Windows locale
+            # (cp1252) crashes the reader thread and leaves stdout None.
+            encoding="utf-8",
+            errors="replace",
             timeout=PDFTOTEXT_TIMEOUT_S,
             check=False,
         )
