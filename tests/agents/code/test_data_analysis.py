@@ -66,6 +66,16 @@ def test_csv_with_a_bom_and_a_long_field(tmp_path: Path) -> None:
     assert [row["label"] for row in table.rows] == ["1", "0"]
 
 
+def test_table_columns_only_leaves_no_unclosed_handles(tmp_path: Path) -> None:
+    path = tmp_path / "columns_only.csv"
+    path.write_text("x,y,z\n1,2,3\n4,5,6\n", encoding="utf-8")
+    table = read_rows(path)
+    assert table.columns == ("x", "y", "z")
+    with table:
+        pass
+    table.close()
+
+
 def test_tsv_uses_tabs(tmp_path: Path) -> None:
     path = tmp_path / "dev.tsv"
     path.write_text("a\tb\n1\t2\n", encoding="utf-8")

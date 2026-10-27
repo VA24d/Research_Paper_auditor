@@ -95,7 +95,10 @@ async def check_setting(task: AuditTask, ctx: RunContext) -> TaskResult:
                 ),
             )
         if confirmed:
-            candidates, uncertain = confirmed, setting.context is not None
+            candidates = confirmed
+            uncertain = (
+                len({_shown(c.setting) for c in confirmed}) > 1 or setting.context is not None
+            )
         else:
             candidates = kept
     error_class = (

@@ -126,18 +126,21 @@ def bm25_ranks(queries: Sequence[str], chunks: Sequence[Chunk]) -> list[list[int
     size = len(docs)
     average = sum(map(len, docs)) / max(size, 1)
     frequency = Counter(w for doc in docs for w in set(doc))
+    idfs = {
+        term: math.log(1 + (size - freq + 0.5) / (freq + 0.5)) for term, freq in frequency.items()
+    }
+    doc_factors = [1.5 * (0.25 + 0.75 * len(doc) / max(average, 1)) for doc in docs]
     counts = [Counter(doc) for doc in docs]
     ranks = []
     for query in queries:
         terms = words(query)
         scores = []
-        for doc, tf in zip(docs, counts, strict=True):
+        for factor, tf in zip(doc_factors, counts, strict=True):
             score = 0.0
             for term in terms:
-                if term in tf:
-                    idf = math.log(1 + (size - frequency[term] + 0.5) / (frequency[term] + 0.5))
-                    norm = tf[term] + 1.5 * (0.25 + 0.75 * len(doc) / max(average, 1))
-                    score += idf * tf[term] * 2.5 / norm
+                count = tf.get(term)
+                if count:
+                    score += idfs[term] * count * 2.5 / (count + factor)
             scores.append(score)
         ranks.append(sorted(range(size), key=lambda i: -scores[i]))
     return ranks
@@ -204,14 +207,16 @@ async def embedding_ranks(
 def take_turns(ranks: Sequence[Sequence[int]], chunks: Sequence[Chunk], budget: int) -> list[Chunk]:
     """The sentences take turns adding their best chunk not yet chosen, within budget."""
     chosen: list[int] = []
+    chosen_set: set[int] = set()
     size = 0
     depth = 0
     longest = max((len(r) for r in ranks), default=0)
     while size < budget and depth < longest:
         for rank in ranks:
-            if depth >= len(rank) or rank[depth] in chosen:
+            if depth >= len(rank) or rank[depth] in chosen_set:
                 continue
             chosen.append(rank[depth])
+            chosen_set.add(rank[depth])
             size += len(chunks[rank[depth]].text)
             if size >= budget:
                 break
@@ -221,11 +226,17 @@ def take_turns(ranks: Sequence[Sequence[int]], chunks: Sequence[Chunk], budget: 
 
 
 async def retrieve(
-    snapshot: Snapshot, text: str, http: HttpClient, settings: Settings, budget: int
+    snapshot: Snapshot,
+    text: str,
+    http: HttpClient,
+    settings: Settings,
+    budget: int,
+    chunks: Sequence[Chunk] | None = None,
 ) -> tuple[list[Chunk], str]:
     """The chunks for the method `text`, and how they were ranked ("embeddings" or
     "bm25"; BM25 when no endpoint is configured or it fails)."""
-    chunks = code_chunks(snapshot)
+    if chunks is None:
+        chunks = code_chunks(snapshot)
     queries = method_sentences(text)
     if not chunks or not queries:
         return [], "none"

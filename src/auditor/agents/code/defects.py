@@ -19,6 +19,7 @@ import ast
 import asyncio
 import importlib.util
 import json
+import logging
 import re
 import shutil
 import subprocess
@@ -47,6 +48,8 @@ from auditor.schemas import (
     TaskOutcome,
     TaskResult,
 )
+
+logger = logging.getLogger(__name__)
 
 MAX_FINDINGS = 20
 RUFF_TIMEOUT_S = 120
@@ -135,15 +138,24 @@ def _imports(tree: ast.Module, path: str) -> list[_Import]:
     return found
 
 
-def _candidates(module: str, importer: str) -> list[str]:
+def _candidates(module: str, importer: str, has_src: bool = False) -> list[str]:
     """The dotted names an import may resolve to: from the repository root, and from the
-    importing script's own folder (scripts are often run from where they live)."""
+    importing script's own folder (scripts are often run from where they live), or under
+    src/ when the repository uses a src/ layout."""
     folder = ".".join(PurePosixPath(importer).parent.parts)
-    return [module] + ([f"{folder}.{module}"] if folder else [])
+    cands = [module]
+    if folder:
+        cands.append(f"{folder}.{module}")
+    if (
+        has_src or folder.startswith("src.") or folder == "src" or importer.startswith("src/")
+    ) and not module.startswith("src."):
+        cands.append(f"src.{module}")
+    return list(dict.fromkeys(cands))
 
 
 def experiment_files(sources: Mapping[str, str]) -> list[str]:
     """The entry-point scripts and every local module they import, sorted."""
+    has_src = any(p.startswith("src/") for p in sources)
     by_module = {_module_name(path): path for path in sources}
     trees = {path: _parse(text, path) for path, text in sources.items()}
     # A script that does not compile still runs as one: its main guard is in the text.
@@ -166,7 +178,7 @@ def experiment_files(sources: Mapping[str, str]) -> list[str]:
         if tree is None:
             continue
         for item in _imports(tree, path):
-            for name in _candidates(item.module, path):
+            for name in _candidates(item.module, path, has_src=has_src):
                 parts = name.split(".")
                 for depth in range(1, len(parts) + 1):
                     local = by_module.get(".".join(parts[:depth]))
@@ -180,9 +192,12 @@ def _missing_modules(
 ) -> list[tuple[str, int, str]]:
     """Imports of a module inside a local package that the repository does not have.
     `known` holds the module names of every file, downloaded or skipped."""
+    has_src = any(p.startswith("src/") for p in sources) or any(k.startswith("src.") for k in known)
     packages = {name.rpartition(".")[0] for name in known if "." in name} | {
         _module_name(p) for p in sources if p.endswith("__init__.py")
     }
+    if has_src:
+        packages |= {p.removeprefix("src.") for p in packages if p.startswith("src.")}
 
     def present(name: str) -> bool:
         return name in known or any(k.startswith(name + ".") for k in known)
@@ -195,7 +210,7 @@ def _missing_modules(
         for item in _imports(tree, path):
             if not item.certain:
                 continue
-            names = _candidates(item.module, path)
+            names = _candidates(item.module, path, has_src=has_src)
             if any(present(name) for name in names):
                 continue
             # Missing only when the import starts inside the repository: its first part
@@ -231,7 +246,8 @@ def _relative(snapshot: Snapshot, filename: str) -> str:
         return Path(filename).as_posix()
 
 
-def _ruff(snapshot: Snapshot, files: list[str]) -> list[dict[str, object]]:
+def _ruff(snapshot: Snapshot, files: list[str]) -> tuple[list[dict[str, object]], bool]:
+    """Ruff's reports, and whether it timed out (then there are none)."""
     command = [
         *_ruff_command(),
         "check",
@@ -244,16 +260,20 @@ def _ruff(snapshot: Snapshot, files: list[str]) -> list[dict[str, object]]:
         "--exit-zero",
         *files,
     ]
-    done = subprocess.run(
-        command,
-        cwd=snapshot.root,
-        capture_output=True,
-        text=True,
-        timeout=RUFF_TIMEOUT_S,
-        check=False,
-    )
+    try:
+        done = subprocess.run(
+            command,
+            cwd=snapshot.root,
+            capture_output=True,
+            text=True,
+            timeout=RUFF_TIMEOUT_S,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        logger.warning("Ruff timed out after %ds on %s", RUFF_TIMEOUT_S, snapshot.source_id)
+        return [], True
     reports = json.loads(done.stdout or "[]")
-    return reports if isinstance(reports, list) else []
+    return (reports if isinstance(reports, list) else []), False
 
 
 async def check_defects(task: AuditTask, ctx: RunContext) -> TaskResult:
@@ -296,8 +316,9 @@ async def check_defects(task: AuditTask, ctx: RunContext) -> TaskResult:
             reason="the experiment code is written for Python 2, which these checks do not cover",
         )
     broken = {path for path, _, _ in defects}
+    ruff_timed_out = False
     if ruff_available():
-        reports = await asyncio.to_thread(_ruff, snapshot, files)
+        reports, ruff_timed_out = await asyncio.to_thread(_ruff, snapshot, files)
         # Grouped per file: the names it uses but never defines, each at its first use.
         names: dict[str, dict[str, int]] = {}
         for report in reports:
@@ -346,9 +367,11 @@ async def check_defects(task: AuditTask, ctx: RunContext) -> TaskResult:
     reason = None
     if not ruff_available():
         reason = "undefined names were not checked: Ruff is not installed"
+    elif ruff_timed_out:
+        reason = "Ruff timed out: only syntax and compile checks ran"
     return TaskResult.for_task(
         task,
         TaskOutcome.CHECKED if reason is None or findings else TaskOutcome.UNVERIFIABLE,
-        reason=reason if not findings else None,
+        reason=reason if (not findings or ruff_timed_out) else None,
         findings=findings,
     )

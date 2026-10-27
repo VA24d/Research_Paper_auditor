@@ -39,8 +39,11 @@ class TaskPolicy:
 # in the math sandbox, at high thinking (a round can take 5 minutes on 3.8 Flash). The
 # results check makes one extraction call per section, up to 6 image readings and a
 # challenge call. With the default limits these tasks failed on SPOT and were retried,
-# paying for the same calls again.
+# paying for the same calls again. A code task can run the claim loop (up to 8 agent
+# calls) and the second look (up to 4 questions, retried on unusable answers); single 3.8
+# Flash calls took up to 4 minutes on set C, so 300 s timed out and the retry paid again.
 KIND_POLICIES: Mapping[TaskKind, TaskPolicy] = {
+    TaskKind.CODE: TaskPolicy(timeout_s=900.0, max_llm_calls=20),
     TaskKind.THEORY: TaskPolicy(max_attempts=2, timeout_s=1800.0, max_llm_calls=40),
     TaskKind.INTEGRITY: TaskPolicy(timeout_s=900.0, max_llm_calls=40),
 }

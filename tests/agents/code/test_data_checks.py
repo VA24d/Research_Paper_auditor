@@ -473,3 +473,66 @@ async def test_several_other_datasets_are_unverifiable(tmp_path: Path) -> None:
     files = {"a.py": 'a = load_dataset("imdb")\nb = load_dataset("ag_news")\n'}
     result = await check(tmp_path, "We fine-tune on the SST-2 dataset.", files)
     assert result.outcome is TaskOutcome.UNVERIFIABLE
+
+
+async def test_dataset_word_boundary_avoids_substring_in_other_words(tmp_path: Path) -> None:
+    files = {
+        "a.py": 'data = load_dataset("imdb")\n',
+        "README.md": "This research repository studies transformers.\n",
+    }
+    result = await check(tmp_path, "We evaluate on the ARC dataset.", files)
+    assert len(result.findings) == 1
+
+
+def test_size_settings_zero_total_splits() -> None:
+    from datetime import UTC, datetime
+
+    from auditor.agents.code.data_checks import _size_settings
+    from auditor.infra.snapshots.snapshot import Snapshot, SnapshotManifest
+    from auditor.infra.snapshots.sources import SourceKind
+
+    manifest = SnapshotManifest(
+        source=SourceKind.HUGGINGFACE,
+        url="https://huggingface.co/datasets/org/zero",
+        identity="org/zero",
+        requested_ref=None,
+        revision="main",
+        fetched_at=datetime.now(UTC),
+        limits={},
+        files=(),
+        skipped=(),
+        skipped_count=0,
+        incomplete=(),
+        metadata={
+            "dataset_size": {
+                "size": {
+                    "splits": [
+                        {"config": "default", "split": "train", "num_rows": 0},
+                        {"config": "default", "split": "test", "num_rows": 0},
+                    ]
+                }
+            }
+        },
+    )
+    snap = Snapshot(Path(), manifest)
+    assert _size_settings(snap, None) == []
+
+
+async def test_dataset_three_adjacent_tokens_matches(tmp_path: Path) -> None:
+    files = {
+        "a.py": 'data = load_dataset("imdb")\n',
+        "README.md": "We benchmark on cifar-10-c under corruptions.\n",
+    }
+    result = await check(tmp_path, "We evaluate on the CIFAR-10-C benchmark.", files)
+    assert result.outcome is TaskOutcome.CHECKED
+    assert result.findings == ()
+
+
+def test_a_dataset_name_matches_adjacent_words_but_not_inside_a_word() -> None:
+    from auditor.agents.code.data_checks import _mentions
+
+    words = "we use the wiki text 103 raw v1 corpus for research"
+    assert _mentions(words, "wikitext103rawv1")
+    assert _mentions(words, "wikitext")
+    assert not _mentions(words, "arc")
+    assert not _mentions(words, "wikitext104")

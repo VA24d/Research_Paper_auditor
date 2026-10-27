@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from auditor.agents.code.code_retrieval import (
     Chunk,
     _spans,
@@ -69,3 +71,64 @@ async def test_embedding_ranks_follow_similarity() -> None:
     chunks = [Chunk("a.py", 1, 1, "optimizer"), Chunk("b.py", 1, 1, "focal loss")]
     ranks = await embedding_ranks(["the loss we use"], chunks, Fake())
     assert ranks == [[1, 0]]
+
+
+def test_bm25_ranks_edge_cases() -> None:
+    # Empty chunks
+    assert bm25_ranks(["query words here"], []) == [[]]
+    # Empty queries
+    assert bm25_ranks([], [Chunk("a.py", 1, 1, "text")]) == []
+    # Queries with words not in docs
+    ranks = bm25_ranks(["nonexistent terms totally absent"], [Chunk("a.py", 1, 1, "hello world")])
+    assert ranks == [[0]]
+
+
+def test_take_turns_deduplication_and_budget() -> None:
+    chunks = [
+        Chunk("a.py", 1, 1, "chunk 0 text"),
+        Chunk("b.py", 1, 1, "chunk 1 text"),
+        Chunk("c.py", 1, 1, "chunk 2 text"),
+    ]
+    # Multiple ranks prefer chunk 0 first
+    ranks = [[0, 1, 2], [0, 2, 1], [0, 1, 2]]
+    chosen = take_turns(ranks, chunks, budget=100)
+    # Deduplicated: every chunk appears at most once
+    assert len(chosen) == 3
+    assert [c.path for c in chosen] == ["a.py", "b.py", "c.py"]
+
+
+async def test_retrieve_uses_supplied_chunks(tmp_path: Path) -> None:
+    from datetime import UTC, datetime
+
+    from auditor.agents.code.code_retrieval import retrieve
+    from auditor.config import Settings
+    from auditor.infra.http import HttpClient
+    from auditor.infra.snapshots.snapshot import Snapshot, SnapshotManifest
+    from auditor.infra.snapshots.sources import SourceKind
+
+    custom_chunks = [
+        Chunk("custom.py", 1, 5, "def custom_optimizer(): lr = 0.01"),
+    ]
+    manifest = SnapshotManifest(
+        source=SourceKind.GITHUB,
+        url="https://github.com/org/repo",
+        identity="org/repo",
+        requested_ref=None,
+        revision="main",
+        fetched_at=datetime.now(UTC),
+        limits={},
+        files=(),
+        skipped=(),
+        skipped_count=0,
+        incomplete=(),
+        metadata={},
+    )
+    snap = Snapshot(tmp_path, manifest)
+    text = "We use a custom optimizer with learning rate 0.01."
+    settings = Settings()
+    retrieved, how = await retrieve(
+        snap, text, HttpClient(settings), settings, budget=1000, chunks=custom_chunks
+    )
+    assert how == "bm25"
+    assert len(retrieved) == 1
+    assert retrieved[0].path == "custom.py"

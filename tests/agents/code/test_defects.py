@@ -136,3 +136,90 @@ async def test_a_clean_repository_has_no_defects(tmp_path: Path) -> None:
     result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
     assert result.outcome is TaskOutcome.CHECKED
     assert result.findings == ()
+
+
+def test_src_layout_experiment_files() -> None:
+    sources = {
+        "main.py": 'from mypkg.net import build\n\nif __name__ == "__main__":\n    build()\n',
+        "src/mypkg/__init__.py": "",
+        "src/mypkg/net.py": "def build(): return 1\n",
+    }
+    assert experiment_files(sources) == [
+        "main.py",
+        "src/mypkg/__init__.py",
+        "src/mypkg/net.py",
+    ]
+
+
+async def test_src_layout_missing_submodule_is_defect(tmp_path: Path) -> None:
+    files = {
+        "main.py": 'from mypkg.missing import build\n\nif __name__ == "__main__":\n    build()\n',
+        "src/mypkg/__init__.py": "",
+        "src/mypkg/net.py": "def build(): return 1\n",
+    }
+    result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
+    missing = [f for f in result.findings if "mypkg.missing" in f.summary]
+    assert len(missing) == 1
+
+
+async def test_ruff_timeout_records_in_reason(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+    from typing import Any
+
+    def fake_run(*args: Any, **kwargs: Any) -> Any:
+        raise subprocess.TimeoutExpired(cmd="ruff", timeout=120)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    files = {"main.py": 'from utils import load\n\nif __name__ == "__main__":\n    load("x")\n'}
+    files["utils.py"] = UTILS
+    result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "Ruff timed out" in result.reason
+
+
+def test_candidates_deduplicates_and_avoids_double_src() -> None:
+    from auditor.agents.code.defects import _candidates
+
+    # When module already starts with src., it should not produce src.src.
+    cands = _candidates("src.pkg.mod", "src/pkg/runner.py", has_src=True)
+    assert "src.src.pkg.mod" not in cands
+    assert cands[0] == "src.pkg.mod"
+
+    # From root, has_src adds src. prefix once
+    cands_root = _candidates("pkg.mod", "main.py", has_src=True)
+    assert cands_root == ["pkg.mod", "src.pkg.mod"]
+
+
+async def test_src_layout_nested_relative_import(tmp_path: Path) -> None:
+    files = {
+        "src/mypkg/__init__.py": "",
+        "src/mypkg/sub/__init__.py": "",
+        "src/mypkg/sub/helper.py": "def helper_fn(): return 42\n",
+        "src/mypkg/sub/worker.py": (
+            'from .helper import helper_fn\n\nif __name__ == "__main__":\n    helper_fn()\n'
+        ),
+    }
+    result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
+    assert result.outcome is TaskOutcome.CHECKED
+    assert result.findings == ()
+
+
+async def test_ruff_timeout_with_syntax_errors_retains_findings_and_reason(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+    from typing import Any
+
+    def fake_run(*args: Any, **kwargs: Any) -> Any:
+        raise subprocess.TimeoutExpired(cmd="ruff", timeout=120)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    files = {"broken.py": "def broken_syntax(:\n"}
+    result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
+    assert result.outcome is TaskOutcome.CHECKED
+    assert len(result.findings) >= 1
+    assert result.reason is not None
+    assert "Ruff timed out" in result.reason

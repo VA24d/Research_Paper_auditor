@@ -388,7 +388,7 @@ async def test_a_kind_with_its_own_policy_runs_under_it(tmp_path: Path) -> None:
         system=SystemName.FULL,
     )
     assert seen == [40]
-    # Theory and integrity tasks get more model calls than the default by default.
+    # Theory, integrity and code tasks get more model calls than the default by default.
     default = TaskPolicy().max_llm_calls or 0
-    for kind in (TaskKind.THEORY, TaskKind.INTEGRITY):
+    for kind in (TaskKind.THEORY, TaskKind.INTEGRITY, TaskKind.CODE):
         assert (KIND_POLICIES[kind].max_llm_calls or 0) > default

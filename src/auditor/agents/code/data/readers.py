@@ -44,14 +44,26 @@ class Table:
             case _:
                 self.rows = self._parquet()
 
+    def close(self) -> None:
+        if hasattr(self.rows, "close"):
+            self.rows.close()
+
+    def __enter__(self) -> "Table":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
     def _delimited(self, delimiter: str) -> Iterator[dict[str, str]]:
-        handle = self.path.open(encoding="utf-8-sig", errors="replace", newline="")
-        reader = csv.reader(handle, delimiter=delimiter)
-        header = next(reader, None)
-        self.columns = tuple(header or ())
+        with self.path.open(encoding="utf-8-sig", errors="replace", newline="") as handle:
+            reader = csv.reader(handle, delimiter=delimiter)
+            header = next(reader, None)
+            self.columns = tuple(header or ())
 
         def rows() -> Iterator[dict[str, str]]:
-            with handle:
+            with self.path.open(encoding="utf-8-sig", errors="replace", newline="") as handle:
+                reader = csv.reader(handle, delimiter=delimiter)
+                next(reader, None)
                 for row in reader:
                     if row:
                         yield dict(zip(self.columns, row, strict=False))
@@ -59,17 +71,21 @@ class Table:
         return rows()
 
     def _json_lines(self) -> Iterator[dict[str, str]]:
-        handle = self.path.open(encoding="utf-8-sig", errors="replace")
-        records = self._records(handle)
-        first = next(records, None)
-        if first is not None:
-            self.columns = tuple(first)
+        with self.path.open(encoding="utf-8-sig", errors="replace") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(record, dict):
+                    self.columns = tuple(record)
+                    break
 
         def rows() -> Iterator[dict[str, str]]:
-            with handle:
-                if first is not None:
-                    yield first
-                yield from records
+            with self.path.open(encoding="utf-8-sig", errors="replace") as handle:
+                yield from self._records(handle)
 
         return rows()
 
@@ -105,12 +121,13 @@ class Table:
                 "parquet needs the optional dependency: uv sync --extra data"
             ) from exc
         # Opened from a file handle, not memory-mapped, so Windows can delete it afterwards.
-        handle = self.path.open("rb")
-        parquet = pq.ParquetFile(handle)
-        self.columns = tuple(parquet.schema_arrow.names)
+        with self.path.open("rb") as handle:
+            parquet = pq.ParquetFile(handle)
+            self.columns = tuple(parquet.schema_arrow.names)
 
         def rows() -> Iterator[dict[str, str]]:
-            with handle:
+            with self.path.open("rb") as handle:
+                parquet = pq.ParquetFile(handle)
                 for batch in parquet.iter_batches(batch_size=_PARQUET_BATCH_ROWS):
                     for record in batch.to_pylist():
                         yield _strings(record)

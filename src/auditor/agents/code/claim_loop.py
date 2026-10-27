@@ -36,6 +36,7 @@ from langchain.agents.structured_output import ToolStrategy
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, StructuredTool
+from langgraph.errors import GraphRecursionError
 from pydantic import BaseModel, Field
 
 from auditor.agents.code.data_checks import paper_quote_text
@@ -291,7 +292,10 @@ async def explore(
     )
     config = RunnableConfig(recursion_limit=4 * model_limit + 10)
     message = _first_message(task, ctx, snapshot, category, claim)
-    state = await agent.ainvoke({"messages": [message]}, config)
+    try:
+        state = await agent.ainvoke({"messages": [message]}, config)
+    except GraphRecursionError:
+        return None, exploration
     answer = state.get("structured_response")
     return (answer if isinstance(answer, ClaimVerdict) else None), exploration
 
