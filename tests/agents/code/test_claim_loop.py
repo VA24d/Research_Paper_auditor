@@ -287,3 +287,27 @@ async def test_the_loop_counts_against_the_runs_call_limit(tmp_path: Path) -> No
     with pytest.raises(CallLimitReachedError):
         await check(task, ctx)
     assert review.calls == 1
+
+
+async def test_graph_recursion_error_is_unverifiable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from langgraph.errors import GraphRecursionError
+
+    from auditor.agents.code import claim_loop
+
+    (task,) = await planned(tmp_path, EVALUATION)
+    ctx, _ = context(tmp_path, [read_train(), verdict()])
+
+    def mock_create_agent(*args: Any, **kwargs: Any) -> Any:
+        class FakeAgent:
+            async def ainvoke(self, *a: Any, **kw: Any) -> Any:
+                raise GraphRecursionError("Recursion limit reached")
+
+        return FakeAgent()
+
+    monkeypatch.setattr(claim_loop, "create_agent", mock_create_agent)
+    result = await check(task, ctx)
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "no verdict within" in result.reason

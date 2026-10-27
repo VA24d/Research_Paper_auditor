@@ -184,7 +184,7 @@ async def _dataset_named(
     key = str(snapshot.root)
     if key not in _words_cache:
         _words_cache[key] = await asyncio.to_thread(_repository_words, snapshot)
-    if len(wanted) >= 3 and wanted in _words_cache[key]:
+    if len(wanted) >= 3 and _mentions(_words_cache[key], wanted):
         return ""
     names = {_name(c.setting.value) for c in related}
     if len(names) > 1:
@@ -197,7 +197,21 @@ async def _dataset_named(
 
 
 def _repository_words(snapshot: Snapshot) -> str:
-    return "".join(_name(snapshot.read_text(f.path)) for f in snapshot.manifest.files)
+    """The repository's text as lowercase words separated by single spaces."""
+    texts = []
+    for f in snapshot.manifest.files:
+        try:
+            texts.append(snapshot.read_text(f.path))
+        except (KeyError, OSError):
+            continue
+    return " ".join(re.findall(r"[a-z0-9]+", "\n".join(texts).lower()))
+
+
+def _mentions(words: str, wanted: str) -> bool:
+    """Whether `wanted` is one word of `words`, or several adjacent words written
+    together ("cifar10c" matches "cifar 10 c"), but never part of a longer word."""
+    letters = " ?".join(re.escape(c) for c in wanted)
+    return re.search(rf"(?<![a-z0-9]){letters}(?![a-z0-9])", words) is not None
 
 
 def paper_sentence(task: AuditTask, ctx: RunContext) -> str:
@@ -289,6 +303,8 @@ def _size_settings(snapshot: Snapshot, config: str | None) -> list[ExtractedSett
         return []
     ordered = ["train", *[s for s in _VALIDATION if s in counts][:1], "test"]
     total = sum(counts[s] for s in ordered)
+    if total == 0:
+        return []
     value = "/".join(f"{counts[s] / total * 100:.4g}" for s in ordered)
     when = snapshot.manifest.fetched_at.date().isoformat()
     return [

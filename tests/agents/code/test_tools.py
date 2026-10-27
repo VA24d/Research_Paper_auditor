@@ -1,6 +1,7 @@
 import dataclasses
 from pathlib import Path
 
+import pytest
 from langchain_core.tools import BaseTool
 
 from auditor.agents.code.tools import make_tools
@@ -81,3 +82,28 @@ async def test_data_analysis_tool_follows_the_mode(tmp_path: Path) -> None:
 async def test_no_repository(tmp_path: Path) -> None:
     tools = {tool.name: tool for tool in make_tools(offline_context(tmp_path))}
     assert "no code repository" in await tools["list_repository_files"].ainvoke({})
+
+
+async def test_search_repository_caches_lines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from auditor.agents.code.tools import _snapshot_lines_cache
+    from auditor.infra.snapshots.snapshot import Snapshot
+
+    tools = tools_by_name(context(tmp_path))
+    await tools["search_repository"].ainvoke({"pattern": "lr"})
+    assert len(_snapshot_lines_cache) > 0
+
+    # On second search, snapshot.read_text is not called because lines are cached
+    read_calls = 0
+    orig_read_text = Snapshot.read_text
+
+    def tracking_read_text(self: Snapshot, path: str) -> str:
+        nonlocal read_calls
+        read_calls += 1
+        return orig_read_text(self, path)
+
+    monkeypatch.setattr(Snapshot, "read_text", tracking_read_text)
+    res = await tools["search_repository"].ainvoke({"pattern": "lr"})
+    assert read_calls == 0
+    assert "train.py:2:" in res

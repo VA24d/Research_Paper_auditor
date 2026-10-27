@@ -308,3 +308,24 @@ async def test_an_unsure_second_look_keeps_the_suspicion(tmp_path: Path) -> None
     result, _ = await second_look(tmp_path, ["unsure", "unsure"])
     (finding,) = result.findings
     assert finding.uncertain
+
+
+async def test_multiple_distinct_values_confirmed_keeps_uncertain(tmp_path: Path) -> None:
+    result, _ = await second_look(tmp_path, ["yes", "yes"])
+    (finding,) = result.findings
+    assert finding.uncertain
+
+
+async def test_same_values_confirmed_by_second_look_not_uncertain(tmp_path: Path) -> None:
+    same_values = {
+        "train.py": 'parser.add_argument("--lr", default=1e-3)\n',
+        "scripts/finetune.sh": "python train.py --lr 1e-3\n",
+    }
+    paper = paper_saying(DEFAULT)
+    tasks = code_tasks(paper, RepositoryRef(url=repo(tmp_path, same_values)), paper_settings(paper))
+    task = next(t for t in tasks if t.setting is not None and t.setting.key == "learning_rate")
+    answers = [{"answer": a, "reason": "r"} for a in ["yes", "yes"]]
+    ctx, _ = with_llm(offline_context(tmp_path, paper=paper), answers)
+    result = await check(task, ctx)
+    (finding,) = result.findings
+    assert not finding.uncertain

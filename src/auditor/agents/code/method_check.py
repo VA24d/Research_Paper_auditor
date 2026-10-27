@@ -20,7 +20,14 @@ from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from auditor.agents.code.code_retrieval import Chunk, method_sentences, retrieve
+from auditor.agents.code.code_retrieval import (
+    Chunk,
+    method_sentences,
+    retrieve,
+)
+from auditor.agents.code.code_retrieval import (
+    code_chunks as retrieval_code_chunks,
+)
 from auditor.agents.code.data_checks import paper_quote_text
 from auditor.infra.context import RunContext
 from auditor.infra.llm import StructuredLLM
@@ -198,9 +205,12 @@ async def _check_rag(
         else [method_text]
     )
     budget = MAX_CODE_CHARS if len(parts) == 1 else MAX_CODE_CHARS // 2
+    rag_chunks = retrieval_code_chunks(snapshot)
 
     async def review(part: str) -> tuple[list[Chunk], list[Discrepancy]]:
-        chunks, how = await retrieve(snapshot, part, ctx.http, ctx.settings, budget)
+        chunks, how = await retrieve(
+            snapshot, part, ctx.http, ctx.settings, budget, chunks=rag_chunks
+        )
         if not chunks:
             return [], []
         shown = "\n\n".join(f"--- {c.path} (lines {c.start}-{c.end})\n{c.numbered}" for c in chunks)
@@ -537,9 +547,12 @@ def _evidence(
     sentence = quoted_sentence(paper, quote)
     if sentence is None or discrepancy.code_path not in files:
         return None
-    lines = snapshot.read_text(discrepancy.code_path).splitlines()
+    try:
+        lines = snapshot.read_text(discrepancy.code_path).splitlines()
+    except (KeyError, OSError):
+        return None
     start, end = discrepancy.code_start_line, discrepancy.code_end_line
-    if end < start or end > len(lines):
+    if start < 1 or end < start or end > len(lines):
         return None
     return [
         paper_quote_text(paper.paper_id, sentence.text),

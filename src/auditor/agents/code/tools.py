@@ -27,6 +27,25 @@ MAX_SEARCH_RESULTS = 50
 MAX_READ_LINES = 400
 _LINE_CHARS = 200
 
+# Searches reuse the split lines of the last few snapshots instead of rereading them.
+_LINES_CACHE_MAX = 4
+_snapshot_lines_cache: dict[tuple[str, str], list[tuple[str, list[str]]]] = {}
+
+
+def _snapshot_lines(snapshot: Snapshot) -> list[tuple[str, list[str]]]:
+    key = (str(snapshot.root), snapshot.manifest.revision)
+    if key not in _snapshot_lines_cache:
+        if len(_snapshot_lines_cache) >= _LINES_CACHE_MAX:
+            _snapshot_lines_cache.pop(next(iter(_snapshot_lines_cache)))
+        loaded = []
+        for file in snapshot.manifest.files:
+            try:
+                loaded.append((file.path, snapshot.read_text(file.path).splitlines()))
+            except (KeyError, OSError, UnicodeDecodeError):
+                continue
+        _snapshot_lines_cache[key] = loaded
+    return _snapshot_lines_cache[key]
+
 
 async def _snapshot(ctx: RunContext) -> Snapshot | str:
     if ctx.repository is None:
@@ -66,10 +85,10 @@ async def search_repository(ctx: RunContext, pattern: str, max_results: int = 20
         regex = re.compile(re.escape(pattern), re.IGNORECASE)
     limit = max(1, min(max_results, MAX_SEARCH_RESULTS))
     hits: list[str] = []
-    for file in snapshot.manifest.files:
-        for number, line in enumerate(snapshot.read_text(file.path).splitlines(), start=1):
+    for file_path, lines in _snapshot_lines(snapshot):
+        for number, line in enumerate(lines, start=1):
             if regex.search(line):
-                hits.append(f"{file.path}:{number}: {line.strip()[:_LINE_CHARS]}")
+                hits.append(f"{file_path}:{number}: {line.strip()[:_LINE_CHARS]}")
                 if len(hits) >= limit:
                     return "\n".join([*hits, f"(stopped after {limit} matches)"])
     return "\n".join(hits) if hits else f"No line matches {pattern!r}."
@@ -84,7 +103,7 @@ async def read_repository_file(
         return snapshot
     try:
         lines = snapshot.read_text(path).splitlines()
-    except KeyError:
+    except (KeyError, OSError):
         return f"{path} is not in the repository snapshot; use list_repository_files."
     start = max(1, start_line)
     end = min(len(lines), end_line, start + MAX_READ_LINES - 1)

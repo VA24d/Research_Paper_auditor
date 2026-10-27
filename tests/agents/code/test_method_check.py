@@ -290,3 +290,23 @@ def test_a_quote_that_runs_past_its_sentence_is_anchored_on_where_it_starts() ->
     assert found.text == LOSS
     # A quote the paper does not contain is still refused.
     assert quoted_sentence(paper, "the weights are drawn from a heavy tailed prior always") is None
+
+
+async def test_evidence_guards_against_start_line_below_one(tmp_path: Path) -> None:
+    from auditor.agents.code.method_check import Discrepancy, _evidence
+    from auditor.infra.snapshots import fetch_snapshot
+
+    paper = method_paper()
+    url = repo(tmp_path)
+    ctx = offline_context(tmp_path, paper=paper)
+    snapshot = await fetch_snapshot(RepositoryRef(url=url), ctx.http, ctx.settings)
+    disc = Discrepancy.model_construct(
+        paper_quote=LOSS,
+        code_path="model.py",
+        code_start_line=0,
+        code_end_line=2,
+        description="test",
+        category="Loss",
+        confidence="high",
+    )
+    assert _evidence(paper, snapshot, ["model.py"], disc) is None
