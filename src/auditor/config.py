@@ -225,7 +225,11 @@ class Settings(BaseSettings):
     claim_loop_max_tool_calls: int = Field(default=12, gt=0)
     claim_loop_max_model_calls: int = Field(default=8, gt=0)
     claim_loop_plan_max_output: int = Field(default=4096, gt=0)
-    claim_loop_effort: Literal["low", "medium", "high"] = "medium"
+    # Low thinking: on 3.8 Flash a medium-effort turn took 46 to 86 s on average on set C,
+    # and a claim makes up to 8 turns one after another.
+    claim_loop_effort: Literal["low", "medium", "high"] = "low"
+    # A claim starts no model call after this many seconds and ends without a verdict.
+    claim_loop_timeout_s: float = Field(default=540.0, gt=0)
     # What the claims are about: the experiments (data, splits, evaluation), or the
     # method's implementation details, read from the method sections.
     claim_loop_focus: Literal["experiments", "method"] = "experiments"
