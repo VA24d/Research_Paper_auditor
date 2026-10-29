@@ -99,6 +99,25 @@ def test_first_surname_handles_both_name_orders() -> None:
     assert first_surname("  ") == ""
 
 
+def test_titles_match_accepts_a_main_title_the_index_shortened() -> None:
+    # An index record sometimes keeps only the part before the colon.
+    assert titles_match(
+        "NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis", "NeRF"
+    )
+    # A different work is still refused.
+    assert not titles_match(
+        "NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis",
+        "BERT: Pre-training of Deep Bidirectional Transformers",
+    )
+
+
+def test_venues_match_ignores_repository_copies() -> None:
+    # OpenAlex sometimes holds an institutional repository's record instead of the
+    # proceedings one; its venue says nothing about where the work was published.
+    assert venues_match("NeurIPS", "UCL Discovery (University College London)")
+    assert venues_match("ICML", "eScholarship")
+
+
 def test_parse_marker_pulls_surnames_and_year() -> None:
     parsed = parse_marker("(Smith et al., 2020; Jones and Lee, 2019a)")
     assert parsed.surnames == ("smith", "jones", "lee")
@@ -168,6 +187,74 @@ async def test_resolve_entry_searches_by_title(tmp_path: Path) -> None:
     assert resolution.work is not None
     assert resolution.work.id == "https://openalex.org/W123"
     assert resolution.queries[0] == ("openalex title search", "1 hits")
+
+
+async def test_resolve_entry_stops_at_the_first_index_with_a_match(tmp_path: Path) -> None:
+    """The remaining indexes are not queried once one has found a candidate."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "api.openalex.org" in str(request.url):
+            return httpx.Response(200, json=OPENALEX_HITS)
+        raise AssertionError(f"unexpected request to {request.url}")
+
+    settings = Settings(cache_dir=tmp_path / "cache")
+    client = HttpClient(settings, transport=httpx.MockTransport(handler), sleep=_no_sleep)
+    entry = BibEntry(
+        id="b1",
+        title="SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+        authors=("Pranav Rajpurkar",),
+        year=2016,
+    )
+    resolution = await resolve_entry(client, entry)
+    assert resolution.found
+    assert resolution.queries == (("openalex title search", "1 hits"),)
+
+
+async def test_resolve_entry_skips_a_dead_index(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "api.openalex.org" in str(request.url):
+            raise httpx.ConnectError("connection refused", request=request)
+        if "api.crossref.org" in str(request.url):
+            return httpx.Response(200, json={"message": {"items": [CROSSREF_HIT["message"]]}})
+        return httpx.Response(404)
+
+    settings = Settings(cache_dir=tmp_path / "cache")
+    client = HttpClient(settings, transport=httpx.MockTransport(handler), sleep=_no_sleep)
+    entry = BibEntry(
+        id="b1",
+        title="SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+        authors=("Pranav Rajpurkar",),
+        year=2016,
+    )
+    resolution = await resolve_entry(client, entry)
+    assert resolution.found
+    assert resolution.queries[0] == ("openalex title search", "failed (HttpRequestError)")
+    assert resolution.queries[1] == ("crossref title search", "1 hits")
+
+
+async def test_resolve_entry_routes_an_arxiv_doi_to_arxiv(tmp_path: Path) -> None:
+    """arXiv's DOIs live in DataCite, so Crossref and OpenAlex do not know them; the
+    entry must not be called fabricated."""
+    feed = (
+        '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">'
+        "<entry><id>http://arxiv.org/abs/2602.12204v1</id>"
+        "<title>Online Elicitation of Necessarily Optimal Matchings</title></entry></feed>"
+    )
+    routes = {
+        "export.arxiv.org": httpx.Response(200, text=feed),
+        "api.crossref.org": httpx.Response(404),
+        "api.openalex.org": httpx.Response(404),
+    }
+    entry = BibEntry(
+        id="b2",
+        title="Online Elicitation of Necessarily Optimal Matchings",
+        doi="10.48550/arXiv.2602.12204v1",
+    )
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert resolution.found
+    assert resolution.work is not None
+    assert resolution.work.arxiv_id == "2602.12204v1"
+    assert not resolution.doi_unresolved
 
 
 async def test_resolve_entry_reports_why_nothing_was_found(tmp_path: Path) -> None:

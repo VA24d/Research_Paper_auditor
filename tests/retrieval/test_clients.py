@@ -8,7 +8,9 @@ from auditor.config import Settings
 from auditor.infra.http import HttpClient
 from auditor.retrieval.clients import (
     arxiv_by_id,
+    arxiv_id_from_doi,
     arxiv_search,
+    ascii_fold,
     crossref_by_doi,
     crossref_search,
     is_arxiv_id,
@@ -18,6 +20,7 @@ from auditor.retrieval.clients import (
     openalex_search,
     s2_by_identifier,
     s2_search,
+    short_title,
 )
 
 ARXIV_FEED = """<?xml version="1.0" encoding="UTF-8"?>
@@ -234,3 +237,24 @@ async def test_http_errors_give_none_or_empty(tmp_path: Path) -> None:
     assert await s2_search(http, "title") == []
 
     assert not is_arxiv_id("1706.037")
+
+
+def test_arxiv_id_from_doi_extracts_the_arxiv_id() -> None:
+    # arXiv's DOIs live in DataCite, not Crossref/OpenAlex; the id behind them is usable.
+    assert arxiv_id_from_doi("10.48550/arXiv.2602.12204v1") == "2602.12204"
+    assert arxiv_id_from_doi("10.48550/arxiv.1706.03762") == "1706.03762"
+    assert arxiv_id_from_doi("10.18653/v1/D16-1264") is None
+    assert arxiv_id_from_doi("https://doi.org/10.48550/arXiv.1706.03762") == "1706.03762"
+
+
+def test_ascii_fold_and_short_title_make_searchable_queries() -> None:
+    # Accents decompose; typography and letters an English query would not carry drop.
+    assert ascii_fold("\u00c9tude sur l'apprentissage") == "Etude sur l'apprentissage"
+    assert ascii_fold("Na\u00efve \u201cbayes\u201d \u2014 a survey") == "Naive \"bayes\" - a survey"
+    assert ascii_fold("Demoir\u0398ing") == "Demoiring"  # a mojibake theta drops out
+    assert short_title("Real-Time Image Demoir\u0398ing on Mobile Devices with Deep Features", words=5) == (
+        "Real Time Image Demoiring on"
+    )
+    assert short_title("One Two Three Four Five Six Seven Eight Nine Ten", words=8) == (
+        "One Two Three Four Five Six Seven Eight"
+    )
