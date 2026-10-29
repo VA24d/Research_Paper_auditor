@@ -483,6 +483,10 @@ def propose(
         if not mention.is_linked:
             continue
         sentence = paper.sentence(mention.sentence_id)
+        # A sentence crowded with bare numbers is a parser-merged table fragment: the
+        # perturbed value would be table data no claim states, which no checker can flag.
+        if len(extract_numbers(sentence.text)) > 3:
+            continue
         for bib_id in mention.bib_ids:
             source_text = sources.get(bib_id)
             if not source_text:
