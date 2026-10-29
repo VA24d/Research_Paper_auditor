@@ -115,7 +115,24 @@ def test_venues_match_ignores_repository_copies() -> None:
     # OpenAlex sometimes holds an institutional repository's record instead of the
     # proceedings one; its venue says nothing about where the work was published.
     assert venues_match("NeurIPS", "UCL Discovery (University College London)")
-    assert venues_match("ICML", "eScholarship")
+    assert venues_match(
+        "TMLR", "Digital Access to Scholarship at Harvard (DASH) (Harvard University)"
+    )
+    assert venues_match("ICML", "Research at the University of Copenhagen (University of Copenhagen)")
+    assert venues_match("ICML", "RePEc: Research Papers in Economics")
+    # A real journal is not a repository, however much it names one.
+    assert not venues_match("Drug Discovery Today", "Nature")
+
+
+def test_venues_match_journal_abbreviations() -> None:
+    # ISO-4-style abbreviations and acronyms.
+    assert venues_match("Mach. Learn.", "Machine Learning")
+    assert venues_match("J. Mach. Learn. Res.", "Journal of Machine Learning Research")
+    assert venues_match("Trans. Mach. Learn. Res.", "Transactions on Machine Learning Research")
+    assert venues_match("JMLR", "Journal of Machine Learning Research")
+    # A different journal is still refused.
+    assert not venues_match("Mach. Learn.", "Machine Translation")
+    assert not venues_match("JMLR", "Journal of Computational Biology")
 
 
 def test_parse_marker_pulls_surnames_and_year() -> None:

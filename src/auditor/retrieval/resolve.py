@@ -234,6 +234,17 @@ def _venue_tokens(venue: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _VENUE_STOPWORDS and len(w) > 1)
 
 
+def _venue_word_list(venue: str) -> list[str]:
+    """The content words of a venue, in the order they appear (abbreviation matching)."""
+    words = re.findall(r"[a-z0-9]+", venue.lower())
+    return [w for w in words if w not in _VENUE_STOPWORDS and len(w) > 1]
+
+
+def _venue_raw_words(venue: str) -> list[str]:
+    """All the words of a venue, in order, stopwords kept (abbreviation anchoring)."""
+    return re.findall(r"[a-z0-9]+", venue.lower())
+
+
 def _venue_variants(venue: str) -> list[str]:
     """The normalised venue and a few folded forms an index or bibliography may use.
 
@@ -253,28 +264,29 @@ def _venue_variants(venue: str) -> list[str]:
 
 
 # Venue strings an index gives that say nothing about where the work was published: an
-# arXiv preprint record, or an institutional repository's copy of it (OpenAlex sometimes
-# holds the repository record instead of the proceedings one). They never contradict an
-# entry's venue.
+# arXiv preprint record, or a working-paper repository. Institutional repositories are
+# matched by pattern (they are named "<X> (<University>)" and are far too many to list).
 _NON_CONTRADICTING_VENUES = frozenset(
     {
         "arxiv",
         "arxiv cornell university",
         "corr",
         "arxiv org",
-        "ucl discovery",
-        "ucl discovery university college london",
-        "escholarship",
-        "inspire",
-        "inspire hep",
-        "zenodo",
-        "ssrn",
-        "dblp",
-        "researchgate",
-        "core",
-        "semanticscholar",
+        "repec",
+        "repec research papers in economics",
     }
 )
+
+_REPOSITORY_VENUE = re.compile(r"\([^()]*universit[a-zè]*[^()]*\)|\brepository\b", re.IGNORECASE)
+
+
+def _is_repository_venue(venue: str) -> bool:
+    """Whether the venue names an institutional repository's copy of a work.
+
+    OpenAlex names them after the repository ("UCL Discovery (University College London)",
+    "Digital Access to Scholarship at Harvard (DASH) (Harvard University)"), which says
+    nothing about where the work was published."""
+    return bool(_REPOSITORY_VENUE.search(venue))
 
 
 def venues_match(a: str | None, b: str | None) -> bool:
@@ -282,14 +294,18 @@ def venues_match(a: str | None, b: str | None) -> bool:
 
     Exact after normalisation and folding (a leading year, a trailing short name in
     brackets, a leading "proceedings of the" are dropped), membership in a shared alias
-    group (an index gives the proceedings' full name, a bibliography the short one), or
-    token containment (each side keeps at least three content words, so "empirical
-    methods natural language processing" matches "conference on empirical methods in
-    natural language processing" without matching a different conference). A preprint or
-    repository placeholder venue says nothing and never contradicts.
+    group (an index gives the proceedings' full name, a bibliography the short one),
+    ISO-4-style abbreviation or acronym ("Mach. Learn." for "Machine Learning", "JMLR"
+    for "Journal of Machine Learning Research"), or token containment (each side keeps at
+    least three content words, so "empirical methods natural language processing" matches
+    "conference on empirical methods in natural language processing" without matching a
+    different conference). A preprint or repository placeholder venue says nothing and
+    never contradicts.
     """
     if not a or not b:
         return False
+    if _is_repository_venue(a) or _is_repository_venue(b):
+        return True
     variants_a, variants_b = _venue_variants(a), _venue_variants(b)
     for variants in (variants_a, variants_b):
         if any(variant in _NON_CONTRADICTING_VENUES for variant in variants):
@@ -308,10 +324,44 @@ def venues_match(a: str | None, b: str | None) -> bool:
     }
     if groups_a & groups_b:
         return True
-    tokens_a, tokens_b = _venue_tokens(variants_a[0]), _venue_tokens(variants_b[0])
+    if any(
+        _venue_abbreviates(
+            _venue_raw_words(x), _venue_raw_words(y), _venue_word_list(x), _venue_word_list(y)
+        )
+        or _venue_abbreviates(
+            _venue_raw_words(y), _venue_raw_words(x), _venue_word_list(y), _venue_word_list(x)
+        )
+        for x in variants_a
+        for y in variants_b
+    ):
+        return True
+    tokens_a, tokens_b = _venue_word_list(variants_a[0]), _venue_word_list(variants_b[0])
     if len(tokens_a) < 3 or len(tokens_b) < 3:
         return False
     return tokens_a <= tokens_b or tokens_b <= tokens_a
+
+
+def _venue_abbreviates(
+    short_raw: list[str], long_raw: list[str], short_content: list[str], long_content: list[str]
+) -> bool:
+    """Whether `short_raw` is an abbreviation of `long_raw`: ISO-4 token prefixes
+    ("trans mach learn res" for "transactions on machine learning research"), or a single
+    acronym matching the content initials ("jmlr" for "journal machine learning
+    research"). The prefix mapping runs on the raw words, so a stopword the long side
+    dropped ("transactions") still anchors its abbreviation ("trans")."""
+    if not short_raw or not long_raw:
+        return False
+    if len(short_content) == 1:
+        return "".join(token[0] for token in long_content) == short_content[0]
+    index = 0
+    for token in short_raw:
+        stem = token.rstrip(".")
+        while index < len(long_raw) and not long_raw[index].startswith(stem):
+            index += 1
+        if index == len(long_raw):
+            return False
+        index += 1
+    return True
 
 
 @dataclass(frozen=True)
