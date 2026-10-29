@@ -172,13 +172,15 @@ async def check_entry(ctx: RunContext, entry: HallmarkEntry) -> ExistenceResult:
         flag = Flag.METADATA_MISMATCH
     else:
         flag = Flag.CLEAN
+    # The first finding's summary explains a flag; keep it in the results file.
+    reason = result.reason or (result.findings[0].summary if result.findings else None)
     return ExistenceResult(
         bibtex_key=entry.bibtex_key,
         label=entry.label,
         hallucination_type=entry.hallucination_type,
         difficulty_tier=entry.difficulty_tier,
         flag=flag,
-        reason=result.reason,
+        reason=reason,
     )
 
 

@@ -143,13 +143,32 @@ def _passages_block(passages: list[Passage]) -> str:
     )
 
 
+def _find_quote(text: str, quote: str) -> tuple[int, int] | None:
+    """Where `quote` occurs in `text`, or None when it does not.
+
+    An exact match is preferred. A whitespace-tolerant match re-anchors a quote the model
+    reformatted (line breaks became spaces), which is the same quote, not a new one."""
+    start = text.find(quote)
+    if start >= 0:
+        return start, start + len(quote)
+    pattern = re.compile(r"\s+".join(re.escape(word) for word in quote.split()))
+    match = pattern.search(text)
+    if match:
+        return match.start(), match.end()
+    return None
+
+
 def _evidence_for(
     task: AuditTask,
     resolution: Resolution,
     source: SourceText,
     quote: str | None = None,
 ) -> tuple[Evidence, ...]:
-    """The evidence a finding carries: how the work was resolved, and the quote."""
+    """The evidence a finding carries: how the work was resolved, and the quote.
+
+    The quote carries exact character offsets when it occurs in the retrieved text (also
+    when only its whitespace differs); a quote that appears nowhere is kept as evidence
+    without offsets, for the verifier and the human reviewer to judge."""
     work = resolution.work
     assert work is not None
     identifier = (
@@ -171,8 +190,8 @@ def _evidence_for(
     )
     if not quote or len(quote) < MIN_QUOTE_CHARS:
         return (lookup,)
-    char_start = source.text.find(quote)
-    char_end = char_start + len(quote) if char_start >= 0 else None
+    found = _find_quote(source.text, quote)
+    char_start, char_end = found if found is not None else (None, None)
     cited = Evidence(
         kind=EvidenceKind.QUOTE,
         source=SourceRef(
@@ -182,7 +201,7 @@ def _evidence_for(
             url=work.html_url or work.pdf_url,
         ),
         text=quote,
-        char_start=char_start if char_start >= 0 else None,
+        char_start=char_start,
         char_end=char_end,
     )
     return (lookup, cited)
@@ -283,8 +302,9 @@ async def check_citation(
 
     `resolution` is what the citation resolved to (auditor.retrieval.resolve) and
     `source` the text retrieved for it (auditor.retrieval.fulltext). The model sees
-    the TOP_PASSAGES passages, and its answer is checked in code: a quote must be
-    verbatim in the source, and a number mismatch is confirmed by value.
+    the TOP_PASSAGES passages, and its answer is checked in code: the quote it returns
+    is anchored in the source when it appears there (exactly or up to whitespace), and
+    a number mismatch is confirmed by value.
     """
     if task.kind is not TaskKind.CITATION or not task.claim:
         raise ValueError(f"{task.task_id} is not a citation task with a claim")

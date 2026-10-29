@@ -213,9 +213,9 @@ def _inject_sentence(
     source_text: str | None,
 ) -> tuple[ParsedPaper, GoldLabel, InjectionRecord]:
     sentence = paper.sentence(anchor.sentence_id)
-    original = sentence.text[anchor.start : anchor.end]
     if anchor.start is None or anchor.end is None:
         raise ValueError("a sentence injection needs an anchor with a span")
+    original = sentence.text[anchor.start : anchor.end]
     injected = _sentence_edited_copy(paper, anchor, new_text)
     new_anchor = SentenceAnchor(
         sentence_id=anchor.sentence_id, start=anchor.start, end=anchor.start + len(new_text)
@@ -542,13 +542,16 @@ def propose(
 
     for entry in paper.bibliography:
         if entry.year:
+            # Two or three years off: one year of drift is normal in real bibliographies
+            # (proceedings year vs the online-first year the index holds), so the
+            # injected year must be beyond the checker's tolerance.
             metadata_props.append(
                 Proposal(
                     kind=InjectionKind.REFERENCE_METADATA_MISMATCH,
                     bib_id=entry.id,
                     sentence_id=None,
                     anchor=None,
-                    new_value=str(entry.year + 1),
+                    new_value=str(entry.year + rng.choice((2, 3))),
                     field_name="year",
                 )
             )

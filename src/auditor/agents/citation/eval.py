@@ -45,10 +45,6 @@ def recall_at_k(
         candidate = _normalise(passage.text)
         if gold in candidate or candidate in gold:
             return True
-        # Majority character overlap either way.
-        shorter, longer = sorted((candidate, gold), key=len)
-        if shorter and shorter in longer:
-            return True
     return False
 
 
