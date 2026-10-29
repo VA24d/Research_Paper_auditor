@@ -335,7 +335,16 @@ def _entry_matches(entry: BibEntry, work: Work) -> bool:
     """Whether `work` is plausibly the work `entry` cites."""
     if work.title and entry.title and not titles_match(entry.title, work.title):
         return False
-    if entry.year and work.year and abs(entry.year - work.year) > 1:
+    # One year of drift is normal. A bigger gap is still the same work when the title is
+    # exactly the entry's (a bibliography with a wrong year, which the metadata check
+    # then reports); only an uncertain title match is rejected on the year.
+    year_off = (
+        entry.year is not None
+        and work.year is not None
+        and abs(entry.year - work.year) > 1
+        and title_text(entry.title or "") != title_text(work.title or "")
+    )
+    if year_off:
         return False
     if entry.authors and work.authors:
         entry_surname = first_surname(entry.authors[0])

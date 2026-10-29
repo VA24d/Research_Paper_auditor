@@ -232,6 +232,37 @@ async def test_resolve_entry_skips_a_dead_index(tmp_path: Path) -> None:
     assert resolution.queries[1] == ("crossref title search", "1 hits")
 
 
+async def test_resolve_entry_accepts_a_wrong_year_when_the_title_is_exact(tmp_path: Path) -> None:
+    """A bibliography with a year several years off still resolves to the real work (the
+    metadata check reports the year); only an uncertain title match is year-filtered."""
+    entry = BibEntry(
+        id="b1",
+        title="SQuAD: 100,000+ Questions for Machine Comprehension of Text",
+        authors=("Pranav Rajpurkar",),
+        year=2019,  # the index's work is from 2016
+    )
+    resolution = await resolve_entry(
+        api_client(tmp_path, {"api.openalex.org": httpx.Response(200, json=OPENALEX_HITS)}), entry
+    )
+    assert resolution.found
+    assert resolution.work is not None
+    assert resolution.work.year == 2016
+
+
+async def test_resolve_entry_rejects_a_different_year_with_an_uncertain_title(
+    tmp_path: Path,
+) -> None:
+    routes = {"api.openalex.org": httpx.Response(200, json=OPENALEX_HITS)}
+    entry = BibEntry(
+        id="b1",
+        title="SQuAD: Questions for Machine Comprehension of Text",  # a weaker title match
+        authors=("Pranav Rajpurkar",),
+        year=2019,
+    )
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert not resolution.found
+
+
 async def test_resolve_entry_routes_an_arxiv_doi_to_arxiv(tmp_path: Path) -> None:
     """arXiv's DOIs live in DataCite, so Crossref and OpenAlex do not know them; the
     entry must not be called fabricated."""
