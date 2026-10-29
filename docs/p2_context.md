@@ -685,7 +685,82 @@ all dataset execution + annotation, none of it code:
 Progress: ALL items done (see "Session 2 final state" above for the full detail).
 Commits: "citation: retrieval package, agent check, B1 tools and offline unit tests",
 
-## Session 5 (2026-10-29) — AUDIT + EVALUATION session (in progress)
+## Session 6 (2026-10-29) — FIX session after the audit (in progress)
+
+Anurag's brief: fix the audit findings as far as possible; only ask about MAJOR decisions;
+set B may be used WITHOUT the D18 second review (he will do it later); the set B numbers
+are horrible — find out what is wrong and fix it; same for HALLMARK accuracy (0.726,
+FPR 0.557 on valid). Testing on minimal sets, LLM-call budget left to my judgement.
+No merge, no PR. Keep this file current.
+
+Plan (in order):
+1. [x] Analyse HALLMARK false positives: runs/hallmark/results.jsonl reasons for VALID
+   entries -> find the comparison bugs in resolve.py/reference.py.
+2. [ ] Fix the metadata comparisons (year/venue/title tolerance) + author handling; tests.
+3. [ ] Fix the eager title searches (lookup.py + resolve.py): sequential with early exit,
+   per-search exception capture; tests.
+4. [ ] Wire GROBID into the agent path (check(), tools.py, citation_eval fetch):
+   construct GrobidClient(ctx.http, ctx.settings.grobid_url) lazily; tests.
+5. [ ] Low cleanups: eval.py dead lines, reference.py re-fetch, set_b.py slice order,
+   support.py quote verbatim/normalised re-anchor + docstring.
+6. [ ] Re-run HALLMARK (HTTP cache makes it cheap, no LLM) + score; iterate thresholds.
+7. [ ] Small FULL-system run on 2-4 subset entries (claim-injected papers), score with
+   --before-verifier (mock verifier sends everything to human review -> nothing counts as
+   positive otherwise), diagnose agent issues, fix.
+8. [ ] Full offline suite + ruff + mypy, `citation:` commits, push.
+
+Findings/notes for this session:
+- HALLMARK false-positive analysis (fresh baseline re-run first — the OLD results file
+  predated merged PRs and reproduced stale numbers): fresh pre-fix baseline (old resolver,
+  reason fix only): accuracy 0.750, P 0.811 / R 0.786 / F1 0.798, FPR 0.313 (96/307).
+  FP buckets: 46 year delta -1, 25 resolution failures, 13 arXiv DOIs, 8 venue, 2 title.
+- FIXES IMPLEMENTED (all with tests, full suite 1212 passed, ruff clean):
+  1. Sequential title searches with early exit + per-index exception capture
+     (resolve.py _search_candidates + lookup.py search_all); one dead/rate-limited index
+     no longer sinks the lookup and unused indexes are not queried.
+  2. arXiv-DOI routing: 10.48550/arXiv.<id> DOIs live in DataCite -> resolve via arXiv
+     instead of being called fabricated (clients.arxiv_id_from_doi; resolve_entry +
+     lookup_citation).
+  3. ASCII-folded search queries + shortened retry (>8 words) for mojibake/long titles
+     (clients.ascii_fold / short_title; "DemoirΘing" -> "Demoiring").
+  4. titles_match: prefix rule (index keeps only the main title, "NeRF" for the full
+     title). reference.py: near-miss title rule (tokens differ, neither side a subset ->
+     flag) — catches "…You Nedd"-style corruptions that resolve fuzzily.
+  5. AUTHOR CHECKS (new): author names the work doesn't have (placeholders/fabricated),
+     silently truncated lists (fewer than the work's, no "et al." marker, work >= 3
+     authors), wrong first author (swapped). first_surname hardened (et al., trailing
+     initial, comma order).
+  6. venues_match: institutional-repository placeholder venues (UCL Discovery,
+     eScholarship, Zenodo, SSRN, ...) never contradict, like arXiv records.
+  7. GROBID wired into the agent path: fulltext.grobid_for(settings, http); check(),
+     both B1 tools and citation_eval fetch pass it; _pdf_full_text checks is_alive first
+     (a dead GROBID is a fallback to abstract, not a crash — HttpRequestError from a dead
+     GROBID would previously have escaped as an unhandled exception).
+  8. check_entry keeps the first finding's summary as the result reason (results files
+     are now self-explanatory).
+  9. Low cleanups: eval.py dead containment lines, reference.py entry pass-through
+     (optional entry param, no re-fetch in the pipeline path), set_b.py slice-before-check
+     order, support.py quote re-anchoring (whitespace-tolerant _find_quote) + honest
+     docstring.
+- YEAR DECISION (Anurag chose option A): checker tolerates ±1 year (46/96 hallmark FPs
+  gone; correct for proceedings-vs-online-first drift). Set B: ALL 38 metadata injections
+  were year+1 -> regenerated to year+3 surgically (runs/_regen_years.py: papers' bib row
+  + raw edited via _replace_in_raw, label ids re-derived like inject_metadata, records
+  updated; 38/38 done). set_b.py propose() now injects year + rng.choice((2,3)) and the
+  builder's verify rejects injected years within ±1 of the resolved work's year.
+  `scripts/set_b.py validate` now exits 1 with EXACTLY the D18 second-review problem.
+  NOTE: the subset B1 runs from the audit session are stale for the metadata class.
+- HALLMARK re-run with all fixes in flight: runs/hallmark/results_fixed.jsonl
+  (~2.5 h at ~5 entries/min; S2's unauthenticated ~1 rps is the bottleneck; a
+  parent+child python pair per run is the venv launcher, NOT a race).
+- Full-system mini-run (step 7) PREPARED: runs/full_mini_dataset.jsonl = 2501.00692
+  injected + original (has both claim classes). First attempt hit 300s reference-task
+  timeouts from API throttling while the hallmark run hammers the same indexes — killed;
+  rerun AFTER hallmark finishes, scoring with --before-verifier (placeholder verifier
+  sends everything to human review; nothing counts positive otherwise).
+
+
+## Session 5 (2026-10-29) — AUDIT + EVALUATION session (completed)
 
 Anurag's instructions: audit the whole P2 implementation end to end, run everything
 (offline suite + network/llm/grobid marked tests + real GROBID + the real Vertex LLM),
