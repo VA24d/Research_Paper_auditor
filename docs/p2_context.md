@@ -775,10 +775,23 @@ Findings so far: (static audit, step 2 — details going into docs/p2_audit_repo
   (baselines/common.py) DROPS reported errors with empty sentence_id/bib_id with a warning
   — findings silently lost when the model omits ids; (c) batch defaults to 3 runs — with
   --llm-cache the extra runs are cheap.
-- Cost model for the P2.9 set B runs (119 dataset entries): ~8 model calls and ~23k
-  input tokens per paper => ~990 calls / ~2.7M in tokens per run; x2 runs (full-text +
-  abstract-only) ~= 2000 calls / 46M in tokens. A documented subset (e.g. 24 entries,
-  stratified) ~= 200 calls per run. Anurag to choose scale.
+- P2.9 subset runs DONE (both conditions, uncached):
+  * Full-text `runs/setb-subset-b1-r1`: 26/30 entries done (4 deterministic non-P2
+    failures: GitHub 403 x2 papers, code-tool JSONDecodeError on rank_bm25 repo x2
+    variants, GraphRecursionError on 00692-injected); B1 emitted 22 predictions on 8
+    papers, 10 citation-class; score vs runs/setb_subset_labels.jsonl (78 labels — MUST
+    use the subset-restricted labels file; the scorer takes the labels as the universe):
+    metadata_mismatch P 1.000 R 0.056 F1 0.105, all other classes 0, macro-F1 0.026, FPR
+    0/14. The low numbers are REAL B1 behaviour (verified: it flags unlabelled real
+    references, e.g. 00799 b28 vs labels b0/b1), not a scoring bug.
+  * Abstract-only `runs/setb-subset-abs-b1-r1`: 25/30 done, macro-F1 0.026 identical;
+    prediction mix shifted (8 RNF vs 6). B1-level ablation shows no difference; the
+    module-level ablation needs the full system (~10x cost, one call per citation task).
+  * Recall@5 1.000 on the 20/154 records that carry a gold passage (134 have none).
+- docs/p2_audit_report.md COMPLETE (all sections; results tables filled).
+- Audit session remaining: nothing pending in code. Follow-ups for Anurag listed in the
+  report §7 (D18 second review, full-dataset + full-system runs, GROBID wiring decision,
+  lookup sequential-fallback decision, embed extra, claim-class growth, llm-marked test).
 
 
 then "citation: HALLMARK loader, set B injection machinery and evaluation scripts".
