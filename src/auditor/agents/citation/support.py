@@ -100,22 +100,53 @@ def extract_numbers(text: str) -> list[str]:
     return _NUMBER.findall(text)
 
 
+_NUMBER_WORDS = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "sixteen": 16,
+    "twenty": 20,
+    "fifty": 50,
+    "hundred": 100,
+    "thousand": 1000,
+}
+
+# A trailing letter or word that is not part of the value itself: "8x", "10-fold",
+# "50GB" — the numeric head is the value; the suffix says what it counts.
+_NUMBER_HEAD = re.compile(r"(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)")
+_NUMBER_WORD = re.compile(r"[a-z]+")
+
+
 def _parse_number(text: str) -> float | None:
     """Normalise a number string to a float, or None when it is not one.
 
     Accepts the forms a claim or a source writes: `3e-4`, `0.0003`, `12.5%`, `80`,
-    `1,000`. A percentage is divided by 100 so "12.5%" and "0.125" agree.
-    """
+    `1,000`, `8x`, `eight`. A percentage is divided by 100 so "12.5%" and "0.125" agree;
+    a trailing suffix ("8x") is dropped, because it says what is counted, not the value;
+    a number word ("eight") is its value."""
     text = text.strip().rstrip(".,;")
     is_percent = text.endswith("%")
-    text = text.rstrip("%").strip().replace(",", "").replace(" ", "")
+    text = text.rstrip("%").strip().replace(",", "").replace(" ", "").lower()
     if not text:
         return None
-    try:
-        value = float(text)
-    except ValueError:
-        return None
-    return value / 100.0 if is_percent else value
+    head = _NUMBER_HEAD.search(text)
+    if head is not None:
+        value = float(head.group(1))
+        return value / 100.0 if is_percent else value
+    word = _NUMBER_WORD.match(text)
+    if word is not None and word.group(0) in _NUMBER_WORDS:
+        return float(_NUMBER_WORDS[word.group(0)])
+    return None
 
 
 def numbers_agree(claimed: str, found: str) -> bool:
@@ -350,6 +381,13 @@ async def check_citation(
         "contradict, or are insufficient to verify the claim made in a research paper.\n\n"
         f"CLAIM: {task.claim}\n\n"
         f"PASSAGES:\n{_passages_block(passages)}\n\n"
+        "Verdicts: supported - the passages back the claim's specific assertion; "
+        "contradicted - a passage states something INCOMPATIBLE with the claim's specific "
+        "assertion (a different direction of effect, a different value, a different cause); "
+        "insufficient - the passages do not settle the claim. Do NOT answer contradicted "
+        "merely because a passage describes different conditions, a different model, or "
+        "does not mention the claim's specifics: that is insufficient, not a contradiction. "
+        "A contradiction needs a passage whose statement cannot both hold with the claim.\n\n"
         "Answer with the verdict, an exact quote from ONE of the passages that justifies "
         "the verdict (empty if insufficient), a short reason, and for every number the "
         "claim attributes to the cited work: the value as the paper states it, the value "

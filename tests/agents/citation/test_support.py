@@ -90,6 +90,12 @@ def test_numbers_agree_by_value_with_tolerance() -> None:
     assert numbers_agree("92.1", "92.15")  # within 1% relative
     assert not numbers_agree("92.1", "88.4")
     assert not numbers_agree("92.1", "about ninety")
+    # A number word is its value, and a suffix says what is counted, not the value.
+    assert numbers_agree("eight", "8")
+    assert numbers_agree("8x", "eight")
+    assert numbers_agree("10-fold", "10")
+    assert not numbers_agree("eight", "9")
+    assert not numbers_agree("eight", "eighty")
 
 
 async def test_supported_claim_is_checked_without_findings(tmp_path: Path) -> None:

@@ -36,6 +36,60 @@ from auditor.schemas import (
 # How an entry's author list ends when it knowingly does not name everyone.
 _TRUNCATION = re.compile(r"(?:\b(?:et\s+al\.?|and\s+others|others)\s*)+[\.,]?\s*$", re.IGNORECASE)
 
+# Above this many authors the work is a collaboration paper; bibliographies legitimately
+# name a few of them, and parser truncation cannot be told from a real omission.
+_MAX_TRUNCATION_AUTHORS = 10
+
+
+def _plausible_surname(surname: str) -> bool:
+    """Whether a token can be compared as a surname (not '*', 'g', '3', an empty piece).
+
+    Bibliography and index author fields carry parse junk — placeholders, initials,
+    asterisks — which would make any name comparison meaningless. Two-letter names
+    ("Li", "Wu", "He") are real surnames and stay."""
+    return len(surname) >= 2 and surname.isalpha()
+
+
+def _surnames(names: tuple[str, ...] | list[str]) -> list[str]:
+    """The comparable surnames of an author list, junk dropped."""
+    return [s for s in (first_surname(a) for a in names if a) if _plausible_surname(s)]
+
+
+def _author_problems(entry: BibEntry, work: Work) -> list[str]:
+    """Problems with the entry's author list compared with the work's.
+
+    A name the entry gives that no index author carries (a placeholder or a fabricated
+    author), a list that silently stops short of the index's (an author dropped without
+    "et al.", in a collaboration small enough that omission is not the norm), and a wrong
+    first author (authors swapped or reordered) are all metadata errors. Names compare by
+    surname, so initials and name order do not matter."""
+    work_surnames = _surnames(work.authors)
+    entry_surnames = _surnames(entry.authors)
+    if not entry_surnames or not work_surnames:
+        return []
+    problems: list[str] = []
+    missing = [s for s in entry_surnames if s not in work_surnames]
+    if missing:
+        problems.append(
+            f"author: the entry lists {', '.join(missing)}, none of whom is on the work"
+        )
+    truncated = bool(_TRUNCATION.search(" ".join(entry.authors)))
+    if (
+        not truncated
+        and 2 <= len(work_surnames) <= _MAX_TRUNCATION_AUTHORS
+        and len(entry_surnames) < len(work_surnames)
+    ):
+        problems.append(
+            f"author: the entry lists {len(entry_surnames)} of the work's "
+            f"{len(work_surnames)} authors without saying so"
+        )
+    if entry_surnames[0] != work_surnames[0] and entry_surnames[0] in work_surnames:
+        problems.append(
+            f"author: the entry's first author ({entry_surnames[0]}) is not the work's "
+            f"first author ({work_surnames[0]})"
+        )
+    return problems
+
 
 def _lookup_evidence(entry: BibEntry, resolution: Resolution) -> Evidence:
     """The LOOKUP evidence for a reference check: what was looked up and what came back."""
@@ -50,42 +104,6 @@ def _lookup_evidence(entry: BibEntry, resolution: Resolution) -> Evidence:
             f"{'found' if resolution.found else 'not found: ' + (resolution.reason or 'unknown')}"
         ),
     )
-
-
-def _author_problems(entry: BibEntry, work: Work) -> list[str]:
-    """Problems with the entry's author list compared with the work's.
-
-    A name the entry gives that no index author carries (a placeholder or a fabricated
-    author), a list that silently stops short of the index's (an author dropped without
-    "et al."), and a wrong first author (authors swapped or reordered) are all metadata
-    errors. Names compare by surname, so initials and name order do not matter."""
-    if not entry.authors or not work.authors:
-        return []
-    work_surnames = [first_surname(a) for a in work.authors if a and first_surname(a)]
-    entry_surnames = [s for s in (first_surname(a) for a in entry.authors) if s]
-    if not entry_surnames or not work_surnames:
-        return []
-    problems: list[str] = []
-    missing = [s for s in entry_surnames if s not in work_surnames]
-    if missing:
-        problems.append(
-            f"author: the entry lists {', '.join(missing)}, none of whom is on the work"
-        )
-    truncated = bool(_TRUNCATION.search(" ".join(entry.authors)))
-    if not truncated and len(entry_surnames) < len(work_surnames) and len(work_surnames) >= 3:
-        problems.append(
-            f"author: the entry lists {len(entry_surnames)} of the work's "
-            f"{len(work_surnames)} authors without saying so"
-        )
-    if (
-        entry_surnames[0] != work_surnames[0]
-        and entry_surnames[0] in work_surnames
-    ):
-        problems.append(
-            f"author: the entry's first author ({entry_surnames[0]}) is not the work's "
-            f"first author ({work_surnames[0]})"
-        )
-    return problems
 
 
 def _metadata_findings(task: AuditTask, entry: BibEntry, work: Work) -> list[CandidateFinding]:
