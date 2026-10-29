@@ -10,7 +10,7 @@ the same retrieval (auditor.retrieval.fulltext) and passage ranking
 from auditor.agents.citation.reference import check_reference
 from auditor.agents.citation.support import check_citation
 from auditor.infra.context import RunContext
-from auditor.retrieval.fulltext import retrieve_source
+from auditor.retrieval.fulltext import grobid_for, retrieve_source
 from auditor.retrieval.resolve import resolve_entry, resolve_marker
 from auditor.schemas import (
     AuditTask,
@@ -38,7 +38,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
                 reason=f"the bibliography entry {task.target.bib_id} is not in the paper",
             )
         resolution = await resolve_entry(ctx.http, entry)
-        return await check_reference(task, ctx, resolution)
+        return await check_reference(task, ctx, resolution, entry)
     if task.kind is TaskKind.CITATION:
         if isinstance(task.target, BibTarget):
             try:
@@ -67,6 +67,7 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
             ctx.http,
             resolution.work,
             ctx.settings,
+            grobid=grobid_for(ctx.settings, ctx.http),
             abstract_only=ctx.settings.citation_abstract_only,
         )
         return await check_citation(task, ctx, resolution, source)

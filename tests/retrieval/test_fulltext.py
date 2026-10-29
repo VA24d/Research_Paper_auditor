@@ -128,3 +128,32 @@ async def test_a_pdf_without_grobid_falls_back_to_the_abstract(tmp_path: Path) -
     )
     assert source.level is SourceLevel.ABSTRACT
     assert source.reason == "no full text was available"
+
+
+def test_grobid_for_builds_a_client_when_a_service_is_configured(tmp_path: Path) -> None:
+    from auditor.parser.grobid import GrobidClient
+    from auditor.retrieval.fulltext import grobid_for
+
+    settings = Settings(cache_dir=tmp_path / "cache", grobid_url="http://localhost:8070")
+    client = grobid_for(settings, refusing_client(tmp_path))
+    assert isinstance(client, GrobidClient)
+    # No service configured: the agent stays on HTML and abstracts.
+    assert grobid_for(
+        Settings(cache_dir=tmp_path / "cache", grobid_url=""), refusing_client(tmp_path)
+    ) is None
+
+
+async def test_a_dead_grobid_skips_the_pdf_and_falls_back(tmp_path: Path) -> None:
+    """GROBID being down is a fallback, not a failure: no download, straight to abstract."""
+    from auditor.retrieval.fulltext import grobid_for
+
+    settings = Settings(cache_dir=tmp_path / "cache", scratch_dir=tmp_path / "scratch")
+    http = page_client(tmp_path, {"isalive": httpx.Response(500)})
+    source = await retrieve_source(
+        http,
+        work(arxiv_id=None, pdf_url="https://example.org/hidden.pdf"),
+        settings,
+        grobid=grobid_for(settings, http),
+    )
+    assert source.level is SourceLevel.ABSTRACT
+    assert source.reason == "no full text was available"

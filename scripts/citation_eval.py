@@ -142,7 +142,7 @@ async def _fetch(args: argparse.Namespace) -> int:
     best level available, one JSON line per entry."""
     from auditor.infra.context import RunContext
     from auditor.infra.http import HttpClient
-    from auditor.retrieval.fulltext import retrieve_source
+    from auditor.retrieval.fulltext import grobid_for, retrieve_source
     from auditor.retrieval.resolve import resolve_entry
     from auditor.schemas import ParsedPaper
 
@@ -176,6 +176,7 @@ async def _fetch(args: argparse.Namespace) -> int:
                 ctx.http,
                 resolution.work,
                 settings,
+                grobid=grobid_for(settings, ctx.http),
                 abstract_only=args.abstract_only,
             )
             lines.append(

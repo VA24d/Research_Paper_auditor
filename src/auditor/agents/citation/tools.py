@@ -12,7 +12,7 @@ from langchain_core.tools import BaseTool
 from auditor.infra.context import RunContext
 from auditor.infra.tools import tracked_tool
 from auditor.retrieval.embeddings import get_embedder
-from auditor.retrieval.fulltext import SourceLevel, retrieve_source
+from auditor.retrieval.fulltext import SourceLevel, grobid_for, retrieve_source
 from auditor.retrieval.passages import rank_passages
 from auditor.retrieval.resolve import Resolution, resolve_entry
 from auditor.schemas import BibEntry
@@ -70,6 +70,7 @@ async def retrieve_cited_text(
         ctx.http,
         resolution.work,
         ctx.settings,
+        grobid=grobid_for(ctx.settings, ctx.http),
         abstract_only=(
             ctx.settings.citation_abstract_only if abstract_only is None else abstract_only
         ),
@@ -91,6 +92,7 @@ async def find_supporting_passages(
         ctx.http,
         resolution.work,
         ctx.settings,
+        grobid=grobid_for(ctx.settings, ctx.http),
         abstract_only=(
             ctx.settings.citation_abstract_only if abstract_only is None else abstract_only
         ),
