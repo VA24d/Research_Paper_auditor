@@ -684,4 +684,101 @@ all dataset execution + annotation, none of it code:
 
 Progress: ALL items done (see "Session 2 final state" above for the full detail).
 Commits: "citation: retrieval package, agent check, B1 tools and offline unit tests",
+
+## Session 5 (2026-10-29) — AUDIT + EVALUATION session (in progress)
+
+Anurag's instructions: audit the whole P2 implementation end to end, run everything
+(offline suite + network/llm/grobid marked tests + real GROBID + the real Vertex LLM),
+execute the P2.9 set B module runs (small sample first, then full with confirmation),
+write docs/p2_audit_report.md (separate from this file). NO new features; only small,
+clearly-correct defect fixes (ask otherwise). Branch stays `p2-citation-checker`, no PR,
+no merge to main. LLM is LIVE: provider `google_genai` (langchain-google-genai v4 ->
+google-genai SDK, Vertex AI + ADC), model gemini-2.5-flash, shared free-trial project
+lmaproject6767 — cost rules: <=100 model calls per run without asking; small sample
+(<=10) first; `--llm-cache` during development, UNCACHED for final reported numbers (D10);
+bounded retries (<=5) already in code, do not weaken; caps AUDITOR_LLM_MAX_CALLS /
+AUDITOR_LLM_MAX_COST_USD stay set; never touch gcloud billing/services/IAM; report
+403 BILLING_DISABLED / PERMISSION_DENIED to Anurag instead of fixing.
+
+Audit plan (in order):
+1. [x] Read the five docs; `git status` clean, branch up to date with origin (HEAD
+   d1019e0 = merge of PR #63, same as origin/main right now).
+2. [ ] Static audit of every P2 module (file:line findings + severity) in
+   docs/p2_audit_report.md.
+3. [ ] Full offline suite + ruff + mypy; network-, llm-, grobid-marked tests.
+4. [ ] End-to-end smoke test (docker GROBID + real LLM): one paper through
+   `auditor audit`, then a 3-5 paper `auditor batch --systems b1`; inspect traces.
+5. [ ] P2.9 eval runs: <=5-paper cached sample -> confirmation -> full set B runs
+   (full-text + abstract-only) -> score/compare/recall + re-score hallmark set A.
+6. [ ] Write docs/p2_audit_report.md, commit, push.
+7. [ ] Final: ruff + mypy + pytest green, `citation: ...` commits, push.
+
+Open items Anurag flagged for this audit:
+- The embedding extra was never synced/run (`uv sync --extra embed`,
+  AUDITOR_CITATION_EMBEDDER=minilm).
+- parser/layout_tables Windows-locale fix (a9aae1c) is mine but belongs to Part 1 —
+  flag to Bhaskar in the report, do NOT merge.
+- Known-weak spots from set A: partial_author_list, near_miss_title.
+- D18 20% second review is Anurag's own job; do not fake `reviewed_by`.
+- Claim classes are thin (20 of 154); growth by hand is optional/later.
+
+Findings so far: (static audit, step 2 — details going into docs/p2_audit_report.md)
+- NO new features; only defect-level observations recorded. Headline findings:
+  1. (medium) GROBID is never wired into the P2 full-text path: `RunContext` has no
+     GrobidClient, so `check()` (agents/citation/__init__.py:66) and the B1 tools
+     (tools.py:69/90) call `retrieve_source` with grobid=None -> SourceLevel.FULL_PDF is
+     unreachable at run time (only scripts/fetch_sources.py passes grobid). Same for
+     scripts/citation_eval.py fetch (citation_eval.py:175). Effect: PDF-only cited works
+     fall back to abstract in every P2 run.
+  2. (medium) lookup.py:93-97 and resolve.py (search step) evaluate ALL FOUR title
+     searches eagerly (tuple of awaited calls), so one lookup always makes 4 API calls
+     even when the first has hits; also one network failure in any of the four aborts the
+     whole search even if an earlier one had hits.
+  3. (low) support.py: docstring (line 279-280) says "a quote must be verbatim in the
+     source" but the code never verifies the model's quote against source.text (quote is
+     attached with char_start=None when not found). Doc/code mismatch, no correctness
+     impact on scoring.
+  4. (low) eval.py:48-51 dead code: `shorter in longer` duplicates the containment test
+     on line 46.
+  5. (low) reference.py:79-88 re-fetches the entry `check()` already resolved (dead
+     duplicate path, plus unreachable because check() only calls it when entry exists).
+  6. (info) `citation_abstract_only` IS already wired into check() (line 70) — the
+     flagged open item is resolved.
+  7. (info, Part 1's file) mypy fails on src/auditor/infra/llm.py:317 (fcntl.flock —
+     Windows-locale, pre-existing, NOT mine; report to Bhaskar together with the
+     layout_tables fix).
+- Test results: offline 1192 passed / 1 skipped (pyarrow missing, Part 3's test) / 8
+  deselected; ruff check clean; ruff format clean (139 files); mypy 2 errors (above);
+  network 1 passed + 1 skipped (onnxruntime — the `embed` extra is indeed NOT synced);
+  grobid 3 passed; llm-marked tests: NONE EXIST (marker defined in pyproject, 1201
+  deselected).
+- Smoke test (step 4a) DONE on data/set_b/papers/2501.00684.json via
+  `auditor audit --run-id audit-smoke-p2` (GROBID up, real LLM): 56 tasks (54 checked,
+  1 unverifiable, 1 failed, 0 verified flags, 21 needs_human_review, 0 dropped); output
+  runs/audit-smoke-p2/2501.00684-original/{tasks,results,predictions,verified}.jsonl.
+  12 citation-class findings with LOOKUP + QUOTE evidence (quotes carry char offsets,
+  e.g. char_start 10770). The 1 failed task was the duplicate-finding-id bug (finding 1
+  above) — FIXED in support.py (number passed into _number_check/_mismatch_finding, call
+  site passes len(findings)) with two regression tests in test_support.py
+  (test_a_contradiction_and_a_number_mismatch_both_reported,
+  test_two_number_mismatches_get_unique_finding_ids); all 79 citation-agent tests pass.
+  LLM probe: provider google_genai:gemini-2.5-flash, structured output + tool calling OK
+- B1 batch smoke (step 4b) DONE: `auditor batch --experiment b1-smoke --systems b1
+  --llm-cache` over 3 entries (2 injected + 1 original; runs/smoke_b1_dataset.jsonl, paths
+  relative to the dataset file), default 3 runs per system. r2 (clean): 25 llm calls /
+  570k in / 14k out tokens for 3 papers (~8 calls+23k in tokens per paper); 30 tool calls,
+  sane mix (lookup_reference 11, find_supporting_passages 5, code/template tools), no
+  loops. B1 caught real injected errors (reference_metadata_mismatch 2, reference_not_found
+  1, claim_not_supported 1 on 00684-injected). Observations: (a) r1 failed paper
+  2501.00691-injected with HttpStatusError HTTP 403 api.github.com (unauthenticated rate
+  limit, from a code tool) — kills the whole paper run, flag to Bhaskar/Vijay; (b) B1
+  (baselines/common.py) DROPS reported errors with empty sentence_id/bib_id with a warning
+  — findings silently lost when the model omits ids; (c) batch defaults to 3 runs — with
+  --llm-cache the extra runs are cheap.
+- Cost model for the P2.9 set B runs (119 dataset entries): ~8 model calls and ~23k
+  input tokens per paper => ~990 calls / ~2.7M in tokens per run; x2 runs (full-text +
+  abstract-only) ~= 2000 calls / 46M in tokens. A documented subset (e.g. 24 entries,
+  stratified) ~= 200 calls per run. Anurag to choose scale.
+
+
 then "citation: HALLMARK loader, set B injection machinery and evaluation scripts".

@@ -214,6 +214,7 @@ def _number_check(
     resolution: Resolution,
     source: SourceText,
     check: NumberCheck,
+    number: int,
 ) -> CandidateFinding | None:
     """A `claim_number_mismatch` finding for one number check, or None.
 
@@ -223,6 +224,9 @@ def _number_check(
     code scans the text itself: a specific number the claim attributes to the work that
     the work's text nowhere states is a mismatch. Against an abstract-only source no
     scan is made (the number may be in the unread full text).
+
+    `number` is the finding's number within the task, so its id is unique even when a
+    task yields several findings (a contradiction plus number mismatches).
     """
     if check.found:
         if not numbers_agree(check.claimed, check.found):
@@ -231,6 +235,7 @@ def _number_check(
                 resolution,
                 source,
                 check,
+                number,
                 f"The claim gives '{check.claimed}' but the cited work's text gives "
                 f"'{check.found}'",
             )
@@ -243,6 +248,7 @@ def _number_check(
             resolution,
             source,
             check,
+            number,
             f"The claim gives '{check.claimed}' for the cited work, but the work's full "
             "text nowhere states a matching number",
         )
@@ -254,11 +260,12 @@ def _mismatch_finding(
     resolution: Resolution,
     source: SourceText,
     check: NumberCheck,
+    number: int,
     summary: str,
 ) -> CandidateFinding:
     return CandidateFinding.for_task(
         task,
-        0,
+        number,
         error_class=ErrorClass.CLAIM_NUMBER_MISMATCH,
         summary=summary,
         explanation=check.quote,
@@ -356,7 +363,7 @@ async def check_citation(
 
     if resolution.work is not None:
         for entry in answer.numbers:
-            finding = _number_check(task, resolution, source, entry)
+            finding = _number_check(task, resolution, source, entry, len(findings))
             if finding is not None:
                 findings.append(finding)
 
