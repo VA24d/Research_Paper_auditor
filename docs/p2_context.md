@@ -758,6 +758,43 @@ Findings/notes for this session:
   timeouts from API throttling while the hallmark run hammers the same indexes — killed;
   rerun AFTER hallmark finishes, scoring with --before-verifier (placeholder verifier
   sends everything to human review; nothing counts positive otherwise).
+- SESSION 6 FINAL RESULTS (all committed, pushed through 180609f):
+  * HALLMARK (runs/hallmark/results_fixed.jsonl, 831/831, full fixes): accuracy 0.851,
+    flagging P 0.902 / R 0.857 / F1 0.879, FPR 0.160 (49/307). From 0.726 / 0.732-0.891-
+    0.804 / 0.557. Author types fixed: partial_author_list R 0.258->0.935,
+    placeholder_authors ->1.000, swapped_authors ->0.968; fabrications ->1.000;
+    near_miss_title 0.475->0.700. Remaining weak: nonexistent_venue R 0.378 and
+    preprint_as_published R 0.500 — the deliberate price of the repository/placeholder
+    venue tolerance (those FNs are indistinguishable from the FPs it removes at venue
+    level); arxiv_version_mismatch R 0.800 (needs a real version check — future work;
+    the old 'flags' for it were resolution failures counted as TPs).
+  * Set B full-system mini-run (00692 injected+original, --llm-cache, 2 done 0 failed):
+    AFTER the dataset cleanups: reference_not_found P 1.000 R 1.000 F1 1.000, macro-F1
+    1.000, FPR 0/14 controls (runs/full_mini_labels.jsonl). The earlier zero scores were
+    (a) a STALE subset-labels file still containing colliding metadata labels
+    (matches() does not compare classes -> RNF preds matched metadata labels first) and
+    (b) genuinely broken dataset labels, both fixed below.
+  * DATASET CORRECTIONS (all applied, validate exits 1 only for the D18 review):
+    1. year injections +1 -> +3 (38 records, runs/_regen_years.py);
+    2. collision labels dropped (32: metadata/claim labels on entries that also carry a
+       not_found injection — unreachable by construction; runs/_drop_collisions.py);
+    3. table-fragment claim_number labels dropped (11 of 15 — the builder had perturbed
+       numbers inside GROBID-merged table rows, e.g. 00692 s68 "10.0 20.2 PG19 2.50
+       6.75..."; runs/_drop_table_junk.py). Final: 158 labels (96 RNF, 9 metadata, 4
+       claim_number, 3 claim_not_supported, 46 controls), 112 records. README updated.
+    propose() now skips sentences crowded with bare numbers (>3) so a rebuild will not
+    reproduce the junk.
+  * AGENT FIXES for the mini-run's over-flagging: _author_problems filters parse junk
+    ('*', 'g', 'xlstm' style tokens stay only if alphabetic >=2 chars) and caps the
+    truncation rule at collaborations of <=10 authors; numbers_agree now maps number
+    words ('eight' <-> 8) and strips suffixes ('8x', '10-fold'); the support prompt
+    demands an INCOMPATIBLE statement for 'contradicted' (different conditions/models
+    are 'insufficient').
+  * Full suite 1216 passed / 1 skipped / 8 deselected; ruff clean; format clean; mypy 2
+    pre-existing Part-1 errors only.
+- Session 6 LEFT OVER: re-run the B1 subset (30 entries) on the cleaned labels if
+  current B1 numbers are wanted (~250 calls); the arxiv_version check; the D18 second
+  review (Anurag); full-dataset runs remain future work.
 
 
 ## Session 5 (2026-10-29) — AUDIT + EVALUATION session (completed)

@@ -1,4 +1,4 @@
-# P2 citation checker — audit report (2026-10-29)
+# P2 citation checker — audit report (2026-10-29, updated 2026-10-30 after the fix session)
 
 Audit of the P2 implementation (citation agent, retrieval package, set A/B machinery,
 evaluation scripts) on branch `p2-citation-checker` at `d1019e0` + audit commits. Scope:
@@ -275,3 +275,86 @@ docker compose up -d ; docker compose ps
   run (§3b).
 - **Anurag**: the D18 second review; the scale decision for the full-dataset set B runs;
   whether to implement findings #2/#3 now or after the datasets freeze.
+
+## 9. Fix session (2026-10-30) — what was fixed and what it changed
+
+Follow-up session implementing the audit's findings and repairing the results. All
+changes are on `p2-citation-checker` (commits `598b04d`..`180609f`), full suite **1216
+passed / 1 skipped / 8 deselected**, ruff clean, mypy unchanged (2 pre-existing Part-1
+errors in `infra/llm.py`).
+
+### 9.1 HALLMARK (set A): 0.726 → 0.851 accuracy
+
+| Metric | Before (stale file) | Fresh pre-fix baseline | **After the fixes** |
+|---|---|---|---|
+| Accuracy | 0.726 | 0.750 | **0.851** |
+| Flagging P / R / F1 | 0.732 / 0.891 / 0.804 | 0.811 / 0.786 / 0.798 | **0.902 / 0.857 / 0.879** |
+| FPR on valid entries | 0.557 (170/305) | 0.313 (96/307) | **0.160 (49/307)** |
+
+(The "before" file predated merged PRs; the fresh baseline re-measured the old resolver.)
+
+Fixes, each with tests: sequential title searches with early exit and per-index exception
+capture; arXiv-DOI routing (`10.48550/arXiv.<id>` lives in DataCite — no longer reported
+as a fabricated DOI); ASCII-folded search queries with a shortened retry (mojibake titles
+like "DemoirΘing"); title-prefix matching (index keeps only "NeRF"); **author checks**
+(missing names, silently truncated lists, wrong first author — `partial_author_list`
+R 0.258 → **0.935**, `placeholder_authors` → **1.000**, `swapped_authors` → **0.968**);
+near-miss title rule; journal-abbreviation and repository-copy venue matching; ±1 year
+tolerance (Anurag's decision A); GROBID wired into the agent path; hallmark results now
+carry the finding summary as the reason.
+
+Honest trade-offs: `nonexistent_venue` R 0.919 → 0.378 and `preprint_as_published`
+R 0.667 → 0.500 — the repository/placeholder venue tolerance removes FPs whose venue
+signal is genuinely indistinguishable from those FNs. `arxiv_version_mismatch` R 0.800:
+its old "flags" were resolution failures counted as TPs; a real version check is future
+work.
+
+### 9.2 Set B: the horrible numbers were three stacked problems
+
+1. **The evaluation used B1** (the one-pass baseline), which emits few citation findings —
+   documented in §4. The full system (the per-task citation agent) is the module's real
+   test.
+2. **The dataset had unreachable labels** (all fixed, `validate` exits 1 only for the
+   pending D18 review): 38 year injections at +1 (undetectable under the correct ±1
+   tolerance — regenerated at +3); 32 labels stacked on entries that also carry a
+   `reference_not_found` injection (a metadata mismatch can never be reported and a claim
+   citing a fabricated entry can never be judged — dropped); 11 of 15 claim-number
+   injections perturbed numbers inside GROBID-merged table fragments, not in claims
+   (dropped; the builder now skips sentences crowded with bare numbers). Final: **158
+   labels** (96 RNF, 9 metadata, 4 claim-number, 3 claim-not-supported, 46 controls).
+3. **The agent over-flagged real bibliographies** (author parse junk like `*`/`xlstm`,
+   100-author collaborations, number words vs suffixes, a trigger-happy "contradicted"
+   verdict) — fixed: junk-surname filtering, a ≤10-author cap on the truncation rule,
+   number-word/suffix handling in `numbers_agree`, and a support prompt that requires an
+   incompatible statement for "contradicted".
+
+### 9.3 Full-system mini-run (one paper pair, `--llm-cache`)
+
+`auditor batch --experiment full-mini --systems full --runs 1` on 2501.00692 (injected +
+original), scored with `--before-verifier` (the placeholder verifier sends everything to
+human review, so nothing counts positive without it — **any full-system scoring before
+Part 4's verifier lands must use `--before-verifier`**):
+
+| Class (00692 labels) | P | R | F1 |
+|---|---|---|---|
+| reference_not_found | 1.000 | 1.000 | 1.000 |
+| **macro-F1** | | | **1.000** |
+| FPR on clean controls | 0.000 (0/14) | | |
+
+The earlier zero scores were the stale subset-labels file (colliding labels matched
+first, since D3 matching does not compare classes) plus the broken labels — both fixed.
+Remaining known limits: the mini-run covers one paper pair; the claim classes have too
+few usable labels to measure (4 claim-number, 3 claim-not-supported dataset-wide); the
+remaining reference-check false positives on the original paper (resolution failures on
+~8 of ~40 real references) are unlabelled flags, not clean-control hits — they feed the
+D14 false-alarm estimate.
+
+### 9.4 What is still owed in P2
+
+- [ ] D18 second review (Anurag) — `validate` exits 1 on exactly that.
+- [ ] Full-dataset set B runs, and a full-system subset run over several papers
+      (~60-100 calls/paper) for the module's real numbers.
+- [ ] B1 subset re-run on the cleaned labels if current B1 numbers are wanted (~250 calls).
+- [ ] arXiv version check for `arxiv_version_mismatch`.
+- [ ] GROBID-in-path is fixed; the sequential-search and quote-anchoring findings are
+      fixed; remaining: none of the audit's medium findings — all resolved this session.
