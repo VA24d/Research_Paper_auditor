@@ -23,15 +23,17 @@ looks for the lines one specific claim depends on.
 Nothing in the repository is run (D11): the tools only list, search and read its files.
 """
 
+import asyncio
 import dataclasses
 import re
+import time
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware, ModelCallLimitMiddleware
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain.agents.middleware.types import ModelRequest, ModelResponse, hook_config
 from langchain.agents.structured_output import ToolStrategy
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -127,11 +129,13 @@ class ClaimVerdict(BaseModel):
 
 @dataclass
 class Exploration:
-    """What the loop's tool calls did: how many ran, and which file lines they showed."""
+    """What the loop's tool calls did: how many ran, and which file lines they showed, and
+    whether the claim ran out of time."""
 
     limit: int
     calls: int = 0
     refused: int = 0
+    timed_out: bool = False
     shown: dict[str, set[int]] = field(default_factory=dict)
 
     def saw(self, path: str, start: int, end: int) -> bool:
@@ -211,6 +215,30 @@ class _Accounted(AgentMiddleware[Any, Any, Any]):
         )
 
 
+# A model call already running when a claim's time is up may finish within this many
+# seconds; past that the claim is cancelled. The claim's limit plus this stays below the
+# code task's timeout (runner.KIND_POLICIES), so a slow claim ends without a verdict
+# instead of failing the task and being retried.
+FINISH_GRACE_S = 240.0
+
+
+class _Deadline(AgentMiddleware[Any, Any, Any]):
+    """Ends the loop without a verdict once the claim has run for `seconds`: no new model
+    call starts after that."""
+
+    def __init__(self, seconds: float, exploration: Exploration) -> None:
+        super().__init__()
+        self.ends_at = time.monotonic() + seconds
+        self.exploration = exploration
+
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
+        if time.monotonic() < self.ends_at:
+            return None
+        self.exploration.timed_out = True
+        return {"jump_to": "end"}
+
+
 def _limits(ctx: RunContext) -> tuple[int, int]:
     """Tool and model calls this claim may use: the configured limits, within what is
     left of the task's budget."""
@@ -279,7 +307,9 @@ async def explore(
     effort: Effort = ctx.settings.claim_loop_effort
     exploration = Exploration(limit=tool_limit)
     scoped = dataclasses.replace(ctx, repository=task.repository)
+    seconds = ctx.settings.claim_loop_timeout_s
     limits: list[AgentMiddleware[Any, Any, Any]] = [
+        _Deadline(seconds, exploration),
         _Accounted(llm, effort),
         ModelCallLimitMiddleware(run_limit=model_limit, exit_behavior="end"),
     ]
@@ -293,8 +323,12 @@ async def explore(
     config = RunnableConfig(recursion_limit=4 * model_limit + 10)
     message = _first_message(task, ctx, snapshot, category, claim)
     try:
-        state = await agent.ainvoke({"messages": [message]}, config)
+        async with asyncio.timeout(seconds + FINISH_GRACE_S):
+            state = await agent.ainvoke({"messages": [message]}, config)
     except GraphRecursionError:
+        return None, exploration
+    except TimeoutError:
+        exploration.timed_out = True
         return None, exploration
     answer = state.get("structured_response")
     return (answer if isinstance(answer, ClaimVerdict) else None), exploration
@@ -359,13 +393,15 @@ async def check_claim(task: AuditTask, ctx: RunContext) -> TaskResult:
         model_limit=model_limit,
     )
     if verdict is None:
+        limit = (
+            f"{ctx.settings.claim_loop_timeout_s:g} s"
+            if exploration.timed_out
+            else f"{model_limit} model calls and {tool_limit} tool calls"
+        )
         return TaskResult.for_task(
             task,
             TaskOutcome.UNVERIFIABLE,
-            reason=(
-                f"no verdict within {model_limit} model calls and {tool_limit} tool calls "
-                f"({exploration.calls} tool calls made)"
-            ),
+            reason=f"no verdict within {limit} ({exploration.calls} tool calls made)",
         )
     if verdict.verdict == "supported":
         return TaskResult.for_task(task, TaskOutcome.CHECKED)

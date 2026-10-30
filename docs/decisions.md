@@ -326,7 +326,12 @@ for claims about the experiments that rest on the released code or data:
   report in data analysis mode. Each claim has at most
   `AUDITOR_CLAIM_LOOP_MAX_TOOL_CALLS` (12) tool calls and
   `AUDITOR_CLAIM_LOOP_MAX_MODEL_CALLS` (8) model calls, at
-  `AUDITOR_CLAIM_LOOP_EFFORT` (medium), and never more than the task's budget has left.
+  `AUDITOR_CLAIM_LOOP_EFFORT` (low; it was medium until October 27, see below), and never
+  more than the task's budget has left. After `AUDITOR_CLAIM_LOOP_TIMEOUT_S` (540) seconds
+  the claim starts no new model call and ends without a verdict; a call still running gets
+  240 s more before it is cancelled. On three set C papers with 3.8 Flash at medium effort,
+  turns averaged 46 to 86 s and 17 to 32 claim tasks ran past the 900 s task timeout, were
+  retried and paid for again.
   A tool call past the limit is not run, and the model is told to answer. Every model call
   goes through `StructuredLLM.direct_call`, so it counts against the run's call and dollar
   limits and is logged with purpose `claim-loop`. These calls are not cached.

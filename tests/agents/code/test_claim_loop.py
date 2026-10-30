@@ -311,3 +311,38 @@ async def test_graph_recursion_error_is_unverifiable(
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "no verdict within" in result.reason
+
+
+async def test_a_claim_past_its_time_starts_no_model_call(tmp_path: Path) -> None:
+    (task,) = await planned(tmp_path, EVALUATION)
+    ctx, review = context(tmp_path, [read_train(), verdict()], claim_loop_timeout_s=1e-9)
+    result = await check(task, ctx)
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "no verdict within 1e-09 s" in result.reason
+    assert review.received == []
+
+
+async def test_a_model_call_running_past_the_grace_is_cancelled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import asyncio
+
+    from auditor.agents.code import claim_loop
+
+    (task,) = await planned(tmp_path, EVALUATION)
+    ctx, _ = context(tmp_path, [read_train(), verdict()], claim_loop_timeout_s=0.01)
+
+    def slow_agent(*args: Any, **kwargs: Any) -> Any:
+        class SlowAgent:
+            async def ainvoke(self, *a: Any, **kw: Any) -> Any:
+                await asyncio.sleep(5)
+
+        return SlowAgent()
+
+    monkeypatch.setattr(claim_loop, "create_agent", slow_agent)
+    monkeypatch.setattr(claim_loop, "FINISH_GRACE_S", 0.0)
+    result = await check(task, ctx)
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "no verdict within 0.01 s" in result.reason
