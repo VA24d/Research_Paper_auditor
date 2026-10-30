@@ -1,0 +1,366 @@
+{
+  "schema_version": 1,
+  "run_id": "spot-cascade2-full-r1",
+  "system": "full",
+  "started_at": "2026-10-17T17:25:16.063363Z",
+  "finished_at": "2026-10-17T17:32:46.212139Z",
+  "git_commit": "4d63fbcaa6b62158923d4ea5fca1dd4e6660edc3",
+  "git_dirty": true,
+  "model": "google_genai:gemini-3.5-flash-lite",
+  "llm_cache": true,
+  "seed": null,
+  "dataset_version": null,
+  "python_version": "3.13.15",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "packages": {
+    "research-paper-auditor": "0.1.0",
+    "langgraph": "1.2.14",
+    "langchain": "1.4.4",
+    "langchain-core": "1.6.9",
+    "langchain-google-genai": "4.4.0",
+    "langchain-openai": "1.7.0",
+    "pydantic": "2.14.0",
+    "httpx": "0.28.1"
+  },
+  "config": {
+    "data_dir": "data",
+    "cache_dir": "data/cache",
+    "runs_dir": "data/spot/runs",
+    "scratch_dir": "data/scratch",
+    "grobid_url": "http://localhost:8070",
+    "log_level": "INFO",
+    "contact_email": null,
+    "allowed_hosts": [
+      "localhost",
+      "127.0.0.1",
+      "arxiv.org",
+      "export.arxiv.org",
+      "api.openalex.org",
+      "api.crossref.org",
+      "api.semanticscholar.org",
+      "github.com",
+      "api.github.com",
+      "codeload.github.com",
+      "raw.githubusercontent.com",
+      "gitlab.com",
+      "huggingface.co",
+      "datasets-server.huggingface.co",
+      ".hf.co",
+      "www.kaggle.com",
+      "storage.googleapis.com",
+      "anonymous.4open.science",
+      "zenodo.org"
+    ],
+    "http_timeout_s": 30.0,
+    "http_max_attempts": 4,
+    "http_cache_ttl_days": 30.0,
+    "snapshot_max_file_bytes": 1000000,
+    "snapshot_max_total_bytes": 10000000,
+    "snapshot_max_files": 500,
+    "snapshot_max_archive_bytes": 50000000,
+    "data_analysis_enabled": false,
+    "data_analysis_max_file_bytes": 200000000,
+    "data_analysis_max_total_bytes": 1000000000,
+    "data_analysis_max_hashed_rows": 2000000,
+    "github_token": "<redacted>",
+    "hf_token": "<redacted>",
+    "llm_provider": "google_genai",
+    "llm_model": "gemini-3.5-flash-lite",
+    "llm_base_url": null,
+    "llm_timeout_s": 600.0,
+    "llm_max_retries": 3,
+    "llm_structured_method": null,
+    "llm_options": {
+      "vertexai": true,
+      "project": "lmaproject6767",
+      "location": "global",
+      "max_output_tokens": 32768
+    },
+    "llm_cache": true,
+    "llm_cache_scope": "run",
+    "llm_review_model": "gemini-3.8-flash",
+    "llm_review_options": null,
+    "llm_context_tokens": null,
+    "llm_max_concurrency": 4,
+    "llm_max_calls": 220,
+    "method_check_mode": "pairs",
+    "method_check_pairs": 12,
+    "code_second_look": true,
+    "theory_check_enabled": true,
+    "theory_batch_size": 8,
+    "theory_max_tasks": 6,
+    "theory_deep_checks": 2,
+    "theory_deep_samples": 2,
+    "experiment": "spot-cascade2",
+    "dataset": "data/spot/dataset.jsonl",
+    "dataset_sha256": "e605695ebaad65eb04165f515e4dc491b50fb3cb5ac784fbc67ddd2473a142ff",
+    "run_index": 1,
+    "papers": 26,
+    "mocked_parts": [
+      "citation",
+      "verifier"
+    ],
+    "inputs": {
+      "system": "full",
+      "model": "google_genai:gemini-3.5-flash-lite",
+      "settings": {
+        "allowed_hosts": [
+          "localhost",
+          "127.0.0.1",
+          "arxiv.org",
+          "export.arxiv.org",
+          "api.openalex.org",
+          "api.crossref.org",
+          "api.semanticscholar.org",
+          "github.com",
+          "api.github.com",
+          "codeload.github.com",
+          "raw.githubusercontent.com",
+          "gitlab.com",
+          "huggingface.co",
+          "datasets-server.huggingface.co",
+          ".hf.co",
+          "www.kaggle.com",
+          "storage.googleapis.com",
+          "anonymous.4open.science",
+          "zenodo.org"
+        ],
+        "http_timeout_s": 30.0,
+        "http_max_attempts": 4,
+        "http_cache_ttl_days": 30.0,
+        "snapshot_max_file_bytes": 1000000,
+        "snapshot_max_total_bytes": 10000000,
+        "snapshot_max_files": 500,
+        "snapshot_max_archive_bytes": 50000000,
+        "data_analysis_enabled": false,
+        "data_analysis_max_file_bytes": 200000000,
+        "data_analysis_max_total_bytes": 1000000000,
+        "data_analysis_max_hashed_rows": 2000000,
+        "llm_provider": "google_genai",
+        "llm_model": "gemini-3.5-flash-lite",
+        "llm_base_url": null,
+        "llm_timeout_s": 600.0,
+        "llm_max_retries": 3,
+        "llm_structured_method": null,
+        "llm_options": {
+          "vertexai": true,
+          "project": "lmaproject6767",
+          "location": "global",
+          "max_output_tokens": 32768
+        },
+        "llm_cache": true,
+        "llm_cache_scope": "run",
+        "llm_review_model": "gemini-3.8-flash",
+        "llm_review_options": null,
+        "llm_context_tokens": null,
+        "method_check_mode": "pairs",
+        "method_check_pairs": 12,
+        "code_second_look": true,
+        "theory_check_enabled": true,
+        "theory_batch_size": 8,
+        "theory_max_tasks": 6,
+        "theory_deep_checks": 2,
+        "theory_deep_samples": 2
+      },
+      "code_sha256": "2d208dd2404677c9284537c1aaf5f7c616ddae5ac8c62f1f5e50813ae29cf9a4",
+      "packages": {
+        "research-paper-auditor": "0.1.0",
+        "langgraph": "1.2.14",
+        "langchain": "1.4.4",
+        "langchain-core": "1.6.9",
+        "langchain-google-genai": "4.4.0",
+        "langchain-openai": "1.7.0",
+        "pydantic": "2.14.0",
+        "httpx": "0.28.1"
+      },
+      "missing_parts": [
+        "citation",
+        "verifier"
+      ],
+      "papers": [
+        {
+          "paper_id": "2405.01133v3",
+          "variant": "original",
+          "paper_sha256": "079e0d33bd9198b45b0d1b73ac9fc90b5db760b03105abed5bdfb1ed13a18925",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2402.10307v2",
+          "variant": "original",
+          "paper_sha256": "976d851bebf8519243bc4106c759284b97f026ac16e190f5a4531a794c1bbb5c",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.01892v2",
+          "variant": "original",
+          "paper_sha256": "0cad02048b03c4ba84e8cb8ba96f40a9d9ba33867f70209e6482d6288366b75f",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2407.06913v2",
+          "variant": "original",
+          "paper_sha256": "defd33ef8d2c9e3be961458a0b871a3684d736df9d31fb42c71c3dc43e364163",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2408.16162v2",
+          "variant": "original",
+          "paper_sha256": "cec3183c123effd1dfbe84e13261ad0c0f2b4e9085f8d50d8667ac9f86d131e6",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.11623v4",
+          "variant": "original",
+          "paper_sha256": "be8a68666be1de00f9d1dba38422fd3a654f062522619f72d0a3988015273932",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2407.09178v2",
+          "variant": "original",
+          "paper_sha256": "1ab155a3f1a54f5a0bab1645fe5d5fb949d9b9644451557282fdf22273a55883",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2401.16191v2",
+          "variant": "original",
+          "paper_sha256": "f888ff1e4bec9b5c2365828100b15576accdfb50372b866b361c2522890513bc",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2405.05635v2",
+          "variant": "original",
+          "paper_sha256": "96e94b3e600482374454516a63a05f98b56a1effb078f0bab53b1fdc0c6bd53a",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2402.01549v2",
+          "variant": "original",
+          "paper_sha256": "a67962a1f616c09d59dfe66759eee8ff469811446089bd8d774657c6fa5596ea",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2403.01085v2",
+          "variant": "original",
+          "paper_sha256": "86cd8cb21d97da5f8c93d165e5940d95f1dd39ddff935f8cd5254305720172c7",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2404.01980v6",
+          "variant": "original",
+          "paper_sha256": "8bdc32920cb83ee621b9c3d70b53e3fd788bf65aaabb9cc78f0881c3bd9d735c",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2402.14546v2",
+          "variant": "original",
+          "paper_sha256": "ff1d5bbbf60920c96798c7c2095918ae9cb8b107f690d62da437a7de03f50434",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2407.04410v3",
+          "variant": "original",
+          "paper_sha256": "b497c5f2caccfe14d0c2bb3808b40c9418f3414ba9ce3c755d97d4a0a4035ffd",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2408.04316v2",
+          "variant": "original",
+          "paper_sha256": "7188bddf134f86b64c7aacca8ce6cae5d8d0ec20605378bfe983b7c2d3047596",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2401.06455",
+          "variant": "original",
+          "paper_sha256": "4b2a72f5ae687d5d852d08bc0016293a4c1cd0d2f1f7ab422c09c7b12a9ec046",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.06431v2",
+          "variant": "original",
+          "paper_sha256": "e3d45346dd11063ec4e25313f18cfcb84616e07493882f0357319b551403645b",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2405.11232v2",
+          "variant": "original",
+          "paper_sha256": "2aaea85b0ba0134a9d788110648b4bc8b4b1622df28f18bc9cf112aa4f518bd1",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2405.20571v2",
+          "variant": "original",
+          "paper_sha256": "11a54f123787a43dacc266b6fec53bb66845e21a77eefe5a79de08feae85ff3d",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2402.16847v2",
+          "variant": "original",
+          "paper_sha256": "fbb430f580333365c079e7ea5a11ed32a7087bb310ed730878bcdc0ef3c7d595",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2404.04502v2",
+          "variant": "original",
+          "paper_sha256": "f21948f2f7b86b4310c39424e96fdcc2ec34617271a1aadb8ed5d10e7542f50e",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2407.18406v2",
+          "variant": "original",
+          "paper_sha256": "fda3ba07470b08d59ae93a4083b94b9a364f50c3f997738bebe03cf4f5b7058c",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2401.09543v2",
+          "variant": "original",
+          "paper_sha256": "6323c8c9d45a2191de9f0bf308f20df4a59699cb1609e150932701c3bf209148",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2405.03612v2",
+          "variant": "original",
+          "paper_sha256": "d6f4185bb51e6afa92105f438f69c6caad9bbd895ef25a2d51d85ddb0c2bb0f9",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2402.10318v2",
+          "variant": "original",
+          "paper_sha256": "84e3fac3a717176e1a7fd78788f7d97cd41e16801ccd3e12b12e871e96b76f8f",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.03201v2",
+          "variant": "original",
+          "paper_sha256": "18c24aa193e459c287919caaab7aa41bead0885d938103fe0920b6381777b50d",
+          "repository": null,
+          "venue_sha256": null
+        }
+      ]
+    }
+  }
+}

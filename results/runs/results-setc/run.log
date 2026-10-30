@@ -1,0 +1,56 @@
+2106.01342v1 0  0.057 33
+2211.07609v1 0  0.067 33
+2212.06322v1 0  0.07 35
+2402.04997v2 0  0.096 49
+1910.10261v1 0  0.119 63
+2001.07645v3 0  0.131 75
+2305.18803v2 0  0.171 98
+2106.09685v2 0  0.185 108
+1911.10194v3 0  0.219 128
+2002.02798v3 0  0.237 131
+2002.00718v2 2  0.247 150
+2002.07128v2 0  0.255 151
+2002.05120v4 0  0.277 154
+2004.09144v3 0  0.277 154
+2004.10016v1 0  0.278 155
+2006.13807v2 0  0.293 177
+2006.06958v1 0  0.302 178
+2012.15000v1 0  0.329 210
+2006.01592v2 0  0.351 221
+2104.01374v2 0  0.368 223
+2003.10606v1 0  0.37 225
+2106.10052v2 0  0.386 241
+2110.13653v1 0  0.391 243
+2208.04654v1 0  0.403 258
+2102.06514v3 0  0.431 286
+2107.12710v2 2  0.45 297
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+Could not get FontBBox from font descriptor because None cannot be parsed as 4 floats
+2304.04740v3 0  0.461 299
+2211.00918v1 0  0.461 299
+2202.03772v3 0  0.471 314
+2304.08467v3 0  0.485 316
+2306.12584v2 0  0.487 317
+2310.16834v3 0  0.506 338
+2402.09453v1 0  0.527 345
+2312.02151v1 0  0.532 353
+2402.18396v1 0  0.558 364
+2401.05363v5 0  0.56 364
+2406.05992v1 0  0.568 379
+2305.14387v4 0  0.584 379
+cost 0.584 calls 379

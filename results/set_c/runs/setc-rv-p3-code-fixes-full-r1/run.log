@@ -1,0 +1,162 @@
+2026-10-27 17:14:42,548 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:42,548 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:42,550 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:42,550 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:42,551 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:42,551 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:42,553 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:42,553 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:44,069 INFO    auditor.agents.code.data_checks [setc-rv-p3-code-fixes-full-r1 code-6d7823b9cd394e77] could not follow dataset disambiguate_pronoun: no revision 'main' of https://huggingface.co/datasets/disambiguate_pronoun: HTTP 401 from https://huggingface.co/api/datasets/disambiguate_pronoun/revision/main
+2026-10-27 17:14:44,590 INFO    auditor.agents.code.data_checks [setc-rv-p3-code-fixes-full-r1 code-cf1f82451c21876f] could not follow dataset disambiguate_pronoun: no revision 'main' of https://huggingface.co/datasets/disambiguate_pronoun: HTTP 401 from https://huggingface.co/api/datasets/disambiguate_pronoun/revision/main
+2026-10-27 17:14:44,800 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:44,800 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:44,806 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:44,806 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:44,823 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:44,823 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:44,894 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:44,894 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:51,209 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:51,209 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:51,215 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:51,215 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:53,261 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:53,261 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:53,266 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:53,266 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:53,826 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:53,826 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:53,830 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:53,830 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:54,502 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:54,502 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:54,508 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:54,508 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:54,888 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:54,888 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:56,662 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:56,662 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:56,888 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:56,888 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:57,465 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:57,465 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:58,100 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:58,100 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:58,107 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:58,107 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:58,877 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:58,878 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:58,887 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:58,887 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:58,976 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:58,976 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:14:59,753 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:14:59,753 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:00,045 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:00,045 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:00,225 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:00,225 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:00,444 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:00,445 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:00,477 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:00,477 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:01,096 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:01,096 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:01,498 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:01,498 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:01,973 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:01,973 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:01,987 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:01,987 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:02,728 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:02,728 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:02,743 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:02,743 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:02,781 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:02,781 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:03,851 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:03,851 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:04,718 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:04,718 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:04,728 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:04,728 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:05,143 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:05,144 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:05,670 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:05,670 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:05,987 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:05,987 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:06,225 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:06,225 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:06,287 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:06,287 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:06,658 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:06,658 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:07,064 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:07,064 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:07,327 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:07,327 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:07,726 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:07,726 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:07,775 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:07,775 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:08,612 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:08,612 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:08,904 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:08,905 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:09,230 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:09,230 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:09,314 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:09,314 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:09,698 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:09,698 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:09,753 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:09,753 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:09,901 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:09,901 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:09,966 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:09,966 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:10,328 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:10,329 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:10,343 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:10,343 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:10,810 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:10,810 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:11,070 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:11,070 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:11,614 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:11,614 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:11,668 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:11,668 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:11,936 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:11,937 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:12,417 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:12,418 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:13,501 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:13,501 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:13,564 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:13,564 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:14,105 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:14,106 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:14,305 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:14,305 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:14,328 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:14,328 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:14,390 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:14,391 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:15,623 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:15,623 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:15,796 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:15,796 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:16,028 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:16,028 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:16,059 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:16,059 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:16,219 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:16,219 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:16,230 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:16,230 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:18,160 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:18,160 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-27 17:15:18,201 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-27 17:15:18,201 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review

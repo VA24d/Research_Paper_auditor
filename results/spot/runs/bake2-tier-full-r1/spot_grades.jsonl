@@ -1,0 +1,6 @@
+{"error_id":"2402.10307v2-e0","paper_id":"2402.10307v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2408.16162v2-e0","paper_id":"2408.16162v2","matched":["theory-fa61a4d2ed985772-f0"],"reason":"Issue 1 correctly identifies that extending the automorphism by fixing Y requires that span(Y) and L have a trivial intersection (direct sum), otherwise the extension is not well-defined, which directly captures the annotated error.","human_agrees":null}
+{"error_id":"2405.05635v2-e0","paper_id":"2405.05635v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2404.01980v6-e0","paper_id":"2404.01980v6","matched":[],"reason":"The annotated error specifically concerns Theorem 3.3 and the invalid assumption that the value of A is identical at t=0 and t=T. The reported issue concerns Theorem 3.2 and the limit of B as A approaches 0.","human_agrees":null}
+{"error_id":"2402.16847v2-e0","paper_id":"2402.16847v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.09543v2-e0","paper_id":"2401.09543v2","matched":[],"reason":"","human_agrees":null}

@@ -1,0 +1,2961 @@
+2026-10-18 21:09:21,382 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:09:21,382 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:09:21,385 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:09:21,385 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:09:21,386 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:09:21,386 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:09:21,387 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:09:21,387 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:26,422 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2404.01980v6
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id 'b3cbc247-00a8-c575-bcbc-c7e33c4e0bc5'
+2026-10-18 21:14:26,434 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:26,434 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:26,450 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:30,379 WARNING auditor.infra.llm [spot-test-repeat2b-full-r1 -] call with a context cache failed ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:31,096 WARNING auditor.infra.llm [spot-test-repeat2b-full-r1 -] call with a context cache failed ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:33,288 WARNING auditor.infra.llm [spot-test-repeat2b-full-r1 -] call with a context cache failed ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:33,389 WARNING auditor.infra.llm [spot-test-repeat2b-full-r1 -] call with a context cache failed ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:34,297 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2402.14546v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '94e5d128-329e-7937-3782-2c24bfa974f6'
+2026-10-18 21:14:34,300 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:34,300 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:34,315 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:37,417 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2403.01085v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '18844cdf-d8fd-754c-3ce9-d3c150068c43'
+2026-10-18 21:14:37,419 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:37,420 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:37,441 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:38,272 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2402.01549v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id 'c3d1094a-64ac-f229-1df7-eacd06c583dd'
+2026-10-18 21:14:38,275 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:38,275 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:38,293 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:41,284 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2407.04410v3
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '005629f4-301f-3bc7-9206-0e8209ec066f'
+2026-10-18 21:14:41,287 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:41,287 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:41,306 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:42,695 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2408.04316v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id 'fad027f2-ffe5-c3be-5077-d365b0465fb1'
+2026-10-18 21:14:42,698 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:42,698 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:45,111 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2405.11232v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '8d1385f2-af4e-0dde-825c-414a06bbf955'
+2026-10-18 21:14:45,114 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:45,114 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:45,127 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:46,804 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2405.20571v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '783cbe28-dc77-1d86-2191-e38a4eccf2f2'
+2026-10-18 21:14:46,807 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:46,807 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:46,822 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:49,227 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2402.16847v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '57e2cf8c-6277-cc9b-5d36-aad9ff509cf1'
+2026-10-18 21:14:49,230 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 21:14:49,230 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 21:14:49,243 WARNING auditor.infra.prefix_cache [spot-test-repeat2b-full-r1 -] no context cache for gemini-3.8-flash ([Errno 8] nodename nor servname provided, or not known); sending it whole
+2026-10-18 21:14:50,855 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2407.18406v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id '1f7aaa26-dd0d-bcbf-6143-15f98090ba47'
+2026-10-18 21:14:52,530 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2405.03612v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id 'd86dee3f-8398-e396-22a3-97d7fc57037b'
+2026-10-18 21:14:54,378 ERROR   auditor.experiments [- -] spot-test-repeat2b-full-r1 failed on 2402.10318v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 474, in _run_one
+    full = await run_full(
+           ^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/experiments.py", line 203, in run_full
+    outcome = await run_audit(
+              ^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 197, in run_audit
+    state = await graph.ainvoke(initial, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/orchestration/graph.py", line 113, in plan
+    tasks = await pipeline.planner(paper, ctx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 268, in plan
+    return await plan_paper(paper, ctx, options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/tasks.py", line 243, in plan_paper
+    looks = await asyncio.gather(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/planner/theory.py", line 281, in triage_tasks
+    result = await llm.generate(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.claude/worktrees/p3-math/src/auditor/infra/llm.py", line 505, in generate
+    output = await runnable.ainvoke(sent)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 3500, in ainvoke
+    input_ = await coro_with_context(part(), context, create_task=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4236, in ainvoke
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 4228, in _ainvoke_step
+    return await coro_with_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input_, child_config), context, create_task=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 6031, in ainvoke
+    return await self.bound.ainvoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 511, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1888, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+        prompt_messages, stop=stop, callbacks=callbacks, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1846, in agenerate
+    raise exceptions[0]
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 2179, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+        messages, stop=stop, run_manager=run_manager, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain_google_genai/chat_models.py", line 4220, in _agenerate
+    await self.async_client.models.generate_content(
+        **request,
+    )
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 8425, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/models.py", line 6879, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1803, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1735, in _async_request
+    return await retry(self._async_request_once, http_request, stream)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/google/genai/_api_client.py", line 1709, in _async_request_once
+    client_response = await self._async_httpx_client.request(  # type: ignore[union-attr]
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/va/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known
+During task with name 'plan' and id 'a7c420d5-9735-4c35-3d8c-f143e44f9066'
+2026-10-18 22:20:57,082 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,082 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,083 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,083 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,085 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,085 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,086 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,086 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,088 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,088 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,090 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,090 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,092 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,092 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:20:57,093 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:20:57,093 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:28:07,593 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:28:07,593 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:28:07,596 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:28:07,596 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:29:11,236 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:29:11,236 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:29:11,239 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:29:11,239 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:29:33,657 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:29:33,657 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:29:33,659 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:29:33,659 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:32:26,902 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:32:26,902 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:32:26,904 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:32:26,904 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:32:45,040 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:32:45,040 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:32:45,042 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:32:45,042 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:34:25,765 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:34:25,765 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:34:25,767 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:34:25,767 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:38:12,870 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:38:12,870 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:38:12,873 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:38:12,873 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:38:51,952 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:38:51,952 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:38:51,954 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:38:51,954 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:39:01,193 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:39:01,193 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:39:01,195 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 22:39:01,195 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 22:47:42,275 WARNING auditor.infra.prefix_cache [- -] could not delete context cache projects/848236490273/locations/global/cachedContents/4833346209672331264 (404 NOT_FOUND. {'error': {'code': 404, 'message': 'Cached content 4833346209672331264 is not found.', 'status': 'NOT_FOUND'}})
+2026-10-18 22:47:42,813 WARNING auditor.infra.prefix_cache [- -] could not delete context cache projects/848236490273/locations/global/cachedContents/3788511096122376192 (404 NOT_FOUND. {'error': {'code': 404, 'message': 'Cached content 3788511096122376192 is not found.', 'status': 'NOT_FOUND'}})
+2026-10-18 22:47:43,319 WARNING auditor.infra.prefix_cache [- -] could not delete context cache projects/848236490273/locations/global/cachedContents/7310326004726104064 (404 NOT_FOUND. {'error': {'code': 404, 'message': 'Cached content 7310326004726104064 is not found.', 'status': 'NOT_FOUND'}})

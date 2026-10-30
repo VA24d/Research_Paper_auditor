@@ -1,0 +1,15 @@
+{"error_id":"2401.06455-e0","paper_id":"2401.06455","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.09543v2-e0","paper_id":"2401.09543v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.16191v2-e0","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.16191v2-e1","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2404.04502v2-e0","paper_id":"2404.04502v2","matched":["theory-a09420dab19d803d-f0"],"reason":"Issue 1 points out that the set $\\mathbb{Z}^*$ is not closed under the operation $\\odot_t$. This directly implies a flaw in the definition or expression of the operation $\\odot_t$ itself, as its application leads to results outside the expected domain, thus making it 'incorrect' in the context of the paper's claims, which aligns with the annotated error.","human_agrees":null}
+{"error_id":"2405.01133v3-e0","paper_id":"2405.01133v3","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2405.05635v2-e0","paper_id":"2405.05635v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.01892v2-e0","paper_id":"2406.01892v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.03201v2-e0","paper_id":"2406.03201v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.03201v2-e1","paper_id":"2406.03201v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.06431v2-e0","paper_id":"2406.06431v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.11623v4-e0","paper_id":"2406.11623v4","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2407.06913v2-e0","paper_id":"2407.06913v2","matched":["theory-6482aef288358615-f0"],"reason":"The annotated error states that Lemma 2.4 is applied inappropriately due to an incorrect assumption about the public topology of shortest path trees. Issue 1 directly states that 'Lemma 2.4 cannot be applied to an adaptively/minimally chosen path' and explains that 'the path that minimizes the perturbed distance depends on the noise, so the noise terms along the chosen path are not independent of the path selection.' This perfectly matches the core of the annotated error regarding the inappropriate application of Lemma 2.4 due to adaptive path selection, which is a consequence of the non-public topology.","human_agrees":null}
+{"error_id":"2407.09178v2-e0","paper_id":"2407.09178v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2408.16162v2-e0","paper_id":"2408.16162v2","matched":["theory-1f9e6659749928be-f0"],"reason":"Reported issue 1 directly describes the method of extending the automorphism by fixing elements of Y, which is precisely the action identified as erroneous in the annotated error. The annotated error explains the consequence of this action (invalid extension), while the issue points to the action itself.","human_agrees":null}

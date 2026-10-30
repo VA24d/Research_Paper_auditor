@@ -1,0 +1,14 @@
+{"error_id":"2401.06455-e0","paper_id":"2401.06455","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.09543v2-e0","paper_id":"2401.09543v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.16191v2-e0","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.16191v2-e1","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2404.04502v2-e0","paper_id":"2404.04502v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2405.01133v3-e0","paper_id":"2405.01133v3","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2405.05635v2-e0","paper_id":"2405.05635v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.01892v2-e0","paper_id":"2406.01892v2","matched":["theory-7b8e2abb7538ebce-f1"],"reason":"Issue 1 directly points out a specific mathematical error in the derivation of a quotient group's order within the proof of Proposition 4.3.1, which is located in Section 4 and aligns with the annotated error's description of an incorrect equation, proof step, or assumption leading to an invalid result.","human_agrees":null}
+{"error_id":"2406.03201v2-e0","paper_id":"2406.03201v2","matched":[],"reason":"The annotated error describes a mistake in the proof of Proposition 4.6, specifically a faulty argument or incorrect application of an equation. The reported issues (1 and 2) both describe an inconsistency in the stated hypothesis of Theorem 5.1 (and its announcement Theorem 1.6) compared to its proof and other parts of the paper. These are different types of errors occurring in different parts of the paper (Proposition 4.6 vs. Theorem 5.1/1.6), so there is no match.","human_agrees":null}
+{"error_id":"2406.03201v2-e1","paper_id":"2406.03201v2","matched":["theory-a1e8f8cea01bd01f-f0","theory-7caba514ae43dfbf-f0"],"reason":"Both issues 1 and 2 describe the same problem: an incorrect hypothesis (H^1 instead of H^2) for Theorem 5.1 as stated on page 19, which is inconsistent with the theorem's announcement (Theorem 1.6) and the actual proof's reliance on the H^2 vanishing. This discrepancy in the foundational assumption for the theorem constitutes a 'flaw or gap in the logical reasoning' of the proof, directly matching the description of the annotated error.","human_agrees":null}
+{"error_id":"2406.06431v2-e0","paper_id":"2406.06431v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.11623v4-e0","paper_id":"2406.11623v4","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2407.09178v2-e0","paper_id":"2407.09178v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2408.16162v2-e0","paper_id":"2408.16162v2","matched":[],"reason":"","human_agrees":null}

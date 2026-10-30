@@ -1,0 +1,408 @@
+{
+  "schema_version": 1,
+  "run_id": "spot-dev-38x2b-full-r1",
+  "system": "full",
+  "started_at": "2026-10-20T00:38:26.979695Z",
+  "finished_at": "2026-10-20T01:06:52.323712Z",
+  "git_commit": "1b7da0997fc9071627338ae174f199ca45238048",
+  "git_dirty": true,
+  "model": "google_genai:gemini-3.5-flash-lite",
+  "llm_cache": true,
+  "seed": null,
+  "dataset_version": null,
+  "python_version": "3.13.15",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "packages": {
+    "research-paper-auditor": "0.1.0",
+    "langgraph": "1.2.14",
+    "langchain": "1.4.4",
+    "langchain-core": "1.6.9",
+    "langchain-google-genai": "4.4.0",
+    "langchain-openai": "1.7.0",
+    "pydantic": "2.14.0",
+    "httpx": "0.28.1"
+  },
+  "config": {
+    "data_dir": "data",
+    "cache_dir": "data/cache",
+    "runs_dir": "data/spot/runs",
+    "scratch_dir": "data/scratch",
+    "grobid_url": "http://localhost:8070",
+    "log_level": "INFO",
+    "contact_email": null,
+    "allowed_hosts": [
+      "localhost",
+      "127.0.0.1",
+      "arxiv.org",
+      "export.arxiv.org",
+      "api.openalex.org",
+      "api.crossref.org",
+      "api.semanticscholar.org",
+      "github.com",
+      "api.github.com",
+      "codeload.github.com",
+      "raw.githubusercontent.com",
+      "gitlab.com",
+      "huggingface.co",
+      "datasets-server.huggingface.co",
+      ".hf.co",
+      "www.kaggle.com",
+      "storage.googleapis.com",
+      "anonymous.4open.science",
+      "zenodo.org",
+      "api2.openreview.net",
+      "openreview.net"
+    ],
+    "http_timeout_s": 30.0,
+    "http_max_attempts": 4,
+    "http_cache_ttl_days": 30.0,
+    "snapshot_max_file_bytes": 1000000,
+    "snapshot_max_total_bytes": 10000000,
+    "snapshot_max_files": 500,
+    "snapshot_max_archive_bytes": 50000000,
+    "data_analysis_enabled": false,
+    "data_analysis_max_file_bytes": 200000000,
+    "data_analysis_max_total_bytes": 1000000000,
+    "data_analysis_max_hashed_rows": 2000000,
+    "github_token": "<redacted>",
+    "hf_token": "<redacted>",
+    "llm_provider": "google_genai",
+    "llm_model": "gemini-3.5-flash-lite",
+    "llm_base_url": null,
+    "llm_timeout_s": 300.0,
+    "llm_max_retries": 3,
+    "llm_structured_method": null,
+    "llm_options": {
+      "vertexai": true,
+      "project": "lmaproject6767",
+      "location": "global",
+      "max_output_tokens": 32768
+    },
+    "llm_cache": true,
+    "llm_cache_scope": "run",
+    "llm_review_model": "gemini-3.8-flash",
+    "llm_review_options": null,
+    "llm_review_provider": "google_genai",
+    "llm_review_structured_method": null,
+    "llm_context_tokens": null,
+    "llm_max_concurrency": 4,
+    "llm_max_calls": 2000,
+    "llm_max_cost_usd": 4.0,
+    "llm_ledger": "data/ledger-2026-10-20.jsonl",
+    "llm_ledger_limit_usd": 30.0,
+    "llm_cached_input_share": 0.25,
+    "llm_explicit_cache": true,
+    "llm_explicit_cache_ttl_s": 1200,
+    "llm_explicit_cache_min_chars": 16000,
+    "llm_cache_storage_price": 1.0,
+    "llm_prices": {
+      "gemini-2.5-flash": [
+        0.3,
+        2.5
+      ],
+      "gemini-3.5-flash-lite": [
+        0.3,
+        2.5
+      ],
+      "gemini-3.8-flash": [
+        0.75,
+        3.75
+      ],
+      "deepseek-ai/deepseek-v4.1-flash-maas": [
+        0.6,
+        2.4
+      ],
+      "deepseek-ai/deepseek-v3.2-maas": [
+        0.6,
+        1.8
+      ],
+      "moonshotai/kimi-k2-thinking-maas": [
+        0.8,
+        3.2
+      ],
+      "zai-org/glm-5-maas": [
+        1.0,
+        3.5
+      ],
+      "zai-org/glm-4.7-maas": [
+        0.6,
+        2.4
+      ],
+      "qwen/qwen3-235b-a22b-instruct-2507-maas": [
+        0.4,
+        1.6
+      ],
+      "qwen/qwen3-next-80b-a3b-instruct-maas": [
+        0.3,
+        1.5
+      ],
+      "qwen/qwen3-coder-480b-a35b-instruct-maas": [
+        1.0,
+        4.0
+      ],
+      "minimaxai/minimax-m2-maas": [
+        0.4,
+        1.6
+      ],
+      "openai/gpt-oss-120b-maas": [
+        0.2,
+        0.8
+      ]
+    },
+    "method_check_mode": "rag",
+    "embed_url": "http://localhost:1234",
+    "embed_model": "text-embedding-nomic-embed-text-v1.5",
+    "method_rag_sentences": 0,
+    "method_check_model": "review",
+    "method_check_pairs": 12,
+    "code_second_look": true,
+    "claim_loop_enabled": false,
+    "claim_loop_max_claims": 6,
+    "claim_loop_max_tool_calls": 12,
+    "claim_loop_max_model_calls": 8,
+    "claim_loop_plan_max_output": 4096,
+    "claim_loop_effort": "medium",
+    "claim_loop_focus": "experiments",
+    "claim_loop_model": "review",
+    "citation_llm_enabled": false,
+    "theory_check_enabled": true,
+    "theory_batch_size": 8,
+    "theory_max_tasks": 6,
+    "theory_deep_checks": 2,
+    "theory_deep_samples": 2,
+    "theory_deep_per_paper": 4,
+    "theory_deep_effort": "medium",
+    "theory_selector": "triage",
+    "theory_triage_max_output": 16384,
+    "theory_repeats": 2,
+    "theory_deep_context": "paper",
+    "theory_sandbox_enabled": true,
+    "results_challenge_enabled": true,
+    "results_crop_tables": true,
+    "results_number_pass_enabled": false,
+    "results_cell_rule_enabled": true,
+    "results_number_max_sentences": 12,
+    "results_number_effort": "medium",
+    "results_number_model": "main",
+    "theory_deep_model": "review",
+    "experiment": "spot-dev-38x2b",
+    "dataset": "data/spot/dev.jsonl",
+    "dataset_sha256": "b837ed38eda3314a56c6fa2d651554c38a4ffe0ccfe16a4599aa06cce3b7588b",
+    "run_index": 1,
+    "papers": 13,
+    "mocked_parts": [
+      "citation",
+      "verifier"
+    ],
+    "inputs": {
+      "system": "full",
+      "model": "google_genai:gemini-3.5-flash-lite",
+      "settings": {
+        "allowed_hosts": [
+          "localhost",
+          "127.0.0.1",
+          "arxiv.org",
+          "export.arxiv.org",
+          "api.openalex.org",
+          "api.crossref.org",
+          "api.semanticscholar.org",
+          "github.com",
+          "api.github.com",
+          "codeload.github.com",
+          "raw.githubusercontent.com",
+          "gitlab.com",
+          "huggingface.co",
+          "datasets-server.huggingface.co",
+          ".hf.co",
+          "www.kaggle.com",
+          "storage.googleapis.com",
+          "anonymous.4open.science",
+          "zenodo.org",
+          "api2.openreview.net",
+          "openreview.net"
+        ],
+        "http_timeout_s": 30.0,
+        "http_max_attempts": 4,
+        "http_cache_ttl_days": 30.0,
+        "snapshot_max_file_bytes": 1000000,
+        "snapshot_max_total_bytes": 10000000,
+        "snapshot_max_files": 500,
+        "snapshot_max_archive_bytes": 50000000,
+        "data_analysis_enabled": false,
+        "data_analysis_max_file_bytes": 200000000,
+        "data_analysis_max_total_bytes": 1000000000,
+        "data_analysis_max_hashed_rows": 2000000,
+        "llm_provider": "google_genai",
+        "llm_model": "gemini-3.5-flash-lite",
+        "llm_base_url": null,
+        "llm_timeout_s": 300.0,
+        "llm_max_retries": 3,
+        "llm_structured_method": null,
+        "llm_options": {
+          "vertexai": true,
+          "project": "lmaproject6767",
+          "location": "global",
+          "max_output_tokens": 32768
+        },
+        "llm_cache": true,
+        "llm_cache_scope": "run",
+        "llm_review_model": "gemini-3.8-flash",
+        "llm_review_options": null,
+        "llm_review_provider": "google_genai",
+        "llm_review_structured_method": null,
+        "llm_context_tokens": null,
+        "llm_ledger": "data/ledger-2026-10-20.jsonl",
+        "llm_ledger_limit_usd": 30.0,
+        "llm_cached_input_share": 0.25,
+        "llm_explicit_cache": true,
+        "llm_explicit_cache_ttl_s": 1200,
+        "llm_explicit_cache_min_chars": 16000,
+        "llm_cache_storage_price": 1.0,
+        "method_check_mode": "rag",
+        "embed_url": "http://localhost:1234",
+        "embed_model": "text-embedding-nomic-embed-text-v1.5",
+        "method_rag_sentences": 0,
+        "method_check_model": "review",
+        "method_check_pairs": 12,
+        "code_second_look": true,
+        "claim_loop_enabled": false,
+        "claim_loop_max_claims": 6,
+        "claim_loop_max_tool_calls": 12,
+        "claim_loop_max_model_calls": 8,
+        "claim_loop_plan_max_output": 4096,
+        "claim_loop_effort": "medium",
+        "claim_loop_focus": "experiments",
+        "claim_loop_model": "review",
+        "citation_llm_enabled": false,
+        "theory_check_enabled": true,
+        "theory_batch_size": 8,
+        "theory_max_tasks": 6,
+        "theory_deep_checks": 2,
+        "theory_deep_samples": 2,
+        "theory_deep_per_paper": 4,
+        "theory_deep_effort": "medium",
+        "theory_selector": "triage",
+        "theory_triage_max_output": 16384,
+        "theory_repeats": 2,
+        "theory_deep_context": "paper",
+        "theory_sandbox_enabled": true,
+        "results_challenge_enabled": true,
+        "results_crop_tables": true,
+        "results_number_pass_enabled": false,
+        "results_cell_rule_enabled": true,
+        "results_number_max_sentences": 12,
+        "results_number_effort": "medium",
+        "results_number_model": "main",
+        "theory_deep_model": "review"
+      },
+      "code_sha256": "145e43019ddb4e17c80f9a9d9c9fec2e41930483d5d5ec3bba33c6660834a338",
+      "packages": {
+        "research-paper-auditor": "0.1.0",
+        "langgraph": "1.2.14",
+        "langchain": "1.4.4",
+        "langchain-core": "1.6.9",
+        "langchain-google-genai": "4.4.0",
+        "langchain-openai": "1.7.0",
+        "pydantic": "2.14.0",
+        "httpx": "0.28.1"
+      },
+      "missing_parts": [
+        "citation",
+        "verifier"
+      ],
+      "papers": [
+        {
+          "paper_id": "2405.01133v3",
+          "variant": "original",
+          "paper_sha256": "079e0d33bd9198b45b0d1b73ac9fc90b5db760b03105abed5bdfb1ed13a18925",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.01892v2",
+          "variant": "original",
+          "paper_sha256": "0cad02048b03c4ba84e8cb8ba96f40a9d9ba33867f70209e6482d6288366b75f",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2407.06913v2",
+          "variant": "original",
+          "paper_sha256": "defd33ef8d2c9e3be961458a0b871a3684d736df9d31fb42c71c3dc43e364163",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2408.16162v2",
+          "variant": "original",
+          "paper_sha256": "cec3183c123effd1dfbe84e13261ad0c0f2b4e9085f8d50d8667ac9f86d131e6",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.11623v4",
+          "variant": "original",
+          "paper_sha256": "be8a68666be1de00f9d1dba38422fd3a654f062522619f72d0a3988015273932",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2407.09178v2",
+          "variant": "original",
+          "paper_sha256": "1ab155a3f1a54f5a0bab1645fe5d5fb949d9b9644451557282fdf22273a55883",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2401.16191v2",
+          "variant": "original",
+          "paper_sha256": "f888ff1e4bec9b5c2365828100b15576accdfb50372b866b361c2522890513bc",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2405.05635v2",
+          "variant": "original",
+          "paper_sha256": "96e94b3e600482374454516a63a05f98b56a1effb078f0bab53b1fdc0c6bd53a",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2401.06455",
+          "variant": "original",
+          "paper_sha256": "4b2a72f5ae687d5d852d08bc0016293a4c1cd0d2f1f7ab422c09c7b12a9ec046",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.06431v2",
+          "variant": "original",
+          "paper_sha256": "e3d45346dd11063ec4e25313f18cfcb84616e07493882f0357319b551403645b",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2404.04502v2",
+          "variant": "original",
+          "paper_sha256": "f21948f2f7b86b4310c39424e96fdcc2ec34617271a1aadb8ed5d10e7542f50e",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2401.09543v2",
+          "variant": "original",
+          "paper_sha256": "6323c8c9d45a2191de9f0bf308f20df4a59699cb1609e150932701c3bf209148",
+          "repository": null,
+          "venue_sha256": null
+        },
+        {
+          "paper_id": "2406.03201v2",
+          "variant": "original",
+          "paper_sha256": "18c24aa193e459c287919caaab7aa41bead0885d938103fe0920b6381777b50d",
+          "repository": null,
+          "venue_sha256": null
+        }
+      ]
+    }
+  }
+}

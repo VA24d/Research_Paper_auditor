@@ -1,0 +1,5 @@
+2026-10-30 18:54:14,218 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-30 18:54:14,218 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-30 18:54:14,221 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-30 18:54:14,221 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-30 18:55:10,456 INFO    auditor.experiments [rq1-pilotb-full-r1 code-bd56be9894c7a1a2] dropping a method discrepancy without shown evidence

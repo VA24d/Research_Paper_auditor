@@ -1,0 +1,1 @@
+{"schema_version":1,"task_id":"theory-87cc746dc39c0d5c","paper_id":"2404.01980v6","variant":"original","kind":"theory","outcome":"failed","reason":null,"error":"ConnectError: [Errno 8] nodename nor servname provided, or not known","findings":[],"attempts":1}

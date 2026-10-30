@@ -1,0 +1,14 @@
+{"error_id":"2401.06455-e0","paper_id":"2401.06455","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.09543v2-e0","paper_id":"2401.09543v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.16191v2-e0","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.16191v2-e1","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2404.04502v2-e0","paper_id":"2404.04502v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2405.01133v3-e0","paper_id":"2405.01133v3","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2405.05635v2-e0","paper_id":"2405.05635v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.01892v2-e0","paper_id":"2406.01892v2","matched":[],"reason":"The annotated error is located in Section 4.2.3, whereas the reported issue concerns Proposition 4.3.1 (in Section 4.3).","human_agrees":null}
+{"error_id":"2406.03201v2-e0","paper_id":"2406.03201v2","matched":[],"reason":"The annotated error concerns a mistake in the proof of Proposition 4.6 (affecting Theorem 4.9), whereas the reported issues exclusively discuss a typo/inconsistency in the statement of Theorem 5.1 regarding $H^1_{fl}$ vs $H^2_{fl}$ vanishing.","human_agrees":null}
+{"error_id":"2406.03201v2-e1","paper_id":"2406.03201v2","matched":[],"reason":"The annotated error concerns a substantive mathematical flaw or gap in the proof of Theorem 5.1 (corrected in arXiv:2407.21431). Both reported issues only point out a typographical inconsistency in the theorem statement ($H^1$ vs. $H^2$) and explicitly state that the proof itself used $H^2$.","human_agrees":null}
+{"error_id":"2406.06431v2-e0","paper_id":"2406.06431v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2406.11623v4-e0","paper_id":"2406.11623v4","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2407.09178v2-e0","paper_id":"2407.09178v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2408.16162v2-e0","paper_id":"2408.16162v2","matched":[],"reason":"","human_agrees":null}

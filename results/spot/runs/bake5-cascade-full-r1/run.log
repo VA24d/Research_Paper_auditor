@@ -1,0 +1,15 @@
+2026-10-17 20:36:28,822 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-17 20:36:28,822 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-17 20:36:28,843 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-17 20:36:28,843 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-17 20:37:38,885 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-17 20:37:38,886 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-17 20:40:06,245 ERROR   auditor.orchestration.runner [bake5-cascade-full-r1 theory-8556d27ca965503c] task failed after 1 attempt(s): ConnectError('')
+2026-10-17 20:40:06,250 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-17 20:40:06,251 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-17 20:41:08,748 ERROR   auditor.orchestration.runner [bake5-cascade-full-r1 theory-87cc746dc39c0d5c] task failed after 1 attempt(s): ConnectError('[Errno 8] nodename nor servname provided, or not known')
+2026-10-17 20:41:08,755 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-17 20:41:08,755 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-17 20:41:08,775 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-17 20:41:08,775 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-17 20:41:37,382 ERROR   auditor.orchestration.runner [bake5-cascade-full-r1 theory-60bccda79655a370] task failed after 1 attempt(s): ConnectError('[Errno 8] nodename nor servname provided, or not known')

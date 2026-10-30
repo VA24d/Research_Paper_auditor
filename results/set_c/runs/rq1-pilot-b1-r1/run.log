@@ -1,0 +1,58 @@
+2026-10-30 18:29:30,752 WARNING auditor.orchestration.registry [- -] no B1 tools from the citation part yet
+2026-10-30 18:29:30,767 WARNING auditor.orchestration.registry [- -] no B1 tools from the citation part yet
+2026-10-30 18:38:34,870 WARNING auditor.orchestration.registry [- -] no B1 tools from the citation part yet
+2026-10-30 18:38:34,891 WARNING auditor.orchestration.registry [- -] no B1 tools from the citation part yet
+2026-10-30 18:40:05,113 ERROR   auditor.experiments [- -] rq1-pilot-b1-r1 failed on 1711.10703v1
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 498, in _run_one
+    await run_baseline(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 244, in run_baseline
+    result = await run_b1(
+             ^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/src/auditor/baselines/b1.py", line 75, in run_b1
+    state = await agent.ainvoke({"messages": [message]}, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3557, in astream
+    raise GraphRecursionError(msg)
+langgraph.errors.GraphRecursionError: Recursion limit of 90 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.
+For troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT
+2026-10-30 18:49:06,315 ERROR   auditor.experiments [- -] rq1-pilot-b1-r1 failed on 1711.10703v1
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 498, in _run_one
+    await run_baseline(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 244, in run_baseline
+    result = await run_b1(
+             ^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/Users/va/Research_Paper_auditor/src/auditor/baselines/b1.py", line 75, in run_b1
+    state = await agent.ainvoke({"messages": [message]}, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/Users/va/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3557, in astream
+    raise GraphRecursionError(msg)
+langgraph.errors.GraphRecursionError: Recursion limit of 90 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.
+For troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT

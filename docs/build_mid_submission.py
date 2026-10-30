@@ -19,6 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     Flowable,
     KeepTogether,
+    PageBreak,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -146,7 +147,7 @@ def banner() -> Table:
             [Paragraph("Research Paper Auditor", TITLE)],
             [
                 Paragraph(
-                    "Mid-project submission | Team Hood Research Department | 30 October 2026",
+                    "CL3.410 Language Models and Agents | Mid-project submission | Team Hood Research Department | 30 Oct 2026",
                     SUBTITLE,
                 )
             ],
@@ -378,10 +379,13 @@ class SystemDiagram(Flowable):
         )
 
 
+def level_colour(pct: float) -> colors.Color:
+    """The bar colour for a score: the same rule in the results table and the ablation cards."""
+    return colors.HexColor(GREEN if pct >= 80 else AMBER if pct >= 50 else RED)
+
+
 def rated(pct: float, text: str) -> Bar:
-    """A result bar coloured by how much of the known errors it found."""
-    colour = GREEN if pct >= 80 else AMBER if pct >= 50 else RED
-    return Bar(pct, text, colors.HexColor(colour))
+    return Bar(pct, text, level_colour(pct))
 
 
 def score_cards() -> Table:
@@ -415,7 +419,7 @@ def glossary() -> Table:
     items = bullets(
         "<b>Caught:</b> the share of known errors a check found. Counts sit beside each %, as a % from few errors can move a lot.",
         "<b>False alarm:</b> a correct item that a check wrongly flags. Clean controls are unchanged items used to measure this.",
-        "<b>F1, macro-F1:</b> a 0% to 100% score combining errors caught and flags that are right; macro-F1 averages over error types.",
+        "<b>F1, macro-F1:</b> a 0% to 100% score combining errors caught and findings that are right; macro-F1 averages over error types.",
     )
     table = Table([[[Paragraph("How to read the numbers", SUB), *items]]], colWidths=[WIDTH])
     table.setStyle(
@@ -439,14 +443,15 @@ def card(question: str, measure: str, rows: list[tuple], takeaway: str) -> Table
         [Paragraph(question, HEAD), ""],
         [Paragraph(f'<font color="{GREY}"><i>{measure}</i></font>', CELL), ""],
     ]
-    for label, pct, text, best in rows:
-        colour = colors.HexColor(GREEN) if best else BLUE
+    for label, pct, text, mark in rows:
+        best = mark is True
+        colour = BLUE if mark == "lower" or pct is None else level_colour(pct)
         value = (
             Paragraph(f"<b>{text}</b>", CELL)
             if pct is None
             else Bar(pct, text, colour, width * 0.52, 18 * mm)
         )
-        data.append([Paragraph(label, CELL), value])
+        data.append([Paragraph(f"<b>{label}</b>" if best else label, CELL), value])
     data.append([Paragraph(f"<b>{takeaway}</b>", CELL), ""])
     table = Table(data, colWidths=[width * 0.48, width * 0.52])
     table.setStyle(
@@ -485,13 +490,13 @@ def results() -> Table:
                     "Reference that does not exist or has wrong details",
                     86,
                     "86%",
-                    "",
-                    "of flags raised, 90% were real; 16% of valid references wrongly flagged",
+                    "449 of 524",
+                    "of findings raised, 90% were real; 16% of valid references wrongly flagged",
                 ),
             ],
         ),
         (
-            "Paper against its code (set C)",
+            "Paper against its code (set C; method check on Gemini 3.8 Flash, about $1)",
             [
                 (
                     "Code uses a different training setting than the paper",
@@ -506,7 +511,7 @@ def results() -> Table:
                     30,
                     "30%",
                     "17 of 57",
-                    "Gemini 3.8 Flash, about $1",
+                    "",
                 ),
             ],
         ),
@@ -584,14 +589,6 @@ def results() -> Table:
     return table
 
 
-def padded(content: list) -> Table:
-    table = Table([[content]], colWidths=[88 * mm])
-    table.setStyle(
-        TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 5), ("TOPPADDING", (0, 0), (-1, -1), 0)])
-    )
-    return table
-
-
 def card_grid(pairs: list[tuple[object, object]]) -> Table:
     table = Table([[a, "", b] for a, b in pairs], colWidths=[88 * mm, 4 * mm, 88 * mm])
     style = [
@@ -643,7 +640,7 @@ def timeline() -> Table:
         ),
         (
             "7 to 10 Nov",
-            "Failure analysis; check unlabelled flags; method and table fixes",
+            "Failure analysis; check unlabelled findings; method and table fixes",
             "Parts 1 and 3",
             7,
             10,
@@ -691,7 +688,7 @@ def story() -> list:
         section("1. Overview and progress"),
         Spacer(1, 5),
         Paragraph(
-            "We are building an auditor for research-paper submissions. It reads the paper (PDF or LaTeX) and its code, plans checkable items, sends each to a specialist and reports findings with quoted evidence. RQ1 asks whether this agent system detects more errors, with no more false alarms, than the same model run as one agent in one pass (B1). B0, the same model with no tools, is a second reference.",
+            "We are building an auditor for research-paper submissions. It reads the paper (PDF or LaTeX) and its code, plans checkable items, sends each to a specialist and reports findings with quoted evidence. RQ1 asks whether the full system detects more errors, with no more false alarms, than the same model run as one agent in one pass (B1). B0, the same model with no tools, is a second reference.",
             BODY,
         ),
         *bullets(
@@ -708,9 +705,9 @@ def story() -> list:
                     "<b>1.</b> Parser, planner, orchestration, baselines",
                     "Bhaskar",
                     [
-                        "Reads papers from PDF and LaTeX",
+                        "Parser for PDF and LaTeX",
                         "Planner that picks what to check",
-                        "Runs the specialists with retries, resume and a budget per task (LangGraph)",
+                        "Specialist runner with retries, resume and a budget per task (LangGraph)",
                         "B0 and B1 baselines, batch runner, Docker image",
                     ],
                     [
@@ -722,8 +719,8 @@ def story() -> list:
                     "<b>2.</b> Citation checker",
                     "Anurag",
                     [
-                        "Checks that references exist and their details are right (arXiv, OpenAlex, Crossref, Semantic Scholar)",
-                        "Checks that a cited source supports the claim, using its full text",
+                        "Check that references exist and their details are right (arXiv, OpenAlex, Crossref, Semantic Scholar)",
+                        "Check that a cited source supports the claim, using its full text",
                         "Set A scored, set B built",
                     ],
                     [
@@ -736,15 +733,15 @@ def story() -> list:
                     "<b>3.</b> Code, data, template, theory, integrity",
                     "Vijay",
                     [
-                        "Compares a paper's settings, metrics and method with its code",
-                        "Checks data analysis and finds code defects",
+                        "Comparison of a paper's settings, metrics and method with its code",
+                        "Data analysis check and code defect check",
                         "Agent that tests claims against the repository (claim loop)",
                         "Template, proof, integrity and results checks",
                         "Sets C and D built, SPOT scored",
                     ],
                     [
                         "Second person checks a sample of set C's labels",
-                        "Decide whether flags that match no label are real errors",
+                        "Decide whether findings that match no label are real errors",
                         "Run the full system, B0 and B1 on all of sets C and D",
                     ],
                 ],
@@ -771,6 +768,8 @@ def story() -> list:
             [
                 section("2. Datasets"),
                 Spacer(1, 5),
+                glossary(),
+                Spacer(1, 5),
                 grid(
                     ["Set", "What it tests", "Size", "State"],
                     [
@@ -783,13 +782,13 @@ def story() -> list:
                         [
                             "<b>B:</b> claim-source pairs",
                             "Whether a cited source supports the claim",
-                            "60 arXiv papers, 158 gold labels (112 injected, 46 clean controls)",
+                            "60 arXiv papers, 158 labels (112 injected, 46 clean controls)",
                             warn("second review pending"),
                         ],
                         [
                             "<b>C:</b> paper-code pairs (from the public SciCoQA benchmark)",
                             "Settings, metrics and method against the official code",
-                            "40 pairs, 80 paper versions, 235 gold labels (63 setting and metric errors, 72 clean-control labels, 100 method labels)",
+                            "40 pairs, 80 paper versions, 235 labels (63 setting and metric errors, 72 clean-control labels, 100 method labels)",
                             warn("second review pending"),
                         ],
                         [
@@ -813,7 +812,7 @@ def story() -> list:
                         [
                             "<b>Real cases</b>",
                             "Errors authors later corrected",
-                            "33 arXiv withdrawals and revisions, 30 ICLR review cases",
+                            "33 arXiv withdrawals and revisions, 30 ICLR review cases; not scored in this report",
                             warn("automatic labels"),
                         ],
                     ],
@@ -835,8 +834,6 @@ def story() -> list:
                     "<b>B0:</b> the same model in a single pass with no tools.",
                     "<b>B1:</b> the same model as one agent with every tool, in one pass, with no verifier.",
                 ),
-                Spacer(1, 2),
-                glossary(),
                 Spacer(1, 4),
                 grid(
                     ["Run", "Test", "Errors caught", "Cost"],
@@ -859,18 +856,13 @@ def story() -> list:
                             good(share(8, 14)),
                             "$1.68 (13 papers)",
                         ],
-                        [
-                            "B1, Gemini 2.5 Flash",
-                            "Set B, 15 papers, old labels",
-                            "macro-F1 2.6%; 0 of 14 clean controls flagged",
-                            "",
-                        ],
                     ],
                     [62, 38, 50, 30],
                 ),
                 Spacer(1, 4),
                 *bullets(
-                    "On the SPOT test half the full system catches 8 errors to B0's 4 by the first judge, at the same cost per paper (about $0.13). If a second judge must also agree, it keeps 5; B0 has no second grading."
+                    "On the SPOT test half the full system catches 8 errors to B0's 4 by the first judge, at the same cost per paper (about $0.13). If a second judge must also agree, it keeps 5; B0 has no second grading.",
+                    "B1 on set B (Gemini 2.5 Flash, 15 papers, labels since corrected): macro-F1 2.6%; 0 of 14 clean controls flagged.",
                 ),
             ]
         ),
@@ -883,6 +875,11 @@ def story() -> list:
                     BODY,
                 ),
                 score_cards(),
+                Spacer(1, 2),
+                Paragraph(
+                    "Overall score: macro-F1 over settings and method errors, on these 5 pairs.",
+                    CAPTION,
+                ),
                 Spacer(1, 4),
                 grid(
                     ["Measure", "Full system", "B0", "B1"],
@@ -894,19 +891,24 @@ def story() -> list:
                             share(0, 6),
                         ],
                         [
-                            "Method differences caught, by the scorer's count",
+                            "Method errors caught, by the scorer's count",
                             good(share(4, 14)),
                             share(0, 14),
                             share(0, 14),
                         ],
                         [
-                            "Method differences caught, read by hand",
+                            "Method errors caught, read by hand",
                             good(share(2, 14)),
                             share(0, 14),
                             share(0, 14),
                         ],
                         ["False alarms on clean controls", share(0, 6), share(0, 6), share(0, 6)],
-                        ["Flags that match no known error, not yet checked", warn("23"), "0", "1"],
+                        [
+                            "Findings that match no known error, not yet checked",
+                            warn("23"),
+                            "0",
+                            "1",
+                        ],
                         ["Model calls per paper version", "22", "1", "20"],
                         ["Cost per paper version", "$0.12", "$0.06", "$0.21"],
                     ],
@@ -920,12 +922,12 @@ def story() -> list:
                 Paragraph("Caveats on this comparison", SUB),
                 *bullets(
                     "The full system leads, but one run on 5 pairs does not test the hypothesis.",
-                    "We have not checked the 23 unmatched flags; each may be a real error we did not label or a false alarm.",
+                    "We have not checked the 23 unmatched findings; each may be a real error we did not label or a false alarm.",
                     "The automatic scorer counts a method finding as correct if the paper has any method error, even a different one, so we also read each finding by hand.",
                     "B0 cannot read code, so it can catch a planted setting only from the paper's text.",
                     "B1 used all 20 of its model calls on every version, so we will test a larger limit before the final comparison.",
                     "A sixth pair failed on rate limits and was dropped for all systems. B0 also lost one clean version, so it covers 9 versions.",
-                    "We reran the full system on two pairs after the local embedding model unloaded during the first run.",
+                    "We reran two pairs for the full system after the embedding model unloaded.",
                 ),
             ]
         ),
@@ -949,7 +951,10 @@ def story() -> list:
         ),
         section("5. Ablations: what changes when we swap one part"),
         Spacer(1, 2),
-        Paragraph("A green bar marks the best variant in its card.", CAPTION),
+        Paragraph(
+            "Bars use the colours of section 4. Bold marks the best variant. False-alarm bars are blue, because lower is better.",
+            CAPTION,
+        ),
         Spacer(1, 5),
         card_grid(
             [
@@ -958,31 +963,38 @@ def story() -> list:
                         "How should we read tables from a PDF?",
                         "Share of table numbers recovered, 12 papers",
                         [
-                            ("GROBID parser", 41, "41%", False),
+                            ("GROBID PDF parser", 41, "41%", False),
                             ("Text with page layout", 20, "20%", False),
                             ("Both combined", 51, "51%", False),
                             ("Text inside table regions", 98, "98%", True),
-                            ("Table image read by a model", 96, "96%", True),
+                            ("Table image read by a model", 96, "96%", False),
                         ],
                         "Table regions recover almost every number.",
                     ),
                     card(
                         "How should we find the code for a method sentence?",
-                        "Share of 84 known differences where the changed line was shown",
+                        "Share of 84 known method errors with the changed line shown",
                         [
                             ("Word overlap", 42, "42% (35)", False),
                             ("BM25 keyword search", 57, "57% (48)", False),
-                            ("Embedding search (nomic)", 70, "70% (59)", True),
+                            ("Embedding search", 70, "70% (59)", True),
                             ("BM25 + embeddings", 68, "68% (57)", False),
-                            ("Embeddings + reranker", 68, "68% (57)", False),
+                            ("Embeddings + reordering model", 68, "68% (57)", False),
                         ],
                         "Embedding search alone did best, by 2 of 84.",
                     ),
                 ),
+            ]
+        ),
+        PageBreak(),
+        Paragraph("5. Ablations, continued", SUB),
+        Spacer(1, 5),
+        card_grid(
+            [
                 (
                     card(
                         "How should the model be shown the code?",
-                        "Share of 28 known differences found, 10 pairs, earlier version",
+                        "Share of 28 known method errors found, 10 pairs, earlier version",
                         [
                             ("Whole files", 7, "7% (2)", False),
                             ("One sentence with its code", 0, "0% (0)", False),
@@ -995,8 +1007,8 @@ def story() -> list:
                         "Did our citation fixes work?",
                         "Set A, before and after the author, year and venue fixes",
                         [
-                            ("False alarms before", 31, "31%", False),
-                            ("False alarms after", 16, "16%", True),
+                            ("False alarms before", 31, "31% (96 of 307)", "lower"),
+                            ("False alarms after", 16, "16% (49 of 307)", "lower"),
                             ("F1 before", 80, "80%", False),
                             ("F1 after", 88, "88%", True),
                         ],
@@ -1006,7 +1018,7 @@ def story() -> list:
                 (
                     card(
                         "Which model reads code best?",
-                        "Share of 57 known differences found",
+                        "Share of 57 known method errors found",
                         [
                             ("Gemini 3.8 Flash", 30, "30% (17)", False),
                             ("Gemini 3.1 Pro", 33, "33% (19)", True),
@@ -1021,19 +1033,19 @@ def story() -> list:
                         "How should the theory checker be organised?",
                         "Found by the first judge: first two rows of 29, the rest of 14 (test half)",
                         [
-                            ("Cheap screen, then deep check", 7, "7% (2 of 29)", False),
+                            ("Quick screen, then deep check", 7, "7% (2 of 29)", False),
                             ("One call", 14, "14% (4 of 29)", False),
-                            ("Triage, then deep check", 57, "57% (8 of 14)", False),
-                            ("Two triage calls pooled", 50, "50% (7 of 14)", False),
+                            ("Pick claims, then deep check", 57, "57% (8 of 14)", False),
+                            ("Two picking calls pooled", 50, "50% (7 of 14)", False),
                             ("Two looks at each paper", 50, "50% (7 of 14)", False),
                         ],
-                        "Triage beats a screen or one call. If both judges must agree, the last three are 36%, 36% and 43%.",
+                        "Picking claims first beats a screen or one call. If both judges must agree, the last three are 36%, 36% and 43%.",
                     ),
                 ),
                 (
                     card(
                         "Does showing more code help?",
-                        "Share of 57 known differences found",
+                        "Share of 57 known method errors found",
                         [
                             ("60k characters", 30, "30% (17)", True),
                             ("120k characters", 28, "28% (16)", False),
@@ -1045,30 +1057,22 @@ def story() -> list:
                         "Tasks that ran out of time and total cost, 3 papers",
                         [
                             ("Medium effort", None, "17 to 32 timeouts, $0.63", False),
-                            ("Low effort, time limit per claim", None, "0 timeouts, $0.47", True),
+                            ("Low effort + per-claim limit", None, "0 timeouts, $0.47", True),
                         ],
-                        "Low effort plus a time limit: no timeouts, 25% less cost.",
-                    ),
-                ),
-                (
-                    card(
-                        "Do citations need the full source text?",
-                        "Set B, macro-F1",
-                        [("Full text", 2.6, "2.6%", False), ("Abstract only", 2.6, "2.6%", False)],
-                        "No difference, but B1 found almost nothing either way.",
-                    ),
-                    padded(
-                        [
-                            Paragraph("Not yet measured", SUB),
-                            *bullets(
-                                "Removing the verifier (needs Part 4)",
-                                "Model-only against tool-using, on set B and the rest of set C",
-                                "Whether the right passage is in the top 5 (7 records so far)",
-                            ),
-                        ]
+                        "On 3 papers: no timeouts and 25% less cost.",
                     ),
                 ),
             ]
+        ),
+        Spacer(1, 3),
+        *bullets(
+            "<b>Full text against abstract only (set B):</b> both macro-F1 2.6%, but B1 found almost nothing either way."
+        ),
+        Paragraph("Not yet measured", SUB),
+        *bullets(
+            "Removing the verifier (needs Part 4).",
+            "The model-only run against the tool-using system, on set B and the rest of set C.",
+            "Whether the right evidence passage is in the top 5 (Recall@5; 7 records so far).",
         ),
         KeepTogether(
             [
@@ -1089,8 +1093,8 @@ def story() -> list:
                         ],
                         [
                             "<b>Cost of those runs</b>",
-                            "about $83 of shared credits for all of set C at those repeats",
-                            "spend ledger and dollar cap per run; run B1 and the full system once first, repeat only where close",
+                            "about $83 of shared credits for all of set C",
+                            "dollar cap per run; run once first, repeat only where close",
                         ],
                         [
                             "<b>Label checks pending</b>",
@@ -1099,7 +1103,7 @@ def story() -> list:
                         ],
                         [
                             "<b>Models overlook code they are shown</b>",
-                            "in an earlier run, the model saw the changed line but reported nothing for 46% (26 of 57)",
+                            "earlier run: the model saw the changed line but reported nothing for 46% (26 of 57)",
                             "show each sentence only its best-matching code (12 of 57 so far); repeat looks",
                         ],
                         [
@@ -1108,8 +1112,8 @@ def story() -> list:
                             "report both counts; add a third judge for the disagreements",
                         ],
                         [
-                            "<b>Unlabelled flags</b>",
-                            "152 settings-check flags on set C have no label",
+                            "<b>Unlabelled findings</b>",
+                            "152 settings-check findings have no label",
                             "check a sample by hand; some are already real mismatches",
                         ],
                         [

@@ -1,0 +1,4 @@
+{"error_id": "2408.16162v2-e0", "second_check": "agree", "note": "Same flaw: extending the automorphism needs span(Y) and L to meet trivially.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2401.09543v2-e0", "second_check": "agree", "note": "Same step of Claim 7: J_m cannot meet every N^Int(Y_i).", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2402.01549v2-e0", "second_check": "agree", "note": "Reports have no explanation and point at Lemma 4 and Section VI, not Claim 3.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2405.20571v2-e0", "second_check": "agree", "note": "Report is about conditioning in Lemma 4.5, not the missing condition in Theorem 2.1.", "checked_by": "Claude (a person still has to confirm)"}

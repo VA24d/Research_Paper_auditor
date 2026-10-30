@@ -1,0 +1,3 @@
+{"schema_version":1,"task_id":"integrity-ad343360bf33e0f2","paper_id":"2401.09543v2","variant":"original","kind":"integrity","outcome":"checked","reason":null,"error":null,"findings":[],"attempts":1}
+{"schema_version":1,"task_id":"integrity-742c078d9285c415","paper_id":"2401.09543v2","variant":"original","kind":"integrity","outcome":"checked","reason":null,"error":null,"findings":[],"attempts":1}
+{"schema_version":1,"task_id":"theory-60bccda79655a370","paper_id":"2401.09543v2","variant":"original","kind":"theory","outcome":"failed","reason":null,"error":"CallLimitReachedError: the run's budget of $1.5 is used up (AUDITOR_LLM_MAX_COST_USD)","findings":[],"attempts":1}

@@ -1,0 +1,3 @@
+{"schema_version":1,"task_id":"integrity-105c9ef0139abfec","paper_id":"2406.06431v2","variant":"original","kind":"integrity","outcome":"checked","reason":null,"error":null,"findings":[],"attempts":1}
+{"schema_version":1,"task_id":"integrity-d3e21aa80e89d7da","paper_id":"2406.06431v2","variant":"original","kind":"integrity","outcome":"checked","reason":null,"error":null,"findings":[],"attempts":1}
+{"schema_version":1,"task_id":"theory-00bb2c7470cd6934","paper_id":"2406.06431v2","variant":"original","kind":"theory","outcome":"failed","reason":null,"error":"CallLimitReachedError: the budget is used up: $3.16 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)","findings":[],"attempts":1}

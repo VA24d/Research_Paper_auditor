@@ -1,0 +1,8 @@
+{"error_id": "2403.01085v2-e0", "second_check": "agree", "note": "Same flaw in Case 2.1 of the triangle detection.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2403.01085v2-e1", "second_check": "agree", "note": "Same flaw in Case 2.1.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2407.18406v2-e0", "second_check": "agree", "note": "Misapplied Dirichlet unit theorem in the proof of Theorem 1.6; the annotation is vague but the step and theorem match.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2405.03612v2-e0", "second_check": "agree", "note": "Same step: equal ramification does not give equal orders of vanishing at 0 and infinity.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2401.09543v2-e0", "second_check": "disagree", "note": "R1 describes the same flaw in Claim 7 as the cascade's matched report (J_m cannot contain two vertices of every N^Int(Y_i)); the judge missed it.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2406.03201v2-e1", "second_check": "unsure", "note": "R1 points at Theorem 5.1 (H^1 assumed instead of H^2); the annotation only says the proof has a gap, so a person who knows the erratum should decide.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2408.16162v2-e0", "second_check": "agree", "note": "R1 is about existence of extensions from a dense subgroup, not the redefinition on L.", "checked_by": "Claude (a person still has to confirm)"}
+{"error_id": "2402.14546v2-e0", "second_check": "agree", "note": "Reports are about a real basis and a vanishing numerator, not the swap of Hodge components.", "checked_by": "Claude (a person still has to confirm)"}

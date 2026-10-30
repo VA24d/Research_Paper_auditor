@@ -1,0 +1,29 @@
+2026-10-18 17:09:38,875 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:09:38,876 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:09:38,878 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:09:38,878 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:09:38,879 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:09:38,879 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:09:38,881 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:09:38,881 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:14:22,560 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:14:22,560 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:16:46,385 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:16:46,385 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:18:16,379 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:18:16,379 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:19:59,930 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:19:59,930 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:20:46,480 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:20:46,480 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:21:15,621 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:21:15,621 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:24:16,685 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:24:16,686 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:25:24,021 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:25:24,021 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:26:40,981 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-18 17:26:40,981 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-18 17:30:00,121 WARNING auditor.infra.prefix_cache [- -] could not delete context cache projects/848236490273/locations/global/cachedContents/849839771495694336 (404 NOT_FOUND. {'error': {'code': 404, 'message': 'Cached content 849839771495694336 is not found.', 'status': 'NOT_FOUND'}})
+2026-10-18 17:30:01,359 WARNING auditor.infra.prefix_cache [- -] could not delete context cache projects/848236490273/locations/global/cachedContents/5709223769428459520 (404 NOT_FOUND. {'error': {'code': 404, 'message': 'Cached content 5709223769428459520 is not found.', 'status': 'NOT_FOUND'}})
+2026-10-18 17:30:01,964 WARNING auditor.infra.prefix_cache [- -] could not delete context cache projects/848236490273/locations/global/cachedContents/2704196918065496064 (404 NOT_FOUND. {'error': {'code': 404, 'message': 'Cached content 2704196918065496064 is not found.', 'status': 'NOT_FOUND'}})

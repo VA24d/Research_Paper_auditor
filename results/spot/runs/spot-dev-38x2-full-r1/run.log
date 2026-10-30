@@ -1,0 +1,92 @@
+2026-10-20 02:22:01,665 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:22:01,665 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:22:01,669 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:22:01,669 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:22:01,671 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:22:01,671 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:22:01,673 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:22:01,673 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:25:46,910 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:25:46,910 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:27:00,752 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:27:00,753 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:29:56,414 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:29:56,414 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:32:48,528 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:32:48,528 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:33:05,440 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:33:05,440 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:36:30,840 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:36:30,840 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:36:40,316 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:36:40,316 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:38:32,052 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:38:32,052 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:39:24,759 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-20 02:39:24,759 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-20 02:41:24,473 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 integrity-ad343360bf33e0f2] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.03 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:24,601 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-c74c7e199aa32445] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.03 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:24,606 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-eaa7abdad95a4d1f] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.03 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:24,610 ERROR   auditor.experiments [- -] spot-dev-38x2-full-r1 failed on 2401.09543v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 493, in _run_one
+    _refuse_incomplete(full.outcome.results, llm)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 524, in _refuse_incomplete
+    raise CallLimitReachedError(
+    ...<2 lines>...
+    )
+auditor.infra.llm.CallLimitReachedError: incomplete: 3 of 4 tasks hit the run's limit of 600 model calls (AUDITOR_LLM_MAX_CALLS); rerun under a new --experiment with a higher limit
+2026-10-20 02:41:35,536 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-00bb2c7470cd6934] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.16 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:35,539 ERROR   auditor.experiments [- -] spot-dev-38x2-full-r1 failed on 2406.06431v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 493, in _run_one
+    _refuse_incomplete(full.outcome.results, llm)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 524, in _refuse_incomplete
+    raise CallLimitReachedError(
+    ...<2 lines>...
+    )
+auditor.infra.llm.CallLimitReachedError: incomplete: 1 of 3 tasks hit the run's limit of 600 model calls (AUDITOR_LLM_MAX_CALLS); rerun under a new --experiment with a higher limit
+2026-10-20 02:41:36,455 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-524726b370b64505] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.17 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:36,459 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-338b38a1d8e4f233] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.17 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:36,464 ERROR   auditor.experiments [- -] spot-dev-38x2-full-r1 failed on 2404.04502v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 493, in _run_one
+    _refuse_incomplete(full.outcome.results, llm)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 524, in _refuse_incomplete
+    raise CallLimitReachedError(
+    ...<2 lines>...
+    )
+auditor.infra.llm.CallLimitReachedError: incomplete: 2 of 4 tasks hit the run's limit of 600 model calls (AUDITOR_LLM_MAX_CALLS); rerun under a new --experiment with a higher limit
+2026-10-20 02:41:57,543 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 integrity-21b04827ab8ce58e] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.20 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:57,576 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 integrity-043c747ef3aafe68] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.20 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:57,677 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-a1e8f8cea01bd01f] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.20 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:57,684 ERROR   auditor.orchestration.runner [spot-dev-38x2-full-r1 theory-150a3622b0a12cf3] task failed after 1 attempt(s): CallLimitReachedError('the budget is used up: $3.20 this run (AUDITOR_LLM_MAX_COST_USD 3.0), ledger limit 30.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)')
+2026-10-20 02:41:57,689 ERROR   auditor.experiments [- -] spot-dev-38x2-full-r1 failed on 2406.03201v2
+Traceback (most recent call last):
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 562, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 493, in _run_one
+    _refuse_incomplete(full.outcome.results, llm)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/va/Research_Paper_auditor/src/auditor/experiments.py", line 524, in _refuse_incomplete
+    raise CallLimitReachedError(
+    ...<2 lines>...
+    )
+auditor.infra.llm.CallLimitReachedError: incomplete: 4 of 4 tasks hit the run's limit of 600 model calls (AUDITOR_LLM_MAX_CALLS); rerun under a new --experiment with a higher limit

@@ -1,0 +1,6 @@
+{"error_id":"2402.10307v2-e0","paper_id":"2402.10307v2","matched":[],"reason":"The annotated error concerns an incorrect beamforming gain factor ($N$ vs. $N^2$), whereas the reported issue discusses a matrix dimensional mismatch between $T$ and $N$ in matrix $F_b$.","human_agrees":null}
+{"error_id":"2408.16162v2-e0","paper_id":"2408.16162v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2405.05635v2-e0","paper_id":"2405.05635v2","matched":[],"reason":"The annotated error is a logical gap in the proof of Proposition 3.9, whereas the reported issue concerns a flaw in the proof of Proposition 2.9.","human_agrees":null}
+{"error_id":"2404.01980v6-e0","paper_id":"2404.01980v6","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2402.16847v2-e0","paper_id":"2402.16847v2","matched":[],"reason":"","human_agrees":null}
+{"error_id":"2401.09543v2-e0","paper_id":"2401.09543v2","matched":[],"reason":"","human_agrees":null}

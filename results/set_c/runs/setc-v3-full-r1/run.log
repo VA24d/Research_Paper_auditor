@@ -1,0 +1,193 @@
+2026-10-16 01:24:36,369 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:36,369 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:36,371 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:36,371 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:36,372 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:36,372 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:36,373 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:36,373 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:37,567 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:37,567 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:37,570 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:37,570 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:37,659 INFO    auditor.agents.code.data_checks [setc-v3-full-r1 code-6d7823b9cd394e77] could not follow dataset disambiguate_pronoun: no revision 'main' of https://huggingface.co/datasets/disambiguate_pronoun: HTTP 401 from https://huggingface.co/api/datasets/disambiguate_pronoun/revision/main
+2026-10-16 01:24:37,815 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:37,815 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:37,955 INFO    auditor.agents.code.data_checks [setc-v3-full-r1 code-cf1f82451c21876f] could not follow dataset disambiguate_pronoun: no revision 'main' of https://huggingface.co/datasets/disambiguate_pronoun: HTTP 401 from https://huggingface.co/api/datasets/disambiguate_pronoun/revision/main
+2026-10-16 01:24:38,641 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:38,649 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:39,616 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:39,616 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:39,620 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:39,620 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:40,451 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:40,452 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:40,454 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:40,454 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:40,842 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:40,842 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:40,844 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:40,844 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:41,145 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:41,145 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:41,152 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:41,153 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:42,101 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:42,101 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:42,258 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:42,258 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:42,293 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-e4188e91e3f29a9d] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/1910.10261v1 at content-4eac9fb34d7d82ce: 24 files, 0 skipped
+2026-10-16 01:24:42,418 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:42,418 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:42,430 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:42,430 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:42,863 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:42,863 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:43,057 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-b567e516d854c631] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/1911.10194v3 at content-3c0f5a2e5a1ba334: 103 files, 0 skipped
+2026-10-16 01:24:43,286 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:43,286 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:43,353 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-0e9bf21772431df5] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2001.07645v3 at content-81fbef3c3d5f8245: 49 files, 0 skipped
+2026-10-16 01:24:43,551 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:43,551 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:43,720 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:43,720 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:43,793 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-7b2f2cd51bab8c64] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2002.00718v2 at content-1bf651f3284d84f8: 31 files, 0 skipped
+2026-10-16 01:24:44,068 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,069 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,076 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,076 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,233 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-dac700b75952edcd] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2002.02798v3 at content-bee223cb66c007c0: 30 files, 0 skipped
+2026-10-16 01:24:44,406 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,406 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,419 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,419 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,530 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,530 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,559 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-fa0bf628eda061f6] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2002.05120v4 at content-2b6cc325a1c77056: 18 files, 0 skipped
+2026-10-16 01:24:44,751 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,751 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,801 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-711ae5c120654a50] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2002.07128v2 at content-3a83142788dec368: 9 files, 0 skipped
+2026-10-16 01:24:44,938 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,938 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:44,988 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:44,988 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:45,230 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-e8824a6b26c1c35e] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2003.10606v1 at content-2f213978400426f9: 36 files, 0 skipped
+2026-10-16 01:24:45,431 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:45,431 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:45,547 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:45,547 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:45,598 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-05373881378abb48] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2004.09144v3 at content-6df1e415bc0ce62f: 20 files, 0 skipped
+2026-10-16 01:24:45,774 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:45,774 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:45,862 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:45,862 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:45,876 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:45,876 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:45,915 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-a0563f3a40dafdf6] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2004.10016v1 at content-c41b50167f5014f4: 8 files, 0 skipped
+2026-10-16 01:24:46,270 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:46,276 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:46,437 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-b893966158892401] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2006.01592v2 at content-3e8091541388d629: 84 files, 0 skipped
+2026-10-16 01:24:46,729 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:46,729 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:46,918 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:46,918 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:47,009 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-ce5bdfcdc86eabeb] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2006.06958v1 at content-a00b80c29a6f9cc7: 38 files, 0 skipped
+2026-10-16 01:24:47,136 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:47,136 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:47,345 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:47,345 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:47,407 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-5d16fd3c6a98f00f] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2006.13807v2 at content-d77f0d1f98e07c9c: 16 files, 0 skipped
+2026-10-16 01:24:47,656 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:47,656 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:47,707 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:47,707 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:47,876 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:47,876 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:47,971 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-6b44a8f55e2c0fdd] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2012.15000v1 at content-5b2283c012488ef7: 62 files, 0 skipped
+2026-10-16 01:24:48,130 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:48,130 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:48,264 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-640c22239627e6a6] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2102.06514v3 at content-5ad33f5bbe3fb548: 28 files, 0 skipped
+2026-10-16 01:24:48,383 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:48,383 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:48,753 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:48,753 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:48,850 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-a5fb27027277e580] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2104.01374v2 at content-c7c93c34bf149c7e: 24 files, 0 skipped
+2026-10-16 01:24:49,069 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:49,070 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:49,285 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:49,285 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:49,397 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-891e91d0a91a7c3b] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2106.10052v2 at content-6b0d2923c8f638a1: 102 files, 0 skipped
+2026-10-16 01:24:49,632 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:49,632 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:49,809 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:49,809 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:49,896 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:49,896 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:49,899 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-543124d9a62e1296] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2107.12710v2 at content-17e0f95cd8366226: 52 files, 0 skipped
+2026-10-16 01:24:50,143 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,143 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:50,185 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-7e748bac1651a9be] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2110.13653v1 at content-2b1ef2ebe3400faa: 17 files, 0 skipped
+2026-10-16 01:24:50,263 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,263 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:50,276 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,276 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:50,451 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-08f35b64def80214] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2202.03772v3 at content-f5608415e98b3965: 24 files, 0 skipped
+2026-10-16 01:24:50,585 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,585 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:50,594 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,594 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:50,687 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-1a84ba2f072dfe78] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2208.04654v1 at content-8f92090974c70cb2: 13 files, 0 skipped
+2026-10-16 01:24:50,816 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,816 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:50,825 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:50,825 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:51,168 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:51,168 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:51,171 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-3fa65ecde90c4bd6] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2211.00918v1 at content-1c798636de840e16: 37 files, 0 skipped
+2026-10-16 01:24:51,354 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:51,354 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:51,528 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-753f971c579b3c97] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2304.04740v3 at content-843b6c2ddb84765b: 33 files, 0 skipped
+2026-10-16 01:24:51,753 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:51,754 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:51,771 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:51,771 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:51,958 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:51,958 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:51,989 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:51,989 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:52,046 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-021600c662e04558] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2304.08467v3 at content-326dba7b0a10bed4: 42 files, 0 skipped
+2026-10-16 01:24:52,571 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-1603ddf0f73efa61] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2305.14387v4 at content-16ee677db9fa2774: 106 files, 0 skipped
+2026-10-16 01:24:53,126 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:53,126 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:53,324 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:53,324 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:53,387 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-7ed3387c83e14e94] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2306.12584v2 at content-f552cb9a04baf18f: 36 files, 0 skipped
+2026-10-16 01:24:53,600 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:53,600 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:53,725 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:53,725 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:53,743 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:53,743 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:53,873 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-4a4eca5cfeb13dda] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2310.16834v3 at content-b1ac80c52d3d2949: 24 files, 0 skipped
+2026-10-16 01:24:54,024 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:54,025 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:54,239 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-9b739d73e9547c9a] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2312.02151v1 at content-7a9c015ba2d803eb: 91 files, 0 skipped
+2026-10-16 01:24:54,601 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:54,602 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:54,712 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:54,712 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:54,778 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-4076225271b06b13] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2401.05363v5 at content-6798b8e7dab9889a: 41 files, 0 skipped
+2026-10-16 01:24:54,927 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:54,927 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:54,958 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:54,958 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:55,086 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:55,086 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:55,670 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:55,670 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:55,679 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:55,679 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:55,769 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-10-16 01:24:55,770 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
+2026-10-16 01:24:55,870 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-a25ed31fd3bde4e9] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2402.18396v1 at content-eae17904e1f313c8: 75 files, 0 skipped
+2026-10-16 01:24:56,209 INFO    auditor.infra.snapshots.snapshot [setc-v3-full-r1 code-18856eaf5601c791] snapshot of file:///Users/va/Research_Paper_auditor/data/set_c/patched/2406.05992v1 at content-c824291eafe363d0: 13 files, 0 skipped
