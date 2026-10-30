@@ -1,6 +1,6 @@
 """Baseline B1: one tool-calling agent with the specialists' tools, one pass, no verifier."""
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
 from langchain.agents import create_agent
@@ -9,9 +9,9 @@ from langchain.agents.middleware import (
     ModelCallLimitMiddleware,
     ToolCallLimitMiddleware,
 )
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langchain.agents.structured_output import ToolStrategy
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 
@@ -24,7 +24,7 @@ from auditor.baselines.common import (
     render_paper,
     to_predictions,
 )
-from auditor.infra.llm import UsageCallback
+from auditor.infra.llm import StructuredLLM, TokenUsage
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
 from auditor.schemas import ParsedPaper, RepositoryRef, SystemName, VenueProfile
@@ -39,13 +39,45 @@ give your final answer in the required structured format.
 {ANSWER_GUIDE}"""
 
 
+PURPOSE = "b1"
+
+
+def _usage(response: ModelResponse[Any]) -> TokenUsage:
+    total = TokenUsage()
+    for message in response.result:
+        if isinstance(message, AIMessage):
+            total += TokenUsage.from_message(message)
+    return total
+
+
+class _Accounted(AgentMiddleware[Any, Any, Any]):
+    """Sends each model call through the run's LLM accounting (the dollar and call limits,
+    the spend ledger and the usage log), and takes the tools away on the last allowed call
+    so the agent has to give its answer."""
+
+    def __init__(self, llm: StructuredLLM, max_model_calls: int) -> None:
+        super().__init__()
+        self.llm = llm
+        self.max_model_calls = max_model_calls
+        self.calls = 0
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], Awaitable[ModelResponse[Any]]],
+    ) -> ModelResponse[Any]:
+        self.calls += 1
+        if self.calls >= self.max_model_calls:
+            request = request.override(tools=[])
+        return await self.llm.direct_call(lambda: handler(request), _usage, purpose=PURPOSE)
+
+
 async def run_b1(
     paper: ParsedPaper,
-    model: BaseChatModel,
+    llm: StructuredLLM,
     tools: Sequence[BaseTool],
     *,
     run_id: str,
-    model_name: str,
     usage: UsageLog | None = None,
     venue: VenueProfile | None = None,
     repository: RepositoryRef | None = None,
@@ -55,21 +87,21 @@ async def run_b1(
     # Each middleware is generic over its own state type; the list is typed loosely so
     # mypy accepts the mix.
     limits: list[AgentMiddleware[Any, Any]] = [
+        _Accounted(llm, max_model_calls),
         ModelCallLimitMiddleware(run_limit=max_model_calls, exit_behavior="end"),
         ToolCallLimitMiddleware(run_limit=max_tool_calls, exit_behavior="continue"),
     ]
     agent = create_agent(
-        model,
+        llm.model,
         tools=list(tools),
         system_prompt=SYSTEM_PROMPT,
         response_format=ToolStrategy(ReportedErrors),
         middleware=limits,
     )
     scope = Scope.for_paper(run_id, paper, usage)
-    config = RunnableConfig(
-        callbacks=[UsageCallback(scope, model_name)],
-        recursion_limit=4 * max_model_calls + 10,
-    )
+    # A model turn takes up to five graph steps: the two limits' hooks, the model and the
+    # tools.
+    config = RunnableConfig(recursion_limit=6 * max_model_calls + 10)
     message = HumanMessage(render_paper(paper, venue=venue, repository=repository))
     with enter_scope(scope):
         state = await agent.ainvoke({"messages": [message]}, config)
