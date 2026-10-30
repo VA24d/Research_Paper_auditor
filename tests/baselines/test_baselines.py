@@ -11,7 +11,7 @@ from auditor.baselines.common import (
     render_paper,
     to_predictions,
 )
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.llm import CallLimitReachedError, Spend, StructuredLLM
 from auditor.infra.tools import tracked_tool
 from auditor.infra.usage import UsageLog
 from auditor.schemas import (
@@ -168,7 +168,7 @@ async def test_b1_retries_a_reply_without_an_errors_list() -> None:
         replies=[tool_reply(ReportedErrors, {}), tool_reply(ReportedErrors, {"errors": [error()]})]
     )
     result = await run_b1(
-        example_paper(), model, [lookup_reference], run_id="r1", model_name="test:scripted"
+        example_paper(), StructuredLLM(model, name="test:scripted"), [lookup_reference], run_id="r1"
     )
     assert [p.error_class for p in result.predictions] == [ErrorClass.CLAIM_NUMBER_MISMATCH]
     assert len(model.received) == 2
@@ -214,10 +214,9 @@ async def test_b1_uses_tools_then_answers() -> None:
     usage = UsageLog()
     result = await run_b1(
         example_paper(),
-        model,
+        StructuredLLM(model, name="test:scripted"),
         [lookup_reference],
         run_id="r1",
-        model_name="test:scripted",
         usage=usage,
     )
     assert [p.system for p in result.predictions] == [SystemName.B1]
@@ -238,13 +237,38 @@ async def test_b1_stops_at_its_model_call_limit() -> None:
     with pytest.raises(IncompleteAnswerError, match="without a final answer"):
         await run_b1(
             example_paper(),
-            model,
+            StructuredLLM(model, name="test:scripted"),
             [lookup_reference],
             run_id="r1",
-            model_name="test:scripted",
             max_model_calls=2,
         )
     assert len(model.received) == 2
+
+
+async def test_b1_answers_on_its_last_model_call() -> None:
+    # Twenty turns used to pass the graph's step limit before the call limit was reached.
+    replies = [tool_reply("lookup_reference", {"title": f"t{i}"}) for i in range(19)]
+    model = ScriptedChatModel(replies=[*replies, tool_reply(ReportedErrors, {"errors": []})])
+    result = await run_b1(
+        example_paper(), StructuredLLM(model, name="test:scripted"), [lookup_reference], run_id="r1"
+    )
+    assert result.predictions == []
+    assert len(model.received) == 20
+    assert [t.name for t in model.bound_tools] == ["ReportedErrors"]
+
+
+async def test_b1_calls_count_against_the_spend_limit() -> None:
+    model = ScriptedChatModel(
+        replies=[
+            tool_reply("lookup_reference", {"title": "SQuAD"}, input_tokens=1_000_000),
+            tool_reply(ReportedErrors, {"errors": []}, input_tokens=1_000_000),
+        ]
+    )
+    spend = Spend(limit_usd=0.5, prices={"scripted": (1.0, 0.0)})
+    llm = StructuredLLM(model, name="test:scripted", spend=spend)
+    with pytest.raises(CallLimitReachedError):
+        await run_b1(example_paper(), llm, [lookup_reference], run_id="r1")
+    assert spend.spent_usd == pytest.approx(1.0)
 
 
 def test_baselines_are_told_every_error_class() -> None:

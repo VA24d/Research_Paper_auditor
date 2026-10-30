@@ -38,8 +38,6 @@ from auditor.infra.llm import (
     LLMNotConfiguredError,
     StructuredLLM,
     closing_llm,
-    create_chat_model,
-    model_id,
 )
 from auditor.infra.log import configure_logging
 from auditor.infra.manifest import build_manifest, package_versions, redact, write_manifest
@@ -243,10 +241,9 @@ async def run_baseline(
         )
         result = await run_b1(
             paper,
-            create_chat_model(settings),
+            llm,
             load_tools(ctx),
             run_id=run_id,
-            model_name=model_id(settings),
             usage=usage,
             venue=venue,
             repository=repository,
