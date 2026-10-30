@@ -7,13 +7,16 @@ can report a clear "not found" instead of guessing.
 """
 
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from auditor.infra.http import HttpClient
 from auditor.retrieval.clients import (
     Work,
     arxiv_by_id,
+    arxiv_id_from_doi,
     arxiv_search,
+    ascii_fold,
     crossref_by_doi,
     crossref_search,
     normalize_doi,
@@ -22,6 +25,7 @@ from auditor.retrieval.clients import (
     s2_by_identifier,
     s2_search,
 )
+from auditor.retrieval.resolve import titles_match
 
 _DOI = re.compile(r"10\.\d{4,9}/\S+", re.IGNORECASE)
 _ARXIV = re.compile(r"arxiv\.org/(?:abs|pdf)/([0-9]{4}\.[0-9]{4,5})(v\d+)?", re.IGNORECASE)
@@ -72,6 +76,12 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
             work = await openalex_by_doi(http, doi)
         if work is not None:
             return LookupResult(work=work, queries=tuple(queries))
+        # arXiv assigns its DOIs through DataCite, so Crossref and OpenAlex do not know
+        # them; such a DOI is real, and the paper is looked up on arXiv instead.
+        if arxiv_id is None:
+            arxiv_id = arxiv_id_from_doi(doi)
+            if arxiv_id is not None:
+                queries.append(f"arxiv id from doi:{doi}")
 
     if arxiv_id:
         queries.append(f"arxiv id:{arxiv_id}")
@@ -90,15 +100,36 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
             queries=tuple(queries),
         )
 
-    for name, found in (
-        ("openalex", await openalex_search(http, title)),
-        ("crossref", await crossref_search(http, title)),
-        ("arxiv", await arxiv_search(http, title)),
-        ("s2", await s2_search(http, title)),
-    ):
-        queries.append(f"{name} title search ({len(found)} hits)")
-        if found:
-            return LookupResult(work=found[0], queries=tuple(queries))
+    # Queries go out ASCII-folded: bibliographies hold accents and mojibake the search
+    # APIs do not match. A shortened retry covers long titles with subtitles.
+    async def search_all(query: str) -> LookupResult | None:
+        searches: list[tuple[str, Callable[[], Awaitable[list[Work]]]]] = [
+            ("openalex", lambda: openalex_search(http, query)),
+            ("crossref", lambda: crossref_search(http, query)),
+            ("arxiv", lambda: arxiv_search(http, query)),
+            ("s2", lambda: s2_search(http, query)),
+        ]
+        for name, search in searches:
+            try:
+                found = await search()
+            except Exception as exc:  # one dead index must not sink the lookup
+                queries.append(f"{name} title search failed ({type(exc).__name__})")
+                continue
+            queries.append(f"{name} title search ({len(found)} hits)")
+            for work in found:
+                if work.title and titles_match(work.title, title):
+                    return LookupResult(work=work, queries=tuple(queries))
+        return None
+
+    result = await search_all(ascii_fold(title))
+    if result is not None:
+        return result
+    words = re.findall(r"[a-z0-9]+", ascii_fold(title).lower())
+    if len(words) > 8:
+        queries.append(f"shortened title retry ({' '.join(words[:8])})")
+        result = await search_all(" ".join(words[:8]))
+        if result is not None:
+            return result
 
     return LookupResult(
         work=None,

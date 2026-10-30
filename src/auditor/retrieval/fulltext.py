@@ -18,7 +18,7 @@ from pathlib import Path
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
 from auditor.parser.grobid import GrobidClient
-from auditor.parser.pipeline import ParseError, parse_pdf
+from auditor.parser.pipeline import parse_pdf
 from auditor.retrieval.clients import Work
 
 logger = logging.getLogger(__name__)
@@ -183,10 +183,24 @@ async def _html_full_text(http: HttpClient, work: Work) -> str | None:
     return text if len(text) > 2000 else None
 
 
+def grobid_for(settings: Settings, http: HttpClient) -> GrobidClient | None:
+    """A GROBID client for the run's settings, or None when none is configured.
+
+    Specialists and B1 tools build this per call: the client is stateless (an HTTP client
+    plus a base URL) and the run context carries no parser state, so nothing needs to be
+    threaded through the orchestrator."""
+    if not settings.grobid_url:
+        return None
+    return GrobidClient(http, settings.grobid_url)
+
+
 async def _pdf_full_text(
     http: HttpClient, work: Work, settings: Settings, grobid: GrobidClient | None
 ) -> str | None:
     if work.pdf_url is None or grobid is None:
+        return None
+    if not await grobid.is_alive():
+        logger.info("PDF of %s skipped: GROBID is not running", work.id)
         return None
     digest = hashlib.sha256(work.pdf_url.encode()).hexdigest()[:24]
     destination = settings.scratch_dir / "citation" / f"{digest}.pdf"
@@ -197,7 +211,7 @@ async def _pdf_full_text(
         return None
     try:
         paper = await parse_pdf(destination, grobid=grobid, cache_dir=settings.cache_dir)
-    except ParseError as exc:
+    except Exception as exc:
         logger.info("PDF of %s could not be parsed: %s", work.id, exc)
         return None
     return "\n".join(sentence.text for sentence in paper.sentences)

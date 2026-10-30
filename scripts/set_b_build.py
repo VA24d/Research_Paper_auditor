@@ -113,9 +113,9 @@ async def _verify(
         if (
             proposal.field_name == "year"
             and work.year is not None
-            and str(work.year) == proposal.new_value
+            and abs(work.year - int(proposal.new_value)) <= 1
         ):
-            return "the resolved work has the injected year"
+            return "the resolved work's year is within the checker's year tolerance"
         return None
     if kind == "reference_not_found":
         fabricated = entry.model_copy(

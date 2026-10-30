@@ -100,22 +100,53 @@ def extract_numbers(text: str) -> list[str]:
     return _NUMBER.findall(text)
 
 
+_NUMBER_WORDS = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "sixteen": 16,
+    "twenty": 20,
+    "fifty": 50,
+    "hundred": 100,
+    "thousand": 1000,
+}
+
+# A trailing letter or word that is not part of the value itself: "8x", "10-fold",
+# "50GB" — the numeric head is the value; the suffix says what it counts.
+_NUMBER_HEAD = re.compile(r"(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)")
+_NUMBER_WORD = re.compile(r"[a-z]+")
+
+
 def _parse_number(text: str) -> float | None:
     """Normalise a number string to a float, or None when it is not one.
 
     Accepts the forms a claim or a source writes: `3e-4`, `0.0003`, `12.5%`, `80`,
-    `1,000`. A percentage is divided by 100 so "12.5%" and "0.125" agree.
-    """
+    `1,000`, `8x`, `eight`. A percentage is divided by 100 so "12.5%" and "0.125" agree;
+    a trailing suffix ("8x") is dropped, because it says what is counted, not the value;
+    a number word ("eight") is its value."""
     text = text.strip().rstrip(".,;")
     is_percent = text.endswith("%")
-    text = text.rstrip("%").strip().replace(",", "").replace(" ", "")
+    text = text.rstrip("%").strip().replace(",", "").replace(" ", "").lower()
     if not text:
         return None
-    try:
-        value = float(text)
-    except ValueError:
-        return None
-    return value / 100.0 if is_percent else value
+    head = _NUMBER_HEAD.search(text)
+    if head is not None:
+        value = float(head.group(1))
+        return value / 100.0 if is_percent else value
+    word = _NUMBER_WORD.match(text)
+    if word is not None and word.group(0) in _NUMBER_WORDS:
+        return float(_NUMBER_WORDS[word.group(0)])
+    return None
 
 
 def numbers_agree(claimed: str, found: str) -> bool:
@@ -143,13 +174,32 @@ def _passages_block(passages: list[Passage]) -> str:
     )
 
 
+def _find_quote(text: str, quote: str) -> tuple[int, int] | None:
+    """Where `quote` occurs in `text`, or None when it does not.
+
+    An exact match is preferred. A whitespace-tolerant match re-anchors a quote the model
+    reformatted (line breaks became spaces), which is the same quote, not a new one."""
+    start = text.find(quote)
+    if start >= 0:
+        return start, start + len(quote)
+    pattern = re.compile(r"\s+".join(re.escape(word) for word in quote.split()))
+    match = pattern.search(text)
+    if match:
+        return match.start(), match.end()
+    return None
+
+
 def _evidence_for(
     task: AuditTask,
     resolution: Resolution,
     source: SourceText,
     quote: str | None = None,
 ) -> tuple[Evidence, ...]:
-    """The evidence a finding carries: how the work was resolved, and the quote."""
+    """The evidence a finding carries: how the work was resolved, and the quote.
+
+    The quote carries exact character offsets when it occurs in the retrieved text (also
+    when only its whitespace differs); a quote that appears nowhere is kept as evidence
+    without offsets, for the verifier and the human reviewer to judge."""
     work = resolution.work
     assert work is not None
     identifier = (
@@ -171,8 +221,8 @@ def _evidence_for(
     )
     if not quote or len(quote) < MIN_QUOTE_CHARS:
         return (lookup,)
-    char_start = source.text.find(quote)
-    char_end = char_start + len(quote) if char_start >= 0 else None
+    found = _find_quote(source.text, quote)
+    char_start, char_end = found if found is not None else (None, None)
     cited = Evidence(
         kind=EvidenceKind.QUOTE,
         source=SourceRef(
@@ -182,7 +232,7 @@ def _evidence_for(
             url=work.html_url or work.pdf_url,
         ),
         text=quote,
-        char_start=char_start if char_start >= 0 else None,
+        char_start=char_start,
         char_end=char_end,
     )
     return (lookup, cited)
@@ -214,6 +264,7 @@ def _number_check(
     resolution: Resolution,
     source: SourceText,
     check: NumberCheck,
+    number: int,
 ) -> CandidateFinding | None:
     """A `claim_number_mismatch` finding for one number check, or None.
 
@@ -223,6 +274,9 @@ def _number_check(
     code scans the text itself: a specific number the claim attributes to the work that
     the work's text nowhere states is a mismatch. Against an abstract-only source no
     scan is made (the number may be in the unread full text).
+
+    `number` is the finding's number within the task, so its id is unique even when a
+    task yields several findings (a contradiction plus number mismatches).
     """
     if check.found:
         if not numbers_agree(check.claimed, check.found):
@@ -231,6 +285,7 @@ def _number_check(
                 resolution,
                 source,
                 check,
+                number,
                 f"The claim gives '{check.claimed}' but the cited work's text gives "
                 f"'{check.found}'",
             )
@@ -243,6 +298,7 @@ def _number_check(
             resolution,
             source,
             check,
+            number,
             f"The claim gives '{check.claimed}' for the cited work, but the work's full "
             "text nowhere states a matching number",
         )
@@ -254,11 +310,12 @@ def _mismatch_finding(
     resolution: Resolution,
     source: SourceText,
     check: NumberCheck,
+    number: int,
     summary: str,
 ) -> CandidateFinding:
     return CandidateFinding.for_task(
         task,
-        0,
+        number,
         error_class=ErrorClass.CLAIM_NUMBER_MISMATCH,
         summary=summary,
         explanation=check.quote,
@@ -276,8 +333,9 @@ async def check_citation(
 
     `resolution` is what the citation resolved to (auditor.retrieval.resolve) and
     `source` the text retrieved for it (auditor.retrieval.fulltext). The model sees
-    the TOP_PASSAGES passages, and its answer is checked in code: a quote must be
-    verbatim in the source, and a number mismatch is confirmed by value.
+    the TOP_PASSAGES passages, and its answer is checked in code: the quote it returns
+    is anchored in the source when it appears there (exactly or up to whitespace), and
+    a number mismatch is confirmed by value.
     """
     if task.kind is not TaskKind.CITATION or not task.claim:
         raise ValueError(f"{task.task_id} is not a citation task with a claim")
@@ -323,6 +381,13 @@ async def check_citation(
         "contradict, or are insufficient to verify the claim made in a research paper.\n\n"
         f"CLAIM: {task.claim}\n\n"
         f"PASSAGES:\n{_passages_block(passages)}\n\n"
+        "Verdicts: supported - the passages back the claim's specific assertion; "
+        "contradicted - a passage states something INCOMPATIBLE with the claim's specific "
+        "assertion (a different direction of effect, a different value, a different cause); "
+        "insufficient - the passages do not settle the claim. Do NOT answer contradicted "
+        "merely because a passage describes different conditions, a different model, or "
+        "does not mention the claim's specifics: that is insufficient, not a contradiction. "
+        "A contradiction needs a passage whose statement cannot both hold with the claim.\n\n"
         "Answer with the verdict, an exact quote from ONE of the passages that justifies "
         "the verdict (empty if insufficient), a short reason, and for every number the "
         "claim attributes to the cited work: the value as the paper states it, the value "
@@ -356,7 +421,7 @@ async def check_citation(
 
     if resolution.work is not None:
         for entry in answer.numbers:
-            finding = _number_check(task, resolution, source, entry)
+            finding = _number_check(task, resolution, source, entry, len(findings))
             if finding is not None:
                 findings.append(finding)
 

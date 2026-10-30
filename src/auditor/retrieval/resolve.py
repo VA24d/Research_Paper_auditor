@@ -5,14 +5,18 @@ is next, and a title with authors is matched against the scholarly indexes. A re
 that finds nothing says why, so the caller can report it instead of guessing.
 """
 
+import logging
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from auditor.infra.http import HttpClient
 from auditor.retrieval.clients import (
     Work,
     arxiv_by_id,
+    arxiv_id_from_doi,
     arxiv_search,
+    ascii_fold,
     crossref_by_doi,
     crossref_search,
     is_arxiv_id,
@@ -23,6 +27,8 @@ from auditor.retrieval.clients import (
     s2_search,
 )
 from auditor.schemas import BibEntry
+
+logger = logging.getLogger(__name__)
 
 # Words ignored when comparing titles.
 _STOPWORDS = frozenset(
@@ -56,6 +62,11 @@ def title_tokens(title: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _STOPWORDS and len(w) > 1)
 
 
+def title_text(title: str) -> str:
+    """A lowercase alphanumeric form of a title, for containment checks."""
+    return " ".join(re.findall(r"[a-z0-9]+", title.lower()))
+
+
 def titles_match(a: str | None, b: str | None) -> bool:
     """Whether two titles are the same work, ignoring case, punctuation and stopwords."""
     if not a or not b:
@@ -64,16 +75,29 @@ def titles_match(a: str | None, b: str | None) -> bool:
     if not tokens_a or not tokens_b:
         return False
     overlap = len(tokens_a & tokens_b) / max(len(tokens_a), len(tokens_b))
-    return overlap >= 0.7
+    if overlap >= 0.7:
+        return True
+    # An index sometimes keeps only the main title and drops the subtitle ("NeRF" for
+    # "NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis"): the
+    # longer title starting with the shorter one is the same work.
+    shorter, longer = sorted((title_text(a), title_text(b)), key=len)
+    return len(shorter) >= 4 and longer.startswith(shorter)
 
 
 def first_surname(author: str) -> str:
-    """The surname of one author name, as written in a bibliography or an API reply."""
+    """The surname of one author name, as written in a bibliography or an API reply.
+
+    Tolerates both name orders, a trailing initial ("Vaswani A") and a trailing
+    "et al." — none of them is the surname."""
     author = author.strip()
     if "," in author:
         return author.split(",", 1)[0].strip().lower()
-    parts = author.split()
-    return parts[-1].strip().lower() if parts else ""
+    parts = [p for p in author.split() if p]
+    while len(parts) > 1 and (
+        parts[-1].strip(".").lower() in {"et", "al", "others"} or len(parts[-1].strip(".")) <= 1
+    ):
+        parts.pop()
+    return parts[-1].strip(".").lower() if parts else ""
 
 
 # Venue spellings that name the same venue. An index usually gives the proceedings' full
@@ -210,6 +234,17 @@ def _venue_tokens(venue: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _VENUE_STOPWORDS and len(w) > 1)
 
 
+def _venue_word_list(venue: str) -> list[str]:
+    """The content words of a venue, in the order they appear (abbreviation matching)."""
+    words = re.findall(r"[a-z0-9]+", venue.lower())
+    return [w for w in words if w not in _VENUE_STOPWORDS and len(w) > 1]
+
+
+def _venue_raw_words(venue: str) -> list[str]:
+    """All the words of a venue, in order, stopwords kept (abbreviation anchoring)."""
+    return re.findall(r"[a-z0-9]+", venue.lower())
+
+
 def _venue_variants(venue: str) -> list[str]:
     """The normalised venue and a few folded forms an index or bibliography may use.
 
@@ -228,9 +263,30 @@ def _venue_variants(venue: str) -> list[str]:
     return [v for v in variants if v]
 
 
-# Venue strings an index gives for an arXiv preprint record; they say nothing about
-# where the work was published, so they never contradict an entry's venue.
-_ARXIV_PLACEHOLDER_VENUES = frozenset({"arxiv", "arxiv cornell university", "corr", "arxiv org"})
+# Venue strings an index gives that say nothing about where the work was published: an
+# arXiv preprint record, or a working-paper repository. Institutional repositories are
+# matched by pattern (they are named "<X> (<University>)" and are far too many to list).
+_NON_CONTRADICTING_VENUES = frozenset(
+    {
+        "arxiv",
+        "arxiv cornell university",
+        "corr",
+        "arxiv org",
+        "repec",
+        "repec research papers in economics",
+    }
+)
+
+_REPOSITORY_VENUE = re.compile(r"\([^()]*universit[a-zè]*[^()]*\)|\brepository\b", re.IGNORECASE)
+
+
+def _is_repository_venue(venue: str) -> bool:
+    """Whether the venue names an institutional repository's copy of a work.
+
+    OpenAlex names them after the repository ("UCL Discovery (University College London)",
+    "Digital Access to Scholarship at Harvard (DASH) (Harvard University)"), which says
+    nothing about where the work was published."""
+    return bool(_REPOSITORY_VENUE.search(venue))
 
 
 def venues_match(a: str | None, b: str | None) -> bool:
@@ -238,17 +294,21 @@ def venues_match(a: str | None, b: str | None) -> bool:
 
     Exact after normalisation and folding (a leading year, a trailing short name in
     brackets, a leading "proceedings of the" are dropped), membership in a shared alias
-    group (an index gives the proceedings' full name, a bibliography the short one), or
-    token containment (each side keeps at least three content words, so "empirical
-    methods natural language processing" matches "conference on empirical methods in
-    natural language processing" without matching a different conference). An arXiv
-    placeholder venue says nothing and never contradicts.
+    group (an index gives the proceedings' full name, a bibliography the short one),
+    ISO-4-style abbreviation or acronym ("Mach. Learn." for "Machine Learning", "JMLR"
+    for "Journal of Machine Learning Research"), or token containment (each side keeps at
+    least three content words, so "empirical methods natural language processing" matches
+    "conference on empirical methods in natural language processing" without matching a
+    different conference). A preprint or repository placeholder venue says nothing and
+    never contradicts.
     """
     if not a or not b:
         return False
+    if _is_repository_venue(a) or _is_repository_venue(b):
+        return True
     variants_a, variants_b = _venue_variants(a), _venue_variants(b)
     for variants in (variants_a, variants_b):
-        if any(variant in _ARXIV_PLACEHOLDER_VENUES for variant in variants):
+        if any(variant in _NON_CONTRADICTING_VENUES for variant in variants):
             return True
     if variants_a and variants_b and set(variants_a) & set(variants_b):
         return True
@@ -264,10 +324,44 @@ def venues_match(a: str | None, b: str | None) -> bool:
     }
     if groups_a & groups_b:
         return True
-    tokens_a, tokens_b = _venue_tokens(variants_a[0]), _venue_tokens(variants_b[0])
+    if any(
+        _venue_abbreviates(
+            _venue_raw_words(x), _venue_raw_words(y), _venue_word_list(x), _venue_word_list(y)
+        )
+        or _venue_abbreviates(
+            _venue_raw_words(y), _venue_raw_words(x), _venue_word_list(y), _venue_word_list(x)
+        )
+        for x in variants_a
+        for y in variants_b
+    ):
+        return True
+    tokens_a, tokens_b = _venue_word_list(variants_a[0]), _venue_word_list(variants_b[0])
     if len(tokens_a) < 3 or len(tokens_b) < 3:
         return False
     return tokens_a <= tokens_b or tokens_b <= tokens_a
+
+
+def _venue_abbreviates(
+    short_raw: list[str], long_raw: list[str], short_content: list[str], long_content: list[str]
+) -> bool:
+    """Whether `short_raw` is an abbreviation of `long_raw`: ISO-4 token prefixes
+    ("trans mach learn res" for "transactions on machine learning research"), or a single
+    acronym matching the content initials ("jmlr" for "journal machine learning
+    research"). The prefix mapping runs on the raw words, so a stopword the long side
+    dropped ("transactions") still anchors its abbreviation ("trans")."""
+    if not short_raw or not long_raw:
+        return False
+    if len(short_content) == 1:
+        return "".join(token[0] for token in long_content) == short_content[0]
+    index = 0
+    for token in short_raw:
+        stem = token.rstrip(".")
+        while index < len(long_raw) and not long_raw[index].startswith(stem):
+            index += 1
+        if index == len(long_raw):
+            return False
+        index += 1
+    return True
 
 
 @dataclass(frozen=True)
@@ -291,7 +385,16 @@ def _entry_matches(entry: BibEntry, work: Work) -> bool:
     """Whether `work` is plausibly the work `entry` cites."""
     if work.title and entry.title and not titles_match(entry.title, work.title):
         return False
-    if entry.year and work.year and abs(entry.year - work.year) > 1:
+    # One year of drift is normal. A bigger gap is still the same work when the title is
+    # exactly the entry's (a bibliography with a wrong year, which the metadata check
+    # then reports); only an uncertain title match is rejected on the year.
+    year_off = (
+        entry.year is not None
+        and work.year is not None
+        and abs(entry.year - work.year) > 1
+        and title_text(entry.title or "") != title_text(work.title or "")
+    )
+    if year_off:
         return False
     if entry.authors and work.authors:
         entry_surname = first_surname(entry.authors[0])
@@ -301,10 +404,40 @@ def _entry_matches(entry: BibEntry, work: Work) -> bool:
     return True
 
 
+async def _search_candidates(
+    http: HttpClient, query: str, entry: BibEntry, queries: list[tuple[str, str]]
+) -> list[Work]:
+    """The title-search candidates of `query` that plausibly match `entry`.
+
+    The four indexes are tried in order and the loop stops at the first that yields a
+    match; one dead or rate-limited index is skipped, not fatal."""
+    candidates: list[Work] = []
+    searches: list[tuple[str, Callable[[], Awaitable[list[Work]]]]] = [
+        ("openalex", lambda: openalex_search(http, query)),
+        ("crossref", lambda: crossref_search(http, query, entry.authors)),
+        ("arxiv", lambda: arxiv_search(http, query)),
+        ("s2", lambda: s2_search(http, query)),
+    ]
+    for name, search in searches:
+        try:
+            found = await search()
+        except Exception as exc:  # one dead index must not sink the lookup
+            logger.info("%s title search of %r failed: %s", name, query[:40], exc)
+            queries.append((f"{name} title search", f"failed ({type(exc).__name__})"))
+            continue
+        queries.append((f"{name} title search", f"{len(found)} hits"))
+        candidates.extend(w for w in found if _entry_matches(entry, w))
+        if candidates:
+            break
+    return candidates
+
+
 async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
     """Resolve one bibliography entry to a work, trying identifiers before search."""
     queries: list[tuple[str, str]] = []
     doi_unresolved = False
+
+    arxiv_id = entry.arxiv_id if entry.arxiv_id and is_arxiv_id(entry.arxiv_id) else None
 
     if entry.doi and is_doi(entry.doi):
         doi = normalize_doi(entry.doi)
@@ -315,11 +448,19 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
             queries.append((f"openalex doi:{doi}", "found" if work else "not found"))
         if work is not None:
             return Resolution(work=work, queries=tuple(queries))
-        doi_unresolved = True
+        # arXiv assigns its DOIs through DataCite, so Crossref and OpenAlex do not know
+        # them; such a DOI is real, and the paper is looked up on arXiv instead of being
+        # called fabricated.
+        if arxiv_id is None:
+            arxiv_id = arxiv_id_from_doi(doi)
+            if arxiv_id is not None:
+                queries.append((f"arxiv id from doi:{doi}", arxiv_id))
+        if arxiv_id is None:
+            doi_unresolved = True
 
-    if entry.arxiv_id and is_arxiv_id(entry.arxiv_id):
-        work = await arxiv_by_id(http, entry.arxiv_id)
-        queries.append((f"arxiv id:{entry.arxiv_id}", "found" if work else "not found"))
+    if arxiv_id:
+        work = await arxiv_by_id(http, arxiv_id)
+        queries.append((f"arxiv id:{arxiv_id}", "found" if work else "not found"))
         if work is not None:
             return Resolution(work=work, queries=tuple(queries))
 
@@ -330,17 +471,18 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
             queries=tuple(queries),
         )
 
-    candidates: list[Work] = []
-    for name, found in (
-        ("openalex", await openalex_search(http, title)),
-        ("crossref", await crossref_search(http, title, entry.authors)),
-        ("arxiv", await arxiv_search(http, title)),
-        ("s2", await s2_search(http, title)),
-    ):
-        queries.append((f"{name} title search", f"{len(found)} hits"))
-        candidates.extend(w for w in found if _entry_matches(entry, w))
-        if candidates:
-            break
+    # Queries go out ASCII-folded: bibliographies hold accents and mojibake the search
+    # APIs do not match ("DemoirΘing" finds nothing; "Demoiring" does).
+    query = ascii_fold(title)
+    candidates = await _search_candidates(http, query, entry, queries)
+    if not candidates:
+        # A long subtitle can push the real title out of the query's useful window;
+        # retry once with the first words only.
+        words = re.findall(r"[a-z0-9]+", query.lower())
+        if len(words) > 8:
+            retry = " ".join(words[:8])
+            queries.append(("shortened title retry", retry))
+            candidates = await _search_candidates(http, retry, entry, queries)
 
     if candidates:
         # A search can return the arXiv preprint record of the proceedings paper the

@@ -7,6 +7,7 @@ failed lookup means for the task at hand.
 """
 
 import re
+import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
@@ -16,6 +17,10 @@ ARXIV_API = "https://export.arxiv.org/api/query"
 OPENALEX_API = "https://api.openalex.org/works"
 CROSSREF_API = "https://api.crossref.org/works"
 S2_API = "https://api.semanticscholar.org/graph/v1/paper"
+
+# The DOI prefix arXiv assigns (DataCite, not Crossref/OpenAlex), e.g.
+# 10.48550/arXiv.2310.09173 or .../arXiv.2310.09173v2.
+_ARXIV_DOI = re.compile(r"^10\.48550/arxiv\.(\d{4}\.\d{4,5})(v\d+)?$", re.IGNORECASE)
 
 _ARXIV_NS = "{http://www.w3.org/2005/Atom}"
 _ARXIV_ID = re.compile(r"^\d{4}\.\d{4,5}(v\d+)?$")
@@ -54,6 +59,42 @@ def is_doi(text: str) -> bool:
 
 def is_arxiv_id(text: str) -> bool:
     return _ARXIV_ID.match(text.strip()) is not None
+
+
+def arxiv_id_from_doi(doi: str) -> str | None:
+    """The arXiv id behind an arXiv-assigned DOI (10.48550/arXiv.<id>), or None.
+
+    These DOIs live in DataCite, so Crossref and OpenAlex do not know them; a resolver
+    that only tries Crossref would call a real reference fabricated."""
+    return match.group(1) if (match := _ARXIV_DOI.match(normalize_doi(doi))) else None
+
+
+# Typography an index query should not carry: some bibliographies hold mojibake or
+# accented letters that the search APIs do not match (a title with a Greek capital theta
+# where an accented e belongs finds nothing).
+_TYPOGRAPHY = str.maketrans(
+    {
+        "\u2019": "'",  # right single quotation mark
+        "\u2018": "'",  # left single quotation mark
+        "\u201c": '"',  # left double quotation mark
+        "\u201d": '"',  # right double quotation mark
+        "\u2013": "-",  # en dash
+        "\u2014": "-",  # em dash
+        "\u2026": "...",  # horizontal ellipsis
+    }
+)
+
+
+def ascii_fold(text: str) -> str:
+    """A search-query form of `text`: accents decomposed, typography and any letters an
+    English query would not carry dropped."""
+    folded = unicodedata.normalize("NFKD", text.translate(_TYPOGRAPHY))
+    return "".join(c for c in folded if ord(c) < 128)
+
+
+def short_title(text: str, *, words: int = 8) -> str:
+    """The first `words` alphanumeric words of a folded title, for a retry query."""
+    return " ".join(re.findall(r"[A-Za-z0-9]+", ascii_fold(text))[:words])
 
 
 def _clean(text: str | None) -> str | None:

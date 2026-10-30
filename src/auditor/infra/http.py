@@ -42,6 +42,9 @@ DEFAULT_MIN_INTERVALS = {
     "api.crossref.org": 0.2,
     "api.openalex.org": 0.1,
     "api.semanticscholar.org": 1.0,
+    # Full-text hosts the citation agent fetches (auditor.retrieval.fulltext).
+    "doi.org": 0.2,
+    "aclanthology.org": 0.5,
     # Repository and data hosts (auditor.infra.snapshots). Anonymous GitHub is a free
     # academic service with no published limits, so it gets the widest gap.
     "anonymous.4open.science": 0.25,

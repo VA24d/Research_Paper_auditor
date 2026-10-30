@@ -519,3 +519,31 @@ def test_allowlist_entries_starting_with_a_dot_cover_subdomains(
 ) -> None:
     client = make_client(lambda request: httpx.Response(200), tmp_path, fake_time)
     assert client.is_allowed(host) is allowed
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "doi.org",
+        "aclanthology.org",
+        "openaccess.thecvf.com",
+        "proceedings.mlr.press",
+        "papers.nips.cc",
+        "proceedings.neurips.cc",
+        "jmlr.org",
+        "link.springer.com",
+        "onlinelibrary.wiley.com",
+        "mdpi.com",
+        "ouci.dntb.gov.ua",
+        "hal.science",
+        "inria.hal.science",
+    ],
+)
+def test_the_scholarly_full_text_hosts_are_allowed(
+    tmp_path: Path, fake_time: FakeTime, host: str
+) -> None:
+    """The citation agent fetches the full text of a cited work from the publisher and
+    repository hosts the indexes name in pdf_url and landing_page_url (doi.org is a
+    redirector whose every target must also be allowlisted)."""
+    client = make_client(lambda request: httpx.Response(200), tmp_path, fake_time)
+    assert client.is_allowed(host)

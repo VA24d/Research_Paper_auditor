@@ -344,6 +344,27 @@ def test_propose_only_uses_pairs_with_a_source(tmp_path: Path) -> None:
     )
 
 
+def test_metadata_year_proposals_are_beyond_the_year_tolerance() -> None:
+    """One year of drift is normal in real bibliographies; the injected year must be at
+    least two years off, or the tolerant checker would never flag it."""
+    import random
+
+    from auditor.agents.citation.set_b import InjectionKind, propose
+
+    p = paper()
+    years = {entry.id: entry.year for entry in p.bibliography if entry.year}
+    proposals, _ = propose(p, {}, pairs=100, controls=0, rng=random.Random(1))
+    year_props = [
+        proposal
+        for proposal in proposals
+        if proposal.kind is InjectionKind.REFERENCE_METADATA_MISMATCH
+        and proposal.field_name == "year"
+    ]
+    assert year_props  # the paper's bibliography has years to propose on
+    for proposal in year_props:
+        assert abs(int(proposal.new_value) - years[proposal.bib_id]) >= 2
+
+
 def test_score_citation_module_counts_matches_one_to_one() -> None:
     p = paper()
     anchor = span(p, "s2", "92.1%")

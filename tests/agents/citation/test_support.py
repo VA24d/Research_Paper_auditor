@@ -90,6 +90,12 @@ def test_numbers_agree_by_value_with_tolerance() -> None:
     assert numbers_agree("92.1", "92.15")  # within 1% relative
     assert not numbers_agree("92.1", "88.4")
     assert not numbers_agree("92.1", "about ninety")
+    # A number word is its value, and a suffix says what is counted, not the value.
+    assert numbers_agree("eight", "8")
+    assert numbers_agree("8x", "eight")
+    assert numbers_agree("10-fold", "10")
+    assert not numbers_agree("eight", "9")
+    assert not numbers_agree("eight", "eighty")
 
 
 async def test_supported_claim_is_checked_without_findings(tmp_path: Path) -> None:
@@ -263,6 +269,43 @@ async def test_the_model_saying_agrees_does_not_stop_a_real_mismatch(tmp_path: P
     )
     (finding,) = result.findings
     assert finding.error_class is ErrorClass.CLAIM_NUMBER_MISMATCH
+
+
+async def test_a_contradiction_and_a_number_mismatch_both_reported(tmp_path: Path) -> None:
+    """A task can yield a claim_not_supported finding AND number mismatches; their
+    finding ids must stay unique, or the TaskResult rejects them (live-run failure)."""
+    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=SUPPORT_QUOTE, agrees=False)]
+    task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(verdict="contradicted", numbers=numbers))),
+        Resolution(work=WORK),
+        source(),
+    )
+    assert len(result.findings) == 2
+    ids = [finding.finding_id for finding in result.findings]
+    assert len(ids) == len(set(ids))
+    assert {finding.error_class for finding in result.findings} == {
+        ErrorClass.CLAIM_NOT_SUPPORTED,
+        ErrorClass.CLAIM_NUMBER_MISMATCH,
+    }
+
+
+async def test_two_number_mismatches_get_unique_finding_ids(tmp_path: Path) -> None:
+    numbers = [
+        NumberCheck(claimed="28.4", found="26.4", quote=SUPPORT_QUOTE, agrees=False),
+        NumberCheck(claimed="12,500", found="12,000", quote=SUPPORT_QUOTE, agrees=False),
+    ]
+    task = citation_task("The Transformer reaches 28.4 BLEU on 12,500 examples. [1]")
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        source(),
+    )
+    assert len(result.findings) == 2
+    ids = [finding.finding_id for finding in result.findings]
+    assert len(ids) == len(set(ids))
 
 
 async def test_numbers_that_agree_by_value_make_no_finding(tmp_path: Path) -> None:

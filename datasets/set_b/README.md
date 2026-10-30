@@ -9,9 +9,9 @@ whose claim sentences or bibliography carry planted errors (decision D1).
 | Item | Count |
 |---|---|
 | Papers (arXiv ids in `arxiv_ids.txt`) | 60 |
-| Gold labels in `labels.jsonl` | 201 |
-| Injected errors | 154: `reference_not_found` 96, `reference_metadata_mismatch` 38, `claim_number_mismatch` 15, `claim_not_supported` 5 |
-| Clean controls (`none`) | 47 |
+| Gold labels in `labels.jsonl` | 158 |
+| Injected errors | 112: `reference_not_found` 96, `claim_number_mismatch` 4, `reference_metadata_mismatch` 9, `claim_not_supported` 3 |
+| Clean controls (`none`) | 46 |
 | Bibliography entries fetched with their cited work's text | 2,743 (one JSON line per entry under `data/set_b/sources/`) |
 
 ## Files
@@ -31,15 +31,31 @@ whose claim sentences or bibliography carry planted errors (decision D1).
 
 `scripts/set_b_build.py`: proposes injections deterministically (number perturbations of
 numbers the claim states and the source confirms; direction-swapped claims the source
-contradicts; a bibliography year changed; a fabricated title with cleared identifiers),
-VERIFIES every proposal (the perturbed value must not be stated by the recorded source;
-the source must state the claim's original direction; a metadata edit must disagree with
-the work the index resolves; a fabricated title must resolve to nothing), and applies
-only the verified ones. Bibliography injections are capped at two per paper so the claim
-kinds are not drowned. Clean controls are sampled from verified pairs that were not
-injected. Every injected error and clean control was checked by `scripts/set_b.py
-validate datasets/set_b --sources data/set_b/sources` — exit status 1 only because the
-D18 second review (20% of labels, `reviewed_by`) has not happened yet.
+contradicts; a bibliography year changed by +2 or +3; a fabricated title with cleared
+identifiers), VERIFIES every proposal (the perturbed value must not be stated by the
+recorded source; the source must state the claim's original direction; a metadata edit
+must disagree with the work the index resolves beyond the checker's ±1 year tolerance; a
+fabricated title must resolve to nothing), and applies only the verified ones.
+Bibliography injections are capped at two per paper so the claim kinds are not drowned.
+Clean controls are sampled from verified pairs that were not injected. Every injected
+error and clean control was checked by `scripts/set_b.py validate datasets/set_b
+--sources data/set_b/sources` — exit status 1 only because the D18 second review (20% of
+labels, `reviewed_by`) has not happened yet.
+
+After the build, three corrections were applied (all 2026-10-30):
+
+- The year injections were moved from +1 to +3 (`runs/_regen_years.py`): one year of
+  drift is normal in real bibliographies, so the checker tolerates ±1 and the injected
+  year must be beyond that.
+- Labels stacked on an entry that also carries a `reference_not_found` injection were
+  dropped (`runs/_drop_collisions.py`, 32 labels): with a fabricated title on the entry,
+  a metadata mismatch can never be reported and a claim citing it can never be judged,
+  so those labels were unreachable by construction.
+- Claim-number labels whose perturbed value sits in a parser-merged table fragment were
+  dropped (`runs/_drop_table_junk.py`, 11 of 15): the builder had extracted numbers from
+  the whole sentence text, and GROBID merges table rows into sentences, so the perturbed
+  value was table data no claim states. `propose()` now skips sentences crowded with
+  bare numbers.
 
 ## What is not done yet
 

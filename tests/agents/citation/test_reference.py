@@ -136,3 +136,115 @@ async def test_an_entry_missing_from_the_paper_is_unverifiable(tmp_path: Path) -
     assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.reason is not None
     assert "not in the paper" in result.reason
+
+
+async def test_an_author_the_work_does_not_have_is_a_mismatch(tmp_path: Path) -> None:
+    """A placeholder or fabricated author the index does not know is reported."""
+    work = dataclasses.replace(MATCHING_WORK, authors=("Jian Zhang", "Robin Li"))
+    result = await check_reference(
+        reference_task(),
+        offline_context(tmp_path, paper=example_paper()),
+        Resolution(work=work, queries=(("q", "found"),)),
+    )
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.REFERENCE_METADATA_MISMATCH
+    assert "author" in finding.summary
+    assert "rajpurkar" in finding.summary
+
+
+async def test_a_silently_truncated_author_list_is_a_mismatch(tmp_path: Path) -> None:
+    """An entry listing 2 of the work's 5 authors without 'et al.' is reported."""
+    work = dataclasses.replace(
+        MATCHING_WORK,
+        authors=(
+            "Pranav Rajpurkar",
+            "Jian Zhang",
+            "Robin Li",
+            "Percy Liang",
+            "Christopher Manning",
+        ),
+    )
+    result = await check_reference(
+        reference_task(),
+        offline_context(tmp_path, paper=example_paper()),
+        Resolution(work=work, queries=(("q", "found"),)),
+    )
+    (finding,) = result.findings
+    assert "2 of the work's 5 authors" in finding.summary
+
+
+async def test_a_truncation_mark_is_not_a_mismatch(tmp_path: Path) -> None:
+    work = dataclasses.replace(
+        MATCHING_WORK,
+        authors=(
+            "Pranav Rajpurkar",
+            "Jian Zhang",
+            "Robin Li",
+            "Percy Liang",
+            "Christopher Manning",
+        ),
+    )
+    paper = example_paper().model_copy(
+        update={
+            "bibliography": tuple(
+                b.model_copy(update={"authors": ("Pranav Rajpurkar et al.",)})
+                if b.id == "b1"
+                else b
+                for b in example_paper().bibliography
+            )
+        }
+    )
+    task = AuditTask.create(
+        paper_id=paper.paper_id,
+        variant=paper.variant,
+        kind=TaskKind.REFERENCE,
+        anchor=BibliographyAnchor(bib_id="b1"),
+        target=BibTarget(bib_id="b1"),
+    )
+    result = await check_reference(
+        task,
+        offline_context(tmp_path, paper=paper),
+        Resolution(work=work, queries=(("q", "found"),)),
+    )
+    assert result.findings == ()
+
+
+async def test_swapped_authors_are_a_mismatch(tmp_path: Path) -> None:
+    work = dataclasses.replace(MATCHING_WORK, authors=("Jian Zhang", "Pranav Rajpurkar"))
+    result = await check_reference(
+        reference_task(),
+        offline_context(tmp_path, paper=example_paper()),
+        Resolution(work=work, queries=(("q", "found"),)),
+    )
+    (finding,) = result.findings
+    assert "first author" in finding.summary
+
+
+async def test_a_near_miss_title_is_a_mismatch(tmp_path: Path) -> None:
+    """A one-letter title corruption still resolves (fuzzy match) and is reported."""
+    paper = example_paper().model_copy(
+        update={
+            "bibliography": tuple(
+                b.model_copy(
+                    update={"title": "SQuAD: 100,000+ Questions for Machine Comprehension of Tex"}
+                )
+                if b.id == "b1"
+                else b
+                for b in example_paper().bibliography
+            )
+        }
+    )
+    task = AuditTask.create(
+        paper_id=paper.paper_id,
+        variant=paper.variant,
+        kind=TaskKind.REFERENCE,
+        anchor=BibliographyAnchor(bib_id="b1"),
+        target=BibTarget(bib_id="b1"),
+    )
+    result = await check_reference(
+        task,
+        offline_context(tmp_path, paper=paper),
+        Resolution(work=MATCHING_WORK, queries=(("q", "found"),)),
+    )
+    (finding,) = result.findings
+    assert "near-miss" in finding.summary

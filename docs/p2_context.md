@@ -684,4 +684,246 @@ all dataset execution + annotation, none of it code:
 
 Progress: ALL items done (see "Session 2 final state" above for the full detail).
 Commits: "citation: retrieval package, agent check, B1 tools and offline unit tests",
+
+## Session 6 (2026-10-29) — FIX session after the audit (in progress)
+
+Anurag's brief: fix the audit findings as far as possible; only ask about MAJOR decisions;
+set B may be used WITHOUT the D18 second review (he will do it later); the set B numbers
+are horrible — find out what is wrong and fix it; same for HALLMARK accuracy (0.726,
+FPR 0.557 on valid). Testing on minimal sets, LLM-call budget left to my judgement.
+No merge, no PR. Keep this file current.
+
+Plan (in order):
+1. [x] Analyse HALLMARK false positives: runs/hallmark/results.jsonl reasons for VALID
+   entries -> find the comparison bugs in resolve.py/reference.py.
+2. [ ] Fix the metadata comparisons (year/venue/title tolerance) + author handling; tests.
+3. [ ] Fix the eager title searches (lookup.py + resolve.py): sequential with early exit,
+   per-search exception capture; tests.
+4. [ ] Wire GROBID into the agent path (check(), tools.py, citation_eval fetch):
+   construct GrobidClient(ctx.http, ctx.settings.grobid_url) lazily; tests.
+5. [ ] Low cleanups: eval.py dead lines, reference.py re-fetch, set_b.py slice order,
+   support.py quote verbatim/normalised re-anchor + docstring.
+6. [ ] Re-run HALLMARK (HTTP cache makes it cheap, no LLM) + score; iterate thresholds.
+7. [ ] Small FULL-system run on 2-4 subset entries (claim-injected papers), score with
+   --before-verifier (mock verifier sends everything to human review -> nothing counts as
+   positive otherwise), diagnose agent issues, fix.
+8. [ ] Full offline suite + ruff + mypy, `citation:` commits, push.
+
+Findings/notes for this session:
+- HALLMARK false-positive analysis (fresh baseline re-run first — the OLD results file
+  predated merged PRs and reproduced stale numbers): fresh pre-fix baseline (old resolver,
+  reason fix only): accuracy 0.750, P 0.811 / R 0.786 / F1 0.798, FPR 0.313 (96/307).
+  FP buckets: 46 year delta -1, 25 resolution failures, 13 arXiv DOIs, 8 venue, 2 title.
+- FIXES IMPLEMENTED (all with tests, full suite 1212 passed, ruff clean):
+  1. Sequential title searches with early exit + per-index exception capture
+     (resolve.py _search_candidates + lookup.py search_all); one dead/rate-limited index
+     no longer sinks the lookup and unused indexes are not queried.
+  2. arXiv-DOI routing: 10.48550/arXiv.<id> DOIs live in DataCite -> resolve via arXiv
+     instead of being called fabricated (clients.arxiv_id_from_doi; resolve_entry +
+     lookup_citation).
+  3. ASCII-folded search queries + shortened retry (>8 words) for mojibake/long titles
+     (clients.ascii_fold / short_title; "DemoirΘing" -> "Demoiring").
+  4. titles_match: prefix rule (index keeps only the main title, "NeRF" for the full
+     title). reference.py: near-miss title rule (tokens differ, neither side a subset ->
+     flag) — catches "…You Nedd"-style corruptions that resolve fuzzily.
+  5. AUTHOR CHECKS (new): author names the work doesn't have (placeholders/fabricated),
+     silently truncated lists (fewer than the work's, no "et al." marker, work >= 3
+     authors), wrong first author (swapped). first_surname hardened (et al., trailing
+     initial, comma order).
+  6. venues_match: institutional-repository placeholder venues (UCL Discovery,
+     eScholarship, Zenodo, SSRN, ...) never contradict, like arXiv records.
+  7. GROBID wired into the agent path: fulltext.grobid_for(settings, http); check(),
+     both B1 tools and citation_eval fetch pass it; _pdf_full_text checks is_alive first
+     (a dead GROBID is a fallback to abstract, not a crash — HttpRequestError from a dead
+     GROBID would previously have escaped as an unhandled exception).
+  8. check_entry keeps the first finding's summary as the result reason (results files
+     are now self-explanatory).
+  9. Low cleanups: eval.py dead containment lines, reference.py entry pass-through
+     (optional entry param, no re-fetch in the pipeline path), set_b.py slice-before-check
+     order, support.py quote re-anchoring (whitespace-tolerant _find_quote) + honest
+     docstring.
+- YEAR DECISION (Anurag chose option A): checker tolerates ±1 year (46/96 hallmark FPs
+  gone; correct for proceedings-vs-online-first drift). Set B: ALL 38 metadata injections
+  were year+1 -> regenerated to year+3 surgically (runs/_regen_years.py: papers' bib row
+  + raw edited via _replace_in_raw, label ids re-derived like inject_metadata, records
+  updated; 38/38 done). set_b.py propose() now injects year + rng.choice((2,3)) and the
+  builder's verify rejects injected years within ±1 of the resolved work's year.
+  `scripts/set_b.py validate` now exits 1 with EXACTLY the D18 second-review problem.
+  NOTE: the subset B1 runs from the audit session are stale for the metadata class.
+- HALLMARK re-run with all fixes in flight: runs/hallmark/results_fixed.jsonl
+  (~2.5 h at ~5 entries/min; S2's unauthenticated ~1 rps is the bottleneck; a
+  parent+child python pair per run is the venv launcher, NOT a race).
+- Full-system mini-run (step 7) PREPARED: runs/full_mini_dataset.jsonl = 2501.00692
+  injected + original (has both claim classes). First attempt hit 300s reference-task
+  timeouts from API throttling while the hallmark run hammers the same indexes — killed;
+  rerun AFTER hallmark finishes, scoring with --before-verifier (placeholder verifier
+  sends everything to human review; nothing counts positive otherwise).
+- SESSION 6 FINAL RESULTS (all committed, pushed through 180609f):
+  * HALLMARK (runs/hallmark/results_fixed.jsonl, 831/831, full fixes): accuracy 0.851,
+    flagging P 0.902 / R 0.857 / F1 0.879, FPR 0.160 (49/307). From 0.726 / 0.732-0.891-
+    0.804 / 0.557. Author types fixed: partial_author_list R 0.258->0.935,
+    placeholder_authors ->1.000, swapped_authors ->0.968; fabrications ->1.000;
+    near_miss_title 0.475->0.700. Remaining weak: nonexistent_venue R 0.378 and
+    preprint_as_published R 0.500 — the deliberate price of the repository/placeholder
+    venue tolerance (those FNs are indistinguishable from the FPs it removes at venue
+    level); arxiv_version_mismatch R 0.800 (needs a real version check — future work;
+    the old 'flags' for it were resolution failures counted as TPs).
+  * Set B full-system mini-run (00692 injected+original, --llm-cache, 2 done 0 failed):
+    AFTER the dataset cleanups: reference_not_found P 1.000 R 1.000 F1 1.000, macro-F1
+    1.000, FPR 0/14 controls (runs/full_mini_labels.jsonl). The earlier zero scores were
+    (a) a STALE subset-labels file still containing colliding metadata labels
+    (matches() does not compare classes -> RNF preds matched metadata labels first) and
+    (b) genuinely broken dataset labels, both fixed below.
+  * DATASET CORRECTIONS (all applied, validate exits 1 only for the D18 review):
+    1. year injections +1 -> +3 (38 records, runs/_regen_years.py);
+    2. collision labels dropped (32: metadata/claim labels on entries that also carry a
+       not_found injection — unreachable by construction; runs/_drop_collisions.py);
+    3. table-fragment claim_number labels dropped (11 of 15 — the builder had perturbed
+       numbers inside GROBID-merged table rows, e.g. 00692 s68 "10.0 20.2 PG19 2.50
+       6.75..."; runs/_drop_table_junk.py). Final: 158 labels (96 RNF, 9 metadata, 4
+       claim_number, 3 claim_not_supported, 46 controls), 112 records. README updated.
+    propose() now skips sentences crowded with bare numbers (>3) so a rebuild will not
+    reproduce the junk.
+  * AGENT FIXES for the mini-run's over-flagging: _author_problems filters parse junk
+    ('*', 'g', 'xlstm' style tokens stay only if alphabetic >=2 chars) and caps the
+    truncation rule at collaborations of <=10 authors; numbers_agree now maps number
+    words ('eight' <-> 8) and strips suffixes ('8x', '10-fold'); the support prompt
+    demands an INCOMPATIBLE statement for 'contradicted' (different conditions/models
+    are 'insufficient').
+  * Full suite 1216 passed / 1 skipped / 8 deselected; ruff clean; format clean; mypy 2
+    pre-existing Part-1 errors only.
+- Session 6 LEFT OVER: re-run the B1 subset (30 entries) on the cleaned labels if
+  current B1 numbers are wanted (~250 calls); the arxiv_version check; the D18 second
+  review (Anurag); full-dataset runs remain future work.
+- ALL CURRENT RESULTS are consolidated in **docs/p2-mid-results.md** (written at
+  Anurag's request, 2026-10-30): test suites, HALLMARK final numbers + per-type table,
+  set B dataset state (158 labels) + corrections, the full-system mini-run (macro-F1
+  1.000, RNF 1.000/1.000, FPR 0, cost 123 calls / 98k+42k tokens), Recall@5 1.000 (7/7),
+  B1 characterisation, known issues, reproduction commands. New sessions should read it
+  alongside this file and the audit report.
+- SESSION 6 ADDENDUM (Anurag's question about blocked full-text hosts): the allowlist is
+  `DEFAULT_ALLOWED_HOSTS` in src/auditor/config.py (Part 1's file), overridable per run
+  with AUDITOR_ALLOWED_HOSTS; entries starting with "." allow subdomains; EVERY redirect
+  hop is checked, so doi.org (a redirector) needs its targets allowlisted too. ADDED
+  (commit 9a57b53): doi.org, aclanthology.org, openaccess.thecvf.com,
+  proceedings.mlr.press, papers.nips.cc, proceedings.neurips.cc, jmlr.org,
+  link.springer.com, onlinelibrary.wiley.com, mdpi.com, ouci.dntb.gov.ua, hal.science +
+  .hal.science (subdomains); polite rate-limit entries for doi.org (0.2 s) and
+  aclanthology.org (0.5 s) in infra/http.py DEFAULT_MIN_INTERVALS; hosts without an
+  entry are NOT rate-limited by default. Test: test_the_scholarly_full_text_hosts_are_
+  allowed. Institutional repositories (mural.maynoothuniversity.ie style) are unbounded
+  and stay blocked -> those works keep the abstract fallback; add specific hosts to
+  AUDITOR_ALLOWED_HOSTS in .env when needed. FLAG TO BHASKAR: shared config file.
+  Full suite 1229 passed after the change.
+
+
+## Session 5 (2026-10-29) — AUDIT + EVALUATION session (completed)
+
+Anurag's instructions: audit the whole P2 implementation end to end, run everything
+(offline suite + network/llm/grobid marked tests + real GROBID + the real Vertex LLM),
+execute the P2.9 set B module runs (small sample first, then full with confirmation),
+write docs/p2_audit_report.md (separate from this file). NO new features; only small,
+clearly-correct defect fixes (ask otherwise). Branch stays `p2-citation-checker`, no PR,
+no merge to main. LLM is LIVE: provider `google_genai` (langchain-google-genai v4 ->
+google-genai SDK, Vertex AI + ADC), model gemini-2.5-flash, shared free-trial project
+lmaproject6767 — cost rules: <=100 model calls per run without asking; small sample
+(<=10) first; `--llm-cache` during development, UNCACHED for final reported numbers (D10);
+bounded retries (<=5) already in code, do not weaken; caps AUDITOR_LLM_MAX_CALLS /
+AUDITOR_LLM_MAX_COST_USD stay set; never touch gcloud billing/services/IAM; report
+403 BILLING_DISABLED / PERMISSION_DENIED to Anurag instead of fixing.
+
+Audit plan (in order):
+1. [x] Read the five docs; `git status` clean, branch up to date with origin (HEAD
+   d1019e0 = merge of PR #63, same as origin/main right now).
+2. [ ] Static audit of every P2 module (file:line findings + severity) in
+   docs/p2_audit_report.md.
+3. [ ] Full offline suite + ruff + mypy; network-, llm-, grobid-marked tests.
+4. [ ] End-to-end smoke test (docker GROBID + real LLM): one paper through
+   `auditor audit`, then a 3-5 paper `auditor batch --systems b1`; inspect traces.
+5. [ ] P2.9 eval runs: <=5-paper cached sample -> confirmation -> full set B runs
+   (full-text + abstract-only) -> score/compare/recall + re-score hallmark set A.
+6. [ ] Write docs/p2_audit_report.md, commit, push.
+7. [ ] Final: ruff + mypy + pytest green, `citation: ...` commits, push.
+
+Open items Anurag flagged for this audit:
+- The embedding extra was never synced/run (`uv sync --extra embed`,
+  AUDITOR_CITATION_EMBEDDER=minilm).
+- parser/layout_tables Windows-locale fix (a9aae1c) is mine but belongs to Part 1 —
+  flag to Bhaskar in the report, do NOT merge.
+- Known-weak spots from set A: partial_author_list, near_miss_title.
+- D18 20% second review is Anurag's own job; do not fake `reviewed_by`.
+- Claim classes are thin (20 of 154); growth by hand is optional/later.
+
+Findings so far: (static audit, step 2 — details going into docs/p2_audit_report.md)
+- NO new features; only defect-level observations recorded. Headline findings:
+  1. (medium) GROBID is never wired into the P2 full-text path: `RunContext` has no
+     GrobidClient, so `check()` (agents/citation/__init__.py:66) and the B1 tools
+     (tools.py:69/90) call `retrieve_source` with grobid=None -> SourceLevel.FULL_PDF is
+     unreachable at run time (only scripts/fetch_sources.py passes grobid). Same for
+     scripts/citation_eval.py fetch (citation_eval.py:175). Effect: PDF-only cited works
+     fall back to abstract in every P2 run.
+  2. (medium) lookup.py:93-97 and resolve.py (search step) evaluate ALL FOUR title
+     searches eagerly (tuple of awaited calls), so one lookup always makes 4 API calls
+     even when the first has hits; also one network failure in any of the four aborts the
+     whole search even if an earlier one had hits.
+  3. (low) support.py: docstring (line 279-280) says "a quote must be verbatim in the
+     source" but the code never verifies the model's quote against source.text (quote is
+     attached with char_start=None when not found). Doc/code mismatch, no correctness
+     impact on scoring.
+  4. (low) eval.py:48-51 dead code: `shorter in longer` duplicates the containment test
+     on line 46.
+  5. (low) reference.py:79-88 re-fetches the entry `check()` already resolved (dead
+     duplicate path, plus unreachable because check() only calls it when entry exists).
+  6. (info) `citation_abstract_only` IS already wired into check() (line 70) — the
+     flagged open item is resolved.
+  7. (info, Part 1's file) mypy fails on src/auditor/infra/llm.py:317 (fcntl.flock —
+     Windows-locale, pre-existing, NOT mine; report to Bhaskar together with the
+     layout_tables fix).
+- Test results: offline 1192 passed / 1 skipped (pyarrow missing, Part 3's test) / 8
+  deselected; ruff check clean; ruff format clean (139 files); mypy 2 errors (above);
+  network 1 passed + 1 skipped (onnxruntime — the `embed` extra is indeed NOT synced);
+  grobid 3 passed; llm-marked tests: NONE EXIST (marker defined in pyproject, 1201
+  deselected).
+- Smoke test (step 4a) DONE on data/set_b/papers/2501.00684.json via
+  `auditor audit --run-id audit-smoke-p2` (GROBID up, real LLM): 56 tasks (54 checked,
+  1 unverifiable, 1 failed, 0 verified flags, 21 needs_human_review, 0 dropped); output
+  runs/audit-smoke-p2/2501.00684-original/{tasks,results,predictions,verified}.jsonl.
+  12 citation-class findings with LOOKUP + QUOTE evidence (quotes carry char offsets,
+  e.g. char_start 10770). The 1 failed task was the duplicate-finding-id bug (finding 1
+  above) — FIXED in support.py (number passed into _number_check/_mismatch_finding, call
+  site passes len(findings)) with two regression tests in test_support.py
+  (test_a_contradiction_and_a_number_mismatch_both_reported,
+  test_two_number_mismatches_get_unique_finding_ids); all 79 citation-agent tests pass.
+  LLM probe: provider google_genai:gemini-2.5-flash, structured output + tool calling OK
+- B1 batch smoke (step 4b) DONE: `auditor batch --experiment b1-smoke --systems b1
+  --llm-cache` over 3 entries (2 injected + 1 original; runs/smoke_b1_dataset.jsonl, paths
+  relative to the dataset file), default 3 runs per system. r2 (clean): 25 llm calls /
+  570k in / 14k out tokens for 3 papers (~8 calls+23k in tokens per paper); 30 tool calls,
+  sane mix (lookup_reference 11, find_supporting_passages 5, code/template tools), no
+  loops. B1 caught real injected errors (reference_metadata_mismatch 2, reference_not_found
+  1, claim_not_supported 1 on 00684-injected). Observations: (a) r1 failed paper
+  2501.00691-injected with HttpStatusError HTTP 403 api.github.com (unauthenticated rate
+  limit, from a code tool) — kills the whole paper run, flag to Bhaskar/Vijay; (b) B1
+  (baselines/common.py) DROPS reported errors with empty sentence_id/bib_id with a warning
+  — findings silently lost when the model omits ids; (c) batch defaults to 3 runs — with
+  --llm-cache the extra runs are cheap.
+- P2.9 subset runs DONE (both conditions, uncached):
+  * Full-text `runs/setb-subset-b1-r1`: 26/30 entries done (4 deterministic non-P2
+    failures: GitHub 403 x2 papers, code-tool JSONDecodeError on rank_bm25 repo x2
+    variants, GraphRecursionError on 00692-injected); B1 emitted 22 predictions on 8
+    papers, 10 citation-class; score vs runs/setb_subset_labels.jsonl (78 labels — MUST
+    use the subset-restricted labels file; the scorer takes the labels as the universe):
+    metadata_mismatch P 1.000 R 0.056 F1 0.105, all other classes 0, macro-F1 0.026, FPR
+    0/14. The low numbers are REAL B1 behaviour (verified: it flags unlabelled real
+    references, e.g. 00799 b28 vs labels b0/b1), not a scoring bug.
+  * Abstract-only `runs/setb-subset-abs-b1-r1`: 25/30 done, macro-F1 0.026 identical;
+    prediction mix shifted (8 RNF vs 6). B1-level ablation shows no difference; the
+    module-level ablation needs the full system (~10x cost, one call per citation task).
+  * Recall@5 1.000 on the 20/154 records that carry a gold passage (134 have none).
+- docs/p2_audit_report.md COMPLETE (all sections; results tables filled).
+- Audit session remaining: nothing pending in code. Follow-ups for Anurag listed in the
+  report §7 (D18 second review, full-dataset + full-system runs, GROBID wiring decision,
+  lookup sequential-fallback decision, embed extra, claim-class growth, llm-marked test).
+
+
 then "citation: HALLMARK loader, set B injection machinery and evaluation scripts".
