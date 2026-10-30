@@ -1,5 +1,8 @@
 # P2 citation checker — audit report (2026-10-29, updated 2026-10-30 after the fix session)
 
+All measured numbers are consolidated in [p2-mid-results.md](p2-mid-results.md) (the
+results deliverable); this file records the audit, the findings and the fixes.
+
 Audit of the P2 implementation (citation agent, retrieval package, set A/B machinery,
 evaluation scripts) on branch `p2-citation-checker` at `d1019e0` + audit commits. Scope:
 static audit of every P2 module, the full test suites (offline/network/llm/grobid), a live

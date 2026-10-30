@@ -795,6 +795,12 @@ Findings/notes for this session:
 - Session 6 LEFT OVER: re-run the B1 subset (30 entries) on the cleaned labels if
   current B1 numbers are wanted (~250 calls); the arxiv_version check; the D18 second
   review (Anurag); full-dataset runs remain future work.
+- ALL CURRENT RESULTS are consolidated in **docs/p2-mid-results.md** (written at
+  Anurag's request, 2026-10-30): test suites, HALLMARK final numbers + per-type table,
+  set B dataset state (158 labels) + corrections, the full-system mini-run (macro-F1
+  1.000, RNF 1.000/1.000, FPR 0, cost 123 calls / 98k+42k tokens), Recall@5 1.000 (7/7),
+  B1 characterisation, known issues, reproduction commands. New sessions should read it
+  alongside this file and the audit report.
 - SESSION 6 ADDENDUM (Anurag's question about blocked full-text hosts): the allowlist is
   `DEFAULT_ALLOWED_HOSTS` in src/auditor/config.py (Part 1's file), overridable per run
   with AUDITOR_ALLOWED_HOSTS; entries starting with "." allow subdomains; EVERY redirect
