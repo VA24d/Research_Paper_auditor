@@ -33,6 +33,23 @@ DEFAULT_ALLOWED_HOSTS = (
     # OpenReview serves public submissions, reviews and decisions (scripts/real_cases.py).
     "api2.openreview.net",
     "openreview.net",
+    # Full-text hosts the citation agent reaches through the indexes' pdf_url and
+    # landing_page_url fields (auditor.retrieval.fulltext). doi.org only redirects — every
+    # redirect hop is checked against this list, so the target hosts must be here too.
+    "doi.org",
+    "aclanthology.org",
+    "openaccess.thecvf.com",
+    "proceedings.mlr.press",
+    "papers.nips.cc",
+    "proceedings.neurips.cc",
+    "jmlr.org",
+    "link.springer.com",
+    "onlinelibrary.wiley.com",
+    "mdpi.com",
+    "ouci.dntb.gov.ua",
+    # HAL serves institutional copies from many subdomains (inria.hal.science, ...).
+    "hal.science",
+    ".hal.science",
 )
 
 
