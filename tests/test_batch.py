@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 from langchain_core.messages import HumanMessage
 
-from auditor import experiments
 from auditor.baselines.common import ReportedErrors
 from auditor.cli import main
 from auditor.config import Settings
@@ -258,8 +257,6 @@ def test_b1_without_a_final_answer_is_a_failure_not_an_empty_answer(
         "from_settings",
         classmethod(lambda cls, settings: cls(model, name="test:scripted")),
     )
-    monkeypatch.setattr(experiments, "create_chat_model", lambda settings: model)
-    monkeypatch.setattr(experiments, "model_id", lambda settings: "test:scripted")
     argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "b1", "--runs", "1"]
     assert main(argv) == 1
     assert not predictions(tmp_path, "exp-b1-r1", "original").exists()
