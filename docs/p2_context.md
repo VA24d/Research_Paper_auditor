@@ -795,6 +795,20 @@ Findings/notes for this session:
 - Session 6 LEFT OVER: re-run the B1 subset (30 entries) on the cleaned labels if
   current B1 numbers are wanted (~250 calls); the arxiv_version check; the D18 second
   review (Anurag); full-dataset runs remain future work.
+- SESSION 6 ADDENDUM (Anurag's question about blocked full-text hosts): the allowlist is
+  `DEFAULT_ALLOWED_HOSTS` in src/auditor/config.py (Part 1's file), overridable per run
+  with AUDITOR_ALLOWED_HOSTS; entries starting with "." allow subdomains; EVERY redirect
+  hop is checked, so doi.org (a redirector) needs its targets allowlisted too. ADDED
+  (commit 9a57b53): doi.org, aclanthology.org, openaccess.thecvf.com,
+  proceedings.mlr.press, papers.nips.cc, proceedings.neurips.cc, jmlr.org,
+  link.springer.com, onlinelibrary.wiley.com, mdpi.com, ouci.dntb.gov.ua, hal.science +
+  .hal.science (subdomains); polite rate-limit entries for doi.org (0.2 s) and
+  aclanthology.org (0.5 s) in infra/http.py DEFAULT_MIN_INTERVALS; hosts without an
+  entry are NOT rate-limited by default. Test: test_the_scholarly_full_text_hosts_are_
+  allowed. Institutional repositories (mural.maynoothuniversity.ie style) are unbounded
+  and stay blocked -> those works keep the abstract fallback; add specific hosts to
+  AUDITOR_ALLOWED_HOSTS in .env when needed. FLAG TO BHASKAR: shared config file.
+  Full suite 1229 passed after the change.
 
 
 ## Session 5 (2026-10-29) — AUDIT + EVALUATION session (completed)
