@@ -250,11 +250,11 @@ def test_arxiv_id_from_doi_extracts_the_arxiv_id() -> None:
 def test_ascii_fold_and_short_title_make_searchable_queries() -> None:
     # Accents decompose; typography and letters an English query would not carry drop.
     assert ascii_fold("\u00c9tude sur l'apprentissage") == "Etude sur l'apprentissage"
-    assert ascii_fold("Na\u00efve \u201cbayes\u201d \u2014 a survey") == "Naive \"bayes\" - a survey"
+    assert ascii_fold("Na\u00efve \u201cbayes\u201d \u2014 a survey") == 'Naive "bayes" - a survey'
     assert ascii_fold("Demoir\u0398ing") == "Demoiring"  # a mojibake theta drops out
-    assert short_title("Real-Time Image Demoir\u0398ing on Mobile Devices with Deep Features", words=5) == (
-        "Real Time Image Demoiring on"
-    )
+    assert short_title(
+        "Real-Time Image Demoir\u0398ing on Mobile Devices with Deep Features", words=5
+    ) == ("Real Time Image Demoiring on")
     assert short_title("One Two Three Four Five Six Seven Eight Nine Ten", words=8) == (
         "One Two Three Four Five Six Seven Eight"
     )

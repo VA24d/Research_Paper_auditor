@@ -159,9 +159,7 @@ async def test_a_dead_index_is_skipped(tmp_path: Path) -> None:
 
     settings = Settings(cache_dir=tmp_path / "cache")
     client = HttpClient(settings, transport=httpx.MockTransport(handler), sleep=_no_sleep)
-    result = await lookup_citation(
-        client, "SQuAD: 100,000+ Questions for Machine Comprehension"
-    )
+    result = await lookup_citation(client, "SQuAD: 100,000+ Questions for Machine Comprehension")
     assert result.found
     assert result.queries[0] == "openalex title search failed (HttpRequestError)"
     assert result.queries[1] == "crossref title search (1 hits)"

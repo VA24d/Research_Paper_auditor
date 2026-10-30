@@ -357,7 +357,8 @@ def test_metadata_year_proposals_are_beyond_the_year_tolerance() -> None:
     year_props = [
         proposal
         for proposal in proposals
-        if proposal.kind is InjectionKind.REFERENCE_METADATA_MISMATCH and proposal.field_name == "year"
+        if proposal.kind is InjectionKind.REFERENCE_METADATA_MISMATCH
+        and proposal.field_name == "year"
     ]
     assert year_props  # the paper's bibliography has years to propose on
     for proposal in year_props:

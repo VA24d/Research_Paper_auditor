@@ -118,7 +118,9 @@ def test_venues_match_ignores_repository_copies() -> None:
     assert venues_match(
         "TMLR", "Digital Access to Scholarship at Harvard (DASH) (Harvard University)"
     )
-    assert venues_match("ICML", "Research at the University of Copenhagen (University of Copenhagen)")
+    assert venues_match(
+        "ICML", "Research at the University of Copenhagen (University of Copenhagen)"
+    )
     assert venues_match("ICML", "RePEc: Research Papers in Economics")
     # A real journal is not a repository, however much it names one.
     assert not venues_match("Drug Discovery Today", "Nature")

@@ -138,9 +138,10 @@ def test_grobid_for_builds_a_client_when_a_service_is_configured(tmp_path: Path)
     client = grobid_for(settings, refusing_client(tmp_path))
     assert isinstance(client, GrobidClient)
     # No service configured: the agent stays on HTML and abstracts.
-    assert grobid_for(
-        Settings(cache_dir=tmp_path / "cache", grobid_url=""), refusing_client(tmp_path)
-    ) is None
+    assert (
+        grobid_for(Settings(cache_dir=tmp_path / "cache", grobid_url=""), refusing_client(tmp_path))
+        is None
+    )
 
 
 async def test_a_dead_grobid_skips_the_pdf_and_falls_back(tmp_path: Path) -> None:
