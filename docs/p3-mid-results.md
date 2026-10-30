@@ -99,6 +99,35 @@ On real papers the results check found a reversed comparison in arXiv 2312.11580
 (0.73) is higher than U-Net (0.78)"), and the theory checker found a mean score of 8.93 in
 2512.21706 that its own Table 6 gives as 6.30.
 
+### 3.5 First RQ1 comparison (set C, 5 pairs)
+
+One run each on Gemini 3.8 Flash, before the verifier, with the citation checker off. The pairs
+are 1711.10703, 1910.10261, 2006.06958, 2304.04740 and 2402.18396.
+
+| Measure | Full system | B0 | B1 |
+|---|---|---|---|
+| Planted settings found, of 6 | 5 | 1 | 0 |
+| Method, scorer, of 14 | 4 | 0 | 0 |
+| Method, description matches the label, of 14 | 2 | 0 | 0 |
+| Macro-F1, settings and method | 0.68 | 0.14 | 0.00 |
+| False alarms on clean controls, of 6 | 0 | 0 | 0 |
+| Flags that match no label | 23 | 0 | 1 |
+| Model calls | 217 | 9 | 200 |
+| Cost | $1.17 | $0.55 | $2.07 |
+
+The scorer gives a method finding credit for any method label in the same paper. Read by hand,
+two of the four are real matches, both in 2006.06958 (L2 penalty, forgetting). The finding in
+1910.10261 concerns a different setting of layer C1 than its label, and the finding in
+1711.10703 concerns a different step than its label.
+
+- 2401.05363 was dropped: rate limits failed it for the full system on both versions.
+- B0 has 9 of 10 versions, because 2304.04740 (clean original) failed on rate limits four times.
+- The full system's 2304.04740 and 2402.18396 come from a rerun with embeddings, after the local
+  model had unloaded during the first run.
+- B1 used its full limit on every version: 20 model calls and 19 tool calls, the last call
+  without tools. It reported 3 errors. Two were kept, neither matching a label, and one was
+  dropped for an invalid setting key. A larger limit needs testing before the final comparison.
+
 ## 4. Ablations
 
 | Question | Variants | Outcome |
@@ -131,4 +160,5 @@ On real papers the results check found a reversed comparison in arXiv 2312.11580
   each method sentence separately with its own code.
 - Theory: a third judge for the cases where the two disagree; a final run on the test half.
 - Results: pair "respectively" lists and column names written differently from the header.
-- Full set C and set D runs of the full system against B0 and B1 for RQ1.
+- RQ1 on the other 35 set C pairs and on set D. Set C alone costs about $83 with B1 and the full
+  system run three times each, at the rates in 3.5.
