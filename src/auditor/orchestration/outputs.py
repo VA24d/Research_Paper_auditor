@@ -6,6 +6,11 @@ runs/<run_id>/
     <paper_id>-<variant>/
         tasks.jsonl, results.jsonl, verified.jsonl    (full system)
         predictions.jsonl                             (every system)
+        predictions.incomplete.jsonl                  (instead, when model calls ran out)
+
+A paper whose checks ran out of model calls has its predictions written under the second
+name. Its missing findings would read as clean results, and a batch takes a paper with
+`predictions.jsonl` as done, so only complete papers get that name.
 """
 
 from collections.abc import Iterable, Sequence
@@ -16,6 +21,9 @@ from pydantic import BaseModel
 from auditor.infra.files import atomic_write
 from auditor.orchestration.graph import AuditOutcome
 from auditor.schemas import ParsedPaper, Prediction, SystemName, VerifiedFinding
+
+PREDICTIONS = "predictions.jsonl"
+INCOMPLETE_PREDICTIONS = "predictions.incomplete.jsonl"
 
 
 def predictions_from_verified(
@@ -61,14 +69,27 @@ class RunDirectory:
         return self.path / f"{paper.paper_id}-{paper.variant.value}"
 
     def save_audit(
-        self, paper: ParsedPaper, outcome: AuditOutcome, predictions: Sequence[Prediction]
+        self,
+        paper: ParsedPaper,
+        outcome: AuditOutcome,
+        predictions: Sequence[Prediction],
+        *,
+        complete: bool = True,
     ) -> Path:
+        """Writes one paper's outputs; `complete` is False when some of its checks ran out
+        of model calls."""
         folder = self.paper_dir(paper)
         write_jsonl(folder / "tasks.jsonl", outcome.tasks)
         write_jsonl(folder / "results.jsonl", outcome.results)
         write_jsonl(folder / "verified.jsonl", outcome.verified)
-        write_jsonl(folder / "predictions.jsonl", predictions)
+        name, other = (
+            (PREDICTIONS, INCOMPLETE_PREDICTIONS)
+            if complete
+            else (INCOMPLETE_PREDICTIONS, PREDICTIONS)
+        )
+        write_jsonl(folder / name, predictions)
+        (folder / other).unlink(missing_ok=True)
         return folder
 
     def save_predictions(self, paper: ParsedPaper, predictions: Sequence[Prediction]) -> Path:
-        return write_jsonl(self.paper_dir(paper) / "predictions.jsonl", predictions)
+        return write_jsonl(self.paper_dir(paper) / PREDICTIONS, predictions)

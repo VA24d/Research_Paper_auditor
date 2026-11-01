@@ -24,7 +24,7 @@ from auditor.baselines.common import (
     render_paper,
     to_predictions,
 )
-from auditor.infra.llm import StructuredLLM, TokenUsage
+from auditor.infra.llm import StructuredLLM, TokenUsage, prompt_of
 from auditor.infra.scope import Scope, enter_scope
 from auditor.infra.usage import UsageLog
 from auditor.schemas import ParsedPaper, RepositoryRef, SystemName, VenueProfile
@@ -69,7 +69,9 @@ class _Accounted(AgentMiddleware[Any, Any, Any]):
         self.calls += 1
         if self.calls >= self.max_model_calls:
             request = request.override(tools=[])
-        return await self.llm.direct_call(lambda: handler(request), _usage, purpose=PURPOSE)
+        return await self.llm.direct_call(
+            lambda: handler(request), _usage, purpose=PURPOSE, prompt=prompt_of(request)
+        )
 
 
 async def run_b1(

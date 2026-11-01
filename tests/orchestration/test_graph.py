@@ -339,6 +339,16 @@ async def test_verifier_decisions_reach_the_output_files(tmp_path: Path) -> None
         VerificationState.NEEDS_HUMAN_REVIEW,
     }
 
+    # A paper that ran out of model calls is written under another name, and a complete
+    # rerun replaces it, so no folder ever holds both.
+    run = RunDirectory(tmp_path / "runs", "r1")
+    run.save_audit(example_paper(), outcome, predictions, complete=False)
+    assert not (folder / "predictions.jsonl").exists()
+    assert len(read("predictions.incomplete.jsonl")) == len(predictions)
+    run.save_audit(example_paper(), outcome, predictions)
+    assert (folder / "predictions.jsonl").is_file()
+    assert not (folder / "predictions.incomplete.jsonl").exists()
+
 
 async def test_review_steps_run_after_the_verifier_in_order(tmp_path: Path) -> None:
     decisions = example_verified_findings()

@@ -344,6 +344,13 @@ def test_a_paper_whose_checks_hit_the_call_limit_is_reported_incomplete(
     assert "0 done, 0 already done, 1 failed" in out
     assert "incomplete" in out
     assert "AUDITOR_LLM_MAX_CALLS" in out
+    # Its predictions are kept to look at, but not under the name that is scored and that
+    # marks a paper as done, so running the batch again does not count it as finished.
+    written = predictions(tmp_path, "exp-full-r1", "original")
+    assert not written.exists()
+    assert written.with_name("predictions.incomplete.jsonl").is_file()
+    assert main(argv) == 1
+    assert "0 done, 0 already done, 1 failed" in capsys.readouterr().out
 
 
 def test_batch_can_run_the_full_system_without_the_model(

@@ -149,7 +149,11 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 
 Each run writes to `runs/<run_id>/`: `manifest.json` (git commit, settings with secrets
 removed, package versions), `usage/*.jsonl` (every tool call, HTTP request and LLM call),
-and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.jsonl`.
+and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.jsonl`. A
+paper whose checks ran out of model calls (`AUDITOR_LLM_MAX_CALLS`, `AUDITOR_LLM_MAX_COST_USD`)
+gets `predictions.incomplete.jsonl` instead, so it is not scored and a batch does not skip
+it as done. The dollar limit also counts what the calls still waiting for a reply could
+cost, at their prompt and answer cap, so calls sent together cannot run far past it.
 
 ### Experiments
 
