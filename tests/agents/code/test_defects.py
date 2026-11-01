@@ -223,3 +223,21 @@ async def test_ruff_timeout_with_syntax_errors_retains_findings_and_reason(
     assert len(result.findings) >= 1
     assert result.reason is not None
     assert "Ruff timed out" in result.reason
+
+
+@pytest.mark.skipif(not ruff_available(), reason="ruff is not installed")
+async def test_a_ruff_module_in_the_repository_is_not_run(tmp_path: Path) -> None:
+    # `python -m ruff` started in the snapshot would import the repository's own ruff.py.
+    marker = tmp_path / "ran"
+    files = {"main.py": MAIN, "utils.py": UTILS, "models/__init__.py": "", "models/net.py": NET}
+    files["ruff.py"] = f"open({str(marker)!r}, 'w').close()\n"
+    result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
+    assert not marker.exists()
+    assert any("accuracy" in f.summary for f in result.findings)
+
+
+@pytest.mark.skipif(not ruff_available(), reason="ruff is not installed")
+async def test_a_file_named_like_an_option_is_checked_as_a_file(tmp_path: Path) -> None:
+    files = {"--output-file=out.py": 'if __name__ == "__main__":\n    print(accuracy)\n'}
+    result = await check(task(repo(tmp_path, files)), offline_context(tmp_path))
+    assert any("accuracy" in f.summary for f in result.findings)

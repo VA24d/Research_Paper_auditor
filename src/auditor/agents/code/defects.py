@@ -69,7 +69,9 @@ def ruff_available() -> bool:
 
 def _ruff_command() -> list[str]:
     if importlib.util.find_spec("ruff") is not None:
-        return [sys.executable, "-m", "ruff"]
+        # -I keeps the working directory, the snapshot, off the import path; without it a
+        # repository's own ruff.py would be imported and run.
+        return [sys.executable, "-I", "-m", "ruff"]
     return ["ruff"]
 
 
@@ -258,6 +260,7 @@ def _ruff(snapshot: Snapshot, files: list[str]) -> tuple[list[dict[str, object]]
         "--output-format",
         "json",
         "--exit-zero",
+        "--",
         *files,
     ]
     try:
@@ -272,6 +275,10 @@ def _ruff(snapshot: Snapshot, files: list[str]) -> tuple[list[dict[str, object]]
     except subprocess.TimeoutExpired:
         logger.warning("Ruff timed out after %ds on %s", RUFF_TIMEOUT_S, snapshot.source_id)
         return [], True
+    if done.returncode != 0:
+        # With --exit-zero Ruff fails only when it could not run, which must not read as
+        # "no undefined names".
+        raise RuntimeError(f"Ruff failed on {snapshot.source_id}: {done.stderr.strip()[:500]}")
     reports = json.loads(done.stdout or "[]")
     return (reports if isinstance(reports, list) else []), False
 
