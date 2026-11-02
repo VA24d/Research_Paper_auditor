@@ -74,9 +74,8 @@ operating systems.
 
 Status: P1.1 is merged (PR #1). P1.2–P1.11 and P1.13–P1.16 are implemented and tested
 (PR #2 and the follow-up PR). P1.10 includes a gold sample of 100 hand-checked citation
-links (see [parser_evaluation.md](parser_evaluation.md)). P1.12 is implemented and tested
-with a scripted model and against Gemini's request format offline; it needs one live run
-once the provider is settled (D9). P1.17 is open. Also available for Part 4: hyperparameter
+links (see [parser_evaluation.md](parser_evaluation.md)). P1.12 has been run live on
+Gemini 2.5 Flash (Vertex AI). P1.17 is open. Also available for Part 4: hyperparameter
 tables read into settings, `auditor batch` for repeated runs over a dataset (P4.6), and a
 Docker image for the final runs.
 
@@ -110,10 +109,16 @@ Planner:
 
 - [x] **P1.11** Deterministic extraction: citation contexts, numbers with units,
   experimental settings (`ExtractedSetting`), repository links.
-- [ ] **P1.12** LLM refinement: decide which claims are worth checking and split sentences
+- [x] **P1.12** LLM refinement: decide which claims are worth checking and split sentences
   that cite several works. Output must quote the paper exactly; anchors come from parser
-  ids (D3). Implemented and tested offline; needs one run with the chosen
-  provider (D9).
+  ids (D3). Live run on Gemini 2.5 Flash, 2 November: 154 citation candidates in two
+  papers (2310.06825, 2005.11401), 9 calls, $0.04. Gemini left the citation markers out of
+  most quotes ("REALM and ORQA" for "REALM [20] and ORQA [31]"), so 48 of 126 claims in
+  2005.11401 fell back to the whole sentence. A quote now also counts when it matches the
+  sentence without its markers, and the claim keeps the sentence's own text. Replayed on
+  the same answers, 89 of 126 are narrowed, 23 are the whole sentence by the model's
+  choice, 9 are empty on candidates judged not check-worthy, and 5 are refused because
+  they skip words with "...". All 28 in 2310.06825 are narrowed.
 - [x] **P1.13** Task generation with deterministic task ids and the right anchor kind (D3):
   reference tasks (one per bibliography entry, for existence and metadata), citation tasks
   (one per claim), code tasks and template tasks. Every citation mention gets a task,
