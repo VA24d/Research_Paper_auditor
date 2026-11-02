@@ -72,6 +72,19 @@ def _stated_in(source_text: str, value: str) -> bool:
     return any(numbers_agree(value, written) for written in extract_numbers(source_text))
 
 
+def _original_stated(source_text: str, span_text: str) -> bool:
+    """Whether the source states the original value a number proposal replaces.
+
+    The span may carry a unit suffix ("92.1%"), so the comparison runs on the numbers
+    extracted from it, the same comparison the checker itself uses.
+    """
+    from auditor.agents.citation.support import extract_numbers, numbers_agree
+
+    stated = extract_numbers(source_text)
+    values = extract_numbers(span_text) or [span_text]
+    return any(numbers_agree(value, written) for value in values for written in stated)
+
+
 async def _resolved_work(http: HttpClient, entry: BibEntry) -> Work | None:
     resolution = await resolve_entry(http, entry)
     return resolution.work
@@ -94,6 +107,15 @@ async def _verify(
     if kind == "claim_number_mismatch":
         if not source_text or _stated_in(source_text, proposal.new_value):
             return "the perturbed value is also stated by the source"
+        # The source must state the ORIGINAL value, so the injected mismatch is really
+        # judgeable against the source (the second review found a label whose source —
+        # an abstract with no numbers — stated neither value).
+        assert proposal.sentence_id is not None
+        assert proposal.anchor is not None
+        sentence = paper.sentence(proposal.sentence_id).text
+        original = sentence[proposal.anchor.start : proposal.anchor.end]
+        if not _original_stated(source_text, original):
+            return "the source does not state the claim's original value"
         return None
     if kind == "claim_not_supported":
         sentence = paper.sentence(proposal.sentence_id or "").text
