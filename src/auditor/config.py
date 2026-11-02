@@ -50,6 +50,41 @@ DEFAULT_ALLOWED_HOSTS = (
     # HAL serves institutional copies from many subdomains (inria.hal.science, ...).
     "hal.science",
     ".hal.science",
+    # More full-text hosts observed during the set B runs (session 7, 2026-11-02): the
+    # indexes hand out publisher and repository landing pages freely, so the list grows
+    # with observed hosts. Paywalled hosts 403 without a subscription; the retrieval
+    # then falls back to the abstract cleanly. Entries with a "." cover subdomains, so
+    # "mdpi.com" (bare) needs ".mdpi.com" to also cover "www.mdpi.com".
+    "proceedings.com",
+    ".proceedings.com",
+    "discovery.ucl.ac.uk",
+    "linkinghub.elsevier.com",
+    ".sciencedirect.com",
+    "ieeexplore.ieee.org",
+    ".science.org",
+    "academic.oup.com",
+    "cds.cern.ch",
+    "citeseerx.ist.psu.edu",
+    "cocosci.berkeley.edu",
+    "dare.uva.nl",
+    ".acm.org",
+    "springer.com",
+    ".springer.com",
+    ".springeropen.com",
+    ".iop.org",
+    ".aaai.org",
+    ".rsna.org",
+    ".acpjournals.org",
+    ".cell.com",
+    ".emerald.com",
+    ".mdpi.com",
+    "nature.com",
+    ".nature.com",
+    ".openreview.net",
+    ".spiedigitallibrary.org",
+    ".tandfonline.com",
+    "panafrican-med-journal.com",
+    ".panafrican-med-journal.com",
 )
 
 
