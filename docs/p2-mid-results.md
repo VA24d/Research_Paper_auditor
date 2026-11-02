@@ -158,12 +158,30 @@ not-found (2 true positives on the injected entries; the rest are resolution fai
 real references, counted as unlabelled flags), 5/3 claim-not-supported and 2/2
 claim-number findings (unlabelled — 00692's claim labels were removed as unreachable).
 
-### 3.3 Recall@5 (retrieval)
+### 3.3 Recall@5 (retrieval) and the ranker decision
 
-`scripts/citation_eval.py recall` on the current injections: **Recall@5 = 1.000 (7 of
-7)** — every label that carries a gold passage has its passage in the top-5 retrieved
-chunks. 105 of 112 records carry no gold passage (bibliography injections and the early
-claim injections never had one), so the number is real but its base is small.
+BM25-vs-MiniLM comparison (2026-11-02, offline, no LLM;
+`scripts/citation_eval.py recall --injections datasets/set_b/injections.jsonl --sources
+data/set_b/sources [--embedder minilm]` — the `--embedder` flag is new this session,
+with offline tests):
+
+| Ranker | Recall@5 | Base |
+|---|---|---|
+| BM25 (default) | **1.000 (6 of 6)** | 6 records with a gold passage |
+| MiniLM (all-MiniLM-L6-v2 ONNX) | 0.667 (4 of 6) | same 6 |
+
+**Decision: BM25 stays the system's ranker.** Two honest caveats cut in the same
+direction: the base is small (105 of 111 records carry no gold passage — bibliography
+injections and the early claim injections never had one), and the gold passages
+themselves were built as BM25 top-1 (`gold_passage_for` defaults to BM25), so the
+MiniLM number is a lower bound on that ranker's quality rather than a fair comparison.
+BM25 wins on the measured data regardless; `AUDITOR_CITATION_EMBEDDER` stays unset
+(BM25) for the final set B run, and the `embed` extra is now installed in the venv
+(`uv sync --extra embed`; MiniLM's ~23 MB model downloads on first use into
+`cache/embeddings` and the network-marked MiniLM test passes).
+
+Previous state (audit session): Recall@5 1.000 on 7 of 7 records; the count dropped to 6
+when the review removed `b-632fd74c81b5` (it carried a gold passage).
 
 ### 3.4 B1 baseline (characterisation, audit session)
 

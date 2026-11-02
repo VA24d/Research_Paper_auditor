@@ -3,7 +3,7 @@
     uv run python scripts/citation_eval.py fetch data/set_b/papers/<id>.json \
         --out data/set_b/sources/<id>.txt          # network: resolves and retrieves
     uv run python scripts/citation_eval.py recall --injections datasets/set_b/injections.jsonl \
-        --sources data/set_b/sources.jsonl [--k 5]  # offline
+        --sources data/set_b/sources.jsonl [--k 5] [--embedder bm25|minilm]  # offline
     uv run python scripts/citation_eval.py score --labels datasets/set_b/labels.jsonl \
         --run runs/<run_id> [--abstract-only]       # offline
     uv run python scripts/citation_eval.py tool-accuracy --file lookups.jsonl --gold gold.jsonl
@@ -72,10 +72,23 @@ def _original_claim(record: InjectionRecord, originals: Path) -> str | None:
     return text[: record.start] + record.original + text[record.end :]
 
 
-def _recall(args: argparse.Namespace) -> int:
+async def _recall(args: argparse.Namespace) -> int:
     records = read_jsonl(args.injections, InjectionRecord)
     sources = _sources(args.sources)
     originals = args.originals
+    embedder = None
+    if args.embedder == "minilm":
+        from auditor.infra.http import HttpClient
+        from auditor.retrieval import embeddings as embeddings_module
+
+        settings = Settings(citation_embedder="minilm")
+        http = HttpClient(settings)
+        embedder = await embeddings_module.get_embedder(settings, http)
+        if embedder is None:
+            print(
+                "AUDITOR_CITATION_EMBEDDER=minilm needs the `embed` extra; using BM25",
+                file=sys.stderr,
+            )
     hits = misses = no_passage = 0
     for record in records:
         if not record.gold_passage:
@@ -89,11 +102,13 @@ def _recall(args: argparse.Namespace) -> int:
         if claim is None:
             print(f"{record.label_id}: no original claim", file=sys.stderr)
             continue
-        if recall_at_k(source_text, claim, record.gold_passage, k=args.k):
+        if recall_at_k(source_text, claim, record.gold_passage, k=args.k, embedder=embedder):
             hits += 1
         else:
             misses += 1
     total = hits + misses
+    ranker = "minilm" if embedder is not None else "bm25"
+    print(f"ranker {ranker}")
     print(f"Recall@{args.k} {hits / total:.3f} ({hits} of {total})" if total else "Recall@k n/a")
     if no_passage:
         print(f"records without a gold passage {no_passage}")
@@ -213,6 +228,12 @@ def main() -> int:
     recall.add_argument("--sources", type=Path, required=True)
     recall.add_argument("--originals", type=Path, default=Path("datasets/set_b/papers/original"))
     recall.add_argument("--k", type=int, default=5)
+    recall.add_argument(
+        "--embedder",
+        choices=["bm25", "minilm"],
+        default="bm25",
+        help="rank the passages with BM25 (default) or the MiniLM embedding ranker",
+    )
     recall.set_defaults(func=_recall)
 
     score = commands.add_parser("score", help="module P/R/F1 for one run (offline)")

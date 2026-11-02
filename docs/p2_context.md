@@ -1016,3 +1016,30 @@ T1 OUTCOME (done, dataset FROZEN):
   improvements), and 2501.09760's 72.19% claim-number label is grounded in the cited
   work's abstract verbatim.
 
+T2 STATUS (done, ranker decided: BM25):
+- `embed` extra installed via `uv sync --extra embed` (uv 0.13.5 IS on PATH at
+  C:\Users\anura\.local\bin\uv.exe; the context's "uv may NOT be on PATH" note is stale
+  for this machine state). onnxruntime 1.31.0 + tokenizers 0.23.3 (+9 deps) in the venv.
+- Fixed a P2 test bug that only showed now that the extra is installed:
+  tests/retrieval/test_embeddings.py::test_minilm_embedder_ranks_a_paraphrase_first was
+  an async test calling asyncio.run() inside the running loop -> RuntimeError. It now
+  awaits directly (pytest-asyncio auto mode). The network-marked MiniLM test PASSES
+  (model downloads once into cache/embeddings).
+- Added `--embedder {bm25,minilm}` to `scripts/citation_eval.py recall` (P2's own
+  script, in scope) + 3 offline tests in
+  tests/agents/citation/test_citation_eval_script.py (BM25 default hit, minilm flag uses
+  the ranker via a fake embedder, miss reported). Fixed while testing: Settings must get
+  citation_embedder="minilm" explicitly; --sources is a FOLDER.
+- Ranker comparison (offline, no LLM): BM25 Recall@5 1.000 (6/6) vs MiniLM 0.667 (4/6).
+  Caveats: base only 6 records (105/111 have no gold passage) and the gold passages were
+  built as BM25 top-1, so MiniLM's number is a lower bound. DECISION: BM25 ships;
+  AUDITOR_CITATION_EMBEDDER unset for the final run.
+- Full offline suite after the change: 1245 passed / 1 skipped (pyarrow, Part 3) / 8
+  deselected; mypy clean (216 files).
+- NOTE (other part, not touched): tests/parser/test_live_grobid.py (Part 1's parser)
+  ERRORs under `-m network` when GROBID is not running — "Failed: GROBID is not running
+  at http://localhost:8070" raised as an ERROR (fixture), and it uses asyncio.run inside
+  a running loop too (test_arxiv_paper_citations_are_linked). Report to Bhaskar/Vijay;
+  NOT P2's file.
+
+

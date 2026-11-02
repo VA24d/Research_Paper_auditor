@@ -114,7 +114,6 @@ async def test_minilm_embedder_ranks_a_paraphrase_first(tmp_path: Path) -> None:
     """The real model (needs the `embed` extra and a ~23 MB download, once)."""
     pytest.importorskip("onnxruntime")
     pytest.importorskip("tokenizers")
-    import asyncio
 
     from auditor.infra.http import HttpClient
 
@@ -123,18 +122,14 @@ async def test_minilm_embedder_ranks_a_paraphrase_first(tmp_path: Path) -> None:
     async def _no_sleep(_seconds: float) -> None:
         return None
 
-    async def run() -> bool:
-        http = HttpClient(settings, sleep=_no_sleep)
-        embedder = await embeddings_module.get_embedder(settings, http)
-        if embedder is None:
-            return False
-        claim = "The authors train on hardware used by everyday consumers."
-        ranked = rank_passages(
-            TEXT + " Gaming GPUs trained the network cheaply. " * 30,
-            claim,
-            top=1,
-            embedder=embedder,
-        )
-        return "Gaming GPUs" in ranked[0].text
-
-    assert asyncio.run(run())
+    http = HttpClient(settings, sleep=_no_sleep)
+    embedder = await embeddings_module.get_embedder(settings, http)
+    assert embedder is not None
+    claim = "The authors train on hardware used by everyday consumers."
+    ranked = rank_passages(
+        TEXT + " Gaming GPUs trained the network cheaply. " * 30,
+        claim,
+        top=1,
+        embedder=embedder,
+    )
+    assert "Gaming GPUs" in ranked[0].text
