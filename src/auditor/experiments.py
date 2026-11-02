@@ -3,8 +3,10 @@ dataset several times (`auditor batch`).
 
 A batch is resumable. Run ids are `<experiment>-<system>-r<n>`, a paper with
 `predictions.jsonl` in its run directory is skipped, and a full-system paper that was
-interrupted continues from its checkpoint. A paper that fails is recorded in
-`failures.jsonl` and the batch moves on; running the batch again retries it.
+interrupted continues from its checkpoint. A paper whose checks ran out of model calls
+gets `predictions.incomplete.jsonl` instead, so it is neither skipped nor scored. A paper
+that fails is recorded in `failures.jsonl` and the batch moves on; running the batch again
+retries it.
 
 Each run records a fingerprint of what produced it: model and LLM settings, a hash of
 the auditor's source code, package versions, and every paper, repository and venue.
@@ -44,7 +46,7 @@ from auditor.infra.manifest import build_manifest, package_versions, redact, wri
 from auditor.infra.snapshots import SourceError, parse_source
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.graph import AuditOutcome, AuditPipeline, ThreadInUseError, run_audit
-from auditor.orchestration.outputs import RunDirectory, predictions_from_verified
+from auditor.orchestration.outputs import PREDICTIONS, RunDirectory, predictions_from_verified
 from auditor.orchestration.registry import (
     load_specialists,
     load_tools,
@@ -208,7 +210,8 @@ async def run_full(
         resume=resume,
     )
     predictions = predictions_from_verified(outcome.verified, run_id=run_id, system=SystemName.FULL)
-    folder = run.save_audit(paper, outcome, predictions)
+    complete = not limit_failures(outcome.results)
+    folder = run.save_audit(paper, outcome, predictions, complete=complete)
     return FullRun(outcome=outcome, predictions=predictions, folder=folder)
 
 
@@ -544,7 +547,7 @@ async def _run_papers(
     gate = asyncio.Semaphore(paper_concurrency)
 
     async def one(item: PaperInput) -> None:
-        if (run.paper_dir(item.paper) / "predictions.jsonl").is_file():
+        if (run.paper_dir(item.paper) / PREDICTIONS).is_file():
             summary.skipped += 1
             return
         async with gate:

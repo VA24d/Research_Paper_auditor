@@ -12,8 +12,9 @@ import functools
 import hashlib
 import json
 import logging
+import sys
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -281,9 +282,30 @@ class Spend:
     # experiments, not only for one command.
     ledger: Path | None = None
     ledger_limit_usd: float | None = None
+    # The most that the calls now waiting for a reply can cost. Calls that start together
+    # all pass the limit check before any of them is charged; counting what they may cost
+    # stops more calls from starting once the budget is spoken for.
+    reserved_usd: float = 0.0
 
     def price(self, model: str) -> tuple[float, float] | None:
         return self.prices.get(model.split(":", 1)[-1])
+
+    def estimate(self, model: str, input_tokens: int, output_tokens: int) -> float:
+        """The most a call can cost, counting its input as uncached; 0 for an unpriced
+        model."""
+        price = self.price(model)
+        if price is None:
+            return 0.0
+        return (input_tokens * price[0] + output_tokens * price[1]) / 1e6
+
+    @contextlib.contextmanager
+    def holding(self, cost: float) -> Iterator[None]:
+        """Counts `cost` against the budget while a call is waiting for its reply."""
+        self.reserved_usd += cost
+        try:
+            yield
+        finally:
+            self.reserved_usd -= cost
 
     def charge(self, model: str, usage: "TokenUsage") -> None:
         price = self.price(model)
@@ -298,26 +320,54 @@ class Spend:
 
     @property
     def exhausted(self) -> bool:
-        if self.limit_usd is not None and self.spent_usd >= self.limit_usd:
+        committed = self.spent_usd + self.reserved_usd
+        if self.limit_usd is not None and committed >= self.limit_usd:
             return True
         if self.ledger is not None and self.ledger_limit_usd is not None:
-            return ledger_total(self.ledger) >= self.ledger_limit_usd
+            return ledger_total(self.ledger) + self.reserved_usd >= self.ledger_limit_usd
         return False
 
 
 def _append_ledger(path: Path, model: str, cost: float) -> None:
-    """One line per priced call. A short append is atomic enough on its own; where fcntl
-    exists (not on Windows) it is also locked against other runs writing at once."""
+    """One line per priced call, locked against other runs writing at the same time
+    (unlocked appends from parallel runs lost lines on Windows)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps({"at": datetime.now(UTC).isoformat(), "model": model, "usd": cost}) + "\n"
-    with path.open("a", encoding="utf-8") as handle:
-        try:
+    with path.open("ab") as handle:
+        if sys.platform == "win32":
+            import msvcrt
+
+            # Locks the first byte; writes still go to the end of the file. LK_LOCK
+            # retries for about 10 seconds before it gives up.
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                handle.write(line.encode("utf-8"))
+                handle.flush()
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
             import fcntl
 
             fcntl.flock(handle, fcntl.LOCK_EX)
-        except ImportError:
-            pass
-        handle.write(line)
+            handle.write(line.encode("utf-8"))
+
+
+def prompt_of(request: Any) -> list[BaseMessage]:
+    """The messages an agent's model request sends: its system message, then the
+    conversation (a langchain `ModelRequest`)."""
+    system = getattr(request, "system_message", None)
+    return [*([system] if system is not None else []), *request.messages]
+
+
+def _output_cap(options: Mapping[str, Any]) -> int | None:
+    """The answer cap set in AUDITOR_LLM_OPTIONS, under either provider's name for it."""
+    for name in ("max_output_tokens", "max_tokens"):
+        value = options.get(name)
+        if isinstance(value, int) and value > 0:
+            return value
+    return None
 
 
 def ledger_total(path: Path) -> float:
@@ -345,6 +395,12 @@ CHARS_PER_TOKEN = 3.5
 # What an image in a message costs, in characters' worth of tokens (Gemini counts a few
 # hundred tokens per image, not the length of its base64 text).
 IMAGE_CHARS = 1_500
+
+
+# The answer length assumed when reserving a call's cost (Spend.holding) if neither the
+# call nor the settings cap it. Thinking counts as output; set `max_output_tokens` in
+# AUDITOR_LLM_OPTIONS to make the reservation a true upper bound.
+ASSUMED_OUTPUT_TOKENS = 16_384
 
 
 def estimated_tokens(messages: Sequence[BaseMessage]) -> int:
@@ -380,6 +436,7 @@ class StructuredLLM:
         spend: Spend | None = None,
         prefix_cache: PrefixCache | None = None,
         cache_storage_price: float = 0.0,
+        output_cap: int | None = None,
     ) -> None:
         self.model = model
         self.name = name
@@ -404,6 +461,8 @@ class StructuredLLM:
         # tokens per hour.
         self.prefix_cache = prefix_cache
         self.cache_storage_price = cache_storage_price
+        # The configured cap on an answer's tokens, used to reserve a call's cost.
+        self.output_cap = output_cap
 
     @property
     def limit_reached(self) -> bool:
@@ -430,6 +489,10 @@ class StructuredLLM:
         if self.prefix_cache is not None:
             await self.prefix_cache.close()
 
+    def _most_cost(self, messages: Sequence[BaseMessage], max_output_tokens: int | None) -> float:
+        output = max_output_tokens or self.output_cap or ASSUMED_OUTPUT_TOKENS
+        return self.spend.estimate(self.name, estimated_tokens(messages), output)
+
     def _check_limits(self) -> None:
         if self.max_calls is not None and self.calls >= self.max_calls:
             raise CallLimitReachedError(
@@ -453,12 +516,13 @@ class StructuredLLM:
             ledger=settings.llm_ledger,
             ledger_limit_usd=settings.llm_ledger_limit_usd,
         )
-        if spend.limit_usd is not None:
+        if spend.limit_usd is not None or spend.ledger_limit_usd is not None:
+            # An unpriced model costs nothing in the accounts, so a limit would never stop it.
             for model in filter(None, (settings.llm_model, settings.llm_review_model)):
                 if spend.price(model) is None:
                     raise ValueError(
-                        f"AUDITOR_LLM_MAX_COST_USD needs the price of {model}; add it to "
-                        "AUDITOR_LLM_PRICES"
+                        f"AUDITOR_LLM_MAX_COST_USD and AUDITOR_LLM_LEDGER_LIMIT_USD need the "
+                        f"price of {model}; add it to AUDITOR_LLM_PRICES"
                     )
         prefix_cache = None
         if settings.llm_explicit_cache and settings.llm_provider == "google_genai":
@@ -504,6 +568,7 @@ class StructuredLLM:
             spend=spend,
             prefix_cache=prefix_cache,
             cache_storage_price=settings.llm_cache_storage_price,
+            output_cap=_output_cap(settings.llm_options),
         )
         llm.provider = settings.llm_provider
         return llm
@@ -617,7 +682,8 @@ class StructuredLLM:
                 started_at = datetime.now(UTC)
                 started = time.perf_counter()
                 try:
-                    output = await runnable.ainvoke(sent)
+                    with self.spend.holding(self._most_cost(sent, max_output_tokens)):
+                        output = await runnable.ainvoke(sent)
                 except Exception as exc:
                     record(
                         TokenUsage(),
@@ -687,11 +753,13 @@ class StructuredLLM:
         *,
         effort: Effort | None = None,
         purpose: str | None = None,
+        prompt: Sequence[BaseMessage] = (),
     ) -> R:
         """Run one chat-model call made outside `generate`, such as one turn of a
         tool-using agent, under the same rules: it is charged to the task's budget and to
         the run's call and dollar limits, waits for a concurrency slot, and is recorded in
-        the usage log. `usage_of` reads the token usage from what `call` returns."""
+        the usage log. `usage_of` reads the token usage from what `call` returns; `prompt`,
+        the messages `call` sends, sizes what the call may cost while it runs."""
         active = current_scope()
         if active is not None:
             active.budget.charge_llm_call()
@@ -702,7 +770,8 @@ class StructuredLLM:
             started_at = datetime.now(UTC)
             started = time.perf_counter()
             try:
-                result = await call()
+                with self.spend.holding(self._most_cost(prompt, None)):
+                    result = await call()
             except Exception as exc:
                 self._record(
                     TokenUsage(),

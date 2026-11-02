@@ -45,7 +45,7 @@ from auditor.agents.code.data_checks import paper_quote_text
 from auditor.agents.code.method_check import related_files
 from auditor.agents.code.tools import make_tools
 from auditor.infra.context import RunContext
-from auditor.infra.llm import Effort, StructuredLLM, TokenUsage
+from auditor.infra.llm import Effort, StructuredLLM, TokenUsage, prompt_of
 from auditor.infra.scope import current_scope
 from auditor.infra.snapshots import (
     Snapshot,
@@ -211,7 +211,11 @@ class _Accounted(AgentMiddleware[Any, Any, Any]):
         handler: Callable[[ModelRequest[Any]], Awaitable[ModelResponse[Any]]],
     ) -> ModelResponse[Any]:
         return await self.llm.direct_call(
-            lambda: handler(request), _usage, effort=self.effort, purpose=PURPOSE
+            lambda: handler(request),
+            _usage,
+            effort=self.effort,
+            purpose=PURPOSE,
+            prompt=prompt_of(request),
         )
 
 

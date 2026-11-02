@@ -446,6 +446,79 @@ async def test_calls_waiting_for_a_slot_are_not_sent_once_the_budget_is_spent() 
     assert sum(isinstance(r, CallLimitReachedError) for r in results) == 2
 
 
+async def test_calls_sent_together_stop_once_their_cost_could_pass_the_budget() -> None:
+    # Each reply costs 15 tokens' worth; the budget is one reply. Every call is reserved at
+    # its prompt plus its 5-token answer cap while it waits, so the third finds the budget
+    # spoken for. Before reservations all five were sent.
+    model = ScriptedChatModel(
+        replies=[tool_reply(Verdict, {"supported": True, "reason": str(i)}) for i in range(5)]
+    )
+    spend = Spend(limit_usd=0.000015, prices={"scripted": (1.0, 1.0)})
+    llm = StructuredLLM(model, name="test:scripted", spend=spend, output_cap=5)
+    questions = [[HumanMessage(f"Question {i}?")] for i in range(5)]
+    results = await asyncio.gather(
+        *(llm.generate(Verdict, q) for q in questions), return_exceptions=True
+    )
+    assert len(model.received) == 2
+    assert sum(isinstance(r, CallLimitReachedError) for r in results) == 3
+    assert spend.reserved_usd == 0
+
+
+async def test_a_failed_call_gives_back_its_reservation() -> None:
+    spend = Spend(limit_usd=1.0, prices={"scripted": (1.0, 1.0)})
+    llm = StructuredLLM(ScriptedChatModel(replies=[]), name="test:scripted", spend=spend)
+    with pytest.raises(RuntimeError, match="ran out of replies"):
+        await llm.generate(Verdict, MESSAGES)
+    assert spend.reserved_usd == 0
+    assert spend.spent_usd == 0
+
+
+def test_the_answer_cap_comes_from_either_option_name(tmp_path: Path) -> None:
+    assert llm_module._output_cap({"max_output_tokens": 4096}) == 4096
+    assert llm_module._output_cap({"max_tokens": 2048}) == 2048
+    assert llm_module._output_cap({"temperature": 0}) is None
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="openai",
+        llm_model="small",
+        llm_options={"api_key": "x", "max_tokens": 2048},
+    )
+    assert StructuredLLM.from_settings(settings).output_cap == 2048
+
+
+def test_a_ledger_limit_needs_the_price_of_every_model(tmp_path: Path) -> None:
+    # Unpriced calls add nothing to the ledger, so its limit would never stop them.
+    settings = Settings(
+        _env_file=None,
+        cache_dir=tmp_path,
+        llm_provider="openai",
+        llm_model="unpriced",
+        llm_options={"api_key": "x"},
+        llm_ledger=tmp_path / "ledger.jsonl",
+        llm_ledger_limit_usd=1.0,
+    )
+    with pytest.raises(ValueError, match="AUDITOR_LLM_PRICES"):
+        StructuredLLM.from_settings(settings)
+
+
+def test_runs_writing_one_ledger_at_once_lose_no_lines(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    from auditor.infra.llm import ledger_total
+
+    ledger = tmp_path / "ledger.jsonl"
+    script = (
+        "import sys; from pathlib import Path; from auditor.infra.llm import _append_ledger; "
+        "[_append_ledger(Path(sys.argv[1]), 'm', 0.001) for _ in range(1000)]"
+    )
+    runs = [subprocess.Popen([sys.executable, "-c", script, str(ledger)]) for _ in range(4)]
+    assert all(run.wait(timeout=120) == 0 for run in runs)
+    assert len(ledger.read_text(encoding="utf-8").splitlines()) == 4000
+    assert ledger_total(ledger) == pytest.approx(4.0)
+
+
 def test_input_read_from_the_cache_is_charged_at_its_share() -> None:
     spend = Spend(limit_usd=None, prices={"m": (1.0, 2.0)}, cached_input_share=0.25)
     spend.charge(
