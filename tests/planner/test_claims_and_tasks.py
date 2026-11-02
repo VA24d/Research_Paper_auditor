@@ -9,6 +9,7 @@ from auditor.planner.claims import (
     ClaimCandidate,
     ClaimJudgements,
     citation_candidates,
+    quote_in,
     refine_candidates,
 )
 from auditor.planner.repository import find_repository, repository_url, snapshot_ref
@@ -68,6 +69,39 @@ async def test_refinement_narrows_claims_and_marks_check_worthiness() -> None:
     assert "Candidate 3" in prompt
     assert "not linked to the bibliography" in prompt
     assert "Attention Is All You Need (2017)" in prompt
+
+
+def spans(sentence: str, *markers: str) -> list[tuple[int, int]]:
+    return [(sentence.index(m), sentence.index(m) + len(m)) for m in markers]
+
+
+# From the live run on arXiv 2005.11401: Gemini left markers out of most of its quotes.
+REALM = (
+    "REALM [20] and ORQA [31], two recently introduced models that combine masked language "
+    "models [8] with a differentiable retriever, have shown promising results"
+)
+
+
+def test_a_quote_without_the_citation_markers_is_the_sentence_text_with_them() -> None:
+    markers = spans(REALM, "[20]", "[31]", "[8]")
+    claim = "REALM and ORQA, two recently introduced models that combine masked language models"
+    assert quote_in(REALM, claim, markers) == REALM[: REALM.index(" [8]")]
+    # Only some markers left out.
+    partly = "REALM [20] and ORQA, two recently introduced models"
+    assert (
+        quote_in(REALM, partly, markers)
+        == "REALM [20] and ORQA [31], two recently introduced models"
+    )
+
+
+def test_a_quote_that_is_not_in_the_sentence_is_refused() -> None:
+    markers = spans(REALM, "[20]", "[31]", "[8]")
+    assert quote_in(REALM, "REALM and ORQA ... promising results", markers) is None
+    assert quote_in(REALM, "REALM and ORQA, two new models", markers) is None
+    assert quote_in(REALM, "", markers) is None
+    # Without the parser's marker spans, only an exact quote counts.
+    assert quote_in(REALM, "REALM and ORQA", []) is None
+    assert quote_in(REALM, "ORQA [31]", []) == "ORQA [31]"
 
 
 async def test_refinement_runs_in_batches() -> None:

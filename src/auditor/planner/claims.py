@@ -3,7 +3,10 @@
 The deterministic pass keeps every mention, including markers the parser could not link,
 so nothing silently drops out (decision D6). The optional LLM pass decides which
 candidates make a checkable statement about the cited work and narrows the claim text;
-whatever it returns must be an exact substring of the sentence, or it is ignored.
+whatever it returns must be an exact substring of the sentence, or it is ignored. Models
+tend to leave the citation markers out of a quote ("REALM and ORQA" for "REALM [20] and
+ORQA [31]"), so a quote also counts when it matches the sentence with the markers the
+parser found taken out; the claim is then the sentence's own text, markers included.
 """
 
 import logging
@@ -92,6 +95,32 @@ def _describe(paper: ParsedPaper, index: int, candidate: ClaimCandidate) -> str:
     )
 
 
+def quote_in(sentence: str, claim: str, markers: Sequence[tuple[int, int]]) -> str | None:
+    """The part of `sentence` that `claim` quotes, or None. The claim may leave out any of
+    the citation markers at the `markers` spans (start and end in the sentence), each with
+    the space before it."""
+    if not claim:
+        return None
+    if claim in sentence:
+        return claim
+    # Both texts without the markers; for each character of the sentence that is kept, its
+    # index in the sentence.
+    spans = [
+        (start - 1 if start > 0 and sentence[start - 1] == " " else start, end)
+        for start, end in markers
+    ]
+    dropped = {i for start, end in spans for i in range(start, end)}
+    kept = [i for i in range(len(sentence)) if i not in dropped]
+    bare = claim
+    for text in sorted({sentence[start:end] for start, end in spans}, key=len, reverse=True):
+        bare = bare.replace(text, "").replace(text.strip(), "")
+    bare = bare.strip()
+    at = "".join(sentence[i] for i in kept).find(bare) if bare else -1
+    if at < 0:
+        return None
+    return sentence[kept[at] : kept[at + len(bare) - 1] + 1]
+
+
 async def refine_candidates(
     paper: ParsedPaper,
     candidates: list[ClaimCandidate],
@@ -114,9 +143,15 @@ async def refine_candidates(
                 continue
             original = batch[judgement.candidate]
             sentence = paper.sentence(original.sentence_id).text
-            claim = judgement.claim.strip()
-            if claim and claim in sentence:
-                narrowed = claim
+            spans = [
+                (m.start, m.end) for m in paper.citations if m.sentence_id == original.sentence_id
+            ]
+            quoted = quote_in(sentence, judgement.claim.strip(), spans)
+            if quoted is not None:
+                narrowed = quoted
+            elif not judgement.claim.strip():
+                # Usually a candidate judged not check-worthy; the sentence stands.
+                narrowed = original.claim
             else:
                 logger.warning(
                     "claim for %s is not an exact quote of the sentence; keeping the sentence",
