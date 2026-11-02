@@ -40,7 +40,7 @@ real conditions; **low** = dead code or doc/code drift; **info** = observation.
 | 3 | `src/auditor/agents/citation/lookup.py:93-101`, `retrieval/resolve.py` (title-search step) | **medium** | The four title searches (OpenAlex, Crossref, arXiv, S2) are built as a tuple of awaited calls, so all four always run even when the first has hits; and any one of them raising aborts the whole lookup even if an earlier one had hits. ~4x the HTTP calls per title lookup, plus fragility. | Small, clearly-correct fix (sequential with early exit + per-search exception capture); ask before implementing since it changes behaviour observable in `queries`. |
 | 4 | `src/auditor/agents/citation/support.py:279-280` vs code | **low** | Docstring says "a quote must be verbatim in the source", but the model's quote is never checked against `source.text`; a non-verbatim quote is attached as evidence with no offsets. Scoring is unaffected. | Either check verbatim (grounding improvement) or fix the docstring. |
 | 5 | `src/auditor/agents/citation/eval.py:48-51` | **low** | Dead code: `shorter in longer` duplicates the containment test on the line above. | Trivial deletion. |
-| 6 | `src/auditor/agents/citation/reference.py:79-88` | **low** | `check_reference` re-fetches the bibliography entry that `check` already resolved and would already have returned unverifiable for a missing one — the KeyError path is unreachable. | Trivial cleanup. |
+| 6 | `src/auditor/agents/citation/reference.py:79-88` | **low** | `check_reference` re-fetches the bibliography entry that `check` already resolved and would already have returned unverifiable for a missing one — the KeyError path is unreachable. | Re-checked 2026-11-02: NOT unreachable — `check_reference` is also called directly on bare tasks (7 tests in `test_reference.py` rely on the re-fetch). Kept as is; the re-fetch makes the check usable without a pre-resolved entry. |
 | 7 | `src/auditor/agents/citation/set_b.py:215-218` | **low** | `_inject_sentence` slices `sentence.text[anchor.start:anchor.end]` before the span-None check (harmless — the slice with None is the whole text and the error is raised before use, but the order reads wrong). | Trivial reorder. |
 | 8 | `src/auditor/agents/citation/support.py:334-336` | **info** | An invalid verdict string is mapped to `insufficient` but the quote computed before the fix is still used. Harmless in practice. | None. |
 
@@ -262,11 +262,18 @@ docker compose up -d ; docker compose ps
 - [ ] Wire GROBID into the agent/B1 full-text path (finding #2) — needs a design choice.
 - [ ] Sequential title-search fallback in `lookup.py`/`resolve.py` (finding #3).
 - [ ] Verbatim-quote check or docstring fix (finding #4) + a measured grounding rate.
-- [ ] Sync the `embed` extra, run the MiniLM vs BM25 Recall@5 comparison offline.
-- [ ] At least one `llm`-marked regression test.
+- [x] Sync the `embed` extra, run the MiniLM vs BM25 Recall@5 comparison offline — DONE
+      2026-11-02 (extra synced, comparison run: BM25 1.000 vs MiniLM 0.667 Recall@5 on
+      the 6 gold-passage records; BM25 ships — see p2-mid-results §3.3).
+- [x] At least one `llm`-marked regression test — DONE 2026-11-02
+      (`tests/agents/citation/test_support_live.py`, one live model call, passes).
 - [ ] `scripts/citation_eval.py tool-accuracy` on labelled lookups (machinery exists, no
       labelled fixture yet).
-- [ ] Trivial cleanups: eval.py dead code, reference.py re-fetch, set_b.py slice order.
+- [x] Trivial cleanups: eval.py dead code (already gone) and set_b.py slice order
+      (already reordered in the fix session); reference.py re-fetch KEPT — finding 6's
+      "unreachable" was wrong, direct callers rely on it.
+- [x] Builder verification hole found by the D18 second review (a number proposal passed
+      although the recorded source states neither value) — FIXED 2026-11-02 with tests.
 
 ## 8. Needs from others / asks
 

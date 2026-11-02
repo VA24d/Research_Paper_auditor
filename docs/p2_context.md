@@ -1040,6 +1040,38 @@ T2 STATUS (done, ranker decided: BM25):
   ERRORs under `-m network` when GROBID is not running — "Failed: GROBID is not running
   at http://localhost:8070" raised as an ERROR (fixture), and it uses asyncio.run inside
   a running loop too (test_arxiv_paper_citations_are_linked). Report to Bhaskar/Vijay;
+
+T3 STATUS (done): tests/agents/citation/test_support_live.py — one live call
+(`check_citation` on the canned Transformer SOURCE_TEXT, claim says 51.0 BLEU vs the
+source's 28.4, so the code-side number check must emit a mismatch finding with QUOTE
+evidence). Marked `llm`; skipped by the default suite; passes live (20s). Notes: the
+suite's autouse isolated_environment fixture clears AUDITOR_* and chdirs away, so the
+test loads the repo .env explicitly via Settings(_env_file=...) (read only, never
+printed). Commit f746088.
+
+T4 STATUS (done, except the two asks):
+- HALLMARK numbers reproduce exactly after teammates' changes: 0.851 / P 0.902 R 0.857
+  F1 0.879 / FPR 0.160 (49/307) on runs/hallmark/results_fixed.jsonl.
+- Builder verification hole (from T1) FIXED: scripts/set_b_build.py `_verify` now
+  rejects a claim_number proposal whose recorded source does not state the ORIGINAL
+  value (helper `_original_stated`, number-aware so "92.1%" matches "92.1"); 3 offline
+  tests in tests/agents/citation/test_set_b_build.py. Commit 406de37.
+- Audit-report trivial cleanups: eval.py dead code and set_b.py slice order were ALREADY
+  fixed in the fix session; reference.py re-fetch KEPT — finding 6's "unreachable" was
+  WRONG (7 direct-call tests rely on it; I briefly removed it, 7 tests failed, reverted;
+  p2_audit_report.md finding 6 corrected). Full suite 1248 passed / 1 skipped.
+- arXiv version check for arxiv_version_mismatch: investigated, NOT SMALL, ask Anurag.
+  The 9 remaining HALLMARK FNs of that type are all the same pattern: real paper, entry
+  swaps in a different REAL conference + shifts the year within the ±1 tolerance, and
+  the work resolves to a preprint record (venue None) → no contradiction is possible
+  from that record. venues_match itself is correct (verified on all 9 pairs). Recovering
+  them needs a second published-version lookup (extra index calls, new FP risk —
+  legitimate bibliographies look exactly like these) + a hallmark re-run to re-measure
+  FPR. NOT done before T6; documented as future work / ask.
+- B1 subset re-run (~250 calls): optional, NOT confirmed by Anurag — skipped, listed as
+  his call.
+- tool-accuracy labelled fixture: still future work (needs a labelled lookup fixture).
+
   NOT P2's file.
 
 
