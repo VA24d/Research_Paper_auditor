@@ -9,8 +9,8 @@ whose claim sentences or bibliography carry planted errors (decision D1).
 | Item | Count |
 |---|---|
 | Papers (arXiv ids in `arxiv_ids.txt`) | 60 |
-| Gold labels in `labels.jsonl` | 158 |
-| Injected errors | 112: `reference_not_found` 96, `claim_number_mismatch` 4, `reference_metadata_mismatch` 9, `claim_not_supported` 3 |
+| Gold labels in `labels.jsonl` | 157 |
+| Injected errors | 111: `reference_not_found` 96, `reference_metadata_mismatch` 9, `claim_number_mismatch` 3, `claim_not_supported` 3 |
 | Clean controls (`none`) | 46 |
 | Bibliography entries fetched with their cited work's text | 2,743 (one JSON line per entry under `data/set_b/sources/`) |
 
@@ -57,11 +57,34 @@ After the build, three corrections were applied (all 2026-10-30):
   value was table data no claim states. `propose()` now skips sentences crowded with
   bare numbers.
 
+## The D18 second review (2026-11-02, dataset FROZEN)
+
+The independent second review (a P2 agent session, reviewer marker `p2-review-agent`,
+seed `random.Random(20260101)`) re-verified 32 of the 157 labels (20.4%, stratified):
+all 3 `claim_number_mismatch` + 3 `claim_not_supported` labels in full, 5/9
+`reference_metadata_mismatch`, 12/96 `reference_not_found`, 9/46 clean controls. Every
+sampled label was checked against the injected paper, the original paper and the recorded
+source text. Resolutions:
+
+- **One label dropped** (`b-632fd74c81b5`, claim_number_mismatch on 2501.09760 citing
+  TSPLIB): the recorded source (TSPLIB's abstract) contains no numbers at all, so the
+  rationale ("the source states 2000") was false and the mismatch is unverifiable from
+  the source. Label and injection record removed; the injected sentence keeps its edit
+  (an unlabelled injected error — a finding there scores as an unlabelled flag).
+- **Two rationales amended** (the 2501.00742 `claim_number_mismatch` pair): the source's
+  "1000" refers to training iterations, not neurons per layer; the amended rationale says
+  so. Labels kept: the number the claim states was changed, and the cited work's
+  experiments use 64-256 neurons per layer.
+- **One disk drift fixed** (`datasets/set_b/papers/2501.00742-injected.json`, s53): the
+  local paper copy said "1350neurons" where the committed record/label say the injection
+  is 1000 -> 750; the copy was rewritten to match the record (same-length rewrite, no
+  offsets moved).
+- The other 29 sampled labels agreed exactly (agreement 32/32 on the final sample set).
+- `scripts/set_b.py validate datasets/set_b --sources data/set_b/sources` now exits 0.
+
 ## What is not done yet
 
-- The D18 second review: 20% of the labels need a second person's `reviewed_by` before
-  the set is frozen.
-- The claim classes are thin (15 + 5 of 154): most claim sentences do not state a
+- The claim classes are thin (6 of 157): most claim sentences do not state a
   specific number the source confirms, and few contain a direction phrase the source
   contradicts. Growing them needs claim-level injections written by hand (the `inject`
   subcommand of `scripts/set_b.py` takes any claim text) or a larger paper pool.

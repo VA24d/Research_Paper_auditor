@@ -71,19 +71,47 @@ version comparison (future work).
 
 ## 3. Set B — claim–source support
 
-### 3.1 Dataset state after the corrections
+### 3.1 Dataset state after the corrections and the D18 second review (FROZEN)
 
-`datasets/set_b/`: **158 gold labels** (112 injection records + 46 clean controls) over
+`datasets/set_b/`: **157 gold labels** (111 injection records + 46 clean controls) over
 the 60 arXiv papers; `scripts/set_b.py validate datasets/set_b --sources
-data/set_b/sources` exits 1 **only** for the D18 second review (Anurag's task).
+data/set_b/sources` **exits 0** — the dataset is frozen as of 2026-11-02.
 
 | Class | Labels |
 |---|---|
 | reference_not_found | 96 |
 | reference_metadata_mismatch | 9 |
-| claim_number_mismatch | 4 |
+| claim_number_mismatch | 3 |
 | claim_not_supported | 3 |
 | none (clean controls) | 46 |
+
+**D18 second review (2026-11-02, this session — the session counts as the independent
+second reviewer per Anurag's instruction).** 32 of the 157 labels (20.4%, stratified,
+seed `random.Random(20260101)`, reviewer marker `p2-review-agent`): all 6 claim labels,
+5/9 metadata-mismatch, 12/96 not-found, 9/46 clean controls. Each was re-verified
+against the injected paper, the original paper and the recorded source text (record
+value vs entry field AND raw for bib injections; sentence span for claim injections;
+sha256 of the source; clean controls' quote evidence in the source). Agreement 32/32 on
+the final sample (the raw sample of 33 surfaced 5 findings — see below). Three
+resolutions, all before freezing:
+
+1. `b-632fd74c81b5` (claim_number_mismatch, 2501.09760 → TSPLIB) DROPPED: the recorded
+   source (TSPLIB's abstract) contains no digits at all, so its rationale ("the source
+   states 2000") was false and no checker could judge the mismatch. Label + record
+   removed; the injected sentence keeps its edit (documented unlabelled injected error).
+   158 → 157 labels, 112 → 111 records.
+2. The two 2501.00742 claim-number rationales amended: the source's "1000" is training
+   iterations, not neurons per layer (its experiments use 64–256 neurons per layer);
+   labels kept, rationale now says that.
+3. The local disk copy `datasets/set_b/papers/2501.00742-injected.json` (gitignored,
+   rebuildable from `injections.jsonl`) had drifted on s53 ("1350neurons" vs the
+   record's 1000 → 750); rewritten to match the committed record (same-length rewrite).
+   This is the only record/paper mismatch among all 112 records (full sweep).
+
+Builder-verification hole found by the review (P2's `scripts/set_b_build.py`, to fix in
+this session): a number proposal passed verification although the recorded source never
+states the original value — the "original stated by source" side of the check is
+missing/insufficient for abstract-level sources.
 
 Three corrections were applied this session (2026-10-30), documented in the set B README:
 
@@ -101,7 +129,8 @@ Three corrections were applied this session (2026-10-30), documented in the set 
    …"), so the perturbed value was table data no claim states. `propose()` now skips
    sentences crowded with bare numbers (>3).
 
-Net effect: 201 → 158 labels; the remaining claim classes are thin (4 + 3) and growing
+Net effect: 201 → 158 labels at build time, 158 → 157 after the second review (above);
+the remaining claim classes are thin (3 + 3) and growing
 them by hand is the documented follow-up.
 
 ### 3.2 Full-system mini-run (the citation agent as the product runs it)
@@ -169,8 +198,8 @@ no difference at B1's granularity; the module-level ablation needs the full syst
   warning). Part 1's `baselines/common.py`.
 - The `embed` extra (`AUDITOR_CITATION_EMBEDDER=minilm`) is still not synced; the default
   stays BM25. A BM25-vs-MiniLM Recall@5 comparison is offline and cheap once synced.
-- The D18 second review (20% of labels, `reviewed_by`) is Anurag's task and is the only
-  `validate` failure.
+- RESOLVED 2026-11-02: the D18 second review is DONE (this session, marker
+  `p2-review-agent`, §3.1) and the dataset is FROZEN; `scripts/set_b.py validate` exits 0.
 
 ## 5. The runs that produced these numbers
 
@@ -206,7 +235,7 @@ no difference at B1's granularity; the module-level ablation needs the full syst
 
 ## 7. What is next for P2
 
-- [ ] D18 second review (Anurag) → freeze the dataset.
+- [x] D18 second review → DONE 2026-11-02 (§3.1), dataset frozen, validate exits 0.
 - [ ] Full-system subset run over several papers (~60 calls + ~50k tokens per paper pair)
       for the module's real set B numbers; then the full-dataset runs.
 - [ ] Optional: B1 re-run on the cleaned labels for current baseline numbers.

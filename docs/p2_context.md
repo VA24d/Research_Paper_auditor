@@ -927,3 +927,92 @@ Findings so far: (static audit, step 2 — details going into docs/p2_audit_repo
 
 
 then "citation: HALLMARK loader, set B injection machinery and evaluation scripts".
+
+## Session 7 (2026-11-02) — P2 completion: D18 review, embed extra, final set B run (in progress)
+
+Anurag's brief: finish everything left in P2 this session. T1 D18 second review of set B
+(FIRST — freezes the dataset), T2 install the `embed` extra + BM25-vs-MiniLM Recall@5
+comparison + ranker decision, T3 one `llm`-marked regression test, T4 clear the small owed
+items (arXiv version check first, then the §4 known-issues sweep on P2's side), T5
+pre-flight gate, T6 THE final full-system set B run LAST (subset, stratified, ~8-10 paper
+pairs, uncached per D10) + the abstract-only ablation on the FINAL system (Anurag
+approved the ablation; it must run after all changes land, on the final system).
+
+Anurag's standing instructions for this session:
+- runs/ is gitignored and stays uncommitted (batch runs, scoring outputs, helper scripts
+  like the previous runs/_*.py correction scripts).
+- Do NOT commit runs/, never merge to main, never open a PR; push to p2-citation-checker.
+- GROBID up and LLM probe passing as of a few hours ago (re-verify at the T5 gate).
+- Before ANY run making more than ~100 model calls: STOP, report the estimate, wait.
+- Cost anchors: full system ~60 calls + ~50k input tokens per paper pair; B1 ~8-25 calls
+  + ~25k input tokens per paper.
+
+Baseline established once at session start (commit 93d1326, tree clean, branch
+p2-citation-checker):
+- `pytest tests -q`: **1242 passed, 1 skipped, 8 deselected** (docs said 1229; teammates
+  added ~13 tests since the fix session, all green; the 1 skip is Part 3's pyarrow test).
+- `ruff check` clean project-wide; `ruff format --check` clean (234 files).
+- `mypy`: **0 errors** — the 2 known Part-1 fcntl errors are GONE (Bhaskar's 28248ee
+  "llm: reserve the cost of calls in flight, lock the ledger on every OS" apparently
+  fixed the Windows lock path; nothing to hand back to Bhaskar on this).
+- `git diff 2a8c820..HEAD --stat` over P2 paths: EMPTY — no teammate touched P2's files,
+  so the docs' line references still hold.
+- NOTE: `origin/main`, `origin/HEAD` and `origin/p2-citation-checker` all point at
+  93d1326 (Bhaskar's PR #71 merge). Someone merged/moved main onto the P2 branch tip at
+  some point (not this session; not a P2 action). Harmless for us: P2 commits stay on
+  p2-citation-checker and are pushed there.
+
+T1 plan (D18 second review, the session opener): >= 32 of the 158 labels, stratified
+across classes and clean controls, seed `random.Random(20260101)`, reviewer marker
+`"reviewed_by": ["p2-review-agent"]` on exactly the sampled label lines. Allocation:
+all 7 claim labels (4 claim_number_mismatch + 3 claim_not_supported), 5/9
+reference_metadata_mismatch, 12/96 reference_not_found, 9/46 clean controls = 33 labels
+(20.9%). Verification per kind (script `runs/_review_setb.py`, gitignored):
+- injected bib labels: injected paper's entry carries `record.injected` in `raw` AND the
+  structured field; `CLASS_FOR_KIND[record.kind] == label.error_class`; original differs.
+- claim labels: injected sentence carries `record.injected` and the label anchor span
+  matches it; the ORIGINAL paper's sentence carries `record.original` and not the
+  injected value; the recorded source text states the original and not the injected
+  value (soft check for the injected one — build time already verified it globally);
+  sha256 of the source text matches `record.source_text_sha256`.
+- clean controls: sentence exists in the ORIGINAL paper, no injection record touches
+  that (paper, sentence), target bib id is in the bibliography and is cited by that
+  sentence, and the label's quote evidence appears in the recorded source text.
+Then `scripts/set_b.py validate` must exit 0 (dataset FROZEN), agreement rate reported,
+labels committed (`citation: D18 second review of set B (33 labels, agent)`).
+
+T1 OUTCOME (done, dataset FROZEN):
+- Sample: 32 of 157 labels = 20.4% (raw sample was 33; one label dropped — see below).
+  Seed `random.Random(20260101)`, marker `reviewed_by: ["p2-review-agent"]` on exactly
+  those 32 label lines. Helpers (all in gitignored runs/): `_review_setb.py` (the
+  review), `_inspect_labels.py` / `_inspect_claims.py` / `_inspect_s53.py`
+  (diagnostics), `_verify_not_supported.py` (semantic check of the direction claims),
+  `_sweep_records.py` (ALL 112 records vs papers), `_fix_setb.py` (the resolutions).
+- Findings and resolutions (all BEFORE freezing, documented in datasets/set_b/README.md
+  and docs/p2-mid-results.md §3.1):
+  1. DROPPED `b-632fd74c81b5` (claim_number_mismatch, 2501.09760 → TSPLIB b30): the
+     recorded source (TSPLIB abstract) contains NO digits at all; rationale false;
+     unverifiable from the source. Label + record removed (158 → 157 labels, 112 → 111
+     records). The injected sentence keeps its edit → one unlabelled injected error,
+     counted as an unlabelled flag if the agent reports it. NOTE for T6: the paper
+     carrying this dropped label (2501.09760) still has 2 valid labels (b-61540e59404a
+     claim_number 72.19, grounded in b28's abstract; plus its other injections).
+  2. AMENDED the two 2501.00742 claim-number rationales (source's "1000" = training
+     iterations, not neurons/layer; source experiments use 64-256 neurons/layer).
+     Labels kept (b-41c20920fa14, b-a6685f8c1d2e).
+  3. FIXED disk drift: datasets/set_b/papers/2501.00742-injected.json (gitignored) s53
+     said "1350neurons" vs the committed record's 1000 → 750; rewritten to match the
+     record (same length, no offsets moved). Full sweep: this was the ONLY record/paper
+     mismatch across all 112 records.
+  4. All other 29 sampled labels agreed exactly → agreement 32/32 on the final sample.
+- `scripts/set_b.py validate datasets\set_b --sources data\set_b\sources` exits 0.
+- Builder-verification hole discovered (for T4): a number proposal passed verification
+  although the recorded source never states the ORIGINAL value — the
+  "source confirms the number" side of the check is missing for abstract-level sources.
+  Fix `scripts/set_b_build.py` verify + a test (builder only; the frozen dataset is
+  already consistent).
+- Also verified by hand: the three claim_not_supported direction reversals really are
+  contradicted by the sources (MCMC-improves, ultra-LoLa accuracy tradeoff, GSL
+  improvements), and 2501.09760's 72.19% claim-number label is grounded in the cited
+  work's abstract verbatim.
+
