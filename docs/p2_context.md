@@ -85,7 +85,7 @@ main. Part 4 (Sudheera): verifier/report/evaluation, not started.
    parameter exists and works; a `citation_abstract_only` Settings field is still TODO
    (never added to config.py), so `check()` currently always fetches full text.
 4. **Support verdicts** (as implemented): supported / contradicted / insufficient.
-   contradicted -> CLAIM_NOT_SUPPORTED finding; insufficient -> checked, no finding;
+   contradicted -> CLAIM_NOT_SUPPORTED finding; insufficient -> unverifiable with the reason (D6) unless a number check found something;
    supported -> no finding. Every finding carries LOOKUP evidence, plus QUOTE evidence
    when the model's quote is >= MIN_QUOTE_CHARS (20); char offsets are recorded when the
    quote is found verbatim in the source text, else offsets stay None (the Part 4

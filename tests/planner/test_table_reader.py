@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.llm import StructuredLLM, StructuredOutputError
 from auditor.planner.table_reader import TableReading, read_tables, table_units
 from auditor.planner.tasks import PlannerOptions, plan_paper
 from auditor.schemas import (
@@ -129,3 +129,15 @@ async def test_equal_values_for_different_configurations_keep_their_own_cells(
     assert [t.setting.context for t in code if t.setting] == ["SST-2", "MRPC", "CoLA"]
     starts = [t.anchor.start for t in code]  # type: ignore[union-attr]
     assert starts == [m.start() for m in re.finditer("16", FLATTENED)]
+
+
+class _BrokenLLM:
+    """A model whose every answer fails validation."""
+
+    async def generate(self, *args: object, **kwargs: object) -> object:
+        raise StructuredOutputError("no valid JSON after 3 tries")
+
+
+async def test_a_failed_table_reading_is_skipped() -> None:
+    found = await read_tables(garbled_paper(), cast(StructuredLLM, _BrokenLLM()), already=[])
+    assert found == []

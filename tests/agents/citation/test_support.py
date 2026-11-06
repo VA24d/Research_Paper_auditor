@@ -218,7 +218,7 @@ async def test_a_short_quote_carries_lookup_evidence_only(tmp_path: Path) -> Non
     assert len("too short") < MIN_QUOTE_CHARS
 
 
-async def test_insufficient_is_checked_without_findings(tmp_path: Path) -> None:
+async def test_insufficient_leaves_the_claim_unverifiable(tmp_path: Path) -> None:
     task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
     result = await check_citation(
         task,
@@ -226,7 +226,9 @@ async def test_insufficient_is_checked_without_findings(tmp_path: Path) -> None:
         Resolution(work=WORK),
         source(),
     )
-    assert result.outcome is TaskOutcome.CHECKED
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.reason is not None
+    assert "does not settle the claim" in result.reason
     assert result.findings == ()
 
 
@@ -238,7 +240,7 @@ async def test_an_unknown_verdict_is_treated_as_insufficient(tmp_path: Path) -> 
         Resolution(work=WORK),
         source(),
     )
-    assert result.outcome is TaskOutcome.CHECKED
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
     assert result.findings == ()
 
 

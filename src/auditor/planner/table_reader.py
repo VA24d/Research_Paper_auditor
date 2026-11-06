@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.llm import StructuredLLM, StructuredOutputError
 from auditor.planner.settings import looks_like_table_row
 from auditor.planner.tables import ALIASES, canonical_key, table_value
 from auditor.schemas import (
@@ -138,9 +138,14 @@ async def read_tables(
     system = SystemMessage(SYSTEM_PROMPT.format(keys=", ".join(ALIASES)))
     for unit in table_units(paper, already):
         rows = "\n".join(f"Row {index}: {sentence.text}" for index, sentence in enumerate(unit))
-        result = await llm.generate(
-            TableReading, [system, HumanMessage(rows)], purpose="table-read"
-        )
+        try:
+            result = await llm.generate(
+                TableReading, [system, HumanMessage(rows)], purpose="table-read"
+            )
+        except StructuredOutputError as exc:
+            # The other tables are still read; this one keeps what the code found in it.
+            logger.warning("reading a table of %s failed (%s)", paper.paper_id, exc)
+            continue
         for reading in result.value.settings:
             setting = _accept(reading, unit, taken)
             if setting is None:

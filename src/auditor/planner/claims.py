@@ -16,7 +16,7 @@ from dataclasses import dataclass, replace
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.llm import StructuredLLM, StructuredOutputError
 from auditor.schemas import ParsedPaper
 
 logger = logging.getLogger(__name__)
@@ -132,11 +132,19 @@ async def refine_candidates(
     for offset in range(0, len(candidates), batch_size):
         batch = candidates[offset : offset + batch_size]
         prompt = "\n\n".join(_describe(paper, i, c) for i, c in enumerate(batch))
-        result = await llm.generate(
-            ClaimJudgements,
-            [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)],
-            purpose="citation-refine",
-        )
+        try:
+            result = await llm.generate(
+                ClaimJudgements,
+                [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)],
+                purpose="citation-refine",
+            )
+        except StructuredOutputError as exc:
+            # One bad answer must not stop the paper's audit: this batch keeps its
+            # sentences as claims, all checked.
+            logger.warning(
+                "refining citation claims %d-%d failed (%s)", offset, offset + len(batch) - 1, exc
+            )
+            continue
         for judgement in result.value.judgements:
             if not 0 <= judgement.candidate < len(batch):
                 logger.warning("ignoring judgement for unknown candidate %d", judgement.candidate)
