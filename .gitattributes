@@ -6,3 +6,6 @@
 *.gz binary
 *.zip binary
 *.sqlite binary
+
+# Data archives in Git LFS (data-archive/README.md)
+data-archive/*.tar.zst filter=lfs diff=lfs merge=lfs -text
