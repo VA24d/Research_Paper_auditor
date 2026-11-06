@@ -62,3 +62,12 @@ Thumbs.db
 .claude/settings.local.json
 .claude/worktrees/
 datasets/set_b/papers/
+
+# Agents & Agentic Workspaces
+.agents/
+
+# Local instructions & credentials
+gemini.md
+GEMINI.md
+
+
