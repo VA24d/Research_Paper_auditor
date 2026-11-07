@@ -35,7 +35,11 @@ The replay on this machine decides 94, 183, 0 (verified, review, dropped) where 
 
 Both runs are from before the verifier and were replayed through it (`results/p4/`). The citation checker was off in both (placeholder), so these are code and data classes only.
 
-Set C, 80 paper versions (40 papers, injected and original), one run:
+Set C, 80 paper versions (40 papers, injected and original), one run. That run
+(`setc-rv-p3-code-fixes-full-r1`) had no model for the method check: all 100 method labels
+ended "unverifiable: comparing the method with the code needs an LLM" (found with
+`scripts/p4_analysis.py`), so method_mismatch scores 0 here by construction and the
+numbers below are the settings and metric checks. The fresh runs below include it.
 
 | | Full system | Without verifier |
 |---|---|---|
