@@ -1,0 +1,80 @@
+{"paper": "../../data/set_c/papers/1711.10703v1.json", "repository": "https://github.com/cs-giung/FSRNet-pytorch", "repository_commit": "5b67fdf0657e454d1b382faafbeaf497560f4dc0"}
+{"paper": "../../data/set_c/injected/1711.10703v1.json", "repository": "https://github.com/cs-giung/FSRNet-pytorch", "repository_commit": "5b67fdf0657e454d1b382faafbeaf497560f4dc0"}
+{"paper": "../../data/set_c/papers/2004.09297v2.json", "repository": "https://github.com/microsoft/MPNet", "repository_commit": "081523a788c1556f28dd90cbc629810f48b083fb"}
+{"paper": "../../data/set_c/injected/2004.09297v2.json", "repository": "https://github.com/microsoft/MPNet", "repository_commit": "081523a788c1556f28dd90cbc629810f48b083fb"}
+{"paper": "../../data/set_c/papers/2106.01342v1.json", "repository": "https://github.com/ogunlao/saint", "repository_commit": "275834bf7372d53dade11daca5bffdad8e058b42"}
+{"paper": "../../data/set_c/injected/2106.01342v1.json", "repository": "https://github.com/ogunlao/saint", "repository_commit": "275834bf7372d53dade11daca5bffdad8e058b42"}
+{"paper": "../../data/set_c/papers/2106.09685v2.json", "repository": "https://github.com/microsoft/LoRA", "repository_commit": "a0d5efec36d74b5dce257492cc6943402573c4f3"}
+{"paper": "../../data/set_c/injected/2106.09685v2.json", "repository": "https://github.com/microsoft/LoRA", "repository_commit": "a0d5efec36d74b5dce257492cc6943402573c4f3"}
+{"paper": "../../data/set_c/papers/2211.07609v1.json", "repository": "https://github.com/chen742/PiPa", "repository_commit": "2a90d4f848d15ff642ad940950bd0a8fddd78dac"}
+{"paper": "../../data/set_c/injected/2211.07609v1.json", "repository": "https://github.com/chen742/PiPa", "repository_commit": "2a90d4f848d15ff642ad940950bd0a8fddd78dac"}
+{"paper": "../../data/set_c/papers/2212.06322v1.json", "repository": "https://github.com/gaow0007/ATSPrivacy", "repository_commit": "b9bf5da58d515167f94d859e256fd8b18d8a1f7c"}
+{"paper": "../../data/set_c/injected/2212.06322v1.json", "repository": "https://github.com/gaow0007/ATSPrivacy", "repository_commit": "b9bf5da58d515167f94d859e256fd8b18d8a1f7c"}
+{"paper": "../../data/set_c/papers/2305.18803v2.json", "repository": "https://github.com/thuml/Koopa", "repository_commit": "a2e0bb77ec7c1a25e8e0579ba517ffb41358b844"}
+{"paper": "../../data/set_c/injected/2305.18803v2.json", "repository": "https://github.com/thuml/Koopa", "repository_commit": "a2e0bb77ec7c1a25e8e0579ba517ffb41358b844"}
+{"paper": "../../data/set_c/papers/2402.04997v2.json", "repository": "https://github.com/jasonkyuyim/multiflow", "repository_commit": "6278899970523bad29953047e7a42b32a41dc813"}
+{"paper": "../../data/set_c/injected/2402.04997v2.json", "repository": "https://github.com/jasonkyuyim/multiflow", "repository_commit": "6278899970523bad29953047e7a42b32a41dc813"}
+{"paper": "../../data/set_c/papers/1910.10261v1.json", "repository": "https://github.com/oleges1/quartznet-pytorch", "repository_commit": "f4df7f571a267cbec79fbef5ba0fbdac84e2995e"}
+{"paper": "../../data/set_c/injected/1910.10261v1.json", "repository": "../../data/set_c/patched/1910.10261v1"}
+{"paper": "../../data/set_c/papers/1911.10194v3.json", "repository": "https://github.com/bowenc0221/panoptic-deeplab", "repository_commit": "cf8e20bbbf1cf540c7593434b965a93c4a889890"}
+{"paper": "../../data/set_c/injected/1911.10194v3.json", "repository": "../../data/set_c/patched/1911.10194v3"}
+{"paper": "../../data/set_c/papers/2001.07645v3.json", "repository": "https://github.com/bowang-lab/shape-attentive-unet", "repository_commit": "2b1dcf0faae70bf4d4978fbac13c0d3f7714d97d"}
+{"paper": "../../data/set_c/injected/2001.07645v3.json", "repository": "../../data/set_c/patched/2001.07645v3"}
+{"paper": "../../data/set_c/papers/2002.00718v2.json", "repository": "https://github.com/fcdl94/MiB", "repository_commit": "1c589833ce5c1a7446469d4602ceab2cdeac1b0e"}
+{"paper": "../../data/set_c/injected/2002.00718v2.json", "repository": "../../data/set_c/patched/2002.00718v2"}
+{"paper": "../../data/set_c/papers/2002.02798v3.json", "repository": "https://github.com/cfinlay/ffjord-rnode", "repository_commit": "8302dfb806284f6c42da0687d6100f4bac45726f"}
+{"paper": "../../data/set_c/injected/2002.02798v3.json", "repository": "../../data/set_c/patched/2002.02798v3"}
+{"paper": "../../data/set_c/papers/2002.05120v4.json", "repository": "https://github.com/ds4dm/branch-search-trees", "repository_commit": "b0cec513c026b52a00b666f7471d6f4abaf6e1ce"}
+{"paper": "../../data/set_c/injected/2002.05120v4.json", "repository": "../../data/set_c/patched/2002.05120v4"}
+{"paper": "../../data/set_c/papers/2002.07128v2.json", "repository": "https://github.com/nealgravindra/scGAT", "repository_commit": "6e5368be08f09e07cb73459fe0b46daef0b25892"}
+{"paper": "../../data/set_c/injected/2002.07128v2.json", "repository": "../../data/set_c/patched/2002.07128v2"}
+{"paper": "../../data/set_c/papers/2003.10606v1.json", "repository": "https://github.com/TheShadow29/vognet-pytorch", "repository_commit": "238e93c37cf9f03a2fd376a14760bb3d334a113d"}
+{"paper": "../../data/set_c/injected/2003.10606v1.json", "repository": "../../data/set_c/patched/2003.10606v1"}
+{"paper": "../../data/set_c/papers/2004.09144v3.json", "repository": "https://github.com/mesnico/TERN", "repository_commit": "357d544a2148d9e5f459068b4d433a3cc747dc59"}
+{"paper": "../../data/set_c/injected/2004.09144v3.json", "repository": "../../data/set_c/patched/2004.09144v3"}
+{"paper": "../../data/set_c/papers/2004.10016v1.json", "repository": "https://github.com/MRLoghmani/relative-rotation", "repository_commit": "93e1fa2a76c25dcbb0633d083a78ecc2f34d0080"}
+{"paper": "../../data/set_c/injected/2004.10016v1.json", "repository": "../../data/set_c/patched/2004.10016v1"}
+{"paper": "../../data/set_c/papers/2006.01592v2.json", "repository": "https://github.com/kenchan0226/dual_view_review_sum", "repository_commit": "2ff1c7323b98f0a8ca1dfb0341806e05b87faf52"}
+{"paper": "../../data/set_c/injected/2006.01592v2.json", "repository": "../../data/set_c/patched/2006.01592v2"}
+{"paper": "../../data/set_c/papers/2006.06958v1.json", "repository": "https://github.com/imirzadeh/stable-continual-learning", "repository_commit": "be4049c6f1c433e6d4593bf3113280dcbeb127b9"}
+{"paper": "../../data/set_c/injected/2006.06958v1.json", "repository": "../../data/set_c/patched/2006.06958v1"}
+{"paper": "../../data/set_c/papers/2006.13807v2.json", "repository": "https://github.com/armiro/COVID-CXNet", "repository_commit": "3ade488b3828705706fc5f58c0667421d8b04a01"}
+{"paper": "../../data/set_c/injected/2006.13807v2.json", "repository": "../../data/set_c/patched/2006.13807v2"}
+{"paper": "../../data/set_c/papers/2012.15000v1.json", "repository": "https://github.com/deepsphere/deepsphere-pytorch", "repository_commit": "43f03f1bef146d256a7e1c1e69df6712d089b9e5"}
+{"paper": "../../data/set_c/injected/2012.15000v1.json", "repository": "../../data/set_c/patched/2012.15000v1"}
+{"paper": "../../data/set_c/papers/2102.06514v3.json", "repository": "https://github.com/nerdslab/bgrl", "repository_commit": "60f9f19ad0598f9163ad70ebbde3e7297760901e"}
+{"paper": "../../data/set_c/injected/2102.06514v3.json", "repository": "../../data/set_c/patched/2102.06514v3"}
+{"paper": "../../data/set_c/papers/2104.01374v2.json", "repository": "https://github.com/juglab/HDN", "repository_commit": "4603b7887991033d6aceaa8992fad5d8946504d8"}
+{"paper": "../../data/set_c/injected/2104.01374v2.json", "repository": "../../data/set_c/patched/2104.01374v2"}
+{"paper": "../../data/set_c/papers/2106.10052v2.json", "repository": "https://github.com/ae-foster/cresp", "repository_commit": "0215842370d3d665133a496d6d971a537400c674"}
+{"paper": "../../data/set_c/injected/2106.10052v2.json", "repository": "../../data/set_c/patched/2106.10052v2"}
+{"paper": "../../data/set_c/papers/2107.12710v2.json", "repository": "https://github.com/eurecom-asp/RawGAT-ST-antispoofing", "repository_commit": "e3b049f79b3cd9552e66f6d0ba844cbb9399c479"}
+{"paper": "../../data/set_c/injected/2107.12710v2.json", "repository": "../../data/set_c/patched/2107.12710v2"}
+{"paper": "../../data/set_c/papers/2110.13653v1.json", "repository": "https://github.com/shangeth/SpeakerProfiling", "repository_commit": "7e5f3b013101fdc95732851e374f4170d2f97150"}
+{"paper": "../../data/set_c/injected/2110.13653v1.json", "repository": "../../data/set_c/patched/2110.13653v1"}
+{"paper": "../../data/set_c/papers/2202.03772v3.json", "repository": "https://github.com/jet-universe/particle_transformer", "repository_commit": "2925bdb249e8ef78560cc2b9b651eda3615da8c7"}
+{"paper": "../../data/set_c/injected/2202.03772v3.json", "repository": "../../data/set_c/patched/2202.03772v3"}
+{"paper": "../../data/set_c/papers/2208.04654v1.json", "repository": "https://github.com/axeber01/ngcc", "repository_commit": "2210bf55395669c1c39d49f65f286fc9a1523fc9"}
+{"paper": "../../data/set_c/injected/2208.04654v1.json", "repository": "../../data/set_c/patched/2208.04654v1"}
+{"paper": "../../data/set_c/papers/2211.00918v1.json", "repository": "https://github.com/kktsubota/universal-dic", "repository_commit": "cc86c1c45f4cfbd834fdac8174da33f8f01ec829"}
+{"paper": "../../data/set_c/injected/2211.00918v1.json", "repository": "../../data/set_c/patched/2211.00918v1"}
+{"paper": "../../data/set_c/papers/2304.04740v3.json", "repository": "https://github.com/louaaron/Reflected-Diffusion", "repository_commit": "dc4402607b7a4f5302f4b325ecfe2095b693b26f"}
+{"paper": "../../data/set_c/injected/2304.04740v3.json", "repository": "../../data/set_c/patched/2304.04740v3"}
+{"paper": "../../data/set_c/papers/2304.08467v3.json", "repository": "https://github.com/jayelm/gisting", "repository_commit": "3be0d062b6bdfd3caf51843bbc60261a0855f876"}
+{"paper": "../../data/set_c/injected/2304.08467v3.json", "repository": "../../data/set_c/patched/2304.08467v3"}
+{"paper": "../../data/set_c/papers/2305.14387v4.json", "repository": "https://github.com/tatsu-lab/alpaca_farm", "repository_commit": "30717ddae735365de756ee2085191b491a71788d"}
+{"paper": "../../data/set_c/injected/2305.14387v4.json", "repository": "../../data/set_c/patched/2305.14387v4"}
+{"paper": "../../data/set_c/papers/2306.12584v2.json", "repository": "https://github.com/smsharma/hierarchical-inference", "repository_commit": "d933a2235b3472cafc660449bddedf7295cd0e8f"}
+{"paper": "../../data/set_c/injected/2306.12584v2.json", "repository": "../../data/set_c/patched/2306.12584v2"}
+{"paper": "../../data/set_c/papers/2310.16834v3.json", "repository": "https://github.com/louaaron/Score-Entropy-Discrete-Diffusion", "repository_commit": "0605786da5ccb5747545e26d66fdf477187598b6"}
+{"paper": "../../data/set_c/injected/2310.16834v3.json", "repository": "../../data/set_c/patched/2310.16834v3"}
+{"paper": "../../data/set_c/papers/2312.02151v1.json", "repository": "https://github.com/wgcban/mix-bt", "repository_commit": "e2c6af0db61596cc9291f389adef7ccdfa8a38d1"}
+{"paper": "../../data/set_c/injected/2312.02151v1.json", "repository": "../../data/set_c/patched/2312.02151v1"}
+{"paper": "../../data/set_c/papers/2401.05363v5.json", "repository": "https://github.com/wjq-learning/SleepDG", "repository_commit": "01d209d4fda874933a277a88bccdca6e3835e884"}
+{"paper": "../../data/set_c/injected/2401.05363v5.json", "repository": "../../data/set_c/patched/2401.05363v5"}
+{"paper": "../../data/set_c/papers/2402.09453v1.json", "repository": "https://github.com/JoshParkSJ/eeg-wgan", "repository_commit": "ea5bbb0b89d065c5c60853738142da66afb26398"}
+{"paper": "../../data/set_c/injected/2402.09453v1.json", "repository": "https://github.com/JoshParkSJ/eeg-wgan", "repository_commit": "ea5bbb0b89d065c5c60853738142da66afb26398"}
+{"paper": "../../data/set_c/papers/2402.18396v1.json", "repository": "https://github.com/LDeng0205/confidence-bootstrapping", "repository_commit": "3c6831c1c33186b59d3664462c4160b2ab59c29d"}
+{"paper": "../../data/set_c/injected/2402.18396v1.json", "repository": "../../data/set_c/patched/2402.18396v1"}
+{"paper": "../../data/set_c/papers/2406.05992v1.json", "repository": "https://github.com/PixDeep/MHS-VM", "repository_commit": "be64b6fa4970a7f57c2e9677645219ffae6c1da5"}
+{"paper": "../../data/set_c/injected/2406.05992v1.json", "repository": "../../data/set_c/patched/2406.05992v1"}

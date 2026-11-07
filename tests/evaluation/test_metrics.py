@@ -94,6 +94,12 @@ def test_true_positive_miss_clean_hit_and_unlabelled() -> None:
     assert scores.clean_controls == 1
     assert scores.false_positive_rate == 1.0
     assert scores.unlabelled == 1
+    assert scores.outcomes == {
+        "l-lr": "found",
+        "l-clean": "flagged",
+        "l-bs": "missed",
+        "l-cite": "missed",
+    }
     # Macro-F1 over the two labelled classes: setting F1 0.5, claim 0.
     assert scores.macro_f1 == 0.25
 

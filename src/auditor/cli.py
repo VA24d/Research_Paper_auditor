@@ -97,7 +97,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
         paper = await load_paper(args.input, settings, http)
         repository = resolve_repository(args.repo, paper, args.repo_commit)
         llm = optional_llm(settings, not args.no_llm)
-        missing = missing_parts(SystemName.FULL)
+        missing = missing_parts(SystemName.FULL, settings.skip_parts)
         inputs = run_fingerprint(
             SystemName.FULL,
             settings,
@@ -195,7 +195,7 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
             extra_config={
                 "paper_id": paper.paper_id,
                 "variant": paper.variant.value,
-                "mocked_parts": list(missing_parts(system)),
+                "mocked_parts": list(missing_parts(system, settings.skip_parts)),
             },
         )
         write_manifest(manifest, run.path)

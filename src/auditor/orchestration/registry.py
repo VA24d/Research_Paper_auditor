@@ -7,11 +7,12 @@
 
 A missing entry point falls back to a mock and is reported, so runs record which parts
 were real. An entry point that exists but fails to import is an error, not a fallback.
+Parts named in `skip` (AUDITOR_SKIP_PARTS) are left out the same way, on purpose.
 """
 
 import importlib
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from types import ModuleType
 from typing import Any, cast
 
@@ -49,12 +50,13 @@ def _entry_point(package: str, attribute: str) -> Callable[..., Any] | None:
     return function if callable(function) else None
 
 
-def load_specialists() -> tuple[Specialists, list[str]]:
-    """The specialists to run, and the names of those still replaced by mocks."""
+def load_specialists(skip: Collection[str] = ()) -> tuple[Specialists, list[str]]:
+    """The specialists to run, and the names of those replaced by mocks: still missing, or
+    in `skip`."""
     checks: dict[str, CheckFn] = {}
     mocked = []
     for name, package in SPECIALIST_PACKAGES.items():
-        function = _entry_point(package, "check")
+        function = None if name in skip else _entry_point(package, "check")
         if function is None:
             mocked.append(name)
             checks[name] = check_nothing
@@ -74,12 +76,12 @@ def load_verifier() -> tuple[VerifyFn, bool]:
     return cast(VerifyFn, function), False
 
 
-def missing_tools() -> list[str]:
-    """Specialist parts that do not expose B1 tools yet."""
+def missing_tools(skip: Collection[str] = ()) -> list[str]:
+    """Specialist parts that do not expose B1 tools yet, or are in `skip`."""
     return [
         name
         for name, package in SPECIALIST_PACKAGES.items()
-        if _entry_point(f"{package}.tools", "make_tools") is None
+        if name in skip or _entry_point(f"{package}.tools", "make_tools") is None
     ]
 
 
@@ -87,6 +89,8 @@ def load_tools(ctx: RunContext) -> list[BaseTool]:
     """Every tool the specialist parts expose for baseline B1 (decision D7)."""
     tools: list[BaseTool] = []
     for name, package in SPECIALIST_PACKAGES.items():
+        if name in ctx.settings.skip_parts:
+            continue
         make_tools = _entry_point(f"{package}.tools", "make_tools")
         if make_tools is None:
             logger.warning("no B1 tools from the %s part yet", name)

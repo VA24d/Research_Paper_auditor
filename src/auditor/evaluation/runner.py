@@ -368,6 +368,7 @@ def to_json(scores: Sequence[RunScore]) -> dict[str, Any]:
                 "rate": r.grounding.rate,
             },
             "verifier_decisions": r.decisions,
+            "label_outcomes": r.scores.outcomes,
             "usage": vars(r.usage),
         }
 

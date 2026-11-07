@@ -88,6 +88,9 @@ class Scores:
     unlabelled: int = 0
     # The same flag raised on both copies of a paper counts once here.
     unlabelled_unique: int = 0
+    # What happened to each label in scope, by label id, for failure analysis: "found",
+    # "wrong_class", "missed" for error labels; "flagged" or "clean" for clean controls.
+    outcomes: dict[str, str] = field(default_factory=dict)
 
     @property
     def macro_f1(self) -> float:
@@ -154,14 +157,18 @@ def score(
         if not matched.is_error:
             scores.clean_flagged += 1
             predicted.false_positives += 1
+            scores.outcomes[matched.label_id] = "flagged"
         elif matched.error_class == prediction.error_class:
             predicted.true_positives += 1
+            scores.outcomes[matched.label_id] = "found"
         else:
             predicted.false_positives += 1
             scores.per_class[ErrorClass(matched.error_class)].false_negatives += 1
+            scores.outcomes[matched.label_id] = "wrong_class"
     for label in unmatched:
         if label.is_error:
             scores.per_class[ErrorClass(label.error_class)].false_negatives += 1
+        scores.outcomes[label.label_id] = "missed" if label.is_error else "clean"
     scores.unlabelled_unique = len(unlabelled)
     return scores
 
