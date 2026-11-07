@@ -66,8 +66,20 @@ def _short(reason: str) -> str:
     return " ".join(words)[:140]
 
 
-def stage_of(label: GoldLabel, run: RunData) -> tuple[str, str]:
-    """Where `label` was lost in one full-system run, and the reason when there is one."""
+def stage_of(
+    label: GoldLabel,
+    run: RunData,
+    outcome: str | None = None,
+    used: set[str] | None = None,
+) -> tuple[str, str]:
+    """Where `label` was lost in one full-system run, and the reason when there is one.
+
+    `outcome` is the label's outcome in the run's score ("found", "wrong_class", ...), so
+    "found" agrees with the headline numbers. Matching is one to one, as in scoring: a
+    finding in `used` already accounts for another label (a document-level method finding
+    matches every method label of its paper, but explains only one).
+    """
+    used = used if used is not None else set()
     paper = next(
         (
             p
@@ -78,18 +90,27 @@ def stage_of(label: GoldLabel, run: RunData) -> tuple[str, str]:
     )
     if paper is None:
         return "paper not run", ""
-    decisions = [d for d in paper.verified if _about(label, d.finding.anchor, d.finding.target)]
+    if outcome == "found":
+        return "found", ""
+    if outcome == "wrong_class":
+        return "wrong class", ""
+    decisions = [
+        d
+        for d in paper.verified
+        if d.duplicate_of is None
+        and d.finding.finding_id not in used
+        and d.state is not VerificationState.VERIFIED_FLAG
+        and _about(label, d.finding.anchor, d.finding.target)
+    ]
     right = [d for d in decisions if d.finding.error_class == label.error_class]
     for wanted, stage in (
-        (VerificationState.VERIFIED_FLAG, "found"),
         (VerificationState.NEEDS_HUMAN_REVIEW, "human review"),
         (VerificationState.DROPPED, "dropped"),
     ):
         hit = next((d for d in right if d.state is wanted), None)
         if hit is not None:
-            return stage, "" if stage == "found" else _short(hit.reason)
-    if any(d.state is VerificationState.VERIFIED_FLAG for d in decisions):
-        return "wrong class", ""
+            used.add(hit.finding.finding_id)
+            return stage, _short(hit.reason)
     tasks = read_jsonl(paper.folder / "tasks.jsonl", AuditTask)
     # A document-level label (a method discrepancy) is checked by a task anchored on one
     # sentence of the method section, so only its target has to agree.
@@ -153,8 +174,10 @@ def analyse(labels: Sequence[GoldLabel], runs: Sequence[RunData]) -> str:
     stages: dict[str, Counter[str]] = defaultdict(Counter)
     reasons: dict[str, Counter[str]] = defaultdict(Counter)
     for run in full:
+        outcomes = score(labels, run.predictions()).outcomes
+        used: set[str] = set()
         for label in errors:
-            stage, reason = stage_of(label, run)
+            stage, reason = stage_of(label, run, outcomes.get(label.label_id), used)
             stages[str(label.error_class)][stage] += 1
             if reason:
                 reasons[stage][reason] += 1

@@ -9,6 +9,7 @@ from types import ModuleType
 
 from pydantic import BaseModel
 
+from auditor.evaluation.metrics import score
 from auditor.evaluation.runs import load_run
 from auditor.orchestration.outputs import predictions_from_verified
 from auditor.schemas import (
@@ -142,16 +143,17 @@ def run_folder(root: Path, uncertain_reason: str) -> Path:
 def test_each_label_is_placed_at_the_stage_where_it_was_lost(tmp_path: Path) -> None:
     script = _script()
     run = load_run(run_folder(tmp_path, script.UNCERTAIN_ONLY))
+    labels = {
+        "found": label("a", ErrorClass.SETTING_MISMATCH, "s1", "learning_rate"),
+        "review": label("b", ErrorClass.SETTING_MISMATCH, "s2", "batch_size"),
+        "nothing": label("c", ErrorClass.SETTING_MISMATCH, "s3", "epochs"),
+        "unplanned": label("d", ErrorClass.SETTING_MISMATCH, "s4", "dropout"),
+        # A document-level method label is checked by a sentence-anchored task.
+        "method": label("e", ErrorClass.METHOD_MISMATCH, None, "method"),
+    }
+    outcomes = score(list(labels.values()), run.predictions()).outcomes
     stages = {
-        lid: script.stage_of(lbl, run)[0]
-        for lid, lbl in {
-            "found": label("a", ErrorClass.SETTING_MISMATCH, "s1", "learning_rate"),
-            "review": label("b", ErrorClass.SETTING_MISMATCH, "s2", "batch_size"),
-            "nothing": label("c", ErrorClass.SETTING_MISMATCH, "s3", "epochs"),
-            "unplanned": label("d", ErrorClass.SETTING_MISMATCH, "s4", "dropout"),
-            # A document-level method label is checked by a sentence-anchored task.
-            "method": label("e", ErrorClass.METHOD_MISMATCH, None, "method"),
-        }.items()
+        lid: script.stage_of(lbl, run, outcomes.get(lbl.label_id))[0] for lid, lbl in labels.items()
     }
     assert stages == {
         "found": "found",
