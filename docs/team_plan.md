@@ -246,11 +246,11 @@ one; record the commit hash actually checked out.
   rate on clean controls, flags per original paper and share of original papers flagged
   (D14), unlabelled flags, coverage (share of tasks checked), grounding rate, and cost
   from token usage, tool calls and HTTP requests.
-- [ ] **P4.6** Experiment configs for B0, B1 and the full system, three runs each on both
+- [x] **P4.6** (Sudheera; set C done, `docs/p4-results.md`: full and B0 three runs, B1 two; set B needs `data/set_b`) Experiment configs for B0, B1 and the full system, three runs each on both
   the injected and the original papers, with run manifests. `auditor batch` (README,
   "Experiments") runs a dataset file this way and resumes after interruptions.
-- [ ] **P4.7** (Sudheera; no-verifier done in `auditor evaluate`) Ablations: no verifier, abstract-only retrieval, single agent.
-- [ ] **P4.8** Result tables and failure analysis.
+- [ ] **P4.7** (Sudheera; no-verifier and single agent (B1) done on set C; abstract-only needs set B) Ablations: no verifier, abstract-only retrieval, single agent.
+- [x] **P4.8** (Sudheera; set C, `scripts/p4_analysis.py`) Result tables and failure analysis.
 
 ### Shared
 

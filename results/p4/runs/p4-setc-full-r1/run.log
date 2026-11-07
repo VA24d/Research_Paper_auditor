@@ -1,0 +1,118 @@
+2026-11-07 19:06:38,774 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:06:38,779 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:17:28,617 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:17:33,804 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:18:10,584 INFO    auditor.agents.code.data_checks [p4-setc-full-r1 code-cf1f82451c21876f] could not follow dataset disambiguate_pronoun: no revision 'main' of https://huggingface.co/datasets/disambiguate_pronoun: HTTP 401 from https://huggingface.co/api/datasets/disambiguate_pronoun/revision/main
+2026-11-07 19:18:34,246 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:18:34,246 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:18:34,247 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:18:35,572 INFO    auditor.agents.code.data_checks [p4-setc-full-r1 code-6d7823b9cd394e77] could not follow dataset disambiguate_pronoun: no revision 'main' of https://huggingface.co/datasets/disambiguate_pronoun: HTTP 401 from https://huggingface.co/api/datasets/disambiguate_pronoun/revision/main
+2026-11-07 19:22:34,648 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:23:27,802 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:23:41,802 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:24:31,228 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:25:03,218 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:25:22,314 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,206 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,206 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,206 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,206 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,207 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,207 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,207 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:30,207 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:26:35,607 INFO    auditor.infra.snapshots.snapshot [p4-setc-full-r1 code-0040ee7beea70dae] snapshot of https://huggingface.co/datasets/xnli at b8dd5d7af51114dbda02c0e3f6133f332186418e: 1 files, 52 skipped
+2026-11-07 19:26:37,998 INFO    auditor.infra.snapshots.snapshot [p4-setc-full-r1 code-0040ee7beea70dae] snapshot of https://huggingface.co/datasets/swag at dc48148372b3853a9c7bae7bb06c161b46d8364a: 1 files, 6 skipped
+2026-11-07 19:26:40,235 INFO    auditor.infra.snapshots.snapshot [p4-setc-full-r1 code-0040ee7beea70dae] snapshot of https://huggingface.co/datasets/glue at bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c: 1 files, 35 skipped
+2026-11-07 19:28:43,921 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:29:13,718 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:29:25,179 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:30:15,025 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:30:38,749 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:30:44,439 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:31:41,852 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:32:22,655 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:32:27,859 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:32:32,886 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:37:22,470 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:38:12,758 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:38:52,428 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:39:13,683 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:39:50,634 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:40:57,293 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:41:25,511 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:42:30,277 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:42:52,054 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:43:59,206 INFO    auditor.experiments [p4-setc-full-r1 code-f9a6fc9e842d106f] dropping a method discrepancy without shown evidence
+2026-11-07 19:43:59,281 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:44:37,568 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:44:42,217 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:46:58,140 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:47:17,687 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:48:12,025 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:48:51,448 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:49:26,767 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:49:27,242 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:50:17,059 INFO    auditor.experiments [p4-setc-full-r1 code-e4d2527165ad73d7] dropping a method discrepancy without shown evidence
+2026-11-07 19:50:17,140 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:51:24,942 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:52:09,943 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:52:32,992 INFO    auditor.experiments [p4-setc-full-r1 code-5887b7754b0eb248] dropping a method discrepancy without shown evidence
+2026-11-07 19:52:33,071 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:56:03,124 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:56:09,585 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:56:42,530 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:56:42,559 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 19:56:56,984 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:57:31,987 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 19:58:42,952 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:01:16,047 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:01:50,049 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:03:10,832 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:03:41,186 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:04:39,924 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:04:47,918 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:04:47,918 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:04:48,227 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:04:48,228 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:05:49,260 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:06:50,043 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:07:24,063 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:07:47,037 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:08:52,936 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:09:12,078 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:09:22,738 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:09:32,900 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:09:55,393 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:10:29,718 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:10:55,669 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:11:05,415 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:11:18,225 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:11:24,417 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:11:24,417 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:12:12,454 INFO    auditor.experiments [p4-setc-full-r1 code-2b66b0c3c9eeb96c] dropping a method discrepancy without shown evidence
+2026-11-07 20:12:12,531 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:12:12,571 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:12:12,571 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:12:40,393 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:13:14,845 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:13:31,180 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:14:12,548 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:14:31,675 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:14:37,192 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:15:20,146 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:15:56,290 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:16:01,711 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:16:07,604 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:16:08,168 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:16:15,641 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:16:15,642 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:16:15,644 WARNING auditor.planner.table_reader [p4-setc-full-r1 -] discarded a table reading that does not quote the table
+2026-11-07 20:17:08,701 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:17:22,783 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:17:37,118 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:17:42,040 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:17:44,384 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:17:48,931 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:18:27,711 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
+2026-11-07 20:18:45,839 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
