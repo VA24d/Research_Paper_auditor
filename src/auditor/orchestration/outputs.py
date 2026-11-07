@@ -5,6 +5,7 @@ runs/<run_id>/
     usage/{tool_calls,http_requests,llm_calls}.jsonl
     <paper_id>-<variant>/
         tasks.jsonl, results.jsonl, verified.jsonl    (full system)
+        report.md, report.json                        (full system; auditor.reporting)
         predictions.jsonl                             (every system)
         predictions.incomplete.jsonl                  (instead, when model calls ran out)
 
@@ -20,6 +21,7 @@ from pydantic import BaseModel
 
 from auditor.infra.files import atomic_write
 from auditor.orchestration.graph import AuditOutcome
+from auditor.reporting import build_report, write_report
 from auditor.schemas import ParsedPaper, Prediction, SystemName, VerifiedFinding
 
 PREDICTIONS = "predictions.jsonl"
@@ -89,6 +91,10 @@ class RunDirectory:
         )
         write_jsonl(folder / name, predictions)
         (folder / other).unlink(missing_ok=True)
+        report = build_report(
+            paper, outcome.tasks, outcome.results, outcome.verified, run_id=self.path.name
+        )
+        write_report(folder, report)
         return folder
 
     def save_predictions(self, paper: ParsedPaper, predictions: Sequence[Prediction]) -> Path:

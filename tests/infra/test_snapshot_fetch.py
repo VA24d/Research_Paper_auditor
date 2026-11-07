@@ -146,6 +146,26 @@ async def test_a_pinned_snapshot_is_reused_without_requests(tmp_path: Path) -> N
     assert second.manifest == first.manifest
 
 
+async def test_files_listed_as_empty_are_not_downloaded(tmp_path: Path) -> None:
+    # raw.githubusercontent.com sometimes answers 501 for an empty file.
+    hosts = FakeHosts()
+    github(hosts, [blob("train.py", 3), blob("pkg/__init__.py", 0)])
+    raw(hosts, "train.py", b"x=1")
+    hosts.routes[f"https://raw.githubusercontent.com/owner/repo/{SHA}/pkg/__init__.py"] = (
+        httpx.Response(501)
+    )
+    settings = settings_for(tmp_path)
+
+    async with client(hosts, settings) as http:
+        snapshot = await fetch_snapshot(
+            RepositoryRef(url="https://github.com/owner/repo", commit="main"), http, settings
+        )
+
+    assert [f.path for f in snapshot.manifest.files] == ["train.py", "pkg/__init__.py"]
+    assert snapshot.read_text("pkg/__init__.py") == ""
+    assert not any("__init__" in url for url in hosts.requested)
+
+
 async def test_download_limits_mark_the_snapshot_incomplete(tmp_path: Path) -> None:
     hosts = FakeHosts()
     github(hosts, [blob("train.py", 20), blob("eval.py", 20)])

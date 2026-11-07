@@ -19,6 +19,10 @@ from auditor.infra.context import RunContext
 from auditor.planner.theory import paper_context
 from auditor.schemas import ErrorClass, SentenceAnchor, VerificationState, VerifiedFinding
 
+# How a drop by this review starts its reason; the evaluation tells these apart from the
+# verifier's drops when it scores the full system without the verifier.
+NO_ERROR_REASON = "The review model found no error"
+
 SYSTEM_PROMPT = """You are the senior referee who checks the mathematics of a research
 paper. Junior referees each checked some of its claims and listed candidate errors. Judge
 every candidate with the whole paper in view, working through the mathematics yourself:
@@ -85,7 +89,7 @@ async def review_math(
             out[index] = decision.model_copy(
                 update={
                     "state": VerificationState.DROPPED,
-                    "reason": f"The review model found no error: {reason}",
+                    "reason": f"{NO_ERROR_REASON}: {reason}",
                     "accepted_evidence": (),
                 }
             )

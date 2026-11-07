@@ -141,6 +141,9 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 | Resume an interrupted audit | `uv run auditor audit paper.pdf --run-id <id> --resume` |
 | Baseline B0 or B1 | `uv run auditor baseline b0 paper.pdf` (needs an LLM in `.env`) |
 | Experiment over a dataset | `uv run auditor batch dataset.jsonl --experiment main [--systems full b0 b1] [--runs 3]` |
+| Score runs against gold labels | `uv run auditor evaluate labels.jsonl runs/main-full-r1 runs/main-b1-r1 [--dataset dataset.jsonl] [--area code] [--markdown out.md] [--json out.json]` |
+| Rebuild one paper's audit report | `uv run auditor report runs/<run_id>/<paper>-<variant> --paper paper.json` |
+| Rerun the verifier on an old run (no model calls) | `uv run python scripts/verifier_replay.py runs/<run_id> --out <folder>` |
 | Set C: candidates, injection, validation, scoring | `uv run python scripts/set_c.py --help` |
 | Data analysis mode | add `--analyse-data` to `audit`, `baseline` or `batch` (Parquet needs `uv sync --extra data`) |
 | Check the LLM provider | `uv run python scripts/probe_llm.py` |
@@ -149,7 +152,8 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 
 Each run writes to `runs/<run_id>/`: `manifest.json` (git commit, settings with secrets
 removed, package versions), `usage/*.jsonl` (every tool call, HTTP request and LLM call),
-and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.jsonl`. A
+and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl`, `predictions.jsonl` and the
+audit report for a human reader, `report.md` (with `report.json`). A
 paper whose checks ran out of model calls (`AUDITOR_LLM_MAX_CALLS`, `AUDITOR_LLM_MAX_COST_USD`)
 gets `predictions.incomplete.jsonl` instead, so it is not scored and a batch does not skip
 it as done. The dollar limit also counts what the calls still waiting for a reply could
@@ -177,6 +181,16 @@ continued with the same inputs: if the model, the code, a package version, any p
 repository or venue, or any setting other than paths and logging changed, the batch refuses
 and asks for a new `--experiment` name. `auditor audit --resume` applies the same check. LLM answers are not cached in a batch unless `--llm-cache` is given, and
 `--strict` refuses to start while any part is still a mock.
+
+### Evaluation
+
+`auditor evaluate` scores any set of run folders (or folders of run folders) against a gold
+label file with the matching rules of D3: Macro-F1, precision, recall, false-positive rate on
+clean controls, flags per original paper (D14), unlabelled flags, review load, coverage,
+grounding of the evidence (with `--dataset`) and cost. Runs of the same system are
+summarised as mean ± standard deviation, and each full-system run is also scored without its
+verifier (`full_no_verifier`, the ablation in P4.7). Results so far are in
+[docs/p4-results.md](docs/p4-results.md).
 
 ### Docker
 

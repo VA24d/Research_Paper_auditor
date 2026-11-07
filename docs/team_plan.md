@@ -229,19 +229,19 @@ one; record the commit hash actually checked out.
 
 ### Part 4 — Sudheera: verifier, report, evaluation
 
-- [ ] **P4.1** Quote validation: a quote counts only if it appears verbatim in the source
+- [x] **P4.1** (Vijay, PR #72) Quote validation: a quote counts only if it appears verbatim in the source
   text after the agreed normalisation (whitespace, hyphenation, ligatures). File and line
   evidence is checked against the fetched repository; rule findings must name their rule.
-- [ ] **P4.2** Gating logic with the three states and a reason for every decision.
+- [x] **P4.2** (Vijay, PR #72) Gating logic with the three states and a reason for every decision.
   Suspicions attached to `unverifiable` or `failed` task results go to
   `NEEDS_HUMAN_REVIEW`. Bounded rechecks reuse the specialist tools. Missing evidence alone
   never produces `VERIFIED_FLAG`.
-- [ ] **P4.3** Verifier fixtures (true errors, false accusations, uncertain cases) and
+- [x] **P4.3** (Vijay, PR #72; decisions on real runs in `auditor evaluate`) Verifier fixtures (true errors, false accusations, uncertain cases) and
   decision accuracy.
-- [ ] **P4.4** Report generator: JSON and Markdown, advisory wording that never asserts
+- [x] **P4.4** (Sudheera) Report generator: JSON and Markdown, advisory wording that never asserts
   intent, with three sections: verified flags, items for human review, and items not
   checked with their reasons (D6).
-- [ ] **P4.5** Evaluation runner: load `GoldLabel`s and `Prediction`s, apply the matching
+- [x] **P4.5** (Sudheera) Evaluation runner: load `GoldLabel`s and `Prediction`s, apply the matching
   rule for every anchor kind (D3), compute Macro-F1, precision, recall, false-positive
   rate on clean controls, flags per original paper and share of original papers flagged
   (D14), unlabelled flags, coverage (share of tasks checked), grounding rate, and cost
@@ -249,7 +249,7 @@ one; record the commit hash actually checked out.
 - [ ] **P4.6** Experiment configs for B0, B1 and the full system, three runs each on both
   the injected and the original papers, with run manifests. `auditor batch` (README,
   "Experiments") runs a dataset file this way and resumes after interruptions.
-- [ ] **P4.7** Ablations: no verifier, abstract-only retrieval, single agent.
+- [ ] **P4.7** (Sudheera; no-verifier done in `auditor evaluate`) Ablations: no verifier, abstract-only retrieval, single agent.
 - [ ] **P4.8** Result tables and failure analysis.
 
 ### Shared

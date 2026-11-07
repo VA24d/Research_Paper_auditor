@@ -253,6 +253,10 @@ async def _download(
 
 
 async def _load_file(file: RemoteFile, max_bytes: int) -> bytes | Skipped:
+    # A file the host lists as empty is not downloaded: raw.githubusercontent.com
+    # sometimes answers 501 for empty files (an empty __init__.py), failing the snapshot.
+    if file.size == 0:
+        return b""
     try:
         return await file.load(max_bytes)
     except ResponseTooLargeError:
