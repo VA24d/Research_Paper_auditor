@@ -306,7 +306,7 @@ def _quote(text: str, limit: int = 600) -> str:
     return "\n".join(f"> {line}" if line.strip() else ">" for line in text.splitlines())
 
 
-def _short_repository(source: str) -> str:
+def short_repository(source: str) -> str:
     """`owner/repo@abc1234` for a hosted repository, the folder name for a local copy."""
     base, _, revision = source.rpartition("@")
     if not base:
@@ -328,7 +328,7 @@ def _source_line(evidence: ReportEvidence) -> str:
     if evidence.source_kind is SourceKind.SUBMISSION:
         label = "The paper"
     elif evidence.source_kind is SourceKind.REPOSITORY:
-        label = f"Repository `{_short_repository(evidence.source)}`"
+        label = f"Repository `{short_repository(evidence.source)}`"
     else:
         label = f"{name.capitalize()} `{evidence.source_title or evidence.source}`"
         if evidence.url and evidence.url != evidence.source:
@@ -338,7 +338,7 @@ def _source_line(evidence: ReportEvidence) -> str:
     return label
 
 
-def _same_text(a: str, b: str) -> bool:
+def same_text(a: str, b: str) -> bool:
     return " ".join(a.split()) == " ".join(b.split())
 
 
@@ -370,7 +370,7 @@ def _render_item(number: int, item: ReportItem, *, show_reason: bool) -> list[st
         if not (
             e.source_kind is SourceKind.SUBMISSION
             and item.place.text
-            and _same_text(e.text, item.place.text)
+            and same_text(e.text, item.place.text)
         )
     ]
     if shown:

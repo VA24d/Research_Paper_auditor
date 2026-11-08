@@ -143,6 +143,7 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 | Experiment over a dataset | `uv run auditor batch dataset.jsonl --experiment main [--systems full b0 b1] [--runs 3]` |
 | Score runs against gold labels | `uv run auditor evaluate labels.jsonl runs/main-full-r1 runs/main-b1-r1 [--dataset dataset.jsonl] [--area code] [--markdown out.md] [--json out.json]` |
 | Rebuild one paper's audit report | `uv run auditor report runs/<run_id>/<paper>-<variant> --paper paper.json` |
+| Web UI: run audits and read reports | `uv run auditor ui` (after `uv sync --extra ui`) |
 | Rerun the verifier on an old run (no model calls) | `uv run python scripts/verifier_replay.py runs/<run_id> --out <folder>` |
 | Set C: candidates, injection, validation, scoring | `uv run python scripts/set_c.py --help` |
 | Data analysis mode | add `--analyse-data` to `audit`, `baseline` or `batch` (Parquet needs `uv sync --extra data`) |
@@ -181,6 +182,26 @@ continued with the same inputs: if the model, the code, a package version, any p
 repository or venue, or any setting other than paths and logging changed, the batch refuses
 and asks for a new `--experiment` name. `auditor audit --resume` applies the same check. LLM answers are not cached in a batch unless `--llm-cache` is given, and
 `--strict` refuses to start while any part is still a mock.
+
+### Web UI
+
+```bash
+uv sync --extra ui
+uv run auditor ui
+```
+
+This opens the auditor in the browser at <http://localhost:8501>, reachable from this computer
+only. Pick a set C demo paper (injected copies carry planted errors) or upload a ParsedPaper
+JSON or a PDF (PDFs need GROBID: `docker compose up -d`), optionally with a repository and
+venue rules, and run the audit. It runs `auditor audit` with live progress and spend, then
+shows the report: verified flags with their evidence, items for human review, checks not
+done. Past audits, including the experiment runs, open in the second tab at no cost.
+
+Switching "Use the model" off makes an audit free (checks that need a model end as not
+checked). With the model on, an audit costs about $0.08 on Gemini 3.8 Flash; every audit
+stops at the per-audit limit in the sidebar, and all UI audits share a ledger
+(`data/ui/ledger.jsonl`) with a total limit (default $5). Sign in for Vertex first
+(`gcloud auth application-default login`).
 
 ### Evaluation
 

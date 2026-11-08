@@ -6,7 +6,7 @@ from pathlib import Path
 
 from auditor.cli import main
 from auditor.reporting import AuditReport, build_report, render_markdown, write_report
-from auditor.reporting.report import CLASS_TITLES, NOTICE, _short_repository
+from auditor.reporting.report import CLASS_TITLES, NOTICE, short_repository
 from auditor.schemas import (
     ErrorClass,
     Evidence,
@@ -123,8 +123,8 @@ def test_every_error_class_has_a_neutral_title() -> None:
 
 
 def test_short_repository_names() -> None:
-    assert _short_repository("https://github.com/owner/repo@0123456789") == "owner/repo@0123456"
-    assert _short_repository("file:///data/patched/2001.0001v1@content-abcdef123") == (
+    assert short_repository("https://github.com/owner/repo@0123456789") == "owner/repo@0123456"
+    assert short_repository("file:///data/patched/2001.0001v1@content-abcdef123") == (
         "2001.0001v1@abcdef1"
     )
 

@@ -2,9 +2,11 @@
 
 import argparse
 import asyncio
+import importlib.util
 import json
 import logging
 import re
+import subprocess
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -308,6 +310,31 @@ async def _report(args: argparse.Namespace, settings: Settings) -> int:
     return 0
 
 
+async def _ui(args: argparse.Namespace, settings: Settings) -> int:
+    if importlib.util.find_spec("streamlit") is None:
+        raise InputError("The UI needs Streamlit: run `uv sync --extra ui` first.")
+    app = Path(__file__).parent / "ui" / "app.py"
+    # Only this computer can reach it (an audit spends the team's credits), and Streamlit's
+    # usage statistics are off.
+    command = [
+        sys.executable,
+        "-m",
+        "streamlit",
+        "run",
+        str(app),
+        "--server.address",
+        "localhost",
+        "--server.port",
+        str(args.port),
+        "--browser.gatherUsageStats",
+        "false",
+    ]
+    if not args.browser:
+        command += ["--server.headless", "true"]
+    # Streamlit runs until the user stops it; nothing else runs in this event loop.
+    return await asyncio.to_thread(subprocess.call, command)
+
+
 _NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
@@ -455,6 +482,12 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("folder", type=Path, help="The paper's folder in the run")
     report.add_argument("--paper", type=Path, required=True, help="The paper: PDF or JSON")
     report.add_argument("-o", "--output", type=Path, help="Folder to write into (default: folder)")
+
+    ui = commands.add_parser("ui", help="Open the web UI to run audits and read reports")
+    ui.add_argument("--port", type=_positive, default=8501)
+    ui.add_argument(
+        "--no-browser", dest="browser", action="store_false", help="Do not open a browser tab"
+    )
     return parser
 
 
@@ -477,6 +510,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "batch": _batch,
         "evaluate": _evaluate,
         "report": _report,
+        "ui": _ui,
     }
     try:
         return asyncio.run(commands[args.command](args, settings))
