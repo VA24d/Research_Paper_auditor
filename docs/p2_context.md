@@ -1065,12 +1065,63 @@ T4 STATUS (done, except the two asks):
   swaps in a different REAL conference + shifts the year within the ±1 tolerance, and
   the work resolves to a preprint record (venue None) → no contradiction is possible
   from that record. venues_match itself is correct (verified on all 9 pairs). Recovering
+
+T5 OUTCOME (2026-11-02): gate ALL GREEN (1248 passed / 1 skipped / 9 deselected; ruff +
+format clean 237 files; mypy 0; set_b validate exits 0; tree clean, 5 session commits
+pushed afd097d..fe9ba34; GROBID healthy; probe_llm all 5 modes ok; subset prepared).
+Subset: runs/setb_final_dataset.jsonl (13 pairs = 26 entries, paths relative to runs/:
+../datasets/set_b/papers/<id>-injected.json and ../datasets/set_b/papers/original/<id>.json)
++ runs/setb_final_labels.jsonl = EXACTLY the 42 labels of those 13 papers (9 metadata,
+15 RNF, 3 claim_number, 3 claim_not_supported, 12 clean). Papers: 00684 00742 00744
+00762 00773 00873 00915 00919 00924 00941 00958 02001 09760. 13 pairs instead of ~8-10
+because the 15 non-RNF labels sit on 13 distinct papers and no paper has >=3 RNF labels.
+ASKED ANURAG; ANSWER: "Go: full-system run only (~780 calls); ablation later" — the
+abstract-only ablation is DEFERRED (do NOT run it this session without a new go; it was
+to run on the final system, so it can still be run later against this exact system).
+No --llm-cache shakeout: the gate found nothing untested -> straight to the uncached run.
+
   them needs a second published-version lookup (extra index calls, new FP risk —
   legitimate bibliographies look exactly like these) + a hallmark re-run to re-measure
   FPR. NOT done before T6; documented as future work / ask.
 - B1 subset re-run (~250 calls): optional, NOT confirmed by Anurag — skipped, listed as
   his call.
 - tool-accuracy labelled fixture: still future work (needs a labelled lookup fixture).
+
+
+## Session 8 (2026-11-03) — P4 landed on main; audit Finding 1 (citation mocked in P4) — in progress
+
+Anurag's new brief: a teammate finished P4 and a full-system audit ran on the whole
+thing; everything is on main now. Put the T6 eval aside (not resumed yet: 25/26 entries
+of runs/setb-final-full-r1 are complete on disk, gitignored; resume = same command +
+AUDITOR_LLM_MAX_CALLS=900 AUDITOR_LLM_MAX_COST_USD=5). Then:
+1. Pull all changes from main INTO p2-citation-checker (never work in main; keep context).
+2. Explore the new P4 code + P1/P3 changes; update docs if needed.
+3. Work the audit's P2 issue — Finding 1 (CRITICAL): the citation agent was MOCKED in
+   every P4 set C run (manifest mocked_parts/skip_parts), set B evaluation never ran in
+   P4, data/set_b exists only on an uncommitted machine, labels.jsonl has too few claim
+   labels (audit counted the pre-session-7 file: 158 labels, 7 claim labels).
+   Remediation per audit: (a) commit/reconstruct data/set_b locally (Anurag prefers a
+   LOCAL solution over cloud for PDF/source caching), (b) expand claim-level labels,
+   (c) execute set B + B1 with citation enabled — DEFERRED: Anurag explicitly said do
+   NOT run the full set B or B1 evaluation (LLM credits uncertain); test on a subset
+   only if needed.
+4. Fix however I recommend; commit + push to main; merge p2-citation-checker into main
+   (remote too, do NOT delete the branch) ONLY IF SURE IT'S FINE. This explicitly
+   supersedes the old "never merge to main" rule for THIS session's final merge.
+5. Keep this context file updated regularly so any session can pick up.
+6. Do not touch or break anything outside P2.
+
+Session 7 leftovers still relevant:
+- docs/p2-mid-results.md, datasets/set_b/README.md updated through the D18 review +
+  ranker decision; commits afd097d..8eb05f2 on origin/p2-citation-checker.
+- The full-system set B subset run (T6) is 25/26 done and PAUSED; the intermediate
+  analysis (runs/_check_intermediate.py, _check_claim_labels.py, _spotcheck.py):
+  RNF golds 15/15, metadata 8/9 (00762 b1 flagged not_found instead), claim golds 2/6 —
+  3 FNs caused by Part 1 planner claim FRAGMENTS (00742 s53/s81 claim = "the
+  tensor-train decomposed PINN (TT-PINN)"; 02001 s24 claim = "reduces communication
+  costs"), 1 agent-level miss (00773 s111 complete claim not judged contradicted),
+  2 tasks lost to a 01:57 network blip in 00941-injected. Planner-fragment issue
+  documented for Bhaskar; NOT fixed by P2 (Part 1's file).
 
   NOT P2's file.
 
