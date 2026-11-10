@@ -214,7 +214,7 @@ reported. Tool-call accuracy, which the proposal lists for the tool-calling capa
 measured on labelled fixtures: the share of reference lookups that resolve to the gold work
 (sets A and B) and of repository searches that reach the gold file (set C).
 
-## D9. One LLM factory, provider chosen by config — Pending (decide by end of week 1)
+## D9. One LLM factory, provider chosen by config — Agreed
 
 - All model access goes through `auditor.infra.llm`. No module constructs a chat model itself.
 - Every component uses the same model ID in reported runs, as RQ1 requires.
@@ -223,9 +223,15 @@ measured on labelled fixtures: the share of reference lookups that resolve to th
   support.
 - Token usage is recorded for every call and rolled up per task, per paper and per run.
 
-Provider options under consideration: Google Gemini (paid from Google Cloud credits) or Z.ai
-GLM. The choice is made after a short probe of tool calling and structured output on the
-candidate models. Code written before then must not depend on the provider.
+The provider is Gemini on Vertex AI, on the team's Google Cloud project, signed in with
+Application Default Credentials (no API key). `scripts/probe_llm.py` passed every
+structured-output method and tool calling on Gemini 2.5 Flash (October 2026). The set C
+experiments (P4.6) run the main and review models on `gemini-3.8-flash`
+(`configs/experiments/set_c.env`). The code still does not depend on the provider: other
+providers, Vertex partner models and local models are configured the same way
+(`.env.example`).
+
+The options considered were Google Gemini (paid from Google Cloud credits) and Z.ai GLM.
 
 Facts that affect the choice (checked October 2026):
 - The Google Cloud $300 trial credit cannot pay for Gemini API keys created in AI Studio

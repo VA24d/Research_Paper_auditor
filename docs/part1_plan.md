@@ -31,12 +31,9 @@ Where the build differs from the plan below, and why:
 - **Experiments.** `auditor batch` runs systems over a dataset file several times with
   resumable run ids, and a Docker image pins the environment for final runs.
 
-Still open:
-
-- Run `scripts/probe_llm.py` and the planner's LLM pass (P1.12) with a real key once the
-  provider is settled (D9; Gemini is likely, and its request format is already tested
-  offline).
-- Failure analysis (P1.17) once real specialists are connected.
+Done since: `scripts/probe_llm.py` and the planner's LLM pass (P1.12) ran live on Gemini 2.5
+Flash on Vertex AI (D9), and the failure analysis (P1.17) is in
+[part1_failure_analysis.md](part1_failure_analysis.md).
 
 ---
 

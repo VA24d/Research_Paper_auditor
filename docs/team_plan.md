@@ -75,7 +75,8 @@ operating systems.
 Status: P1.1 is merged (PR #1). P1.2–P1.11 and P1.13–P1.16 are implemented and tested
 (PR #2 and the follow-up PR). P1.10 includes a gold sample of 100 hand-checked citation
 links (see [parser_evaluation.md](parser_evaluation.md)). P1.12 has been run live on
-Gemini 2.5 Flash (Vertex AI). P1.17 is open. Also available for Part 4: hyperparameter
+Gemini 2.5 Flash (Vertex AI). The failure analysis (P1.17) is in
+[part1_failure_analysis.md](part1_failure_analysis.md). Also available for Part 4: hyperparameter
 tables read into settings, `auditor batch` for repeated runs over a dataset (P4.6), and a
 Docker image for the final runs.
 
@@ -131,7 +132,8 @@ Integration and baselines:
 - [x] **P1.15** B0 runner: one model call over the whole paper, no tools.
 - [x] **P1.16** B1 runner: one tool-calling agent, one pass, no verifier, using the tools
   from P2.6 and P3.7.
-- [ ] **P1.17** Failure analysis for parsing, planning and orchestration for the write-up.
+- [x] **P1.17** Failure analysis for parsing, planning and orchestration for the write-up:
+  [part1_failure_analysis.md](part1_failure_analysis.md).
 
 ### Part 2 — Anurag: citation agent and retrieval
 
@@ -255,7 +257,7 @@ one; record the commit hash actually checked out.
 ### Shared
 
 - [ ] **S1** Review schemas v0 (P1.2) within a day of the PR opening.
-- [ ] **S2** LLM provider decision (D9) by the end of week 1.
+- [x] **S2** LLM provider decision (D9): Gemini on Vertex AI.
 - [ ] **S3** Write-up: each person writes the method and results for their part; everyone
   edits the introduction, the discussion and the limitations.
 - [ ] **S4** Demo.

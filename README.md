@@ -158,7 +158,9 @@ audit report for a human reader, `report.md` (with `report.json`). A
 paper whose checks ran out of model calls (`AUDITOR_LLM_MAX_CALLS`, `AUDITOR_LLM_MAX_COST_USD`)
 gets `predictions.incomplete.jsonl` instead, so it is not scored and a batch does not skip
 it as done. The dollar limit also counts what the calls still waiting for a reply could
-cost, at their prompt and answer cap, so calls sent together cannot run far past it.
+cost, at their prompt and answer cap, so calls sent together cannot run far past it. For B0
+and B1, `dropped.jsonl` lists why any answer could not become a prediction (an anchor
+outside the paper, an unknown entry).
 
 ### Experiments
 
