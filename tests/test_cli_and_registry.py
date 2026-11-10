@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import types
 from pathlib import Path
@@ -66,6 +67,29 @@ def test_tools_are_collected_from_each_part(
 
     parts["auditor.agents.citation.tools"].make_tools = lambda ctx: [find_reference]  # type: ignore[attr-defined]
     assert registry.load_tools(offline_context(tmp_path)) == [find_reference]
+
+
+def test_skipped_parts_run_as_placeholders_with_their_tools(
+    parts: dict[str, types.ModuleType], tmp_path: Path
+) -> None:
+    async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
+        return checked_result(task)
+
+    @tool
+    def find_reference(title: str) -> str:
+        """Find a cited work by title."""
+        return title
+
+    parts["auditor.agents.citation"].check = check  # type: ignore[attr-defined]
+    parts["auditor.agents.citation.tools"].make_tools = lambda ctx: [find_reference]  # type: ignore[attr-defined]
+    specialists, mocked = registry.load_specialists(skip=["citation"])
+    assert specialists.citation is check_nothing
+    assert "citation" in mocked
+    assert "citation" in registry.missing_tools(skip=["citation"])
+    ctx = offline_context(tmp_path)
+    skipping = ctx.settings.model_copy(update={"skip_parts": ("citation",)})
+    assert registry.load_tools(ctx) == [find_reference]
+    assert registry.load_tools(dataclasses.replace(ctx, settings=skipping)) == []
 
 
 def test_broken_imports_are_not_hidden(monkeypatch: pytest.MonkeyPatch) -> None:

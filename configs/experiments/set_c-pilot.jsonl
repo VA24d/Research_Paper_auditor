@@ -1,0 +1,4 @@
+{"paper": "../../data/set_c/papers/1711.10703v1.json", "repository": "https://github.com/cs-giung/FSRNet-pytorch", "repository_commit": "5b67fdf0657e454d1b382faafbeaf497560f4dc0"}
+{"paper": "../../data/set_c/injected/1711.10703v1.json", "repository": "https://github.com/cs-giung/FSRNet-pytorch", "repository_commit": "5b67fdf0657e454d1b382faafbeaf497560f4dc0"}
+{"paper": "../../data/set_c/papers/1910.10261v1.json", "repository": "https://github.com/oleges1/quartznet-pytorch", "repository_commit": "f4df7f571a267cbec79fbef5ba0fbdac84e2995e"}
+{"paper": "../../data/set_c/injected/1910.10261v1.json", "repository": "../../data/set_c/patched/1910.10261v1"}

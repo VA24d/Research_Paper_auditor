@@ -69,5 +69,9 @@ datasets/set_b/papers/
 # Local instructions & credentials
 gemini.md
 GEMINI.md
+AGENTS.md
+.claude/
+.gemini/
+.trail/
 
 

@@ -1,0 +1,136 @@
+2026-11-08 03:29:30,285 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: 1 validation error for SettingTarget
+key
+  String should match pattern '^[a-z][a-z0-9_]*$' [type=string_pattern_mismatch, input_value='67.4', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.14/v/string_pattern_mismatch
+2026-11-08 03:31:39,667 ERROR   auditor.experiments [- -] p4-setc-b1-r3 failed on 2212.06322v1
+Traceback (most recent call last):
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/experiments.py", line 563, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/experiments.py", line 499, in _run_one
+    await run_baseline(
+    ...<10 lines>...
+    )
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/experiments.py", line 245, in run_baseline
+    result = await run_b1(
+             ^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/baselines/b1.py", line 109, in run_b1
+    state = await agent.ainvoke({"messages": [message]}, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain/agents/factory.py", line 1602, in amodel_node
+    result = await awrap_model_call_handler(request, _execute_model_async)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain/agents/factory.py", line 418, in normalized_single
+    return _to_composed_result(await single_handler(request, handler))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/baselines/b1.py", line 72, in awrap_model_call
+    return await self.llm.direct_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        lambda: handler(request), _usage, purpose=PURPOSE, prompt=prompt_of(request)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/infra/llm.py", line 766, in direct_call
+    self._check_limits()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/infra/llm.py", line 502, in _check_limits
+    raise CallLimitReachedError(
+    ...<3 lines>...
+    )
+auditor.infra.llm.CallLimitReachedError: the budget is used up: $16.43 this run (AUDITOR_LLM_MAX_COST_USD 40.0), ledger limit 125.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)
+During task with name 'model' and id '88d831d1-3e69-b3a6-0fba-7ea52d8a1b92'
+2026-11-08 03:32:13,150 ERROR   auditor.experiments [- -] p4-setc-b1-r3 failed on 2212.06322v1
+Traceback (most recent call last):
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/experiments.py", line 563, in one
+    await _run_one(
+    ...<10 lines>...
+    )
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/experiments.py", line 499, in _run_one
+    await run_baseline(
+    ...<10 lines>...
+    )
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/experiments.py", line 245, in run_baseline
+    result = await run_b1(
+             ^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/baselines/b1.py", line 109, in run_b1
+    state = await agent.ainvoke({"messages": [message]}, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 4155, in ainvoke
+    async for chunk in self.astream(
+    ...<30 lines>...
+            chunks.append(chunk)
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3505, in astream
+    async for _ in runner.atick(
+    ...<16 lines>...
+            yield o
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+    ...<15 lines>...
+    )
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 744, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        step.ainvoke(input, config, **kwargs), context=context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain/agents/factory.py", line 1602, in amodel_node
+    result = await awrap_model_call_handler(request, _execute_model_async)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/.venv/lib/python3.13/site-packages/langchain/agents/factory.py", line 418, in normalized_single
+    return _to_composed_result(await single_handler(request, handler))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/baselines/b1.py", line 72, in awrap_model_call
+    return await self.llm.direct_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        lambda: handler(request), _usage, purpose=PURPOSE, prompt=prompt_of(request)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/infra/llm.py", line 766, in direct_call
+    self._check_limits()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/dheeruys/Documents/Github/Research_Paper_auditor/src/auditor/infra/llm.py", line 502, in _check_limits
+    raise CallLimitReachedError(
+    ...<3 lines>...
+    )
+auditor.infra.llm.CallLimitReachedError: the budget is used up: $16.57 this run (AUDITOR_LLM_MAX_COST_USD 40.0), ledger limit 125.0 (AUDITOR_LLM_LEDGER_LIMIT_USD)
+During task with name 'model' and id '10190e57-472c-fe6c-688b-d4c0677e55f7'
