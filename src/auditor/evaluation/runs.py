@@ -180,17 +180,19 @@ def _usage(folder: Path, manifest: RunManifest) -> Usage:
     usage.cost_usd = cost if priced else None
     tool_calls = folder / "usage" / "tool_calls.jsonl"
     if tool_calls.is_file():
-        usage.tool_calls = sum(1 for line in tool_calls.open(encoding="utf-8") if line.strip())
+        with tool_calls.open(encoding="utf-8") as lines:
+            usage.tool_calls = sum(1 for line in lines if line.strip())
     http = folder / "usage" / "http_requests.jsonl"
     if http.is_file():
-        for line in http.open(encoding="utf-8"):
-            if not line.strip():
-                continue
-            record = json.loads(line)
-            if not record.get("cache_hit"):
-                usage.http_requests += int(record.get("attempts", 1)) + int(
-                    record.get("redirects", 0)
-                )
+        with http.open(encoding="utf-8") as lines:
+            for line in lines:
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                if not record.get("cache_hit"):
+                    usage.http_requests += int(record.get("attempts", 1)) + int(
+                        record.get("redirects", 0)
+                    )
     return usage
 
 
@@ -232,12 +234,13 @@ def load_run(folder: Path, remap: tuple[str, str] | None = None) -> RunData:
     failed: list[str] = []
     failures = folder / "failures.jsonl"
     if failures.is_file():
-        for line in failures.open(encoding="utf-8"):
-            if line.strip():
-                record = json.loads(line)
-                key = f"{record.get('paper_id')}-{record.get('variant')}"
-                if key not in done and key not in failed:
-                    failed.append(key)
+        with failures.open(encoding="utf-8") as lines:
+            for line in lines:
+                if line.strip():
+                    record = json.loads(line)
+                    key = f"{record.get('paper_id')}-{record.get('variant')}"
+                    if key not in done and key not in failed:
+                        failed.append(key)
     return RunData(
         path=folder,
         manifest=manifest,

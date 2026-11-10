@@ -89,7 +89,16 @@ async def _docker(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-    out, _ = await asyncio.wait_for(process.communicate(stdin), timeout_s)
+    try:
+        out, _ = await asyncio.wait_for(process.communicate(stdin), timeout_s)
+    except BaseException:
+        # A timeout or a cancelled task: end the docker client and reap it, so no process
+        # outlives the call.
+        if process.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                process.kill()
+            await asyncio.shield(process.wait())
+        raise
     return process.returncode or 0, out.decode("utf-8", "replace")
 
 

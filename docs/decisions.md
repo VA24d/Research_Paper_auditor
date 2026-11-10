@@ -892,6 +892,15 @@ rule `unfinished_content`). It checks in two ways:
   notes to the authors left in the text, and unfinished text. Which wording counts is the
   model's reading, so this works in any field. A finding must quote its sentence exactly;
   prose is copied, not rendered, so a word match is not enough here.
+- **Text that looks cut off goes to a person** (November 2026). In the set C run
+  `p4-setc-full-r1`, 147 of this class's 152 flags were "unfinished text": sentences
+  GROBID had split at an abbreviation ("shown in Figs." / "5(b-c), while ...") or run into
+  table text. Set C has no labels for the class, so none of them counted against precision.
+  The prompt now says the text was extracted from the PDF and that such breaks are not
+  findings, and an unfinished-text finding is uncertain, so the verifier sends it to human
+  review. Re-run on the ten paper versions with the most flags (3.8 Flash), the 55 flags
+  became 8 uncertain findings and no flags. The placeholder statements of 2004.09297 and the
+  "??" of 2401.05363 are still flagged.
 
 Findings have severity `high` (D20). B0 and B1 learn the class from the class guide, and B1
 gets no extra tools.

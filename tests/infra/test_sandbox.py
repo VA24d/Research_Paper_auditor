@@ -61,6 +61,21 @@ async def test_a_cancelled_run_stops_its_container(monkeypatch: pytest.MonkeyPat
     assert process.killed
 
 
+async def test_a_docker_command_that_times_out_is_killed_and_reaped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _HangingProcess()
+
+    async def spawn(*args: Any, **kwargs: Any) -> _HangingProcess:
+        return process
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
+    with pytest.raises(TimeoutError):
+        await sandbox_module._docker("image", "inspect", IMAGE, timeout_s=0.01)
+    assert process.killed
+    assert process.returncode is not None
+
+
 @pytest.fixture
 async def sandbox() -> MathSandbox:
     box = MathSandbox(SandboxLimits(timeout_s=10))

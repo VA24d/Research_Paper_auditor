@@ -72,8 +72,11 @@ Find sentences, including table and figure captions and footnotes, that:
   ("placeholder_results");
 - are notes or instructions to the authors or editors left in the text, such as "add the
   ablation here" or "check this number" ("author_note");
-- are otherwise clearly unfinished: cut off, template text never filled in
-  ("unfinished_text").
+- are otherwise clearly unfinished: template text never filled in, or a sentence the
+  authors plainly left half-written ("unfinished_text").
+The text was extracted from the PDF automatically. A sentence there is often split in the
+wrong place or interrupted by figure, table or footnote text, a page break or an
+abbreviation such as "Fig." or "Eq.", so it looks cut off; that is not a finding.
 Simulations that are part of the method (a simulated environment, synthetic data the paper
 studies) are not findings. For each finding give the sentence id, a quote of at least four
 words copied exactly from that sentence, the kind and a one-line explanation. An empty
@@ -186,5 +189,12 @@ async def check(task: AuditTask, ctx: RunContext) -> TaskResult:
             summary = (
                 f"{label.capitalize()}: {item.explanation.strip() or found.sentence.text[:200]}"
             )
-            findings.append(_finding(task, len(findings), found.sentence, found.span, summary))
+            # Text that looks cut off is far more often the PDF extraction's doing than the
+            # authors': in the set C run p4-setc-full-r1, 147 of this class's 152 flags were
+            # cut-off text, and those read were sentences GROBID split at "Figs." or ran into
+            # table text. It goes to a person instead of standing as a flag.
+            uncertain = item.kind == "unfinished_text"
+            findings.append(
+                _finding(task, len(findings), found.sentence, found.span, summary, uncertain)
+            )
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)
