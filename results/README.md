@@ -17,3 +17,15 @@ Left out, because they are large or can be rebuilt: PDFs and LaTeX sources, pars
 The RQ1 full-system scores use `rq1-pilotb` and `rq1-c5`, with `rq1-fix2` replacing 2304.04740 and 2402.18396. B0 and B1 fill their gaps from `rq1-rb0` and `rq1-rb1`. Pair 2401.05363 is dropped.
 
 `mid-submission-audit.md` lists what the audit of the report found.
+
+## Part 4 (`results/p4/`, 8 November 2026)
+
+| File | What it holds |
+|---|---|
+| `set_c-rq1.md`, `set_c-rq1.json` | `auditor evaluate` on the set C runs: full system and B0 three runs, B1 two, plus the full system without its verifier |
+| `set_c-failures.md` | `scripts/p4_analysis.py`: where each planted error is lost, stability across runs, uncertain findings counted |
+| `set_c-verifier-ablation.*`, `rq1-pilot.*` | Earlier runs replayed through the verifier (7 November) |
+| `runs/p4-setc-*`, `runs/p4-pilot-*` | Per run: manifest, log, failures, model calls; per paper: predictions, task results, verifier decisions |
+| `ledger-p4.jsonl` | Spend ledger of these runs ($125.04) |
+
+`runs/p4-setc-b1-r3` stopped at the spend limit after 10 of 80 versions and is not scored. Left out: checkpoints, `tasks.jsonl` and the audit reports (`report.md`, `report.json`), which `auditor report` rebuilds. Settings: `configs/experiments/set_c.env`. Write-up: `docs/p4-results.md`.

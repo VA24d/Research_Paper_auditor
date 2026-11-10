@@ -141,6 +141,10 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 | Resume an interrupted audit | `uv run auditor audit paper.pdf --run-id <id> --resume` |
 | Baseline B0 or B1 | `uv run auditor baseline b0 paper.pdf` (needs an LLM in `.env`) |
 | Experiment over a dataset | `uv run auditor batch dataset.jsonl --experiment main [--systems full b0 b1] [--runs 3]` |
+| Score runs against gold labels | `uv run auditor evaluate labels.jsonl runs/main-full-r1 runs/main-b1-r1 [--dataset dataset.jsonl] [--area code] [--markdown out.md] [--json out.json]` |
+| Rebuild one paper's audit report | `uv run auditor report runs/<run_id>/<paper>-<variant> --paper paper.json` |
+| Web UI: run audits and read reports | `uv run auditor ui` (after `uv sync --extra ui`) |
+| Rerun the verifier on an old run (no model calls) | `uv run python scripts/verifier_replay.py runs/<run_id> --out <folder>` |
 | Set C: candidates, injection, validation, scoring | `uv run python scripts/set_c.py --help` |
 | Data analysis mode | add `--analyse-data` to `audit`, `baseline` or `batch` (Parquet needs `uv sync --extra data`) |
 | Check the LLM provider | `uv run python scripts/probe_llm.py` |
@@ -149,11 +153,14 @@ JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
 
 Each run writes to `runs/<run_id>/`: `manifest.json` (git commit, settings with secrets
 removed, package versions), `usage/*.jsonl` (every tool call, HTTP request and LLM call),
-and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl` and `predictions.jsonl`. A
+and per paper `tasks.jsonl`, `results.jsonl`, `verified.jsonl`, `predictions.jsonl` and the
+audit report for a human reader, `report.md` (with `report.json`). A
 paper whose checks ran out of model calls (`AUDITOR_LLM_MAX_CALLS`, `AUDITOR_LLM_MAX_COST_USD`)
 gets `predictions.incomplete.jsonl` instead, so it is not scored and a batch does not skip
 it as done. The dollar limit also counts what the calls still waiting for a reply could
-cost, at their prompt and answer cap, so calls sent together cannot run far past it.
+cost, at their prompt and answer cap, so calls sent together cannot run far past it. For B0
+and B1, `dropped.jsonl` lists why any answer could not become a prediction (an anchor
+outside the paper, an unknown entry).
 
 ### Experiments
 
@@ -177,6 +184,36 @@ continued with the same inputs: if the model, the code, a package version, any p
 repository or venue, or any setting other than paths and logging changed, the batch refuses
 and asks for a new `--experiment` name. `auditor audit --resume` applies the same check. LLM answers are not cached in a batch unless `--llm-cache` is given, and
 `--strict` refuses to start while any part is still a mock.
+
+### Web UI
+
+```bash
+uv sync --extra ui
+uv run auditor ui
+```
+
+This opens the auditor in the browser at <http://localhost:8501>, reachable from this computer
+only. Pick a set C demo paper (injected copies carry planted errors) or upload a ParsedPaper
+JSON or a PDF (PDFs need GROBID: `docker compose up -d`), optionally with a repository and
+venue rules, and run the audit. It runs `auditor audit` with live progress and spend, then
+shows the report: verified flags with their evidence, items for human review, checks not
+done. Past audits, including the experiment runs, open in the second tab at no cost.
+
+Switching "Use the model" off makes an audit free (checks that need a model end as not
+checked). With the model on, an audit costs about $0.08 on Gemini 3.8 Flash; every audit
+stops at the per-audit limit in the sidebar, and all UI audits share a ledger
+(`data/ui/ledger.jsonl`) with a total limit (default $5). Sign in for Vertex first
+(`gcloud auth application-default login`).
+
+### Evaluation
+
+`auditor evaluate` scores any set of run folders (or folders of run folders) against a gold
+label file with the matching rules of D3: Macro-F1, precision, recall, false-positive rate on
+clean controls, flags per original paper (D14), unlabelled flags, review load, coverage,
+grounding of the evidence (with `--dataset`) and cost. Runs of the same system are
+summarised as mean ± standard deviation, and each full-system run is also scored without its
+verifier (`full_no_verifier`, the ablation in P4.7). Results so far are in
+[docs/p4-results.md](docs/p4-results.md).
 
 ### Docker
 

@@ -1,0 +1,299 @@
+{
+ "runs": [
+  {
+   "run_id": "setc-rv-p3-code-fixes-full-r1",
+   "system": "full",
+   "papers": 80,
+   "incomplete": 0,
+   "failed": [],
+   "mocked": [
+    "citation"
+   ],
+   "labels_without_run": 0,
+   "macro_f1": 0.5209621993127148,
+   "precision": 1.0,
+   "recall": 0.2392638036809816,
+   "false_positive_rate": 0.0,
+   "clean_controls": 72,
+   "clean_flagged": 0,
+   "unlabelled": 63,
+   "unlabelled_unique": 31,
+   "per_class": {
+    "method_mismatch": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 100,
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "metric_mismatch": {
+     "tp": 2,
+     "fp": 0,
+     "fn": 1,
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8
+    },
+    "setting_mismatch": {
+     "tp": 37,
+     "fp": 0,
+     "fn": 23,
+     "precision": 1.0,
+     "recall": 0.6166666666666667,
+     "f1": 0.7628865979381444
+    }
+   },
+   "original_papers": 40,
+   "original_flagged": 20,
+   "original_flags": 29,
+   "review_load": 183,
+   "task_outcomes": {
+    "checked": 12465,
+    "unverifiable": 555,
+    "failed": 0
+   },
+   "coverage": 0.9573732718894009,
+   "grounding": {
+    "flags": 94,
+    "backed": 94,
+    "found": 276,
+    "not_found": 0,
+    "unchecked": 0,
+    "records": 0,
+    "skipped": 0,
+    "backed_share": 1.0,
+    "rate": 1.0
+   },
+   "verifier_decisions": {
+    "real_error": {
+     "verified_flag": 39,
+     "needs_human_review": 23,
+     "dropped": 0
+    },
+    "wrong_class": {
+     "verified_flag": 0,
+     "needs_human_review": 0,
+     "dropped": 0
+    },
+    "clean_control": {
+     "verified_flag": 0,
+     "needs_human_review": 0,
+     "dropped": 0
+    },
+    "unlabelled": {
+     "verified_flag": 55,
+     "needs_human_review": 160,
+     "dropped": 0
+    }
+   },
+   "usage": {
+    "llm_calls": 0,
+    "cached_llm_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_tokens": 0,
+    "cost_usd": null,
+    "tool_calls": 0,
+    "http_requests": 26,
+    "logged": false
+   }
+  },
+  {
+   "run_id": "setc-rv-p3-code-fixes-full-r1",
+   "system": "full_no_verifier",
+   "papers": 80,
+   "incomplete": 0,
+   "failed": [],
+   "mocked": [
+    "citation"
+   ],
+   "labels_without_run": 0,
+   "macro_f1": 0.6,
+   "precision": 1.0,
+   "recall": 0.3803680981595092,
+   "false_positive_rate": 0.0,
+   "clean_controls": 72,
+   "clean_flagged": 0,
+   "unlabelled": 241,
+   "unlabelled_unique": 89,
+   "per_class": {
+    "method_mismatch": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 100,
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "metric_mismatch": {
+     "tp": 2,
+     "fp": 0,
+     "fn": 1,
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8
+    },
+    "setting_mismatch": {
+     "tp": 60,
+     "fp": 0,
+     "fn": 0,
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0
+    }
+   },
+   "original_papers": 40,
+   "original_flagged": 32,
+   "original_flags": 109,
+   "review_load": null,
+   "task_outcomes": {
+    "checked": 12465,
+    "unverifiable": 555,
+    "failed": 0
+   },
+   "coverage": 0.9573732718894009,
+   "grounding": {
+    "flags": 277,
+    "backed": 272,
+    "found": 841,
+    "not_found": 0,
+    "unchecked": 20,
+    "records": 0,
+    "skipped": 0,
+    "backed_share": 0.9819494584837545,
+    "rate": 1.0
+   },
+   "verifier_decisions": null,
+   "usage": {
+    "llm_calls": 0,
+    "cached_llm_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_tokens": 0,
+    "cost_usd": null,
+    "tool_calls": 0,
+    "http_requests": 26,
+    "logged": false
+   }
+  }
+ ],
+ "summary": {
+  "full": {
+   "Macro-F1": {
+    "mean": 0.5209621993127148,
+    "sd": null,
+    "n": 1
+   },
+   "Precision": {
+    "mean": 1.0,
+    "sd": null,
+    "n": 1
+   },
+   "Recall": {
+    "mean": 0.2392638036809816,
+    "sd": null,
+    "n": 1
+   },
+   "FP rate (clean)": {
+    "mean": 0.0,
+    "sd": null,
+    "n": 1
+   },
+   "Flags / original": {
+    "mean": 0.725,
+    "sd": null,
+    "n": 1
+   },
+   "Originals flagged": {
+    "mean": 0.5,
+    "sd": null,
+    "n": 1
+   },
+   "Unlabelled": {
+    "mean": 63.0,
+    "sd": null,
+    "n": 1
+   },
+   "Review / paper": {
+    "mean": 2.2875,
+    "sd": null,
+    "n": 1
+   },
+   "Coverage": {
+    "mean": 0.9573732718894009,
+    "sd": null,
+    "n": 1
+   },
+   "Flags backed": {
+    "mean": 1.0,
+    "sd": null,
+    "n": 1
+   },
+   "Quotes grounded": {
+    "mean": 1.0,
+    "sd": null,
+    "n": 1
+   },
+   "LLM calls / paper": null,
+   "Cost / paper ($)": null
+  },
+  "full_no_verifier": {
+   "Macro-F1": {
+    "mean": 0.6,
+    "sd": null,
+    "n": 1
+   },
+   "Precision": {
+    "mean": 1.0,
+    "sd": null,
+    "n": 1
+   },
+   "Recall": {
+    "mean": 0.3803680981595092,
+    "sd": null,
+    "n": 1
+   },
+   "FP rate (clean)": {
+    "mean": 0.0,
+    "sd": null,
+    "n": 1
+   },
+   "Flags / original": {
+    "mean": 2.725,
+    "sd": null,
+    "n": 1
+   },
+   "Originals flagged": {
+    "mean": 0.8,
+    "sd": null,
+    "n": 1
+   },
+   "Unlabelled": {
+    "mean": 241.0,
+    "sd": null,
+    "n": 1
+   },
+   "Review / paper": null,
+   "Coverage": {
+    "mean": 0.9573732718894009,
+    "sd": null,
+    "n": 1
+   },
+   "Flags backed": {
+    "mean": 0.9819494584837545,
+    "sd": null,
+    "n": 1
+   },
+   "Quotes grounded": {
+    "mean": 1.0,
+    "sd": null,
+    "n": 1
+   },
+   "LLM calls / paper": null,
+   "Cost / paper ($)": null
+  }
+ },
+ "labels": "datasets/set_c/labels.jsonl",
+ "areas": []
+}

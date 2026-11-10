@@ -1,0 +1,3 @@
+[lfs]
+	# The data archives are large; fetch them on demand (data-archive/README.md).
+	fetchexclude = data-archive/**

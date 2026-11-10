@@ -13,6 +13,7 @@ unavailable and the checks that would use it run without it.
 """
 
 import asyncio
+import contextlib
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -88,8 +89,27 @@ async def _docker(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-    out, _ = await asyncio.wait_for(process.communicate(stdin), timeout_s)
+    try:
+        out, _ = await asyncio.wait_for(process.communicate(stdin), timeout_s)
+    except BaseException:
+        # A timeout or a cancelled task: end the docker client and reap it, so no process
+        # outlives the call.
+        if process.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                process.kill()
+            await asyncio.shield(process.wait())
+        raise
     return process.returncode or 0, out.decode("utf-8", "replace")
+
+
+async def _stop(name: str, process: asyncio.subprocess.Process) -> None:
+    """Stops the container itself, not only the docker client, and reaps the client."""
+    with contextlib.suppress(OSError, TimeoutError):
+        await _docker("kill", name, timeout_s=30)
+    if process.returncode is None:
+        with contextlib.suppress(ProcessLookupError):
+            process.kill()
+    await process.wait()
 
 
 class MathSandbox:
@@ -121,10 +141,13 @@ class MathSandbox:
         try:
             out, err = await asyncio.wait_for(process.communicate(code.encode("utf-8")), limit)
         except TimeoutError:
-            # Stop the container itself, not only the docker client.
-            await _docker("kill", name, timeout_s=30)
-            await process.wait()
+            await _stop(name, process)
             return SandboxResult("", f"stopped after {limit:g} s", None, timed_out=True)
+        except BaseException:
+            # A cancelled check (the run stopped, a parent timeout) must not leave the
+            # container running: it has no time limit of its own.
+            await asyncio.shield(_stop(name, process))
+            raise
         return SandboxResult(
             out.decode("utf-8", "replace")[:MAX_OUTPUT_CHARS],
             err.decode("utf-8", "replace")[:MAX_OUTPUT_CHARS],

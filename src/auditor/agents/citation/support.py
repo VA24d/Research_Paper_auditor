@@ -425,6 +425,15 @@ async def check_citation(
             if finding is not None:
                 findings.append(finding)
 
-    if not findings:
-        return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[])
+    if not findings and verdict.verdict == "insufficient":
+        # Passages that neither back nor contradict the claim leave it unchecked, not
+        # clean (decision D6): the report lists it for a human to look up.
+        return TaskResult.for_task(
+            task,
+            TaskOutcome.UNVERIFIABLE,
+            reason=(
+                f"The retrieved text of the cited work ({source.level}) does not settle the "
+                f"claim: {verdict.reason.strip() or 'no reason given'}"
+            ),
+        )
     return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=findings)

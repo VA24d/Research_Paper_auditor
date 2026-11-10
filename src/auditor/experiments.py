@@ -18,7 +18,7 @@ import asyncio
 import hashlib
 import json
 import logging
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -187,7 +187,7 @@ async def run_full(
         review_llm=llm.review if llm is not None else None,
         source_pdf=source_pdf,
     )
-    specialists, _ = load_specialists()
+    specialists, _ = load_specialists(settings.skip_parts)
     verifier, _ = load_verifier()
     reviews = (review_math,) if settings.theory_check_enabled else ()
     pipeline = AuditPipeline(
@@ -253,18 +253,20 @@ async def run_baseline(
         )
     else:
         raise ValueError(f"{system.value} is not a baseline")
+    run.save_dropped(paper, result.dropped)
     return result, run.save_predictions(paper, result.predictions)
 
 
-def missing_parts(system: SystemName) -> list[str]:
-    """Parts a system needs that are still placeholders: the specialists and verifier for
-    the full system, the specialists' tools for B1 (decision D7). B0 needs none."""
+def missing_parts(system: SystemName, skip: Collection[str] = ()) -> list[str]:
+    """Parts a system needs that are placeholders: the specialists and verifier for the
+    full system, the specialists' tools for B1 (decision D7), including the parts in
+    `skip` (AUDITOR_SKIP_PARTS). B0 needs none."""
     if system is SystemName.FULL:
-        _, mocked = load_specialists()
+        _, mocked = load_specialists(skip)
         _, verifier_mocked = load_verifier()
         return [*mocked, *(["verifier"] if verifier_mocked else [])]
     if system is SystemName.B1:
-        return [f"{name} tools" for name in missing_tools()]
+        return [f"{name} tools" for name in missing_tools(skip)]
     return []
 
 
@@ -594,7 +596,7 @@ async def run_batch(
     """`paper_concurrency` papers run at the same time; each paper's results are written to
     its own folder, so the outputs do not depend on it."""
     entries = read_dataset(dataset)
-    missing = {system: missing_parts(system) for system in systems}
+    missing = {system: missing_parts(system, settings.skip_parts) for system in systems}
     if strict and any(missing.values()):
         problems = "; ".join(f"{s.value}: {', '.join(p)}" for s, p in missing.items() if p)
         raise InputError(f"--strict: these parts are still mocks or missing: {problems}")

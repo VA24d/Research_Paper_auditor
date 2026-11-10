@@ -298,6 +298,15 @@ class Settings(BaseSettings):
     # better for paraphrases; needs the `embed` extra, `uv sync --extra embed`, and
     # gracefully falls back to BM25 when it is not installed or the model is offline).
     citation_embedder: Literal["bm25", "minilm"] = "bm25"
+    # Specialist parts to leave out of a run, as JSON (AUDITOR_SKIP_PARTS=["citation"]).
+    # A skipped part runs as a placeholder and is listed in the manifest's mocked_parts,
+    # with its B1 tools, so the full system and B1 stay matched. Set C runs skip the
+    # citation agent: set C labels no citation classes, and its checks would add model
+    # calls and network time whose flags no label covers.
+    skip_parts: tuple[Literal["citation", "code", "template", "theory", "integrity"], ...] = ()
+    # A second model reading of the verified flags that rest on a model's judgement
+    # (claim support, method descriptions), one call per paper (auditor.agents.verifier).
+    verifier_recheck: bool = False
     # Check the mathematics of the paper's formal claims with the LLM (decision D21). The
     # planner lists the claims in one call and groups them into at most `theory_max_tasks`
     # tasks of `theory_batch_size` claims; each task screens its claims in one cheap call,

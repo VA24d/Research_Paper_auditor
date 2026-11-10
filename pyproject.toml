@@ -31,6 +31,10 @@ embed = [
     "onnxruntime>=1.17,<2",
     "tokenizers>=0.15,<1",
 ]
+# The web UI (`auditor ui`).
+ui = [
+    "streamlit>=1.40,<2",
+]
 
 [dependency-groups]
 dev = [
@@ -94,6 +98,11 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 # onnxruntime and tokenizers are the optional `embed` extra and ship no type information.
 module = ["onnxruntime", "onnxruntime.*", "tokenizers", "tokenizers.*", "numpy"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# streamlit is the optional `ui` extra; CI type-checks without it.
+module = ["streamlit", "streamlit.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

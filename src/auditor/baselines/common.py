@@ -69,6 +69,20 @@ ANSWER_GUIDE = """For every error, give:
   "marker" with the citation marker text when it has no entry, "setting" with a snake_case
   setting name such as "learning_rate", or "rule" with a venue rule id.
 - summary: one sentence describing the problem.
+Some classes always use the same anchor and target:
+- method_mismatch: anchor "document"; target "setting" "method".
+- code_defect: anchor "document"; target "setting" "code_defects".
+- metric_mismatch: the sentence; target "setting" "eval_metric".
+- data_split_mismatch: the sentence; target "setting" "data_split", "test_fraction",
+  "validation_fraction" or "dataset".
+- dataset_size_mismatch: the sentence; target "setting" "train_examples",
+  "validation_examples", "test_examples" or "total_examples".
+- label_distribution_mismatch: the sentence; target "setting" "num_classes" or
+  "class_balance".
+- data_leakage: the sentence; target "setting" "test_overlap".
+- math_error: the sentence; target "setting" "math".
+- unfinished_or_placeholder_content: the sentence; target "rule" "unfinished_content".
+- result_inconsistency: the sentence; target "rule" "result_consistency".
 Report only errors you have specific reasons for. An empty list is a valid answer."""
 
 

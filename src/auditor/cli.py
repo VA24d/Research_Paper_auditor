@@ -2,8 +2,11 @@
 
 import argparse
 import asyncio
+import importlib.util
+import json
 import logging
 import re
+import subprocess
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -13,6 +16,8 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from auditor.baselines.common import IncompleteAnswerError
 from auditor.config import Settings
+from auditor.evaluation import EvaluationError, run_evaluation
+from auditor.evaluation.runs import read_jsonl
 from auditor.experiments import (
     BATCH_SYSTEMS,
     InputError,
@@ -40,12 +45,16 @@ from auditor.infra.manifest import build_manifest, new_run_id, write_manifest
 from auditor.infra.usage import UsageLog
 from auditor.orchestration.graph import NothingToResumeError, ThreadInUseError
 from auditor.orchestration.outputs import RunDirectory
+from auditor.reporting import build_report, write_report
 from auditor.schemas import (
+    AuditTask,
     LinkMethod,
     ParsedPaper,
     SystemName,
     TaskOutcome,
+    TaskResult,
     VerificationState,
+    VerifiedFinding,
 )
 
 logger = logging.getLogger("auditor.cli")
@@ -90,7 +99,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
         paper = await load_paper(args.input, settings, http)
         repository = resolve_repository(args.repo, paper, args.repo_commit)
         llm = optional_llm(settings, not args.no_llm)
-        missing = missing_parts(SystemName.FULL)
+        missing = missing_parts(SystemName.FULL, settings.skip_parts)
         inputs = run_fingerprint(
             SystemName.FULL,
             settings,
@@ -154,7 +163,7 @@ async def _audit(args: argparse.Namespace, settings: Settings) -> int:
         f"{states[VerificationState.NEEDS_HUMAN_REVIEW]} for human review, "
         f"{states[VerificationState.DROPPED]} dropped"
         + (f" ({duplicates} repeat an earlier finding)" if duplicates else "")
-        + f". Output: {result.folder}"
+        + f". Report: {result.folder / 'report.md'}"
     )
     hit = limit_failures(outcome.results)
     if hit:
@@ -188,7 +197,7 @@ async def _baseline(args: argparse.Namespace, settings: Settings) -> int:
             extra_config={
                 "paper_id": paper.paper_id,
                 "variant": paper.variant.value,
-                "mocked_parts": list(missing_parts(system)),
+                "mocked_parts": list(missing_parts(system, settings.skip_parts)),
             },
         )
         write_manifest(manifest, run.path)
@@ -246,6 +255,84 @@ async def _batch(args: argparse.Namespace, settings: Settings) -> int:
             print(f"    {message}")
         failed += len(summary.failed)
     return 1 if failed else 0
+
+
+async def _evaluate(args: argparse.Namespace, settings: Settings) -> int:
+    remap = None
+    if args.remap:
+        old, sep, new = args.remap.partition("=")
+        if not sep or not old:
+            raise InputError("--remap takes OLD=NEW")
+        remap = (old, new)
+    try:
+        markdown, report = await run_evaluation(
+            args.labels,
+            args.runs,
+            settings=settings,
+            dataset=args.dataset,
+            remap=remap,
+            areas=args.area or (),
+            strict=args.strict,
+            ablate_verifier=not args.no_ablation,
+            title=args.title,
+        )
+    except EvaluationError as exc:
+        raise InputError(str(exc)) from exc
+    if args.markdown is not None:
+        atomic_write(args.markdown, markdown.encode("utf-8"))
+    if args.json is not None:
+        atomic_write(args.json, (json.dumps(report, indent=1) + "\n").encode("utf-8"))
+    print(markdown)
+    return 0
+
+
+async def _report(args: argparse.Namespace, settings: Settings) -> int:
+    folder: Path = args.folder
+    verified = read_jsonl(folder / "verified.jsonl", VerifiedFinding)
+    results = read_jsonl(folder / "results.jsonl", TaskResult)
+    if not verified and not results:
+        raise InputError(f"{folder}: no verified.jsonl or results.jsonl (a full-system run?)")
+    async with HttpClient(settings) as http:
+        paper = await load_paper(args.paper, settings, http)
+    run_id = folder.parent.name if (folder.parent / "manifest.json").is_file() else None
+    report = build_report(
+        paper,
+        read_jsonl(folder / "tasks.jsonl", AuditTask),
+        results,
+        verified,
+        run_id=run_id,
+    )
+    path = write_report(args.output or folder, report)
+    print(
+        f"{len(report.verified)} verified flags, {len(report.review)} for human review, "
+        f"{len(report.not_checked)} not checked, {len(report.dropped)} set aside. Report: {path}"
+    )
+    return 0
+
+
+async def _ui(args: argparse.Namespace, settings: Settings) -> int:
+    if importlib.util.find_spec("streamlit") is None:
+        raise InputError("The UI needs Streamlit: run `uv sync --extra ui` first.")
+    app = Path(__file__).parent / "ui" / "app.py"
+    # Only this computer can reach it (an audit spends the team's credits), and Streamlit's
+    # usage statistics are off.
+    command = [
+        sys.executable,
+        "-m",
+        "streamlit",
+        "run",
+        str(app),
+        "--server.address",
+        "localhost",
+        "--server.port",
+        str(args.port),
+        "--browser.gatherUsageStats",
+        "false",
+    ]
+    if not args.browser:
+        command += ["--server.headless", "true"]
+    # Streamlit runs until the user stops it; nothing else runs in this event loop.
+    return await asyncio.to_thread(subprocess.call, command)
 
 
 _NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -357,6 +444,50 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run the full system without the LLM, even when one is configured; checks that "
         "need it are reported unverifiable (part of the run settings)",
     )
+
+    evaluate = commands.add_parser(
+        "evaluate", help="Score runs against gold labels (Macro-F1, false alarms, grounding, cost)"
+    )
+    evaluate.add_argument("labels", type=Path, help="JSON Lines file of GoldLabel records")
+    evaluate.add_argument(
+        "runs", type=Path, nargs="+", help="Run folders, or folders that hold run folders"
+    )
+    evaluate.add_argument(
+        "--dataset", type=Path, help="The runs' dataset file, to load papers for grounding"
+    )
+    evaluate.add_argument(
+        "--remap", metavar="OLD=NEW", help="Rewrite a path prefix in runs made on another machine"
+    )
+    evaluate.add_argument(
+        "--area",
+        action="append",
+        choices=["citation", "code", "data", "theory", "integrity", "template"],
+        help="Score only this area's classes (repeatable)",
+    )
+    evaluate.add_argument(
+        "--strict", action="store_true", help="Refuse runs in which a part was a placeholder"
+    )
+    evaluate.add_argument(
+        "--no-ablation",
+        action="store_true",
+        help="Do not also score full-system runs without their verifier",
+    )
+    evaluate.add_argument("--title", default="Evaluation", help="Heading of the Markdown")
+    evaluate.add_argument("--markdown", type=Path, help="Write the tables here")
+    evaluate.add_argument("--json", type=Path, help="Write the numbers here")
+
+    report = commands.add_parser(
+        "report", help="Write the audit report for one paper of a finished full-system run"
+    )
+    report.add_argument("folder", type=Path, help="The paper's folder in the run")
+    report.add_argument("--paper", type=Path, required=True, help="The paper: PDF or JSON")
+    report.add_argument("-o", "--output", type=Path, help="Folder to write into (default: folder)")
+
+    ui = commands.add_parser("ui", help="Open the web UI to run audits and read reports")
+    ui.add_argument("--port", type=_positive, default=8501)
+    ui.add_argument(
+        "--no-browser", dest="browser", action="store_false", help="Do not open a browser tab"
+    )
     return parser
 
 
@@ -372,7 +503,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     settings = settings_for_args(args, Settings())
     configure_logging(settings.log_level)
-    commands = {"parse": _parse, "audit": _audit, "baseline": _baseline, "batch": _batch}
+    commands = {
+        "parse": _parse,
+        "audit": _audit,
+        "baseline": _baseline,
+        "batch": _batch,
+        "evaluate": _evaluate,
+        "report": _report,
+        "ui": _ui,
+    }
     try:
         return asyncio.run(commands[args.command](args, settings))
     except InputError as exc:

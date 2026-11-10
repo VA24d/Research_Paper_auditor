@@ -369,3 +369,29 @@ def test_batch_can_run_the_full_system_without_the_model(
     assert main([*argv, "--no-llm"]) == 0
     assert main([*argv[:-3], "b0", "--runs", "1", "--no-llm"]) == 2
     assert "need an LLM" in capsys.readouterr().err
+
+
+def test_a_batch_keeps_why_baseline_answers_were_set_aside(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    outside = {
+        "error_class": "claim_not_supported",
+        "anchor_kind": "sentence",
+        "anchor_id": "s999",
+        "target_kind": "bibliography",
+        "target": "b1",
+        "summary": "points at a sentence the paper does not have",
+    }
+    model = ScriptedChatModel(replies=[tool_reply(ReportedErrors, {"errors": [outside]})])
+    monkeypatch.setattr(
+        StructuredLLM,
+        "from_settings",
+        classmethod(lambda cls, settings: cls(model, name="test:scripted")),
+    )
+    dataset = write_dataset(tmp_path, PaperVariant.ORIGINAL)
+    argv = ["batch", str(dataset), "--experiment", "exp", "--systems", "b0", "--runs", "1"]
+    assert main(argv) == 0
+    written = predictions(tmp_path, "exp-b0-r1", "original")
+    assert written.read_text(encoding="utf-8") == ""
+    (line,) = written.with_name("dropped.jsonl").read_text(encoding="utf-8").splitlines()
+    assert "s999" in json.loads(line)["reason"]

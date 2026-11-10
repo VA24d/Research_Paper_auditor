@@ -6,9 +6,12 @@ later section settles, and the same error from two segments. As in Google's Pape
 Assistant Tool, a synthesis step then reviews the candidates with the whole paper in view.
 Here one call to the review model (AUDITOR_LLM_REVIEW_MODEL, or the main model) per paper
 judges every candidate math error: a real error stays, a repeat points at the one it
-repeats, and one that is not an error is dropped with the model's reason.
+repeats, and one that is not an error is dropped with the model's reason. An answer that
+cannot be used sends the flagged errors to human review: they were not confirmed, and one
+bad answer must not fail the paper.
 """
 
+import logging
 from collections.abc import Sequence
 from typing import Literal
 
@@ -16,8 +19,15 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
 from auditor.infra.context import RunContext
+from auditor.infra.llm import StructuredOutputError
 from auditor.planner.theory import paper_context
 from auditor.schemas import ErrorClass, SentenceAnchor, VerificationState, VerifiedFinding
+
+logger = logging.getLogger(__name__)
+
+# How a drop by this review starts its reason; the evaluation tells these apart from the
+# verifier's drops when it scores the full system without the verifier.
+NO_ERROR_REASON = "The review model found no error"
 
 SYSTEM_PROMPT = """You are the senior referee who checks the mathematics of a research
 paper. Junior referees each checked some of its claims and listed candidate errors. Judge
@@ -66,14 +76,26 @@ async def review_math(
     texts = {s.id: s.text for s in ctx.paper.sentences}
     listing = "\n".join(_candidate(n, out[i], texts) for n, i in enumerate(positions, start=1))
     prompt = f"{SYSTEM_PROMPT}\n\nCandidate errors:\n{listing}"
-    result = await ctx.require_review_llm().generate(
-        MathVerdicts,
-        # The paper first, as in the deep checks, so the prompt cache covers it.
-        [paper_context(ctx.paper), HumanMessage(prompt)],
-        effort="medium",
-        purpose="theory-challenge",
-        cache_prefix=True,
-    )
+    try:
+        result = await ctx.require_review_llm().generate(
+            MathVerdicts,
+            # The paper first, as in the deep checks, so the prompt cache covers it.
+            [paper_context(ctx.paper), HumanMessage(prompt)],
+            effort="medium",
+            purpose="theory-challenge",
+            cache_prefix=True,
+        )
+    except StructuredOutputError as exc:
+        logger.warning("the math challenge failed (%s); its errors go to human review", exc)
+        for i in positions:
+            if out[i].state is VerificationState.VERIFIED_FLAG:
+                out[i] = out[i].model_copy(
+                    update={
+                        "state": VerificationState.NEEDS_HUMAN_REVIEW,
+                        "reason": "The challenge step failed, so the error was not confirmed.",
+                    }
+                )
+        return out
     by_number = dict(enumerate(positions, start=1))
     for verdict in result.value.verdicts:
         index = by_number.get(verdict.number)
@@ -85,7 +107,7 @@ async def review_math(
             out[index] = decision.model_copy(
                 update={
                     "state": VerificationState.DROPPED,
-                    "reason": f"The review model found no error: {reason}",
+                    "reason": f"{NO_ERROR_REASON}: {reason}",
                     "accepted_evidence": (),
                 }
             )

@@ -11,6 +11,7 @@ appears twice in the experiment dataset: the original, and an injected copy whos
 | Clean controls (`none`), labelled in both the original and the injected copy | 36 (72 labels) |
 | Method discrepancies (`method_mismatch`) | 92: 8 reported, 84 synthetic |
 | Gold labels in `labels.jsonl` | 235 |
+| Second reviews in `labels.jsonl` (`reviewed_by`) | 47 (20.0%, reviewer DheeruYS, 100% agreement) |
 
 Injected settings by key: batch size 17, epochs 16, learning rate 11, optimizer 8,
 dropout 6, metric 3, weight decay 2. Clean controls cover optimizer (10), learning rate
@@ -64,12 +65,18 @@ file stay under `data/set_c/` (D13). To recreate them, run `collect` on the pool
 for the 40 pairs) and then `build`; `build` refuses a PDF whose hash differs from
 `pairs.jsonl`, and re-applies each injection only where the original value is still found.
 
-## Before freezing (D18)
+## Second review and validation (D18)
 
-- A second team member must review at least 20% of the labels. `review-sample` writes a
-  fixed random 20% sample with the sentence, rationale and evidence for each label; fill in
-  `reviewer` and `agree`, then run `apply-review`. Until then `validate` reports the
-  missing reviews and the set is not frozen.
+The 20% second review requirement under Decision D18 is fulfilled and verified:
+- **Sample and review coverage**: 47 of 235 labels (20.0%) were drawn using `review-sample`
+  (seed 20261015, share 0.20) and independently adjudicated by reviewer DheeruYS against
+  paper text, injected perturbations, and repository code.
+- **Agreement**: 100% agreement across all 47 sampled labels (47/47 agree, 0 disagreements),
+  recorded and applied to `labels.jsonl` with `apply-review`.
+- **Sample composition**: 11 injected setting errors (`setting_mismatch`), 14 clean controls
+  (`none`), and 22 method discrepancies (`method_mismatch`).
+- **Validation**: `python scripts/set_c.py validate datasets/set_c` passes cleanly reporting
+  `235 labels, 0 problems`.
 - The method discrepancies need an LLM: without one the code agent marks every method task
   unverifiable, which counts as a miss.
 - Run the experiments with `--analyse-data` only if data labels are added later; none of

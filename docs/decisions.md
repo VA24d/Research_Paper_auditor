@@ -214,7 +214,7 @@ reported. Tool-call accuracy, which the proposal lists for the tool-calling capa
 measured on labelled fixtures: the share of reference lookups that resolve to the gold work
 (sets A and B) and of repository searches that reach the gold file (set C).
 
-## D9. One LLM factory, provider chosen by config — Pending (decide by end of week 1)
+## D9. One LLM factory, provider chosen by config — Agreed
 
 - All model access goes through `auditor.infra.llm`. No module constructs a chat model itself.
 - Every component uses the same model ID in reported runs, as RQ1 requires.
@@ -223,9 +223,15 @@ measured on labelled fixtures: the share of reference lookups that resolve to th
   support.
 - Token usage is recorded for every call and rolled up per task, per paper and per run.
 
-Provider options under consideration: Google Gemini (paid from Google Cloud credits) or Z.ai
-GLM. The choice is made after a short probe of tool calling and structured output on the
-candidate models. Code written before then must not depend on the provider.
+The provider is Gemini on Vertex AI, on the team's Google Cloud project, signed in with
+Application Default Credentials (no API key). `scripts/probe_llm.py` passed every
+structured-output method and tool calling on Gemini 2.5 Flash (October 2026). The set C
+experiments (P4.6) run the main and review models on `gemini-3.8-flash`
+(`configs/experiments/set_c.env`). The code still does not depend on the provider: other
+providers, Vertex partner models and local models are configured the same way
+(`.env.example`).
+
+The options considered were Google Gemini (paid from Google Cloud credits) and Z.ai GLM.
 
 Facts that affect the choice (checked October 2026):
 - The Google Cloud $300 trial credit cannot pay for Gemini API keys created in AI Studio
@@ -892,6 +898,15 @@ rule `unfinished_content`). It checks in two ways:
   notes to the authors left in the text, and unfinished text. Which wording counts is the
   model's reading, so this works in any field. A finding must quote its sentence exactly;
   prose is copied, not rendered, so a word match is not enough here.
+- **Text that looks cut off goes to a person** (November 2026). In the set C run
+  `p4-setc-full-r1`, 147 of this class's 152 flags were "unfinished text": sentences
+  GROBID had split at an abbreviation ("shown in Figs." / "5(b-c), while ...") or run into
+  table text. Set C has no labels for the class, so none of them counted against precision.
+  The prompt now says the text was extracted from the PDF and that such breaks are not
+  findings, and an unfinished-text finding is uncertain, so the verifier sends it to human
+  review. Re-run on the ten paper versions with the most flags (3.8 Flash), the 55 flags
+  became 8 uncertain findings and no flags. The placeholder statements of 2004.09297 and the
+  "??" of 2401.05363 are still flagged.
 
 Findings have severity `high` (D20). B0 and B1 learn the class from the class guide, and B1
 gets no extra tools.
@@ -1173,3 +1188,49 @@ gives 5 false alarms on the 254 papers, so the condition stays.
   The table may now be named up to 3 sentences back in the same section
   (`CELL_REACH`), which finds 2 of 10 and adds no finding on the 254 papers. On the old set
   D the code finds 2 of 7 before and after.
+
+## D23. How the verifier checks a finding — Proposed
+
+The verifier (`auditor.agents.verifier`, team plan P4.1 to P4.3) decides every candidate
+finding with code, from its evidence, and calls a model only when asked to.
+
+1. **Grounding.** Every piece of evidence is found again in the source it names:
+   - a paper quote must occur in the paper's sentences after normalisation (Unicode
+     compatibility forms, so ligatures; line-end hyphens; curly quotes and dashes;
+     whitespace). It may run across sentences. A span given by offsets into the flagged
+     sentence is compared exactly, however short;
+   - a quote from a cited work counts when the citation agent's code located it in the
+     retrieved text (it then records offsets);
+   - code must match its file and lines in the repository snapshot; a repository lookup
+     that names a file must name one the snapshot holds;
+   - rule evidence must name a venue rule; index lookups are kept as tool records.
+2. **Both sides.** Each class names what it compares (`policy.NEEDS`): the paper against
+   the repository, the cited work, the index or a rule, or against itself (math, results,
+   unfinished content, which need a quote). A finding is a verified flag only when both
+   sides are shown.
+3. **States.**
+   - Dropped: evidence that is not in its source and was a side's only support, or a
+     finding with no evidence from a finished check.
+   - Human review: a side not shown or not checkable (a linked dataset snapshot), a
+     finding that rests on absence (`reference_not_found`, or a number the cited text
+     nowhere states), one the specialist marked uncertain, one from an unfinished check,
+     and one whose quotes are all from another place than the flagged sentence.
+4. **Second reading (optional).** With `AUDITOR_VERIFIER_RECHECK=true`, the review model
+   reads the verified `claim_not_supported` and `method_mismatch` flags with only their
+   accepted evidence, in one call per paper: "not shown" drops a flag, "unclear" or no
+   verdict sends it to review. Math errors keep their own review step (D21).
+
+`scripts/verifier_replay.py` reruns the verifier on a finished run with no model calls and
+no network, so a run made before the verifier can be scored after it. On two set C runs
+(November 2026), every piece of evidence was found again in its source, so grounding alone
+changes nothing; the uncertain rule moves findings to review:
+
+| Run | Verified, review, dropped | Macro-F1 before, after | Unlabelled flags before, after |
+|---|---|---|---|
+| set C, 80 versions | 95, 182, 0 | 0.600, 0.521 (settings 60 to 37 of 60) | 152, 54 |
+| RQ1, 4 pairs | 24, 28, 0 | 0.576, 0.375 | 23, 7 |
+
+False positives on clean controls are 0 before and after; set C cannot show a precision
+gain, since its only false positives are on clean controls. Whether uncertain findings
+should count as flags is open: they hold most of the recall on set C and most of the
+unlabelled flags.

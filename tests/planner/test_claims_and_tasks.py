@@ -1,9 +1,10 @@
 from collections import Counter
 from pathlib import Path
+from typing import cast
 
 import pytest
 
-from auditor.infra.llm import StructuredLLM
+from auditor.infra.llm import StructuredLLM, StructuredOutputError
 from auditor.orchestration.graph import AuditPipeline, run_audit
 from auditor.planner.claims import (
     ClaimCandidate,
@@ -292,3 +293,17 @@ def test_code_hosts_in_announcing_sentences_give_the_repository(
     data["sentences"][5]["text"] = f"Our code is available at {url}."
     data["links"] = [{"url": url, "page": 2, "sentence_id": "s5", "source": "text"}]
     assert find_repository(type(example_paper()).model_validate(data)) == expected
+
+
+class _BrokenLLM:
+    """A model whose every answer fails validation."""
+
+    async def generate(self, *args: object, **kwargs: object) -> object:
+        raise StructuredOutputError("no valid JSON after 3 tries")
+
+
+async def test_a_failed_refinement_keeps_the_sentences_as_claims() -> None:
+    paper = example_paper()
+    candidates = citation_candidates(paper)
+    refined = await refine_candidates(paper, candidates, cast(StructuredLLM, _BrokenLLM()))
+    assert refined == candidates

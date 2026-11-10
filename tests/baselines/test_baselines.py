@@ -79,6 +79,57 @@ def test_render_paper_shows_layout_measurements_and_rule_parameters() -> None:
     assert "(check: max_pages; max_pages=9)" in text
 
 
+def test_the_answer_guide_gives_the_anchors_and_targets_the_specialists_use() -> None:
+    # The full system's checks and the gold labels use these; baselines that were not told
+    # them could not match a method or metric label however right they were.
+    from auditor.agents.code.data_checks import ERROR_CLASSES
+    from auditor.baselines.common import ANSWER_GUIDE
+    from auditor.planner.integrity import RESULTS_RULE_ID, RULE_ID
+    from auditor.planner.tasks import DEFECTS_KEY, METHOD_KEY
+    from auditor.planner.theory import THEORY_KEY
+
+    keys = {METHOD_KEY, DEFECTS_KEY, THEORY_KEY, RULE_ID, RESULTS_RULE_ID, "eval_metric"}
+    for key in keys | set(ERROR_CLASSES):
+        assert f'"{key}"' in ANSWER_GUIDE, key
+    for error_class in set(ERROR_CLASSES.values()):
+        assert f"- {error_class.value}:" in ANSWER_GUIDE, error_class
+
+    from auditor.schemas import Evidence, EvidenceKind, GoldLabel, SourceKind, SourceRef
+    from auditor.schemas.evaluation import matches
+
+    label = GoldLabel(
+        label_id="m1",
+        paper_id=example_paper().paper_id,
+        variant=PaperVariant.ORIGINAL,
+        error_class=ErrorClass.METHOD_MISMATCH,
+        anchor=DocumentAnchor(),
+        target=SettingTarget(key=METHOD_KEY),
+        rationale="the loss differs",
+        evidence=(
+            Evidence(
+                kind=EvidenceKind.QUOTE,
+                source=SourceRef(kind=SourceKind.SUBMISSION, id="p"),
+                text="We use a focal loss.",
+            ),
+        ),
+    )
+    answer = error(
+        error_class="method_mismatch",
+        anchor_kind="document",
+        anchor_id=None,
+        target_kind="setting",
+        target="method",
+        summary="The loss differs: the paper specifies a focal loss.",
+    )
+    (prediction,), _ = to_predictions(
+        ReportedErrors.model_validate({"errors": [answer]}),
+        example_paper(),
+        run_id="r1",
+        system=SystemName.B0,
+    )
+    assert matches(prediction, label)
+
+
 def test_to_predictions_maps_every_anchor_and_target_kind() -> None:
     reported = ReportedErrors.model_validate(
         {
@@ -277,3 +328,49 @@ def test_baselines_are_told_every_error_class() -> None:
 
     for error_class in ErrorClass:
         assert f"- {error_class.value}:" in ERROR_CLASS_GUIDE
+
+
+@tool
+async def fetch_repository_file(path: str) -> str:
+    """Read a file of the paper's repository."""
+    raise RuntimeError("HTTP 403 for https://api.github.com/repos/o/r/contents/train.py")
+
+
+async def test_b1_goes_on_after_a_tool_fails() -> None:
+    # A rate-limited GitHub call used to end the whole paper's B1 run.
+    model = ScriptedChatModel(
+        replies=[
+            tool_reply("fetch_repository_file", {"path": "train.py"}),
+            tool_reply(ReportedErrors, {"errors": [error()]}),
+        ]
+    )
+    result = await run_b1(
+        example_paper(),
+        StructuredLLM(model, name="test:scripted"),
+        [fetch_repository_file],
+        run_id="r1",
+    )
+    assert [p.error_class for p in result.predictions] == [ErrorClass.CLAIM_NUMBER_MISMATCH]
+    told = str(model.received[1][-1].content)
+    assert "HTTP 403" in told
+
+
+@tool
+async def over_budget_tool(path: str) -> str:
+    """A tool whose call is past the run's budget."""
+    from auditor.infra.scope import BudgetExceededError
+
+    raise BudgetExceededError("tool calls used up")
+
+
+async def test_b1_still_stops_when_a_tool_is_over_budget() -> None:
+    from auditor.infra.scope import BudgetExceededError
+
+    model = ScriptedChatModel(replies=[tool_reply("over_budget_tool", {"path": "x"})])
+    with pytest.raises(BudgetExceededError):
+        await run_b1(
+            example_paper(),
+            StructuredLLM(model, name="test:scripted"),
+            [over_budget_tool],
+            run_id="r1",
+        )

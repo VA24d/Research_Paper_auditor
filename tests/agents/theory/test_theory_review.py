@@ -96,3 +96,17 @@ async def test_the_main_model_reviews_when_no_review_model_is_set(tmp_path: Path
     ctx = offline_context(tmp_path, paper=paper(), llm=StructuredLLM(model, name="only"))
     await review_math([decision(1, "Lemma 2 is false")], ctx)
     assert len(model.received) == 1
+
+
+async def test_an_unusable_answer_sends_flagged_errors_to_review(tmp_path: Path) -> None:
+    from langchain_core.messages import AIMessage
+
+    strong = ScriptedChatModel(replies=[AIMessage("Hard to say.")] * 3)
+    ctx = offline_context(tmp_path, paper=paper(), llm=StructuredLLM(strong, name="strong"))
+    flagged = decision(1, "Lemma 2 is false").model_copy(
+        update={"state": VerificationState.VERIFIED_FLAG}
+    )
+    reviewed = await review_math([flagged, decision(2, "Lemma 2 sum wrong")], ctx)
+    assert [d.state for d in reviewed] == [VerificationState.NEEDS_HUMAN_REVIEW] * 2
+    assert "challenge step failed" in reviewed[0].reason
+    assert reviewed[1].reason == "r"
