@@ -1188,4 +1188,21 @@ Session 8 progress (continued — Finding 1 remediation, DONE before merge):
 - The paused session-7 run (runs/setb-final-full-r1, 25/26) remains resumable; its 13
   papers' labels are unchanged by the growth.
 
+Session 8 MERGE OUTCOME (done):
+- Branch state: p2-citation-checker == origin/p2-citation-checker == origin/main ==
+  local main == bcbdda7 (fast-forward: bcbdda7 contains origin/main bf1b3b5, so the
+  "merge" was a clean fast-forward push `git push origin p2-citation-checker:main`).
+  The branch is NOT deleted (local + remote both alive; we remain checked out on it).
+- Commits now on main from sessions 7-8: afd097d (D18 second review), af01b8a (embed
+  extra + ranker comparison), f746088 (llm-marked test), 406de37 (builder verify fix),
+  fe9ba34 (docs), 8eb05f2 (allowlist +25 hosts), d0eba34/45de838 (merge of P4 main),
+  0421aae (set B data committed + claim growth + marker-relocation fix), bcbdda7
+  (team_plan Part 2 status).
+- Pre-merge verification: full suite 1351 passed / 1 skipped / 9 deselected; ruff check
+  + format clean (267 files); mypy 0 (239 files); set_b validate exits 0 (159 labels).
+- Still deferred: the set B LLM evaluation (runbook in docs/p2-mid-results.md §8) and
+  the resumable 25/26 paused subset run (runs/setb-final-full-r1). Bhaskar owns the
+  planner claim-fragment issue (3 of 6 claim golds unreachable in the subset run).
+
+
   13-pair subset stays exactly as the paused run needs it (25/26 entries on disk).
