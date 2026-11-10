@@ -20,6 +20,7 @@ from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 
 from auditor.schemas import ErrorClass, GoldLabel, Prediction, VerificationState, matches
+from auditor.schemas.evaluation import is_method_comparison, method_overlap
 
 # The areas of decision D4, for scoring one specialist's classes at a time.
 AREAS: dict[str, frozenset[ErrorClass]] = {
@@ -122,6 +123,39 @@ def _unlabelled_key(prediction: Prediction) -> tuple[str, str, str, str]:
     )
 
 
+def best_match_assignment(
+    predictions: Sequence[Prediction],
+    labels: Sequence[GoldLabel],
+) -> list[tuple[Prediction, GoldLabel | None]]:
+    """Assign predictions to labels 1-to-1, maximizing match strength.
+
+    Duplicate predictions claiming the same label are deduplicated: only the
+    best match is assigned; subsequent duplicates cannot claim other labels.
+    """
+    candidates: list[tuple[float, bool, int, int]] = []
+    for p_idx, pred in enumerate(predictions):
+        for l_idx, lbl in enumerate(labels):
+            if matches(pred, lbl):
+                score_val = method_overlap(pred, lbl) if is_method_comparison(pred, lbl) else 1.0
+                same_class = pred.error_class == lbl.error_class
+                candidates.append((score_val, same_class, p_idx, l_idx))
+
+    candidates.sort(key=lambda c: (c[0], c[1]), reverse=True)
+
+    assigned_preds: dict[int, int] = {}
+    assigned_labels: set[int] = set()
+    for _, _, p_idx, l_idx in candidates:
+        if p_idx not in assigned_preds and l_idx not in assigned_labels:
+            assigned_preds[p_idx] = l_idx
+            assigned_labels.add(l_idx)
+
+    result: list[tuple[Prediction, GoldLabel | None]] = []
+    for p_idx, pred in enumerate(predictions):
+        matched_idx = assigned_preds.get(p_idx)
+        result.append((pred, labels[matched_idx] if matched_idx is not None else None))
+    return result
+
+
 def score(
     labels: Sequence[GoldLabel],
     predictions: Sequence[Prediction],
@@ -140,14 +174,15 @@ def score(
         if label.is_error:
             scores.per_class.setdefault(ErrorClass(label.error_class), ClassScore())
     scores.clean_controls = sum(1 for label in in_scope if not label.is_error)
+
+    active_preds = [
+        p for p in predictions if p.is_positive and (classes is None or p.error_class in classes)
+    ]
+    assignments = best_match_assignment(active_preds, in_scope)
     unmatched = list(in_scope)
     unlabelled: set[tuple[str, str, str, str]] = set()
-    for prediction in predictions:
-        if not prediction.is_positive:
-            continue
-        if classes is not None and prediction.error_class not in classes:
-            continue
-        matched = next((label for label in unmatched if matches(prediction, label)), None)
+
+    for prediction, matched in assignments:
         if matched is None:
             scores.unlabelled += 1
             unlabelled.add(_unlabelled_key(prediction))
@@ -194,20 +229,18 @@ def verifier_decisions(
     with real errors (ideally verified) and with false accusations (ideally dropped).
     Duplicates (D20) count once, as in the report."""
     table: dict[str, Counter[VerificationState]] = {truth: Counter() for truth in TRUTHS}
-    unmatched = list(labels)
-    for prediction in predictions:
-        if prediction.state is None or prediction.duplicate_of is not None:
-            continue
-        matched = next((label for label in unmatched if matches(prediction, label)), None)
+    valid_preds = [p for p in predictions if p.state is not None and p.duplicate_of is None]
+    assignments = best_match_assignment(valid_preds, list(labels))
+    for prediction, matched in assignments:
         if matched is None:
             truth = Truth.UNLABELLED
         else:
-            unmatched.remove(matched)
             if not matched.is_error:
                 truth = Truth.CLEAN
             elif matched.error_class == prediction.error_class:
                 truth = Truth.REAL_ERROR
             else:
                 truth = Truth.WRONG_CLASS
+        assert prediction.state is not None
         table[truth][prediction.state] += 1
     return table

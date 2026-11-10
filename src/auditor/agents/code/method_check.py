@@ -133,6 +133,20 @@ def _method_llm(ctx: RunContext) -> StructuredLLM:
     return ctx.require_llm()
 
 
+def _is_duplicate_method_discrepancy(
+    path: str,
+    start: int,
+    end: int,
+    description: str,
+    taken: Sequence[tuple[str, int, int]],
+    seen_summaries: set[str],
+) -> bool:
+    norm_summary = _normalised(description.lower())
+    if norm_summary in seen_summaries:
+        return True
+    return any(p == path and s <= end and start <= e for p, s, e in taken)
+
+
 async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
     repository = task.repository
     if repository is None:
@@ -167,11 +181,27 @@ async def check_method(task: AuditTask, ctx: RunContext) -> TaskResult:
         MethodReview, [SystemMessage(SYSTEM_PROMPT), HumanMessage(prompt)], purpose="method-whole"
     )
     findings: list[CandidateFinding] = []
+    taken: list[tuple[str, int, int]] = []
+    seen_summaries: set[str] = set()
     for discrepancy in result.value.discrepancies:
+        if _is_duplicate_method_discrepancy(
+            discrepancy.code_path,
+            discrepancy.code_start_line,
+            discrepancy.code_end_line,
+            discrepancy.description,
+            taken,
+            seen_summaries,
+        ):
+            ctx.logger.info("dropping duplicate method discrepancy")
+            continue
         evidence = _evidence(ctx.paper, snapshot, files, discrepancy)
         if evidence is None:
             ctx.logger.info("dropping a method discrepancy without verbatim evidence")
             continue
+        taken.append(
+            (discrepancy.code_path, discrepancy.code_start_line, discrepancy.code_end_line)
+        )
+        seen_summaries.add(_normalised(discrepancy.description.lower()))
         findings.append(
             CandidateFinding.for_task(
                 task,
@@ -231,8 +261,20 @@ async def _check_rag(
             task, TaskOutcome.UNVERIFIABLE, reason="the repository has no code to compare"
         )
     findings: list[CandidateFinding] = []
+    taken: list[tuple[str, int, int]] = []
+    seen_summaries: set[str] = set()
     for chunks, discrepancies in reviewed:
         for discrepancy in discrepancies:
+            if _is_duplicate_method_discrepancy(
+                discrepancy.code_path,
+                discrepancy.code_start_line,
+                discrepancy.code_end_line,
+                discrepancy.description,
+                taken,
+                seen_summaries,
+            ):
+                ctx.logger.info("dropping duplicate method discrepancy")
+                continue
             inside = any(
                 c.path == discrepancy.code_path
                 and c.start <= discrepancy.code_start_line <= discrepancy.code_end_line <= c.end
@@ -246,6 +288,10 @@ async def _check_rag(
             if evidence is None:
                 ctx.logger.info("dropping a method discrepancy without shown evidence")
                 continue
+            taken.append(
+                (discrepancy.code_path, discrepancy.code_start_line, discrepancy.code_end_line)
+            )
+            seen_summaries.add(_normalised(discrepancy.description.lower()))
             findings.append(
                 CandidateFinding.for_task(
                     task,
@@ -426,6 +472,7 @@ async def _check_pairs(
     judgements = await asyncio.gather(*(judge(pair) for pair in pairs))
     findings: list[CandidateFinding] = []
     taken: list[tuple[str, int, int]] = []
+    seen_summaries: set[str] = set()
     for pair, judgement in zip(pairs, judgements, strict=True):
         if judgement.verdict != "inconsistent":
             continue
@@ -433,14 +480,22 @@ async def _check_pairs(
         start, end = judgement.code_start_line, judgement.code_end_line
         if not chunk.start <= start <= end <= chunk.end:
             continue
-        if any(p == chunk.path and s <= end and start <= e for p, s, e in taken):
+        description = judgement.description or "The code differs from the paper."
+        if _is_duplicate_method_discrepancy(
+            chunk.path,
+            start,
+            end,
+            description,
+            taken,
+            seen_summaries,
+        ):
             continue
         discrepancy = Discrepancy(
             paper_quote=judgement.paper_quote,
             code_path=chunk.path,
             code_start_line=start,
             code_end_line=end,
-            description=judgement.description or "The code differs from the paper.",
+            description=description,
             category="Algorithm",
             confidence=judgement.confidence,
         )
@@ -448,6 +503,7 @@ async def _check_pairs(
         if evidence is None:
             continue
         taken.append((chunk.path, start, end))
+        seen_summaries.add(_normalised(description.lower()))
         findings.append(
             CandidateFinding.for_task(
                 task,
