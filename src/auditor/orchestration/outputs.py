@@ -8,12 +8,14 @@ runs/<run_id>/
         report.md, report.json                        (full system; auditor.reporting)
         predictions.jsonl                             (every system)
         predictions.incomplete.jsonl                  (instead, when model calls ran out)
+        dropped.jsonl                                 (B0, B1: answers that could not be used)
 
 A paper whose checks ran out of model calls has its predictions written under the second
 name. Its missing findings would read as clean results, and a batch takes a paper with
 `predictions.jsonl` as done, so only complete papers get that name.
 """
 
+import json
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
@@ -99,3 +101,13 @@ class RunDirectory:
 
     def save_predictions(self, paper: ParsedPaper, predictions: Sequence[Prediction]) -> Path:
         return write_jsonl(self.paper_dir(paper) / PREDICTIONS, predictions)
+
+    def save_dropped(self, paper: ParsedPaper, reasons: Sequence[str]) -> None:
+        """Why each baseline answer that could not become a prediction was set aside (an
+        anchor outside the paper, an unknown entry), so a batch keeps the count."""
+        path = self.paper_dir(paper) / "dropped.jsonl"
+        if not reasons:
+            path.unlink(missing_ok=True)
+            return
+        lines = "".join(json.dumps({"reason": reason}) + "\n" for reason in reasons)
+        atomic_write(path, lines.encode("utf-8"))

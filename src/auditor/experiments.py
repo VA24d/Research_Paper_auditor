@@ -253,6 +253,7 @@ async def run_baseline(
         )
     else:
         raise ValueError(f"{system.value} is not a baseline")
+    run.save_dropped(paper, result.dropped)
     return result, run.save_predictions(paper, result.predictions)
 
 
