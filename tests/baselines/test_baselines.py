@@ -327,3 +327,49 @@ def test_baselines_are_told_every_error_class() -> None:
 
     for error_class in ErrorClass:
         assert f"- {error_class.value}:" in ERROR_CLASS_GUIDE
+
+
+@tool
+async def fetch_repository_file(path: str) -> str:
+    """Read a file of the paper's repository."""
+    raise RuntimeError("HTTP 403 for https://api.github.com/repos/o/r/contents/train.py")
+
+
+async def test_b1_goes_on_after_a_tool_fails() -> None:
+    # A rate-limited GitHub call used to end the whole paper's B1 run.
+    model = ScriptedChatModel(
+        replies=[
+            tool_reply("fetch_repository_file", {"path": "train.py"}),
+            tool_reply(ReportedErrors, {"errors": [error()]}),
+        ]
+    )
+    result = await run_b1(
+        example_paper(),
+        StructuredLLM(model, name="test:scripted"),
+        [fetch_repository_file],
+        run_id="r1",
+    )
+    assert [p.error_class for p in result.predictions] == [ErrorClass.CLAIM_NUMBER_MISMATCH]
+    told = str(model.received[1][-1].content)
+    assert "HTTP 403" in told
+
+
+@tool
+async def over_budget_tool(path: str) -> str:
+    """A tool whose call is past the run's budget."""
+    from auditor.infra.scope import BudgetExceededError
+
+    raise BudgetExceededError("tool calls used up")
+
+
+async def test_b1_still_stops_when_a_tool_is_over_budget() -> None:
+    from auditor.infra.scope import BudgetExceededError
+
+    model = ScriptedChatModel(replies=[tool_reply("over_budget_tool", {"path": "x"})])
+    with pytest.raises(BudgetExceededError):
+        await run_b1(
+            example_paper(),
+            StructuredLLM(model, name="test:scripted"),
+            [over_budget_tool],
+            run_id="r1",
+        )

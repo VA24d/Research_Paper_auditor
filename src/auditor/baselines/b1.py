@@ -9,11 +9,12 @@ from langchain.agents.middleware import (
     ModelCallLimitMiddleware,
     ToolCallLimitMiddleware,
 )
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain.agents.middleware.types import ModelRequest, ModelResponse, ToolCallRequest
 from langchain.agents.structured_output import ToolStrategy
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
+from langgraph.types import Command
 
 from auditor.baselines.b0 import BaselineResult
 from auditor.baselines.common import (
@@ -25,7 +26,7 @@ from auditor.baselines.common import (
     to_predictions,
 )
 from auditor.infra.llm import StructuredLLM, TokenUsage, prompt_of
-from auditor.infra.scope import Scope, enter_scope
+from auditor.infra.scope import BudgetExceededError, Scope, enter_scope
 from auditor.infra.usage import UsageLog
 from auditor.schemas import ParsedPaper, RepositoryRef, SystemName, VenueProfile
 
@@ -72,6 +73,26 @@ class _Accounted(AgentMiddleware[Any, Any, Any]):
         return await self.llm.direct_call(
             lambda: handler(request), _usage, purpose=PURPOSE, prompt=prompt_of(request)
         )
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """A tool that fails (a rate-limited GitHub call, a malformed file) is reported to
+        the agent, which can try something else; it used to end the paper's run. Running
+        out of budget still ends it."""
+        try:
+            return await handler(request)
+        except BudgetExceededError:
+            raise
+        except Exception as exc:
+            return ToolMessage(
+                content=f"The tool failed: {type(exc).__name__}: {exc}",
+                tool_call_id=request.tool_call["id"],
+                name=request.tool_call["name"],
+                status="error",
+            )
 
 
 async def run_b1(
