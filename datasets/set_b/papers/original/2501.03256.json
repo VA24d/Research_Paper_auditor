@@ -1,0 +1,6313 @@
+{
+ "schema_version": 1,
+ "paper_id": "2501.03256",
+ "variant": "original",
+ "parser": {
+  "name": "grobid",
+  "version": "0.9.1",
+  "pdf_sha256": "90339bae20576d849444efdc75100a620d3e505388c552da2a91c9ea4f27ee4a"
+ },
+ "metadata": {
+  "title": null,
+  "authors": [],
+  "year": 2025,
+  "venue": null,
+  "doi": null,
+  "arxiv_id": "2501.03256"
+ },
+ "sections": [
+  {
+   "id": "sec0",
+   "title": "(I) Introduction Artificial Intelligence for Microcontrollers",
+   "number": null
+  },
+  {
+   "id": "sec1",
+   "title": "Comparable Approaches and Added Value",
+   "number": null
+  },
+  {
+   "id": "sec2",
+   "title": "(II) Requirements Raspberry Pi Pico / Raspberry Pi Pico 2",
+   "number": null
+  },
+  {
+   "id": "sec3",
+   "title": "MicroPython",
+   "number": null
+  },
+  {
+   "id": "sec4",
+   "title": "Thonny",
+   "number": null
+  },
+  {
+   "id": "sec5",
+   "title": "(III) Basic Knowledge Architecture of Neural Networks",
+   "number": null
+  },
+  {
+   "id": "sec6",
+   "title": "a) Neurons",
+   "number": null
+  },
+  {
+   "id": "sec7",
+   "title": "b) Layers",
+   "number": null
+  },
+  {
+   "id": "sec8",
+   "title": "c) Density",
+   "number": null
+  },
+  {
+   "id": "sec9",
+   "title": "d) Activation Functions",
+   "number": null
+  },
+  {
+   "id": "sec10",
+   "title": "Sof tmax(x",
+   "number": null
+  },
+  {
+   "id": "sec11",
+   "title": "e) Weights and Biases",
+   "number": null
+  },
+  {
+   "id": "sec12",
+   "title": "Confusion Matrix",
+   "number": null
+  },
+  {
+   "id": "sec13",
+   "title": "(IV) Application Example Binary Classsification",
+   "number": null
+  },
+  {
+   "id": "sec14",
+   "title": "Solution with 8 Neurons",
+   "number": null
+  },
+  {
+   "id": "sec15",
+   "title": "Solution with 6 Neurons",
+   "number": null
+  },
+  {
+   "id": "sec16",
+   "title": "(V) Summary",
+   "number": null
+  },
+  {
+   "id": "sec17",
+   "title": "About the Author",
+   "number": null
+  },
+  {
+   "id": "sec18",
+   "title": "Appendix (A) Mathematical Basics in MicroPython",
+   "number": null
+  },
+  {
+   "id": "sec19",
+   "title": "(B) Activation Funtions in MicroPython",
+   "number": null
+  },
+  {
+   "id": "sec20",
+   "title": "C) Neurons in MicroPython",
+   "number": null
+  }
+ ],
+ "sentences": [
+  {
+   "id": "s0",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "This working paper explores the integration of neural networks onto resource-constrained embedded systems like a Raspberry Pi Pico / Raspberry Pi Pico 2. A TinyML aproach transfers neural networks directly on these microcontrollers, enabling real-time, low-latency, and energy-efficient inference while maintaining data privacy.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 71.64,
+     "y": 233.52,
+     "width": 468.44,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 245.52,
+     "width": 468.36,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 257.4,
+     "width": 468.08,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 269.4,
+     "width": 56.07,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s1",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "Therefore, AI-ANNE: (A) (N)eural (N)et for (E)xploration will be presented, which facilitates the transfer of pre-trained models from high-performance platforms like TensorFlow and Keras onto microcontrollers, using a lightweight programming language like MicroPython.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 132.26,
+     "y": 269.4,
+     "width": 407.74,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 281.4,
+     "width": 469.77,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 293.28,
+     "width": 319.11,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s2",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "This approach demonstrates how neural network architectures, such as neurons, layers, density and activation functions can be implemented in MicroPython in order to deal with the computational limitations of embedded systems.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 395.78,
+     "y": 293.28,
+     "width": 144.72,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 305.28,
+     "width": 467.93,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 317.28,
+     "width": 402.84,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "Based on the Raspberry Pi Pico / Raspberry Pi Pico 2, two different neural networks on microcontrollers are presented for an example of data classification.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 481.55,
+     "y": 317.28,
+     "width": 58.43,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 329.16,
+     "width": 468.19,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 341.16,
+     "width": 144.02,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "As an further application example, such a microcontroller can be used for condition monitoring, where immediate corrective measures are triggered on the basis of sensor data.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 220.21,
+     "y": 341.16,
+     "width": 319.98,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 353.04,
+     "width": 440.9,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "Overall, this working paper presents a very easy-to-implement way of using neural networks on energy-efficient devices such as microcontrollers.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 517.33,
+     "y": 353.04,
+     "width": 24.56,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 365.04,
+     "width": 468.53,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 377.04,
+     "width": 139.68,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "section_id": null,
+   "kind": "abstract",
+   "text": "This makes AI-ANNE: (A) (N)eural (N)et for (E)xploration not only suited for practical use, but also as an educational tool with clear insights into how neural networks operate.",
+   "boxes": [
+    {
+     "page": 1,
+     "x": 215.63,
+     "y": 377.04,
+     "width": 324.44,
+     "height": 10.77
+    },
+    {
+     "page": 1,
+     "x": 72.0,
+     "y": 388.92,
+     "width": 445.35,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Machine Learning and Deep Learning are increasingly driving innovation across various fields (LeCun et al. 2015), with a notable expansion into embedded systems, bringing their capabilities closer to data sources.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 116.64,
+     "width": 468.3,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 128.64,
+     "width": 470.19,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "This trend, known as TinyML, is especially prominent in microcontrollers and Internet of Things devices.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.64,
+     "y": 140.64,
+     "width": 470.43,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s9",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "TinyML offers several advantages over cloud-based artificial intelligence, including improved data privacy, lower processing latency, energy efficiency, and reduced dependency on connectivity (Ray 2022).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.64,
+     "y": 152.52,
+     "width": 469.86,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 164.52,
+     "width": 426.15,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s10",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "One key application of TinyML is in condition monitoring, where neural networks can be used to detect anomalies directly within sensors so that immediate corrective actions can be taken automatically (Cioffi et al. 2020).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 504.14,
+     "y": 164.52,
+     "width": 36.34,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 176.4,
+     "width": 468.09,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 188.4,
+     "width": 470.18,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s11",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Therefore, when these microcontrollers are connected to microscopes in medical diagnostics or machines for industrial production, they are referred to as embedded systems.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.64,
+     "y": 200.4,
+     "width": 468.54,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 212.28,
+     "width": 282.24,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s12",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "While many high-performance frameworks like TensorFlow and Keras for Python are designed for powerful hardware such as GPUs, these frameworks are unsuitable for embedded systems due to their limited computational resources (Delnevo et al. 2023).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.52,
+     "y": 230.28,
+     "width": 470.28,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 242.16,
+     "width": 467.9,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 254.16,
+     "width": 206.54,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s13",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "To address this issue, the architecture of neural networks need to be reconstructed in a leightweight programming language like MicroPython.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 284.89,
+     "y": 254.16,
+     "width": 255.34,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 266.16,
+     "width": 366.99,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s14",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "Thus, neural networks trained on high-performance hardware can be transferred onto resource-constrained devices like microcontrollers while achieving the same outputs and results (Ray 2022).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 443.19,
+     "y": 266.16,
+     "width": 97.06,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 278.04,
+     "width": 469.75,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 290.04,
+     "width": 290.17,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s15",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "However, training or developing neural networks directly on embedded systems remains a complex challenge.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 368.16,
+     "y": 290.04,
+     "width": 172.01,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 302.04,
+     "width": 301.93,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s16",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "AIfES: (A)rtificial (I)ntelligence (f)or (E)mbedded (S)ystems, as presented below as a comparable approach, has shown initial success here (Wulfert et al. 2024).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 378.24,
+     "y": 302.04,
+     "width": 161.86,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 70.8,
+     "y": 313.92,
+     "width": 469.37,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 325.92,
+     "width": 52.21,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s17",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "This working paper presents AI-ANNE: (A) (N)eural (N)et for (E)xploration, a new method for transferring pre-trained neural networks onto a microcontroller.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.64,
+     "y": 343.8,
+     "width": 468.6,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 355.8,
+     "width": 221.68,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s18",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "For this purpose, neurons, layers, density and activation functions as the underlying foundation of neural networks were coded in MicroPython in order to be able to reconstruct the original neural networks trained with TensorFlow and Keras.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 297.64,
+     "y": 355.8,
+     "width": 242.54,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 367.8,
+     "width": 467.98,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 379.68,
+     "width": 334.82,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s19",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "How the transfer works and a suitable application example are part of this working paper.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 411.02,
+     "y": 379.68,
+     "width": 128.96,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 391.68,
+     "width": 262.45,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s20",
+   "section_id": "sec0",
+   "kind": "body",
+   "text": "The underlying foundation of neural networks and their counterparts in MicroPython are presented successively.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 339.12,
+     "y": 391.68,
+     "width": 201.15,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 403.56,
+     "width": 287.41,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s21",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "AIfES: (A)rtificial (I)ntelligence (f)or (E)mbedded (S)ystems is a flexible software framework designed by Fraunhofer to run deep learning models on small, low-power devices like microcontrollers (Wulfert et al. 2024).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.64,
+     "y": 449.88,
+     "width": 468.7,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 461.88,
+     "width": 470.18,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s22",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "It simplifies the process of building, training, and running models directly on these devices, without needing powerful external systems.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 473.76,
+     "width": 467.95,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 485.76,
+     "width": 114.73,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s23",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "Users can customize the framework to fit their needs by choosing different model components, like types of layers or how data is processed.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 190.92,
+     "y": 485.76,
+     "width": 349.11,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 497.76,
+     "width": 246.61,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s24",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "AIfES: (A)rtificial (I)ntelligence (f)or (E)mbedded (S)ystems can run pre-trained models and train new ones on the device itself, saving energy and protecting privacy (Wulfert et al. 2024).",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 322.69,
+     "y": 497.76,
+     "width": 217.26,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 70.8,
+     "y": 509.64,
+     "width": 469.28,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 521.64,
+     "width": 128.2,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s25",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "It outperforms similar tools in terms of speed and memory usage for certain tasks.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 205.23,
+     "y": 521.64,
+     "width": 334.91,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 533.52,
+     "width": 24.84,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s26",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "Future improvements will focus on making it even more efficient and supporting new types of deep learning models.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 102.36,
+     "y": 533.52,
+     "width": 437.68,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 545.52,
+     "width": 71.18,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s27",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "AI-ANNE: (A) (N)eural (N)et for (E)xploration is a similar approach and, as an open framework, enables the flexible expansion of the underlying activation functions in order to explore their performance while simultaneously the number of neurons and layers can be adjusted easily in MicroPython.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 71.64,
+     "y": 563.4,
+     "width": 468.48,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 575.4,
+     "width": 468.02,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 587.4,
+     "width": 397.6,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s28",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "This flexibility can also be used for fine-tuning directly on the microcontroller.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 476.19,
+     "y": 587.4,
+     "width": 64.2,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 599.28,
+     "width": 277.57,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s29",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "As a result, AI-ANNE: (A) (N)eural (N)et for (E)xploration allows the learning behavior of the neural networks to be observed and creates a didactic value for its users.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 354.01,
+     "y": 599.28,
+     "width": 186.17,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 611.28,
+     "width": 468.0,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 71.76,
+     "y": 623.28,
+     "width": 80.06,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s30",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "Two neural networks are already pre-installed: One with six neurons in a total of three layers and one with eight neurons in a total of four layers.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 156.85,
+     "y": 623.28,
+     "width": 383.18,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 635.16,
+     "width": 248.82,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s31",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "In the given example, the learning behavior of the various neural networks can be investigated with the pre-installed IRIS dataset.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 324.89,
+     "y": 635.16,
+     "width": 215.13,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 71.76,
+     "y": 647.16,
+     "width": 342.49,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s32",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "The transparent insight into the MicroPython code also opens up didactic application potential.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 418.44,
+     "y": 647.16,
+     "width": 121.53,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 659.04,
+     "width": 289.58,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s33",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "The interaction with the microcontroller takes place via Thonny.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 365.89,
+     "y": 659.04,
+     "width": 174.56,
+     "height": 10.77
+    },
+    {
+     "page": 2,
+     "x": 72.0,
+     "y": 671.04,
+     "width": 103.1,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s34",
+   "section_id": "sec1",
+   "kind": "body",
+   "text": "All the necessary components are presented below.",
+   "boxes": [
+    {
+     "page": 2,
+     "x": 179.41,
+     "y": 671.04,
+     "width": 221.51,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s35",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "The Raspberry Pi Pico is powered by the RP2040 microcontroller, which features a dual-core ARM Cortex-M0+ processor running at 133 MHz, with 264 KB on-chip SRAM and 2 MB onboard flash memory.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 116.64,
+     "width": 470.13,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 128.64,
+     "width": 430.35,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s36",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "It offers a wide range of connectivity options, including USB for power and data transfer, up to two I2C, SPI, and UART interfaces for communication, as well as 16 PWM channels for precise control of external devices.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 506.54,
+     "y": 128.64,
+     "width": 33.56,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 140.64,
+     "width": 468.07,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 152.52,
+     "width": 456.37,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s37",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "The board also includes three 12-bit ADC channels for analog input, and it supports a range of peripherals such as a real-time clock (RTC), timers, and interrupt handling through a nested vectored interrupt controller (NVIC).",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 170.52,
+     "width": 468.51,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 182.4,
+     "width": 469.8,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 194.4,
+     "width": 66.02,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s38",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "For power, the Raspberry Pi Pico operates on a voltage range of 1.8V to 3.6V, with typical consumption between 20-100 mA, and can be powered via the micro-USB port or the VSYS pin for external power sources like batteries or regulated supplies.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 141.49,
+     "y": 194.4,
+     "width": 398.67,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 206.4,
+     "width": 468.17,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 218.28,
+     "width": 216.02,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s39",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "In 2024 an updated Raspberry Pi Pico 2 was introduced, which is powered by the RP2350 microcontroller, which features a dual-core ARM Cortex-M33 processor running at 150MHz and 520 KB on-chip SRAM and 4 MB onboard flash memory.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 236.28,
+     "width": 469.7,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 248.16,
+     "width": 468.27,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 260.16,
+     "width": 149.91,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s40",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Both can be operated with MicroPython.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 228.27,
+     "y": 260.16,
+     "width": 184.08,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s41",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "It can be assumed that the Raspberry Pi Pico 2 can calculate larger datasets and more complex neural networks with AI-ANNE: (A) (N)eural (N)et for (E)xploration.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 418.57,
+     "y": 260.16,
+     "width": 121.43,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 272.04,
+     "width": 469.14,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 70.8,
+     "y": 284.04,
+     "width": 144.53,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s42",
+   "section_id": "sec2",
+   "kind": "body",
+   "text": "Therefore, the use of a Raspberry Pi Pico 2 is recommended for practical use; The use of the Raspberry Pi Pico might be sufficient for educational purpose.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 219.64,
+     "y": 284.04,
+     "width": 320.5,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 296.04,
+     "width": 358.94,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s43",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "MicroPython is an efficient, lightweight implementation of the Python programming language designed to run on microcontrollers and embedded systems with constrained resources (Delnevo et al. 2023).",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 342.24,
+     "width": 467.98,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 354.24,
+     "width": 418.93,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s44",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "Unlike the full Python environment, MicroPython is optimized to operate within the memory and processing limits typical of small-scale devices, offering a streamlined interpreter and a subset of Python's standard libraries.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 495.12,
+     "y": 354.24,
+     "width": 44.88,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 366.24,
+     "width": 467.98,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 378.12,
+     "width": 470.22,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s45",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "MicroPython retains much of Python's high-level syntax and ease of use, making it accessible to developers familiar with Python.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 390.12,
+     "width": 468.07,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 402.12,
+     "width": 96.64,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s46",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "It is particularly well-suited for rapid prototyping, development, and deployment of machine learning and neural network models on embedded platforms, where resources such as memory, computational power, and storage are limited.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 176.56,
+     "y": 402.12,
+     "width": 363.9,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 414.0,
+     "width": 469.43,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 426.0,
+     "width": 201.27,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s47",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "In the context of neural network applications, MicroPython is often used in edge computing scenarios, where deep learning models need to be deployed directly onto microcontroller-based systems for real-time, localized inference.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 443.88,
+     "width": 468.11,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 455.88,
+     "width": 468.12,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 467.76,
+     "width": 41.29,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s48",
+   "section_id": "sec3",
+   "kind": "body",
+   "text": "Although MicroPython does not natively support the extensive numerical libraries found in full Python (e.g., TensorFlow and Keras), it is possible to reproduce the basic architecture of neural networks with AI-ANNE: (A) (N)eural (N)et for (E)xploration in MicroPython from scratch.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 118.68,
+     "y": 467.76,
+     "width": 421.25,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 479.76,
+     "width": 468.23,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 491.76,
+     "width": 364.95,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s49",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "Thonny is a simple, user-friendly program that works on all major computer systems.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 537.96,
+     "width": 379.44,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s50",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "It makes it easy to connect with and program the Raspberry Pi Pico / Raspberry Pi Pico 2. Thonny enables users to quickly write and test code, manage files and fix any mistakes with helpful tools.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 456.71,
+     "y": 537.96,
+     "width": 83.21,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 549.96,
+     "width": 468.48,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 561.96,
+     "width": 322.1,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s51",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "It can be described as a tool for those just starting with MicroPython on microcontrollers and embedded systems.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 398.89,
+     "y": 561.96,
+     "width": 141.31,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 72.0,
+     "y": 573.84,
+     "width": 354.36,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s52",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "With Thonny, AI-ANNE: (A) (N)eural (N)et for (E)xploration can simply be flashed onto the microcontroller.",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 430.67,
+     "y": 573.84,
+     "width": 110.68,
+     "height": 10.77
+    },
+    {
+     "page": 3,
+     "x": 70.8,
+     "y": 585.84,
+     "width": 368.78,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s53",
+   "section_id": "sec4",
+   "kind": "body",
+   "text": "Thonny can be downloaded here: https://thonny.org/",
+   "boxes": [
+    {
+     "page": 3,
+     "x": 71.64,
+     "y": 603.72,
+     "width": 144.64,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s54",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "A neural network is a computational model inspired by the way biological neural systems process information.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 116.64,
+     "width": 470.42,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s55",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "It consists of interconnected layers of nodes, or neurons, which transform input data into output predictions through a series of mathematical operations (LeCun et al. 2015).",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 128.64,
+     "width": 468.16,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 140.64,
+     "width": 291.13,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s56",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "In the context of implementing neural networks in MicroPython, the architecture must be designed to operate within the resource constraints of embedded systems (Ray 2022).",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 369.96,
+     "y": 140.64,
+     "width": 170.19,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 152.52,
+     "width": 468.1,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 164.52,
+     "width": 150.24,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s57",
+   "section_id": "sec5",
+   "kind": "body",
+   "text": "Despite these constraints, the basic components of a neural networkneurons, layers, density, and activation functions -can still be effectively modeled (Sakr et al. 2021).",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 229.19,
+     "y": 164.52,
+     "width": 312.46,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 176.4,
+     "width": 438.62,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s58",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "A neuron in a neural network is a computational unit that receives inputs, applies a weight to each input, sums the weighted inputs, and passes the result through an activation function to produce an output.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 220.68,
+     "width": 469.72,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 232.56,
+     "width": 452.71,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s59",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "In MicroPython (Appendix -C), each neuron can be represented as a mathematical operation involving inputs and weights, with the output being calculated via simple matrix operations.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 530.94,
+     "y": 232.56,
+     "width": 9.14,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 244.56,
+     "width": 468.0,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 256.44,
+     "width": 331.94,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s60",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "The general form of the neuron's computation can be expressed with y as the output of the neuron, f as the activation function, x i as the inputs, w i as the corresponding weights and b as the bias:",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 274.44,
+     "width": 468.34,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 286.32,
+     "width": 96.42,
+     "height": 11.14
+    },
+    {
+     "page": 4,
+     "x": 172.32,
+     "y": 286.32,
+     "width": 72.54,
+     "height": 11.14
+    },
+    {
+     "page": 4,
+     "x": 248.76,
+     "y": 286.32,
+     "width": 205.33,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s61",
+   "section_id": "sec6",
+   "kind": "body",
+   "text": "In a MicroPython implementation, these calculations can be done using basic array operations, making it computationally efficient for small-scale neural networks on microcontrollers.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 348.36,
+     "width": 468.31,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 360.36,
+     "width": 335.06,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s62",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "A neural network is typically structured as a series of layers, where each layer consists of multiple neurons.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 404.52,
+     "width": 470.41,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s63",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "There are three main types of layers in a typical neural network architecture:",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 416.52,
+     "width": 337.34,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s64",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "• Input Layer: This is the first layer of the network and receives the raw input data.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 84.12,
+     "y": 434.4,
+     "width": 382.47,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s65",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "Each neuron in the input layer corresponds to a feature in the input data.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 472.58,
+     "y": 434.4,
+     "width": 67.48,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 96.96,
+     "y": 446.4,
+     "width": 260.71,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s66",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "With AI-ANNE: (A) (N)eural (N)et for (E)xploration, this layer would typically read sensor values or external data directly.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 364.02,
+     "y": 446.4,
+     "width": 176.19,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 95.76,
+     "y": 458.28,
+     "width": 368.66,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s67",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "• Hidden Layers: Between the input and output layers, the network may contain one or more hidden layers.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 84.12,
+     "y": 476.28,
+     "width": 455.92,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 96.96,
+     "y": 488.28,
+     "width": 27.73,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s68",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "These layers are responsible for learning complex representations of the input data.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 132.6,
+     "y": 488.28,
+     "width": 377.8,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s69",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "Each hidden layer is composed of neurons that perform weighted sums of the outputs of the previous layer, followed by an activation function.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 518.55,
+     "y": 488.28,
+     "width": 21.62,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 96.96,
+     "y": 500.16,
+     "width": 444.64,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 96.96,
+     "y": 512.16,
+     "width": 150.77,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s70",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "• Output Layer: This is the final layer of the network, which produces the prediction or classification result.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 84.12,
+     "y": 530.04,
+     "width": 456.03,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 96.96,
+     "y": 542.04,
+     "width": 27.25,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s71",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "The output layer's structure depends on the problem being solved (e.g., binary classification, multi-class classification, logistic regression).",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 129.96,
+     "y": 542.04,
+     "width": 411.63,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 96.96,
+     "y": 553.92,
+     "width": 194.04,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s72",
+   "section_id": "sec7",
+   "kind": "body",
+   "text": "MicroPython can represent the layers as a list of lists (or arrays) of neurons, where each element stores the weights, biases, and outputs of the neurons in the respective layer.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 571.92,
+     "width": 467.98,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 583.92,
+     "width": 290.41,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s73",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "The density of a layer refers to the number of neurons in that layer.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 71.64,
+     "y": 628.08,
+     "width": 309.37,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s74",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "In a fully connected (dense) layer, each neuron in the current layer is connected to all neurons in the previous layer.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 388.08,
+     "y": 628.08,
+     "width": 153.51,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 639.96,
+     "width": 353.43,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s75",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "This is the most common configuration in neural networks.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 429.62,
+     "y": 639.96,
+     "width": 110.52,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 651.96,
+     "width": 145.61,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s76",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "For example: In a dense layer with 5 neurons, each neuron in the layer receives input from all neurons in the previous layer, and the layer will contain 5 sets of weights and biases to be learned during training.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 223.48,
+     "y": 651.96,
+     "width": 316.86,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 663.84,
+     "width": 467.94,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 675.84,
+     "width": 116.09,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s77",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "MicroPython can implement a dense layer efficiently using matrix multiplication (Appendix -A, all of a sudden, school math seems very practical!).",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 192.28,
+     "y": 675.84,
+     "width": 347.75,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 70.8,
+     "y": 687.84,
+     "width": 294.38,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s78",
+   "section_id": "sec8",
+   "kind": "body",
+   "text": "Each layer's input and weight matrices are multiplied together, followed by the addition of a bias term, and the result is passed through an activation function.",
+   "boxes": [
+    {
+     "page": 4,
+     "x": 369.85,
+     "y": 687.84,
+     "width": 170.27,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 699.72,
+     "width": 468.17,
+     "height": 10.77
+    },
+    {
+     "page": 4,
+     "x": 72.0,
+     "y": 711.72,
+     "width": 38.43,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s79",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "An activation function determines whether a neuron should activate, so that the neuron's output will be passed forward to the next layer.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 71.64,
+     "y": 92.04,
+     "width": 468.38,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 104.04,
+     "width": 141.39,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s80",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "The activation function introduces non-linearity into the network, allowing it to learn complex patterns in the data.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 217.34,
+     "y": 104.04,
+     "width": 322.88,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 116.04,
+     "width": 176.44,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s81",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "Common activation functions include:",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 252.87,
+     "y": 116.04,
+     "width": 165.48,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s82",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "• Sigmoid: The Sigmoid function outputs values between 0 and 1 and is often used in binary classification tasks.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 84.12,
+     "y": 133.92,
+     "width": 456.05,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 145.92,
+     "width": 24.84,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s83",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "• ReLU (Rectified Linear Unit): ReLU outputs the input directly if it is positive; otherwise, it outputs zero.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 84.12,
+     "y": 199.92,
+     "width": 455.88,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 211.92,
+     "width": 20.64,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s84",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "It is widely used in hidden layers due to its simplicity and efficiency in preventing vanishing gradients.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 124.68,
+     "y": 211.92,
+     "width": 415.42,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 223.8,
+     "width": 42.62,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s85",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "• Leaky ReLU: The Leaky ReLU activation function is a variant of the traditional ReLU activation function, which addresses a common issue known as the \"dying ReLU\" problem.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 84.12,
+     "y": 286.44,
+     "width": 456.05,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 298.44,
+     "width": 349.93,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s86",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "This problem occurs when neurons become inactive and stop learning because their output is always zero (when the input is negative).",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 451.2,
+     "y": 298.44,
+     "width": 88.89,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.6,
+     "y": 310.44,
+     "width": 443.71,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 322.32,
+     "width": 53.53,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s87",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "Leaky ReLU overcomes this by allowing a small, non-zero gradient when the input is negative.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 157.44,
+     "y": 322.32,
+     "width": 382.56,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 334.32,
+     "width": 38.89,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s88",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "The key difference between ReLU and Leaky ReLU is that when x < 0, instead of the output being zero (as in ReLU), the output is a small negative value.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 139.92,
+     "y": 334.32,
+     "width": 400.38,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 346.2,
+     "width": 267.39,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s89",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "The parameter alpha controls the slope of this negative region, typically with small values such as 0.01 or 0.1.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 368.64,
+     "y": 346.2,
+     "width": 171.35,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 358.2,
+     "width": 305.42,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s90",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "• Tanh: The hyperbolic tangent function Tanh outputs values between -1 and 1.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 84.12,
+     "y": 420.84,
+     "width": 366.01,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s91",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "It is similar to the sigmoid but has a wider output range, making it useful for some applications where the network needs to model both positive and negative values.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 457.08,
+     "y": 420.84,
+     "width": 82.91,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 432.84,
+     "width": 443.02,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 444.72,
+     "width": 189.99,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s92",
+   "section_id": "sec9",
+   "kind": "body",
+   "text": "T anh(x) = e xe -x e x + e -x • Softmax: Often used in the output layer of classification networks, the Softmax function normalizes the output to produce a probability distribution across multiple classes.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 260.52,
+     "y": 478.44,
+     "width": 48.07,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 312.6,
+     "y": 472.86,
+     "width": 4.64,
+     "height": 9.07
+    },
+    {
+     "page": 5,
+     "x": 317.28,
+     "y": 471.66,
+     "width": 32.6,
+     "height": 10.27
+    },
+    {
+     "page": 5,
+     "x": 312.6,
+     "y": 485.16,
+     "width": 37.28,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 84.12,
+     "y": 499.92,
+     "width": 455.99,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 96.96,
+     "y": 511.8,
+     "width": 313.32,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s93",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "In MicroPython, these activation functions can be implemented as simple functions, leveraging MicroPython's built-in math library (Appendix -B).",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 575.16,
+     "width": 469.9,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 587.04,
+     "width": 192.31,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s94",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "Given the computational constraints of embedded devices, it is crucial to choose lightweight activation functions like ReLU, which avoid the more computationally expensive exponentiation operations used in Sigmoid or Tanh.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 267.42,
+     "y": 587.04,
+     "width": 272.56,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 599.04,
+     "width": 468.13,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 610.92,
+     "width": 225.18,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s95",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "AI-ANNE: (A) (N)eural (N)et for (E)xploration passes data through the neural network layer by layer, and each neuron's output is computed based on the inputs and weights.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 301.49,
+     "y": 610.92,
+     "width": 238.63,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 622.92,
+     "width": 468.01,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 634.92,
+     "width": 54.98,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s96",
+   "section_id": "sec10",
+   "kind": "body",
+   "text": "In a MicroPython environment, due to the limited processing power and memory, a smaller network with fewer layers and neurons might be preferred, and training could be done in advance on a more powerful system before deployment to the embedded device.",
+   "boxes": [
+    {
+     "page": 5,
+     "x": 132.97,
+     "y": 634.92,
+     "width": 407.34,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 646.8,
+     "width": 468.15,
+     "height": 10.77
+    },
+    {
+     "page": 5,
+     "x": 72.0,
+     "y": 658.8,
+     "width": 262.82,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s97",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "In neural networks, weights and biases are key parameters that the model learns during the training process to make accurate predictions.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 92.04,
+     "width": 468.12,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 104.04,
+     "width": 128.65,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s98",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Weights are the parameters that scale the input values as they pass through the network.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 71.52,
+     "y": 121.92,
+     "width": 394.35,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s99",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "They determine the strength of the connections between neurons in adjacent layers.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 470.78,
+     "y": 121.92,
+     "width": 69.23,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 133.92,
+     "width": 296.17,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s100",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Each connection between two neurons has its own weight, and the value of this weight influences how much the input from the previous layer affects the output of the current layer.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 373.2,
+     "y": 133.92,
+     "width": 166.9,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 145.92,
+     "width": 467.99,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 157.8,
+     "width": 134.08,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s101",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "In mathematical terms, if a neuron receives an input x and its corresponding weight is w, the contribution of that input to the neuron's output is w * x.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 210.16,
+     "y": 157.8,
+     "width": 330.05,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 71.64,
+     "y": 169.8,
+     "width": 336.37,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s102",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Weights are adjusted during training using optimization techniques, such as gradient descent, to minimize the model's prediction error.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 414.72,
+     "y": 169.8,
+     "width": 125.37,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 181.68,
+     "width": 464.53,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s103",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Biases, on the other hand, allow the model to shift the output independently of the weighted sum of inputs.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 199.68,
+     "width": 469.97,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s104",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "They are added to the weighted sum before it is passed through the activation function.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 71.64,
+     "y": 211.68,
+     "width": 394.24,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s105",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "This allows the network to better model complex relationships in the data by shifting the activation function's threshold.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 472.47,
+     "y": 211.68,
+     "width": 67.55,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 223.56,
+     "width": 470.1,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s106",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "For example, if the weighted sum of inputs to a neuron is represented as z = w * x + b, the bias term b shifts the output, enabling the model to learn more effectively.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 235.56,
+     "width": 467.97,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 247.44,
+     "width": 251.55,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s107",
+   "section_id": "sec11",
+   "kind": "body",
+   "text": "Like the weights, biases are also learned during training.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 329.79,
+     "y": 247.44,
+     "width": 210.29,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 259.44,
+     "width": 37.23,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s108",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "A confusion matrix is like a scoreboard that indicates how well a neural network is doing at making predictions.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 71.64,
+     "y": 305.76,
+     "width": 470.45,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s109",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "It's especially useful for classification problems, where the goal is to assign items to categories.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 317.64,
+     "width": 427.91,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s110",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "For the purpose of binary classification a confusion matrix can be a table with two rows and two columns.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 507.22,
+     "y": 317.64,
+     "width": 32.75,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 329.64,
+     "width": 424.82,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s111",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "Each cell tells something about the model's predictions compared to the actual results, which can be interpreted as follows:",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 501.13,
+     "y": 329.64,
+     "width": 38.89,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 341.64,
+     "width": 468.1,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 353.52,
+     "width": 32.29,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s112",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "• True Positives (TP): The model correctly predicted the positive class.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 84.12,
+     "y": 371.52,
+     "width": 317.4,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s113",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "• True Negatives (TN): The model correctly predicted the negative class.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 84.12,
+     "y": 389.4,
+     "width": 324.12,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s114",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "• False Positives (FP): The model incorrectly predicted the positive class (Type I Error).",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 84.12,
+     "y": 407.4,
+     "width": 394.22,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s115",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "• False Negatives (FN): The model incorrectly predicted the negative class (Type II Error).",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 84.12,
+     "y": 425.28,
+     "width": 404.89,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s116",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "The Accuracy of the neural network based prediction can be calculated as a metric based on this.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 71.64,
+     "y": 443.16,
+     "width": 424.21,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s117",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "Accuracy as a percentage is a metric that provides information about how often the model is right overall.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 500.17,
+     "y": 443.16,
+     "width": 40.29,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 455.16,
+     "width": 426.51,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s118",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "Below is an illustrative example (Tab. 1) of a confusion matrix with actual values in the rows and predicted values in the columns:",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 503.54,
+     "y": 455.16,
+     "width": 36.44,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 467.16,
+     "width": 467.99,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 479.04,
+     "width": 67.1,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s119",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "(Tab. 1) Confusion Matrix Example Predicted Positive Predicted Negative Actual Positive 09.00 01.00 Actual Negative 00.00 10.00",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 506.29,
+     "width": 181.77,
+     "height": 9.43
+    },
+    {
+     "page": 6,
+     "x": 259.92,
+     "y": 531.84,
+     "width": 174.24,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 177.96,
+     "y": 548.76,
+     "width": 66.59,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 259.93,
+     "y": 548.76,
+     "width": 22.86,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 351.13,
+     "y": 548.76,
+     "width": 22.86,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 177.96,
+     "y": 560.76,
+     "width": 104.82,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 351.12,
+     "y": 560.76,
+     "width": 22.86,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s120",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "In this binary classification, 09.00 of the positive class are classified correctly and 01.00 incorrectly (Type II Error).",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 596.76,
+     "width": 468.0,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 608.64,
+     "width": 41.18,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s121",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "Accordingly, 10.00 of the negative class are classified correctly and 00.00 incorrectly.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 117.38,
+     "y": 608.64,
+     "width": 367.32,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s122",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "This results in an Accuracy of 95% (19.00 / 20.00 = 00.95) and is based on the second application example of a neural network with 6 neurons, which is presented below.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 488.89,
+     "y": 608.64,
+     "width": 51.21,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 620.64,
+     "width": 468.15,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 632.64,
+     "width": 217.59,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s123",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "In addition to this metric, there are other metrics for the evaluation of neural networks, e.g.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 293.91,
+     "y": 632.64,
+     "width": 246.09,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 644.52,
+     "width": 146.44,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s124",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "Precision, Recall and F1 Score.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 220.95,
+     "y": 644.52,
+     "width": 133.06,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s125",
+   "section_id": "sec12",
+   "kind": "body",
+   "text": "For this example and as basic introduction to AI-ANNE: (A) (N)eural (N)et for (E)xploration, the focus on accuracy shall suffice.",
+   "boxes": [
+    {
+     "page": 6,
+     "x": 357.96,
+     "y": 644.52,
+     "width": 182.09,
+     "height": 10.77
+    },
+    {
+     "page": 6,
+     "x": 72.0,
+     "y": 656.52,
+     "width": 378.36,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s126",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "The IRIS dataset is a widely recognized dataset in statistics, machine learning and deep learning and often used for classification problems.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 71.64,
+     "y": 116.64,
+     "width": 468.42,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 128.64,
+     "width": 141.02,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s127",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "Introduced by the British biologist and statistician Ronald A. Fisher in 1936, it contains 150 instances of iris flowers, each with four attributes that describe their physical characteristics.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 219.85,
+     "y": 128.64,
+     "width": 320.2,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 71.52,
+     "y": 140.64,
+     "width": 470.39,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 152.52,
+     "width": 36.72,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s128",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "These attributes include the sepal length, sepal width, petal length, and petal width, all measured in centimeters.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 113.03,
+     "y": 152.52,
+     "width": 427.15,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 164.52,
+     "width": 64.08,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s129",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "Based on these four attributes, the objective of the dataset is to classify each flower into one of three species: Setosa, Versicolor, and Virginica.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 182.4,
+     "width": 469.44,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 194.4,
+     "width": 143.19,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s130",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "The IRIS dataset serves as an ideal example for demonstrating and testing machine learning algorithms and neural networks as deep learning models, particularly for classification tasks.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 219.26,
+     "y": 194.4,
+     "width": 320.71,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 206.4,
+     "width": 470.08,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s131",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "Its manageable size, clear distinctions between classes and straightforward nature make it a popular choice for exploring classification techniques.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 218.28,
+     "width": 468.15,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 230.28,
+     "width": 165.75,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s132",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "However, classifying some of the species, particularly Versicolor and Virginica, can be challenging due to their overlapping characteristics, making the task more complex for certain machine learning algorithms and neural networks as deep learning models.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 242.55,
+     "y": 230.28,
+     "width": 297.49,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 71.64,
+     "y": 242.16,
+     "width": 468.54,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 254.16,
+     "width": 358.22,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s133",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "In the pre-installed example, AI-ANNE: (A) (N)eural (N)et for (E)xploration was entrusted with the classification of Versicolor and Virginica accordingly.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 272.04,
+     "width": 469.79,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 284.04,
+     "width": 217.37,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s134",
+   "section_id": "sec13",
+   "kind": "body",
+   "text": "The result will be a percentage, as presented before as Accuracy.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 295.84,
+     "y": 284.04,
+     "width": 244.26,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 71.64,
+     "y": 296.04,
+     "width": 42.25,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s135",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "First, with TensorFlow and Keras pre-trained weights and biases must be transferred onto the microcontroller.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 342.24,
+     "width": 469.76,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 354.24,
+     "width": 29.54,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s136",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "The weights and biases of the neural network with 8 neurons need to be coded in a specific order in MicroPython (Tab.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 105.85,
+     "y": 354.24,
+     "width": 434.18,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 366.24,
+     "width": 83.55,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s137",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "2).",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 159.87,
+     "y": 366.24,
+     "width": 11.65,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s138",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "The first layer, the so called input layer, contains two neurons that process the input from the four independent variables of the IRIS dataset.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 175.71,
+     "y": 366.24,
+     "width": 364.59,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 378.12,
+     "width": 250.14,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s139",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "The weights w1 are coded accordingly with two columns and four rows in MicroPython.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 328.25,
+     "y": 378.12,
+     "width": 211.83,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 390.12,
+     "width": 174.77,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s140",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "The two neurons are correspondingly provided with two biases b1.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 251.69,
+     "y": 390.12,
+     "width": 290.36,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s141",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "The weights and biases for the number of neurons in the other layers are coded accordingly: Three neurons follow in the first hidden layer, followed by two neurons in the second hidden layer and one neuron in the output layer.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 71.64,
+     "y": 402.12,
+     "width": 468.46,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 414.0,
+     "width": 468.03,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 426.0,
+     "width": 56.43,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s142",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "(Tab. 2) Weights and Biases for 8 Neurons w1 = [[-0.75323504,",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 453.25,
+     "width": 215.96,
+     "height": 9.43
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 475.61,
+     "width": 109.8,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s143",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "-0.25906014], [-0.46379513, -0.5019245 ], [ 2.1273055 , 1.7724446 ], [ 1.1853403 , 0.88468695]] b1 = [0.53405946,",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 213.24,
+     "y": 475.63,
+     "width": 63.31,
+     "height": 7.7
+    },
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 487.49,
+     "width": 141.31,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 499.49,
+     "width": 141.31,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 511.37,
+     "width": 141.79,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 523.37,
+     "width": 89.35,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s144",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "0.32578036] w2 = [[-1.6785783,",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 197.52,
+     "y": 523.37,
+     "width": 58.03,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 535.37,
+     "width": 94.63,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s145",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "2.0158117, 1.2769054], [-1.4055765, 0.6828738, 1.5902631]] b2 = [ 1.18362 , -1.1555661, -1.0966455] w3 = [[ 0.729278 , -1.0240695 ], [-0.80972326, 1.4383037 ], [-0.90892404, 1.6760625 ]] b3 = [0.10695826,",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 207.96,
+     "y": 535.37,
+     "width": 120.79,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 547.25,
+     "width": 193.99,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 559.25,
+     "width": 214.87,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 571.25,
+     "width": 172.63,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 583.13,
+     "width": 141.31,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 595.13,
+     "width": 141.31,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 607.01,
+     "width": 89.35,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s146",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "0.01635581] w4 = [[-0.2019448],",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 197.52,
+     "y": 607.01,
+     "width": 58.03,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 619.01,
+     "width": 99.91,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s147",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "[ 1.5772797]] b4 = [-1.2177287]",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 134.76,
+     "y": 631.01,
+     "width": 68.47,
+     "height": 9.2
+    },
+    {
+     "page": 7,
+     "x": 103.44,
+     "y": 642.89,
+     "width": 89.35,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s148",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "For pre-training in TensorFlow and Keras the ReLU activation function was used in the input layer, followed by Tanh in the first hidden layer, Softmax in the second hidden layer and Sigmoid in the output layer.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 663.36,
+     "width": 468.19,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 675.24,
+     "width": 453.78,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s149",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "In MicroPython (Tab.",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 530.93,
+     "y": 675.24,
+     "width": 9.14,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 687.24,
+     "width": 85.11,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s150",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "3), where users have the option to change the number of neurons, layers as well as changing the activation functions used, the corresponding code would be:",
+   "boxes": [
+    {
+     "page": 7,
+     "x": 164.67,
+     "y": 687.24,
+     "width": 375.43,
+     "height": 10.77
+    },
+    {
+     "page": 7,
+     "x": 72.0,
+     "y": 699.12,
+     "width": 319.82,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s151",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "(Tab. 3) Neural Network with 8 Neurons yout1 = dense(2, transpose(Xtest), w1, b1, relu ) yout2 = dense(3, yout1, w2, b2, tanh ) yout3 = dense(2, yout2, w3, b3, softmax ) ypred = dense(1, yout3, w4, b4, sigmoid )",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 75.01,
+     "width": 207.81,
+     "height": 9.43
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 97.37,
+     "width": 261.79,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 109.37,
+     "width": 204.19,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 121.25,
+     "width": 220.03,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 133.25,
+     "width": 214.99,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s152",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "The Accuracy of this neural network with 8 neurons is 90%.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 155.04,
+     "width": 260.2,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s153",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "A variation of the number of neurons, layers as well as activation functions with their weights and biases can influence the accuracy accordingly.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 336.15,
+     "y": 155.04,
+     "width": 203.98,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 166.92,
+     "width": 420.99,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s154",
+   "section_id": "sec14",
+   "kind": "body",
+   "text": "Therefore, AI-ANNE: (A) (N)eural (N)et for (E)xploration enables direct customization of the code in MicroPython via Thonny.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 496.82,
+     "y": 166.92,
+     "width": 44.77,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 178.92,
+     "width": 468.64,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 71.76,
+     "y": 190.92,
+     "width": 52.11,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s155",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "The next neural network differs in the number of neurons, the layers and the activation functions used.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 237.12,
+     "width": 444.64,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s156",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "This time there are three neurons in the input layer (Tab.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 520.59,
+     "y": 237.12,
+     "width": 19.41,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 249.12,
+     "width": 235.6,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s157",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "4).",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 313.72,
+     "y": 249.12,
+     "width": 11.65,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s158",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "Accordingly, the weights w1 of the neurons are coded in three columns and four rows, which result from the four independent variables of the IRIS dataset.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 331.48,
+     "y": 249.12,
+     "width": 208.64,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 261.0,
+     "width": 470.08,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s159",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "This time three biases b1 need to be added.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 273.0,
+     "width": 192.5,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s160",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "The code for the hidden layer and the output layer is written accordingly, so that there is again one neuron in the output layer for binary classification.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 269.41,
+     "y": 273.0,
+     "width": 270.61,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 285.0,
+     "width": 392.19,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s161",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "(Tab. 4) Weights and Biases for 6 Neurons w1 = [[ 0.50914556, -0.18116623, -0.04498423], [ 0.33949652, -0.42303845, -0.37400272], [-1.4968083 , 1.2034143 , 0.95544535], [-1.344156 , 0.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 312.25,
+     "width": 215.96,
+     "height": 9.43
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 334.61,
+     "width": 241.15,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 134.76,
+     "y": 346.49,
+     "width": 209.83,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 134.76,
+     "y": 358.49,
+     "width": 209.71,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 134.76,
+     "y": 370.37,
+     "width": 89.03,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s162",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "39220142, 1.2244085 ]] b1 = [0.83684736,",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 223.79,
+     "y": 370.37,
+     "width": 120.2,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 382.37,
+     "width": 89.35,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s163",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "0.5311056 , 0.7652087 ] w2 = [[-2.1645586",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 197.52,
+     "y": 382.37,
+     "width": 120.31,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 394.37,
+     "width": 89.35,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s164",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": ", 1.3892978 ], [ 0.43439832, -1.8758974 ], [ 0.92036045, -1.5745732 ]] b2 = [0.9615521,",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 197.52,
+     "y": 394.37,
+     "width": 78.55,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 134.76,
+     "y": 406.25,
+     "width": 141.31,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 134.76,
+     "y": 418.25,
+     "width": 141.31,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 430.25,
+     "width": 84.07,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s165",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "0.4445824] w3 = [[ 1.6905344], [-2.6346245]] b3 = [0.4316521]",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 192.24,
+     "y": 430.25,
+     "width": 52.75,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 442.13,
+     "width": 99.79,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 134.76,
+     "y": 454.13,
+     "width": 68.59,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 466.01,
+     "width": 84.07,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s166",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "This time, the ReLU activation function was used during pre-training in TensorFlow and Keras for the input layer, followed by the Sigmoid activation function in the hidden layer and in the output layer.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 486.48,
+     "width": 468.69,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 498.36,
+     "width": 412.14,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s167",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "This results in the following code in MicroPython (Tab.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 488.81,
+     "y": 498.36,
+     "width": 51.33,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 510.36,
+     "width": 189.54,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s168",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "5):",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 265.97,
+     "y": 510.36,
+     "width": 11.65,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s169",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "(Tab. 5) Neural Network with 6 Neurons yout1 = dense(3, transpose(Xtest), w1, b1, relu ) yout2 = dense(2, yout1, w2, b2, sigmoid ) ypred = dense(1, yout2, w3, b3, sigmoid )",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 537.61,
+     "width": 207.81,
+     "height": 9.43
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 559.97,
+     "width": 261.79,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 571.85,
+     "width": 220.03,
+     "height": 9.2
+    },
+    {
+     "page": 8,
+     "x": 103.44,
+     "y": 583.85,
+     "width": 220.03,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s170",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "This results in an Accuracy of 95%, whereby flexible adjustments are also possible here.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 605.64,
+     "width": 402.25,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s171",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "The different Accuracies of the two examples demonstrate the importance of the number of neurons and layers as well as the activation functions used.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 482.4,
+     "y": 605.64,
+     "width": 57.88,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 71.64,
+     "y": 617.52,
+     "width": 468.47,
+     "height": 10.77
+    },
+    {
+     "page": 8,
+     "x": 72.0,
+     "y": 629.52,
+     "width": 128.55,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s172",
+   "section_id": "sec15",
+   "kind": "body",
+   "text": "In this case, a simpler neural network seems to be more appropriate.",
+   "boxes": [
+    {
+     "page": 8,
+     "x": 204.98,
+     "y": 629.52,
+     "width": 299.75,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s173",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "This working paper explored the integration of neural networks onto resource-limited microcontrollers and embedded systems like the Raspberry Pi Pico and Raspberry Pi Pico 2, using a TinyML approach.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 71.64,
+     "y": 96.36,
+     "width": 468.39,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 108.24,
+     "width": 442.6,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s174",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "This method enabled the deployment of neural networks directly onto microcontrollers, providing real-time, lowlatency, and energy-efficient inference while ensuring data privacy.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 520.6,
+     "y": 108.24,
+     "width": 19.41,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 120.24,
+     "width": 469.79,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 132.12,
+     "width": 284.3,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s175",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "For this purpose, AI-ANNE: (A) (N)eural (N)et for (E)xploration was introduced, a open source framework that facilitated the transfer of pre-trained models from high-performance platforms like TensorFlow and Keras to microcontrollers, using MicroPython as lightweight and transparent programming languages.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 360.49,
+     "y": 132.12,
+     "width": 179.56,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 70.8,
+     "y": 144.12,
+     "width": 469.38,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 156.12,
+     "width": 468.29,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 168.0,
+     "width": 246.41,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s176",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "The approach demonstrated how key neural network components -such as neurons, layers, density, and activation functions -could be implemented in MicroPython in order to address the computational constraints of microcontrollers and embedded systems.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 324.88,
+     "y": 168.0,
+     "width": 216.78,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 71.64,
+     "y": 180.0,
+     "width": 468.41,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 192.0,
+     "width": 470.05,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s177",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "Two neural network examples were presented, either with 8 neurons in 4 layers or with 6 neurons in 3 layers.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 71.64,
+     "y": 203.88,
+     "width": 470.57,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s178",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "Overall, this working paper offered a simple and practical method for deploying neural networks on energyefficient devices like microcontrollers and how they can be used for practical use or as an educational tool with insights into the underlying technology and programming techniques of deep learning models.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 221.88,
+     "width": 469.81,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 233.76,
+     "width": 468.05,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 245.76,
+     "width": 416.43,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s179",
+   "section_id": "sec16",
+   "kind": "body",
+   "text": "AI-ANNE: (A) (N)eural (N)et for (E)xploration is an open source project.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 495.02,
+     "y": 245.76,
+     "width": 46.33,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 70.8,
+     "y": 257.64,
+     "width": 274.93,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s180",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Dennis Klinkhammer completed his doctorate and habilitation at Justus Liebig University Giessen (JLU) and focuses his teaching and research as a social data scientist on the methodological foundations of machine learning and deep learning in the programming languages R and Python.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 312.48,
+     "width": 443.07,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 95.76,
+     "y": 324.36,
+     "width": 444.36,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 336.36,
+     "width": 369.27,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s181",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Insights into his teaching and research are available at: https://www.statistical-thinking.de/",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 470.54,
+     "y": 336.36,
+     "width": 69.46,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 348.36,
+     "width": 331.4,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s182",
+   "section_id": null,
+   "kind": "caption",
+   "text": "Open Source Code • Both the presented and other examples of AI-ANNE: (A) (N)eural (N)et for (E)xploration are available on GitHub.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 379.48,
+     "width": 132.3,
+     "height": 13.64
+    },
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 403.08,
+     "width": 456.04,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 415.08,
+     "width": 49.71,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s183",
+   "section_id": null,
+   "kind": "caption",
+   "text": "This includes Jupyter Notebooks for pre-training with TensorFlow and Keras in Python, as well as the parameters to be transferred and the corresponding code in MicroPython.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 151.7,
+     "y": 415.08,
+     "width": 389.78,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 426.96,
+     "width": 388.6,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s184",
+   "section_id": null,
+   "kind": "caption",
+   "text": "The link to the repository is: https://github.com/statistical-thinking/KI.ENNA/ Sources • Cioffi, R.; Travaglioni, M.; Piscitelli, G.; Petrillo, A. and F. de Felice (2020): Artificial intelligence and machine learning applications in smart production: Progress trends and directions.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 490.48,
+     "y": 426.96,
+     "width": 49.51,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 438.96,
+     "width": 303.56,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 72.0,
+     "y": 470.2,
+     "width": 53.54,
+     "height": 13.64
+    },
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 493.68,
+     "width": 455.92,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 505.68,
+     "width": 362.06,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s185",
+   "section_id": null,
+   "kind": "caption",
+   "text": "In: Sustainability, 12(2), p. 492.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 463.33,
+     "y": 505.68,
+     "width": 78.16,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.36,
+     "y": 517.68,
+     "width": 58.34,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s186",
+   "section_id": null,
+   "kind": "caption",
+   "text": "https://doi.org/10.3390/su12020492",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 159.01,
+     "y": 517.68,
+     "width": 157.77,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s187",
+   "section_id": null,
+   "kind": "caption",
+   "text": "• Delnevo, G.; Mirri, S.; Prandi, C.; Manzoni, P. (2023): An evaluation methodology to determine the actual limitations of a TinyML-based solution.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 535.56,
+     "width": 457.54,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 547.56,
+     "width": 258.4,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s188",
+   "section_id": null,
+   "kind": "caption",
+   "text": "In: Internet of Things, 22, p. 100729.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 365.44,
+     "y": 547.56,
+     "width": 176.88,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s189",
+   "section_id": null,
+   "kind": "caption",
+   "text": "https://doi.org/10.1016/j.iot.2023.100729",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 559.44,
+     "width": 181.18,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s190",
+   "section_id": null,
+   "kind": "caption",
+   "text": "• LeCun, Y.; Bengio, Y.; Hinton, G. (2015): Deep Learning.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 577.44,
+     "width": 300.66,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s191",
+   "section_id": null,
+   "kind": "caption",
+   "text": "In: Nature, 521, pp.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 398.33,
+     "y": 577.44,
+     "width": 101.26,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s192",
+   "section_id": null,
+   "kind": "caption",
+   "text": "436-444.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 505.94,
+     "y": 577.44,
+     "width": 36.37,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s193",
+   "section_id": null,
+   "kind": "caption",
+   "text": "https://doi.org/10.1038/nature14539",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 589.32,
+     "width": 161.73,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s194",
+   "section_id": null,
+   "kind": "caption",
+   "text": "• Ray, P. (2022): A review on TinyML: State-of-the-art and prospects.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 607.32,
+     "width": 309.96,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s195",
+   "section_id": null,
+   "kind": "caption",
+   "text": "In: Journal of King Saud University -Computer and Information Sciences, 34(4), pp.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 398.27,
+     "y": 607.32,
+     "width": 143.53,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 619.2,
+     "width": 223.6,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s196",
+   "section_id": null,
+   "kind": "caption",
+   "text": "1595-1623.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 322.83,
+     "y": 619.2,
+     "width": 46.42,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s197",
+   "section_id": null,
+   "kind": "caption",
+   "text": "https://doi.org/10.1016/j.jksuci.2021.11.019 • Sakr, F.; Berta, R.; Doyle, J.; de Gloria, A and F. Bellotti (2021): Self-Learning Pipeline for Low-Energy Resource-Constrained Devices.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 372.72,
+     "y": 619.2,
+     "width": 192.7,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 637.2,
+     "width": 457.67,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 649.2,
+     "width": 165.84,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s198",
+   "section_id": null,
+   "kind": "caption",
+   "text": "In: Energies, 14(20), p 6636.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 266.87,
+     "y": 649.2,
+     "width": 121.22,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s199",
+   "section_id": null,
+   "kind": "caption",
+   "text": "https://doi.org/10.3390/en14206636",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 391.93,
+     "y": 649.2,
+     "width": 158.37,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s200",
+   "section_id": null,
+   "kind": "caption",
+   "text": "• Wulfert, L.; Kühnel, J.; Krupp, L.; Viga, J.; Wiede, Ch.; Gembaczka, P.; Grabmaier, A. (2024): AIfES: A Next-Generation Edge AI Framework.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 84.12,
+     "y": 667.08,
+     "width": 457.47,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.48,
+     "y": 679.08,
+     "width": 217.11,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s201",
+   "section_id": null,
+   "kind": "caption",
+   "text": "In: IEEE Transactions on Pattern Analysis and Machine Intelligence, 46(6), pp.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 321.87,
+     "y": 679.08,
+     "width": 218.17,
+     "height": 10.77
+    },
+    {
+     "page": 9,
+     "x": 96.96,
+     "y": 690.96,
+     "width": 137.79,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s202",
+   "section_id": null,
+   "kind": "caption",
+   "text": "4519-4533.",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 238.1,
+     "y": 690.96,
+     "width": 46.45,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s203",
+   "section_id": null,
+   "kind": "caption",
+   "text": "https://doi.org/10.1109/TPAMI.2024.3355495",
+   "boxes": [
+    {
+     "page": 9,
+     "x": 288.38,
+     "y": 690.96,
+     "width": 202.98,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s204",
+   "section_id": "sec18",
+   "kind": "body",
+   "text": "These mathematical basics enable matrix multiplication and other important operations for the neural network architecture.",
+   "boxes": [
+    {
+     "page": 10,
+     "x": 71.64,
+     "y": 115.92,
+     "width": 470.05,
+     "height": 10.77
+    },
+    {
+     "page": 10,
+     "x": 71.64,
+     "y": 127.8,
+     "width": 79.1,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s205",
+   "section_id": "sec18",
+   "kind": "body",
+   "text": "The codes (Tab.",
+   "boxes": [
+    {
+     "page": 10,
+     "x": 155.05,
+     "y": 127.8,
+     "width": 70.92,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s206",
+   "section_id": "sec18",
+   "kind": "body",
+   "text": "A) therefore do not need to be adapted in MicroPython!",
+   "boxes": [
+    {
+     "page": 10,
+     "x": 230.4,
+     "y": 127.8,
+     "width": 247.0,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s207",
+   "section_id": "sec18",
+   "kind": "body",
+   "text": "(Tab.",
+   "boxes": [
+    {
+     "page": 10,
+     "x": 72.0,
+     "y": 155.05,
+     "width": 26.46,
+     "height": 9.43
+    }
+   ]
+  },
+  {
+   "id": "s208",
+   "section_id": "sec18",
+   "kind": "body",
+   "text": "A) Mathematical Basics # Mathematical Basics -I def zero_dim(x): z = [0 for i in range(len(x))] return z # Mathematical Basics -II def add_dim(x, y): z = [x[i] + y[i] for i in range(len(x))] return z # Mathematical Basics -III def zeros(rows, cols): M = [] while len(M) < rows: M.append([]) while len(M[-1]) < cols: M[-1].append(0.0)",
+   "boxes": [
+    {
+     "page": 10,
+     "x": 103.67,
+     "y": 155.05,
+     "width": 120.9,
+     "height": 9.43
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 177.16,
+     "width": 130.75,
+     "height": 8.47
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 188.45,
+     "width": 84.19,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 200.33,
+     "width": 157.51,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 212.33,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 236.92,
+     "width": 136.03,
+     "height": 8.47
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 248.21,
+     "width": 94.15,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 260.21,
+     "width": 209.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 272.09,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 296.68,
+     "width": 141.31,
+     "height": 8.47
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 307.97,
+     "width": 115.27,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 319.97,
+     "width": 31.39,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 331.85,
+     "width": 104.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 343.85,
+     "width": 63.31,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 355.85,
+     "width": 125.71,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 166.2,
+     "y": 367.73,
+     "width": 89.59,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s209",
+   "section_id": "sec18",
+   "kind": "body",
+   "text": "return M # Mathematical Basics -IV def transpose(M): if not isinstance(M[0], list): M = [M] rows = len(M) cols = len(M[0]) MT = zeros(cols, rows) for i in range(rows): for j in range(cols): MT[j][i] = M[i][j] return MT # Mathematical Basics -V def print_matrix(M, decimals=3): for row in M: print([round(x, decimals) + 0 for x in row]) # Mathematical Basics -VI def dense(nunit, x, w, b, activation): res = [] for i in range(nunit): z = neuron(x, w[i], b[i], activation) res.append(z) return res",
+   "boxes": [
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 379.73,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 404.32,
+     "width": 136.03,
+     "height": 8.47
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 415.61,
+     "width": 89.47,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 427.49,
+     "width": 157.15,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 439.49,
+     "width": 36.79,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 451.49,
+     "width": 68.23,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 463.37,
+     "width": 84.07,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 475.37,
+     "width": 115.27,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 487.25,
+     "width": 110.35,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 499.25,
+     "width": 110.35,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 166.2,
+     "y": 511.25,
+     "width": 94.39,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 523.13,
+     "width": 47.11,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 547.84,
+     "width": 130.75,
+     "height": 8.47
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 559.01,
+     "width": 167.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 571.01,
+     "width": 67.99,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 583.01,
+     "width": 230.35,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 607.6,
+     "width": 136.03,
+     "height": 8.47
+    },
+    {
+     "page": 10,
+     "x": 103.44,
+     "y": 618.77,
+     "width": 199.27,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 630.77,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 642.77,
+     "width": 115.63,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 654.65,
+     "width": 193.99,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 145.2,
+     "y": 666.65,
+     "width": 68.59,
+     "height": 9.2
+    },
+    {
+     "page": 10,
+     "x": 124.32,
+     "y": 678.65,
+     "width": 52.39,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s210",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "The following code (Tab.",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 71.64,
+     "y": 92.04,
+     "width": 113.78,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s211",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "B) demonstrates how the activation functions Sigmoid, ReLU, Leaky ReLU, Tanh and Softmax can be programmed in MicroPython.",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 194.41,
+     "y": 92.04,
+     "width": 346.93,
+     "height": 10.77
+    },
+    {
+     "page": 11,
+     "x": 71.64,
+     "y": 104.04,
+     "width": 250.87,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s212",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "In TensorFlow and Keras these are already preprogrammed, in MicroPython the programming has to be done manually.",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 328.74,
+     "y": 104.04,
+     "width": 213.03,
+     "height": 10.77
+    },
+    {
+     "page": 11,
+     "x": 72.0,
+     "y": 116.04,
+     "width": 325.95,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s213",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "Additional activation functions can be added accordingly.",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 403.82,
+     "y": 116.04,
+     "width": 136.21,
+     "height": 10.77
+    },
+    {
+     "page": 11,
+     "x": 72.0,
+     "y": 127.92,
+     "width": 112.95,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s214",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "(Tab.",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 72.0,
+     "y": 155.17,
+     "width": 26.46,
+     "height": 9.43
+    }
+   ]
+  },
+  {
+   "id": "s215",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "B) Activation Functions # Sigmoid def sigmoid(x): z = [1 / (1 + math.exp(-x[val])) for val in range(len(x))] return z # ReLU def relu(x): y = [] for i in range(len(x)): if x[i] >= 0: y.append(x[i]) else: y.append(0) return y # Leaky ReLU def leaky_relu(x, alpha=0.01):",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 103.67,
+     "y": 155.17,
+     "width": 120.3,
+     "height": 9.43
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 177.28,
+     "width": 47.35,
+     "height": 8.47
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 188.57,
+     "width": 78.91,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 200.45,
+     "width": 304.03,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 212.45,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 237.04,
+     "width": 31.51,
+     "height": 8.47
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 248.33,
+     "width": 63.07,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 260.21,
+     "width": 31.39,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 272.21,
+     "width": 120.91,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 145.2,
+     "y": 284.21,
+     "width": 68.11,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 166.2,
+     "y": 296.09,
+     "width": 73.87,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 145.2,
+     "y": 308.11,
+     "width": 26.35,
+     "height": 7.7
+    },
+    {
+     "page": 11,
+     "x": 166.2,
+     "y": 320.09,
+     "width": 58.03,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 331.97,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 356.56,
+     "width": 62.83,
+     "height": 8.47
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 367.85,
+     "width": 157.39,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s216",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "p = [] for i in range(len(x)): if x[i] >= 0: p.append(x[i]) else: p.append(alpha * x[i]) return p # Tanh def tanh(x): t = [(math.exp(x[val])",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 379.85,
+     "width": 31.39,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 391.73,
+     "width": 120.91,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 145.2,
+     "y": 403.73,
+     "width": 68.11,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 166.2,
+     "y": 415.73,
+     "width": 73.87,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 145.2,
+     "y": 427.63,
+     "width": 26.35,
+     "height": 7.7
+    },
+    {
+     "page": 11,
+     "x": 166.2,
+     "y": 439.61,
+     "width": 115.27,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 451.49,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 476.2,
+     "width": 31.51,
+     "height": 8.47
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 487.37,
+     "width": 63.07,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 499.37,
+     "width": 125.47,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s217",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "-math.exp(-x[val]))",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 255.12,
+     "y": 499.37,
+     "width": 94.75,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s218",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "/ (math.exp(x[val])",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 354.48,
+     "y": 499.37,
+     "width": 100.03,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s219",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "+ math.exp(-x[val])) for val in range(len(x))] return t # Softmax def softmax(x): max_x = max(x[val]) exp_x = [math.exp(val",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 134.76,
+     "y": 511.37,
+     "width": 241.27,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 523.25,
+     "width": 41.83,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 547.84,
+     "width": 47.35,
+     "height": 8.47
+    },
+    {
+     "page": 11,
+     "x": 103.44,
+     "y": 559.13,
+     "width": 78.91,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 571.13,
+     "width": 99.91,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 583.01,
+     "width": 120.31,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s220",
+   "section_id": "sec19",
+   "kind": "body",
+   "text": "-max_x) for val in range(len(x))] sum_exp_x = sum(exp_x) s = [j / sum_exp_x for j in exp_x] return s",
+   "boxes": [
+    {
+     "page": 11,
+     "x": 249.84,
+     "y": 583.01,
+     "width": 167.95,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 595.01,
+     "width": 115.51,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 607.01,
+     "width": 178.03,
+     "height": 9.2
+    },
+    {
+     "page": 11,
+     "x": 124.32,
+     "y": 618.89,
+     "width": 41.83,
+     "height": 9.2
+    }
+   ]
+  },
+  {
+   "id": "s221",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "The predefined activation functions Sigmoid, ReLU, Leaky ReLU, Tanh and Softmax are already preprogrammed for each neuron in MicroPython (Tab.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 71.64,
+     "y": 92.04,
+     "width": 470.15,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 104.04,
+     "width": 225.54,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s222",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "C).",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 302.33,
+     "y": 104.04,
+     "width": 13.81,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s223",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "Activation functions that are added independently must be added accordingly.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 319.62,
+     "y": 104.04,
+     "width": 220.66,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 116.04,
+     "width": 119.31,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s224",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "(Tab.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 143.17,
+     "width": 26.46,
+     "height": 9.43
+    }
+   ]
+  },
+  {
+   "id": "s225",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "C) Neurons # Single Neuron def neuron(x, w, b, activation): tmp = zero_dim(x[0]) for i in range(len(x)): tmp = add_dim(tmp, [(float(w[i]) * float(x[i][j])) for j in range(len(x[0]))]) if activation == \"sigmoid\": yp = sigmoid([tmp[i] + b for i in range(len(tmp))]) elif activation == \"relu\": yp = relu([tmp[i] + b for i in range(len(tmp))]) elif activation == \"leaky_relu\": yp = relu([tmp[i] + b for i in range(len(tmp))]) elif activation == \"tanh\": yp = tanh([tmp[i] + b for i in range(len(tmp))]) elif activation == \"softmax\": yp = tanh([tmp[i] + b for i in range(len(tmp))]) else: print(\"Function unknown!\") return yp (D) German Free Software License AI-ANNE: (A) (N)eural (N)et for (E)xploration and KI-ENNA: (E)in (N)euronales (N)etz zum (A)usprobieren may be used by anyone in accordance with the terms of the German Free Software License.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 103.67,
+     "y": 143.17,
+     "width": 58.53,
+     "height": 9.43
+    },
+    {
+     "page": 12,
+     "x": 103.44,
+     "y": 165.28,
+     "width": 78.67,
+     "height": 8.47
+    },
+    {
+     "page": 12,
+     "x": 103.44,
+     "y": 176.57,
+     "width": 167.83,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 200.45,
+     "width": 105.19,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 224.45,
+     "width": 120.91,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 236.33,
+     "width": 262.27,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 155.64,
+     "y": 248.33,
+     "width": 142.03,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 272.21,
+     "width": 141.67,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 284.21,
+     "width": 267.55,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 296.09,
+     "width": 136.27,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 308.09,
+     "width": 251.83,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 320.09,
+     "width": 167.95,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 331.97,
+     "width": 251.83,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 343.97,
+     "width": 136.27,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 355.85,
+     "width": 251.83,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 367.85,
+     "width": 152.11,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 379.85,
+     "width": 251.83,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 391.75,
+     "width": 26.35,
+     "height": 7.7
+    },
+    {
+     "page": 12,
+     "x": 145.2,
+     "y": 403.73,
+     "width": 136.51,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 124.32,
+     "y": 427.61,
+     "width": 47.11,
+     "height": 9.2
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 459.27,
+     "width": 204.66,
+     "height": 11.37
+    },
+    {
+     "page": 12,
+     "x": 71.64,
+     "y": 477.72,
+     "width": 468.39,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 70.8,
+     "y": 489.72,
+     "width": 469.31,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 501.6,
+     "width": 34.56,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s226",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "The German Free Software License (Deutsche Freie Software Lizenz) is a license of open-source nature with the same flavors as the GNU GPL but governed by German law.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 113.39,
+     "y": 501.6,
+     "width": 426.82,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 513.6,
+     "width": 337.93,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s227",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "This makes the license easily acceptable to German authorities.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 414.49,
+     "y": 513.6,
+     "width": 125.96,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 525.6,
+     "width": 150.98,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s228",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "The D-FSL is available in German and in English.",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 229.69,
+     "y": 525.6,
+     "width": 226.23,
+     "height": 10.77
+    }
+   ]
+  },
+  {
+   "id": "s229",
+   "section_id": "sec20",
+   "kind": "body",
+   "text": "Both versions are equally binding and are available at: http://www.d-fsl.org/",
+   "boxes": [
+    {
+     "page": 12,
+     "x": 462.63,
+     "y": 525.6,
+     "width": 77.51,
+     "height": 10.77
+    },
+    {
+     "page": 12,
+     "x": 72.0,
+     "y": 537.48,
+     "width": 158.94,
+     "height": 10.77
+    }
+   ]
+  }
+ ],
+ "bibliography": [],
+ "citations": [
+  {
+   "id": "c0",
+   "sentence_id": "s7",
+   "start": 93,
+   "end": 112,
+   "marker": "(LeCun et al. 2015)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c1",
+   "sentence_id": "s10",
+   "start": 200,
+   "end": 220,
+   "marker": "(Cioffi et al. 2020)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c2",
+   "sentence_id": "s12",
+   "start": 223,
+   "end": 244,
+   "marker": "(Delnevo et al. 2023)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c3",
+   "sentence_id": "s16",
+   "start": 139,
+   "end": 160,
+   "marker": "(Wulfert et al. 2024)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c4",
+   "sentence_id": "s21",
+   "start": 196,
+   "end": 217,
+   "marker": "(Wulfert et al. 2024)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c5",
+   "sentence_id": "s24",
+   "start": 167,
+   "end": 188,
+   "marker": "(Wulfert et al. 2024)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c6",
+   "sentence_id": "s43",
+   "start": 175,
+   "end": 196,
+   "marker": "(Delnevo et al. 2023)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c7",
+   "sentence_id": "s55",
+   "start": 154,
+   "end": 173,
+   "marker": "(LeCun et al. 2015)",
+   "bib_ids": [],
+   "link_method": "none"
+  },
+  {
+   "id": "c8",
+   "sentence_id": "s57",
+   "start": 152,
+   "end": 170,
+   "marker": "(Sakr et al. 2021)",
+   "bib_ids": [],
+   "link_method": "none"
+  }
+ ],
+ "tables": [],
+ "links": [
+  {
+   "url": "https://thonny.org/",
+   "page": 3,
+   "sentence_id": "s53",
+   "source": "text"
+  },
+  {
+   "url": "https://www.statistical-thinking.de/",
+   "page": 9,
+   "sentence_id": "s181",
+   "source": "text"
+  },
+  {
+   "url": "https://github.com/statistical-thinking/KI.ENNA/",
+   "page": 9,
+   "sentence_id": "s184",
+   "source": "text"
+  },
+  {
+   "url": "https://doi.org/10.3390/su12020492",
+   "page": 9,
+   "sentence_id": "s186",
+   "source": "text"
+  },
+  {
+   "url": "https://doi.org/10.1016/j.iot.2023.100729",
+   "page": 9,
+   "sentence_id": "s189",
+   "source": "text"
+  },
+  {
+   "url": "https://doi.org/10.1038/nature14539",
+   "page": 9,
+   "sentence_id": "s193",
+   "source": "text"
+  },
+  {
+   "url": "https://doi.org/10.1016/j.jksuci.2021.11.019",
+   "page": 9,
+   "sentence_id": "s197",
+   "source": "text"
+  },
+  {
+   "url": "https://doi.org/10.3390/en14206636",
+   "page": 9,
+   "sentence_id": "s199",
+   "source": "text"
+  },
+  {
+   "url": "https://doi.org/10.1109/TPAMI.2024.3355495",
+   "page": 9,
+   "sentence_id": "s203",
+   "source": "text"
+  },
+  {
+   "url": "http://www.d-fsl.org/",
+   "page": 12,
+   "sentence_id": "s229",
+   "source": "text"
+  },
+  {
+   "url": "http://arxiv.org/abs/2501.03256v1",
+   "page": 1,
+   "sentence_id": null,
+   "source": "annotation"
+  }
+ ],
+ "layout": {
+  "pages": [
+   {
+    "number": 1,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 70.8,
+    "text_top": 110.93,
+    "text_right": 541.89,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 2,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 70.8,
+    "text_top": 72.05,
+    "text_right": 542.19,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 3,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 70.8,
+    "text_top": 72.05,
+    "text_right": 542.22,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 4,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 70.8,
+    "text_top": 72.05,
+    "text_right": 542.06,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 5,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 71.64,
+    "text_top": 74.48,
+    "text_right": 541.9,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 6,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 71.52,
+    "text_top": 74.48,
+    "text_right": 542.1,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 7,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 71.52,
+    "text_top": 72.05,
+    "text_right": 542.08,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 8,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 71.64,
+    "text_top": 74.48,
+    "text_right": 542.08,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 9,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 70.8,
+    "text_top": 72.05,
+    "text_right": 565.43,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 10,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 71.64,
+    "text_top": 71.21,
+    "text_right": 541.69,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 11,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 71.64,
+    "text_top": 73.01,
+    "text_right": 541.77,
+    "text_bottom": 752.37
+   },
+   {
+    "number": 12,
+    "width": 612.0,
+    "height": 792.0,
+    "text_left": 70.8,
+    "text_top": 73.01,
+    "text_right": 541.79,
+    "text_bottom": 752.37
+   }
+  ],
+  "fonts": [
+   {
+    "name": "LMRoman10-Regular",
+    "size": 10.0,
+    "chars": 24387
+   },
+   {
+    "name": "LMMono10-Regular",
+    "size": 10.0,
+    "chars": 2150
+   },
+   {
+    "name": "LMRoman12-Bold",
+    "size": 12.0,
+    "chars": 370
+   },
+   {
+    "name": "LMMonoLt10-Bold",
+    "size": 10.0,
+    "chars": 359
+   },
+   {
+    "name": "LMRoman10-Bold",
+    "size": 10.0,
+    "chars": 299
+   },
+   {
+    "name": "LMMono10-Italic",
+    "size": 10.0,
+    "chars": 180
+   },
+   {
+    "name": "LMRoman12-Bold",
+    "size": 14.3,
+    "chars": 125
+   },
+   {
+    "name": "LMRoman12-Regular",
+    "size": 12.0,
+    "chars": 109
+   },
+   {
+    "name": "LMMathItalic10-Regular",
+    "size": 10.0,
+    "chars": 87
+   },
+   {
+    "name": "LMRoman17-Regular",
+    "size": 17.2,
+    "chars": 40
+   },
+   {
+    "name": "LMMathItalic7-Regular",
+    "size": 7.0,
+    "chars": 14
+   },
+   {
+    "name": "LMMathSymbols10-Regular",
+    "size": 10.0,
+    "chars": 5
+   },
+   {
+    "name": "LMMathExtension10-Regular",
+    "size": 10.0,
+    "chars": 4
+   },
+   {
+    "name": "LMMathSymbols7-Regular",
+    "size": 7.0,
+    "chars": 3
+   },
+   {
+    "name": "LMMathItalic5-Regular",
+    "size": 5.0,
+    "chars": 2
+   }
+  ]
+ }
+}

@@ -1,6 +1,13 @@
 # Project specific
 archive/
-/data/
+# data/ is the fetched-data tree (D13: not committed) — EXCEPT set B, which the
+# FULL_SYSTEM_AUDIT_REPORT Finding 1 remediation commits so the citation evaluation is
+# reproducible from the repository (session 8, 2026-11-03).
+/data/*
+!/data/set_b/
+/data/set_b/*
+!/data/set_b/papers/
+!/data/set_b/sources/
 /runs/
 *.sqlite
 *.sqlite-shm
@@ -61,7 +68,8 @@ Thumbs.db
 # Claude Code: personal settings and agent worktrees
 .claude/settings.local.json
 .claude/worktrees/
-datasets/set_b/papers/
+# The parsed papers of set B are committed since the Finding 1 remediation
+# (session 8); the build logs under data/set_b stay out.
 
 # Agents & Agentic Workspaces
 .agents/

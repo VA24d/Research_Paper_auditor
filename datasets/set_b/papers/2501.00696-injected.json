@@ -1,0 +1,6298 @@
+{
+  "schema_version": 1,
+  "paper_id": "2501.00696",
+  "variant": "injected",
+  "parser": {
+    "name": "grobid",
+    "version": "0.9.1",
+    "pdf_sha256": "76f2ed11ec4b7a1ceb015070a898494a31991c6bb0f31294a30f4d166443f232"
+  },
+  "metadata": {
+    "title": "Cost and Reward Infused Metric Elicitation",
+    "authors": [
+      "Chethan Bhateja",
+      "Joseph O'brien",
+      "Afnaan Hashmi",
+      "Eva Prakash"
+    ],
+    "year": null,
+    "venue": null,
+    "doi": null,
+    "arxiv_id": null
+  },
+  "sections": [
+    {
+      "id": "sec0",
+      "title": "Introduction",
+      "number": "1"
+    },
+    {
+      "id": "sec1",
+      "title": "Preliminaries",
+      "number": "2"
+    },
+    {
+      "id": "sec2",
+      "title": "Assumption 2 (Trade-off Between Costs/Rewards and Accuracy) For any reward r",
+      "number": null
+    },
+    {
+      "id": "sec3",
+      "title": "Method",
+      "number": "4"
+    },
+    {
+      "id": "sec4",
+      "title": "Choosing Hypothesis Weights",
+      "number": "4.1"
+    },
+    {
+      "id": "sec5",
+      "title": "Determining the Optimal Classifier",
+      "number": "4.2"
+    },
+    {
+      "id": "sec6",
+      "title": "Optimal Weighted Accuracy Classifier",
+      "number": "4.2.1"
+    },
+    {
+      "id": "sec7",
+      "title": "Cost-Accuracy Classifier",
+      "number": "4.2.2"
+    },
+    {
+      "id": "sec8",
+      "title": "Algorithm",
+      "number": "4.3"
+    },
+    {
+      "id": "sec9",
+      "title": "Experiments and Analysis",
+      "number": "5"
+    },
+    {
+      "id": "sec10",
+      "title": "Future Work",
+      "number": "6"
+    },
+    {
+      "id": "sec11",
+      "title": "Ethics and Society Review Statement",
+      "number": "7"
+    },
+    {
+      "id": "sec12",
+      "title": "Conclusion",
+      "number": "8"
+    }
+  ],
+  "sentences": [
+    {
+      "id": "s0",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "In machine learning, metric elicitation refers to the selection of performance metrics that best reflect an individual's implicit preferences for a given application.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 338.94,
+          "width": 324.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 349.85,
+          "width": 304.3,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Currently, metric elicitation methods only consider metrics that depend on the accuracy values encoded within a given model's confusion matrix.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 451.36,
+          "y": 349.85,
+          "width": 18.42,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 360.76,
+          "width": 324.62,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.62,
+          "y": 371.67,
+          "width": 222.64,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "However, focusing solely on confusion matrices does not account for other model feasibility considerations such as varied monetary costs or latencies.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 369.36,
+          "y": 371.67,
+          "width": 99.12,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 382.57,
+          "width": 324.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 393.48,
+          "width": 171.09,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "In our work, we build upon the multiclass metric elicitation framework of Hiranandani et al. (2019b), extrapolating their proposed Diagonal Linear Performance Metric Elicitation (DLPME) algorithm to account for additional bounded costs and rewards.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 318.05,
+          "y": 393.48,
+          "width": 151.74,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 404.39,
+          "width": 324.44,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 415.3,
+          "width": 324.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 426.21,
+          "width": 201.53,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Our experimental results with synthetic data demonstrate our approach's ability to quickly converge to the true metric.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 348.47,
+          "y": 426.21,
+          "width": 119.66,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 437.12,
+          "width": 324.26,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 143.87,
+          "y": 448.03,
+          "width": 27.95,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Our code can be found at https://github.com/chethus/metric.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 174.9,
+          "y": 448.03,
+          "width": 100.42,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 410.12,
+          "y": 448.03,
+          "width": 4.01,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The selection of performance metrics in machine learning is crucial to ensuring they align with real-world application needs and effectively capture the trade-offs and priorities of an intended use case.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 107.69,
+          "y": 503.93,
+          "width": 396.31,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 514.84,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 525.75,
+          "width": 19.24,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "For example, in the context of a cost-sensitive predictive categorical model for cancer diagnosis (Yang and Naiman, 2014), failing to place sufficient importance on false negatives can lead to missed or delayed disease detection, whereas false positives can lead to unnecessary treatment.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 130.32,
+          "y": 525.75,
+          "width": 373.68,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.67,
+          "y": 536.66,
+          "width": 396.33,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 547.57,
+          "width": 349.77,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Both cases can have severe health consequences for patients.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 460.87,
+          "y": 547.57,
+          "width": 43.14,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 558.48,
+          "width": 195.41,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "While a doctor can make an informed decision on patient care based on years of training, the challenge arises in determining how to choose a model that best reflects the doctor's preferences.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 306.51,
+          "y": 558.48,
+          "width": 197.49,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 569.39,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 580.3,
+          "width": 165.62,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "In other words, we would like to translate the knowledge of a user (i.e. the doctor) about the trade-offs between models into a numerical form.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 276.7,
+          "y": 580.3,
+          "width": 227.3,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 591.2,
+          "width": 333.62,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "This numerical form is known as the performance metric (Zhang et al., 2020;Dmitriev and Wu, 2016).",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 444.7,
+          "y": 591.2,
+          "width": 59.29,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 602.11,
+          "width": 347.08,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Motivated by such scenarios, metric elicitation is a framework to identify the underlying performance metric of a practitioner in a given context (Hiranandani et al., 2019a).",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 618.5,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 629.41,
+          "width": 286.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "This task is accomplished by relying on user feedback with the goal of collecting as few queries as possible due to the high cost of acquiring feedback from individuals (Hiranandani et al., 2019a).",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 398.25,
+          "y": 629.41,
+          "width": 105.74,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 640.32,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 651.23,
+          "width": 285.83,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The general framework for metric elicitation was first coined by Hiranandani et al. (2019a), utilizing the confusion matrices of classifiers to derive a metric function in a binary classification setting.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 396.92,
+          "y": 651.23,
+          "width": 107.26,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 662.14,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 673.05,
+          "width": 281.09,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Due to the inaccuracies that generally result from asking people to give their absolute preferences (Qian et al., 2013), the authors proposed to present the oracle (i.e. the user) with pairwise preferences between confusion matrices (Hiranandani et al., 2019a).",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 392.21,
+          "y": 673.05,
+          "width": 111.79,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 683.96,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 694.87,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.67,
+          "y": 705.77,
+          "width": 108.56,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Traditionally, the metric function takes a classifier's confusion matrix as input and outputs a measure of how much the user prefers this classifier (Hiranandani et al., 2019a).",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 219.35,
+          "y": 705.77,
+          "width": 284.65,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 249.73,
+          "width": 397.75,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Hiranandani et al. (2019b) expanded upon the binary classification setting, proposing methods to derive the metric for a classification task with an arbitrary number of classes.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 260.64,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 271.55,
+          "width": 306.44,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s18",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "However, the confusion matrix omits other important attributes of a model that may matter to users.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 287.94,
+          "width": 397.74,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s19",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "For example, work has pointed towards a potential trade-off between accuracy and fairness (Valdivia et al., 2021;Liu and Vicente, 2022;Menon and Williamson, 2018).",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 298.85,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 309.76,
+          "width": 263.59,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s20",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "In turn, Hiranandani et al. (2020) adapted the multiclass metric elicitation framework by introducing terms into the metric to penalize large differences in accuracy between different groups.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 374.7,
+          "y": 309.76,
+          "width": 129.97,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 320.67,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 331.58,
+          "width": 215.85,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s21",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Still, this work did not account for additional trade-offs that could exist beyond fairness.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 326.92,
+          "y": 331.58,
+          "width": 177.07,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 342.49,
+          "width": 169.23,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s22",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Other work has centered on analyzing the trade-off between accuracy and other model-related criteria.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 358.88,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 369.78,
+          "width": 31.32,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s23",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Baughman et al. (2019) explored the relationship between accuracy and model training time by varying the number of iterations and amount of data used during training.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 144.24,
+          "y": 369.78,
+          "width": 359.76,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 380.69,
+          "width": 326.72,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s24",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The authors also investigated how execution time related to accuracy in an ensemble setting by altering the number of models used in the ensemble (Baughman et al., 2019).",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 437.83,
+          "y": 380.69,
+          "width": 66.17,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 391.6,
+          "width": 396.16,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 402.51,
+          "width": 237.94,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s25",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Salmani et al. (2023) highlighted the trade-off between latency, accuracy, and cost-efficiency for inference serving systems.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 351.35,
+          "y": 402.51,
+          "width": 152.65,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 413.42,
+          "width": 345.21,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s26",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The authors framed the scenario as a multi-objective constraint satisfaction problem formulated using integer linear programming.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 456.3,
+          "y": 413.42,
+          "width": 47.7,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 424.33,
+          "width": 396.17,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 435.24,
+          "width": 84.01,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s27",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "While the authors propose an objective function to maximize with weights determined by user preference, they did not offer a method to identify this function (Salmani et al., 2023).",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 196.63,
+          "y": 435.24,
+          "width": 307.37,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 446.15,
+          "width": 397.25,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 457.06,
+          "width": 25.73,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s28",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Thus, we see that relying solely on models' confusion matrices can exclude other relevant factors.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 107.69,
+          "y": 473.45,
+          "width": 398.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s29",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Practical applications often involve trade-offs that go beyond accuracy.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 484.36,
+          "width": 281.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s30",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "For example, a less accurate model might be chosen due to lower monetary costs, or a faster model might be favored when latency constraints are critical.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 392.15,
+          "y": 484.36,
+          "width": 111.85,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 495.26,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 506.17,
+          "width": 88.77,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s31",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "These additional factors can be essential for determining the most appropriate classifier in real-world scenarios.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 199.87,
+          "y": 506.17,
+          "width": 304.13,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 517.08,
+          "width": 132.48,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s32",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Thus, running our algorithm could enable corporations to choose models with other desirable attributes, such as serving clients efficiently or being environmentally friendly.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 243.58,
+          "y": 517.08,
+          "width": 260.42,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 527.99,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 538.9,
+          "width": 33.38,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s33",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "In this work, we explore the question of how costs and rewards for a specific classifier can be incorporated into metric elicitation.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 555.29,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 566.2,
+          "width": 142.17,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s34",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "To this end, we propose a novel algorithm for the elicitation of metrics which include bounded classifier-specific costs and rewards.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 253.25,
+          "y": 566.2,
+          "width": 250.75,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 577.11,
+          "width": 271.71,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s35",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "We first define relevant variables following the notation described in Hiranandani et al. (2019a).",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 107.53,
+          "y": 637.15,
+          "width": 398.21,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s36",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Metric elicitation can be performed on binary classifiers by making use of confusion matrices to recover the true performance metric ϕ of an oracle.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 648.06,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 658.65,
+          "width": 205.07,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s37",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "In this setting, X is defined as the features of a single data point and Y is defined as the corresponding binary label (0 = negative class, 1 = positive class).",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 316.17,
+          "y": 658.65,
+          "width": 187.83,
+          "height": 8.96
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 669.56,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 680.79,
+          "width": 24.67,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s38",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "η(x) = P (Y = 1|X = x) represents the conditional probability of the positive class (Y = 1), and ζ = P (Y = 1) represents the unconditional probability of the positive class.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 135.74,
+          "y": 680.47,
+          "width": 369.51,
+          "height": 8.96
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 691.38,
+          "width": 335.84,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s39",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "A classifier h maps the featurized input X to one of the two classes with the goal of accurately approximating the relationship between X and Y through maximizing the relevant performance metrics derived from the confusion matrix.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 448.66,
+          "y": 691.38,
+          "width": 55.34,
+          "height": 8.96
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 702.29,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 713.2,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 75.48,
+          "width": 83.14,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s40",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The confusion matrix contains rates for true positives (TP), true negatives (TN), false positives (FP), and false negatives (FN) defined as follows • T P (h, P ) = P (Y = 1, h = 1)",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 194.2,
+          "y": 75.48,
+          "width": 311.04,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 86.39,
+          "width": 253.12,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 135.4,
+          "y": 107.52,
+          "width": 132.66,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s41",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "• F P (h, P ) = P (Y = 0, h = 1)",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 135.4,
+          "y": 124.56,
+          "width": 133.24,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s42",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The confusion matrix C can be reduced to a two-dimensional space of just T P and T N , as F N (h, P ) can be expressed as ζ -T P (h, P ) and F P (h, P ) can be expressed as 1 -ζ -T N (h, P ).",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.69,
+          "y": 180.09,
+          "width": 397.47,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 191.0,
+          "width": 361.24,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s43",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The true performance metric ϕ for metric elicitation is estimated by querying an oracle Ω with pairwise comparisons of the confusion matrices of different classifiers, which is represented as the following:",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.69,
+          "y": 207.39,
+          "width": 396.31,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 218.62,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 229.53,
+          "width": 41.27,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s44",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The error between the true metric ϕ and resulting estimated metric φ is written as ∥ϕ -φ∥.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.69,
+          "y": 260.96,
+          "width": 362.96,
+          "height": 11.59
+        }
+      ]
+    },
+    {
+      "id": "s45",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "As described by Hiranandani et al. (2019b), the multiclass setting builds upon the binary setting by instead classifying a featurized datapoint X into one of k classes (Y ∈ [k]).",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.64,
+          "y": 280.3,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 290.89,
+          "width": 326.89,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s46",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The conditional probability is modified from the binary setting to be η i (x) = P (Y = i|X = x) to represent the likelihood of class i for the input, and ζ i = P (Y = i) now represents the unconditional probability of class i.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 439.48,
+          "y": 291.2,
+          "width": 64.52,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 301.79,
+          "width": 396.0,
+          "height": 9.65
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 312.7,
+          "width": 396.0,
+          "height": 9.65
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 323.61,
+          "width": 26.89,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s47",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The classifier h maps the featurized input x to a probability for each class i in k.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 137.83,
+          "y": 323.61,
+          "width": 307.52,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s48",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The confusion matrix becomes a k x k matrix where diagonal entries (predicted class = true class) indicate correct classifications and off-diagonal entries (predicted class ̸ = true class) indicate incorrect classifications.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 448.28,
+          "y": 323.93,
+          "width": 55.72,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 334.52,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 345.43,
+          "width": 397.74,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s49",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The probability of the predicted class being j and the true class being i is represented as follows in the confusion matrix:",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.69,
+          "y": 356.34,
+          "width": 396.31,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 367.57,
+          "width": 85.23,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s50",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Similar to the binary setting, the simplification of C ii can be represented as follows:",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 399.5,
+          "width": 334.55,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s51",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Diagonal elements capture the probability of correct predictions for each class (class accuracy) while off-diagonal elements capture the probability of errors.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 459.64,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 470.55,
+          "width": 218.6,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s52",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "One of the types of performance metrics used in multiclass classification settings is the Diagonal Linear Performance Metric (DLPM), which only considers class accuracies when evaluating a classifier.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 486.93,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 497.84,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 508.75,
+          "width": 37.4,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s53",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The weight matrix a ∈ R k with ∥a∥ 1 = 1 to ensure scale invariance is used to weight the individual importances of each class in k.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 148.5,
+          "y": 508.43,
+          "width": 100.82,
+          "height": 9.3
+        },
+        {
+          "page": 3,
+          "x": 249.32,
+          "y": 506.86,
+          "width": 4.24,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 256.72,
+          "y": 508.43,
+          "width": 247.28,
+          "height": 9.65
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 519.34,
+          "width": 164.74,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s54",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "A DLPM metric ψ in the family of DPLM metrics ϕ DLPM is formulaically defined as the following, with d = diag(C(h, P )) being the diagonal elements of C(h, P ):",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 275.83,
+          "y": 519.34,
+          "width": 227.67,
+          "height": 9.81
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 530.22,
+          "width": 396.0,
+          "height": 8.99
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 541.16,
+          "width": 36.3,
+          "height": 8.74
+        }
+      ]
+    },
+    {
+      "id": "s55",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "To apply this multiclass framework to our setting where a classifier h can have bounded costs and rewards, we introduce a vector of reward terms r(h) and cost terms c(h).",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.69,
+          "y": 613.42,
+          "width": 396.31,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 624.3,
+          "width": 297.71,
+          "height": 8.99
+        }
+      ]
+    },
+    {
+      "id": "s56",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Each reward term r i (h) has a bounded range [0, A i ] for all classifiers and similarly each cost term c i (h) has a bounded range [-B i , 0].",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 409.2,
+          "y": 624.33,
+          "width": 95.97,
+          "height": 9.65
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 635.24,
+          "width": 396.0,
+          "height": 9.65
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 646.14,
+          "width": 36.11,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s57",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Then for our cost and reward infused diagonal linear performance metric, we denote the weights for the accuracies in d(h) by a d , the weights for the rewards in r(h) by a r , and the weights for costs c(h) by a c .",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 147.2,
+          "y": 646.46,
+          "width": 356.8,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 107.64,
+          "y": 658.06,
+          "width": 156.07,
+          "height": 8.99
+        },
+        {
+          "page": 3,
+          "x": 263.71,
+          "y": 656.5,
+          "width": 5.01,
+          "height": 6.14
+        },
+        {
+          "page": 3,
+          "x": 269.22,
+          "y": 658.02,
+          "width": 163.45,
+          "height": 9.03
+        },
+        {
+          "page": 3,
+          "x": 432.67,
+          "y": 656.5,
+          "width": 3.73,
+          "height": 6.14
+        },
+        {
+          "page": 3,
+          "x": 436.89,
+          "y": 658.41,
+          "width": 67.11,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 668.93,
+          "width": 77.94,
+          "height": 9.03
+        },
+        {
+          "page": 3,
+          "x": 185.94,
+          "y": 667.4,
+          "width": 4.02,
+          "height": 6.14
+        },
+        {
+          "page": 3,
+          "x": 190.46,
+          "y": 669.32,
+          "width": 2.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s58",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "With this notation, a linear performance metric over accuracies, costs, and rewards is defined as",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 197.71,
+          "y": 669.32,
+          "width": 306.29,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 108.0,
+          "y": 680.23,
+          "width": 82.93,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s59",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "As a shorthand, we also denote the concatenation of (a d , a r , a c ) as a. 3 Geometry of the Space of Cost and Reward Infused Classifiers",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 107.64,
+          "y": 713.2,
+          "width": 219.17,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 326.81,
+          "y": 711.6,
+          "width": 5.01,
+          "height": 6.14
+        },
+        {
+          "page": 3,
+          "x": 332.31,
+          "y": 713.17,
+          "width": 10.0,
+          "height": 8.77
+        },
+        {
+          "page": 3,
+          "x": 342.31,
+          "y": 711.6,
+          "width": 3.73,
+          "height": 6.14
+        },
+        {
+          "page": 3,
+          "x": 346.54,
+          "y": 713.17,
+          "width": 10.0,
+          "height": 8.77
+        },
+        {
+          "page": 3,
+          "x": 356.53,
+          "y": 711.6,
+          "width": 4.02,
+          "height": 6.14
+        },
+        {
+          "page": 3,
+          "x": 361.05,
+          "y": 713.17,
+          "width": 25.21,
+          "height": 8.99
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 261.69,
+          "width": 335.71,
+          "height": 10.75
+        }
+      ]
+    },
+    {
+      "id": "s60",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "We first analyze the query space of classifiers for cost and reward infused metric elicitation, which augments the space of multiclass confusion matrices in multiclass metric elicitation (Hiranandani et al., 2019b) with bounded costs and rewards.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 107.53,
+          "y": 288.1,
+          "width": 396.47,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 299.01,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 309.92,
+          "width": 182.84,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s61",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "As in multiclass metric elicitation (Hiranandani et al., 2019b), we make the following regularity assumption on the input data distribution of the classifier:",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 293.92,
+          "y": 309.92,
+          "width": 211.32,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 320.83,
+          "width": 396.95,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s62",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "≥ r are continuous and strictly decreasing for r ∈ [0, ∞).",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 484.01,
+          "y": 345.71,
+          "width": 15.01,
+          "height": 8.74
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 360.66,
+          "width": 214.63,
+          "height": 8.74
+        }
+      ]
+    },
+    {
+      "id": "s63",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Intuitively, this assumption means that there is always a trade-off between the accuracies of different classes.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 382.49,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 393.39,
+          "width": 30.46,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s64",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Therefore changing the relative weights of the accuracies will change the preferences over classifiers.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 141.54,
+          "y": 393.39,
+          "width": 362.63,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 404.3,
+          "width": 41.78,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s65",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Given this assumption, the multiclass metric elicitation paper finds the following: Proposition 1 (Confusion Space) The space of diagonal confusions D is strictly convex, closed, and contained in the box",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 152.87,
+          "y": 404.3,
+          "width": 323.96,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 425.42,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 436.54,
+          "width": 79.68,
+          "height": 8.59
+        }
+      ]
+    },
+    {
+      "id": "s66",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The vertices of the space of diagonal confusions are given by ζ i e i ∀i ∈ [k], where e i denotes the ith elementary vector.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 315.63,
+          "y": 436.54,
+          "width": 188.37,
+          "height": 8.59
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 447.28,
+          "width": 276.6,
+          "height": 9.68
+        }
+      ]
+    },
+    {
+      "id": "s67",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "We include a helpful visualization of the confusion space from Hiranandani et al. (2019b) in Figure 2. Note that each vertex ζ i e i of the space of confusions is achieved by the trivial classifier ∀x, h(x) = i which predicts only class i for all data points.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 107.53,
+          "y": 469.14,
+          "width": 398.21,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 479.7,
+          "width": 396.0,
+          "height": 9.68
+        },
+        {
+          "page": 4,
+          "x": 107.64,
+          "y": 490.64,
+          "width": 188.08,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s68",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Extending this space to include a bounded cost c i with maximum magnitude B i adds a dimension with range [-B i , 0].",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 300.15,
+          "y": 490.64,
+          "width": 203.35,
+          "height": 9.65
+        },
+        {
+          "page": 4,
+          "x": 107.64,
+          "y": 501.54,
+          "width": 276.93,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s69",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Similarly, extending this to a beneficial feature of a classifier r i with maximum magnitude A i adds a dimension with range [0, A i ].",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 387.68,
+          "y": 501.86,
+          "width": 116.32,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 512.45,
+          "width": 396.0,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s70",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Key to our algorithm is the assumption of an implicit trade-off between costs/rewards and accuracies in our data.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 523.68,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 534.59,
+          "width": 44.88,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s71",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Without this assumption, we cannot obtain queries that trade-off between these features, and it is impossible to determine how one should be exchanged for the other.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 155.96,
+          "y": 534.59,
+          "width": 349.29,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 545.5,
+          "width": 305.64,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s72",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "In our later experiments with synthetic data, we choose an f ij that takes on all possible slopes in [0, ∞], guaranteeing that we can approximate the true metric for any set of weights.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 624.88,
+          "width": 395.99,
+          "height": 9.65
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 635.79,
+          "width": 333.25,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s73",
+      "section_id": "sec3",
+      "kind": "body",
+      "text": "Our algorithm will consider different sets of hypothesis weights, determine the optimal classifier for each set of weights, query the oracle for comparisons of these classifiers, and use the query outputs to narrow the search space of weights.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 691.7,
+          "width": 396.17,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 702.61,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 108.0,
+          "y": 713.51,
+          "width": 141.95,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s74",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "Akin to DLPM, our metric only depends on the ratios between the weights, corresponding to the direction of the normalized weight vector.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.64,
+          "y": 95.45,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 106.36,
+          "width": 170.19,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s75",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "We follow the strategy in Hiranandani et al. (2019b) of making comparisons that change two classifier statistics at a time between statistics d 1 , c 1 , r 1 and d 2 , c 2 , r 2 because this depends only on the ratio between weights.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 281.35,
+          "y": 106.36,
+          "width": 222.65,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 116.92,
+          "width": 345.23,
+          "height": 8.99
+        },
+        {
+          "page": 5,
+          "x": 453.23,
+          "y": 115.36,
+          "width": 4.51,
+          "height": 6.14
+        },
+        {
+          "page": 5,
+          "x": 458.24,
+          "y": 116.92,
+          "width": 9.52,
+          "height": 8.77
+        },
+        {
+          "page": 5,
+          "x": 467.76,
+          "y": 115.36,
+          "width": 4.51,
+          "height": 6.14
+        },
+        {
+          "page": 5,
+          "x": 472.77,
+          "y": 116.92,
+          "width": 9.15,
+          "height": 8.77
+        },
+        {
+          "page": 5,
+          "x": 481.92,
+          "y": 115.36,
+          "width": 4.51,
+          "height": 6.14
+        },
+        {
+          "page": 5,
+          "x": 489.41,
+          "y": 117.27,
+          "width": 14.59,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 127.83,
+          "width": 6.37,
+          "height": 8.77
+        },
+        {
+          "page": 5,
+          "x": 114.37,
+          "y": 126.27,
+          "width": 4.51,
+          "height": 6.14
+        },
+        {
+          "page": 5,
+          "x": 119.38,
+          "y": 127.83,
+          "width": 9.52,
+          "height": 8.77
+        },
+        {
+          "page": 5,
+          "x": 128.9,
+          "y": 126.27,
+          "width": 4.51,
+          "height": 6.14
+        },
+        {
+          "page": 5,
+          "x": 133.91,
+          "y": 127.83,
+          "width": 9.15,
+          "height": 8.77
+        },
+        {
+          "page": 5,
+          "x": 143.06,
+          "y": 126.27,
+          "width": 4.51,
+          "height": 6.14
+        },
+        {
+          "page": 5,
+          "x": 150.56,
+          "y": 128.18,
+          "width": 223.29,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s76",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "As a concrete example, the output of a deterministic oracle when changing only accuracies d i and",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.64,
+          "y": 155.13,
+          "width": 383.34,
+          "height": 9.68
+        }
+      ]
+    },
+    {
+      "id": "s77",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "which we can see only depends on the ratio a d i a d j .",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.64,
+          "y": 243.56,
+          "width": 181.37,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 293.62,
+          "y": 239.54,
+          "width": 8.57,
+          "height": 7.78
+        },
+        {
+          "page": 5,
+          "x": 302.68,
+          "y": 243.55,
+          "width": 2.66,
+          "height": 4.37
+        },
+        {
+          "page": 5,
+          "x": 293.34,
+          "y": 248.19,
+          "width": 12.0,
+          "height": 7.37
+        },
+        {
+          "page": 5,
+          "x": 307.32,
+          "y": 243.56,
+          "width": 2.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s78",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "To take advantage of this observation, we can sample different weight ratios for each classifier attribute relative to the class 1 accuracy with weights for all other statistics set to 0. Then we find the optimal classifier for each of these samples and query the oracle with the corresponding metrics, enabling us to binary search on the true weight ratio.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 314.86,
+          "y": 243.56,
+          "width": 189.14,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 256.83,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 267.74,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 278.65,
+          "width": 379.89,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s79",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "When searching for a class accuracy, cost, or reward weight relative to the first weight (class 1 accuracy), our framework has two cases that we must consider differently.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.53,
+          "y": 322.25,
+          "width": 397.22,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 333.16,
+          "width": 298.16,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s80",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "The first case is that we are searching for the weight of an accuracy and the second is that we are searching for the weight of a cost or reward.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 409.27,
+          "y": 333.16,
+          "width": 94.73,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 344.06,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 354.97,
+          "width": 66.04,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s81",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "As noted in Hiranandani et al. (2019b), the optimal classifier that predicts only two classes for a weighted accuracy metric is given by the Restricted Bayes Optimal (RBO) classifier.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.64,
+          "y": 395.88,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 107.64,
+          "y": 406.79,
+          "width": 337.02,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s82",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "Proposition 2 (RBO Classifier) For a weighted accuracy metric ψ ∈ φ DLP M , the optimal classifier that predicts only distinct classes k 1 , k 2 ∈ [k] is given by",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 424.91,
+          "width": 396.0,
+          "height": 9.72
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 435.88,
+          "width": 226.46,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s83",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "When our hypothesis weights are only on two accuracies, we know that only these two corresponding classes will be predicted and the optimal classifier will be the RBO classifier for the corresponding two classes.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.53,
+          "y": 483.72,
+          "width": 396.47,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 494.63,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 505.54,
+          "width": 47.49,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s84",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "The optimal classifier for a metric that weights only class 1 accuracy and a single cost/reward can be easily determined when the function for the Pareto frontier given by f ij (t) in Assumption 2 is known.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.69,
+          "y": 546.44,
+          "width": 396.31,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 557.03,
+          "width": 397.74,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s85",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "To find this classifier, we can solve for the point where the slope of the Pareto frontier matches the slope of the metric's level curves which is determined by the ratio of the metric weights.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.69,
+          "y": 568.26,
+          "width": 396.31,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 579.17,
+          "width": 351.41,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s86",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "It is possible this point does not exist if the Pareto frontier does not contain all possible slopes.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 600.99,
+          "width": 369.58,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s87",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "When generating synthetic data, we choose a quarter ellipse as the Pareto frontier as shown in Figure 3, covering all possible weight ratios (slopes) in [0, ∞] between the two attributes.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 480.66,
+          "y": 600.99,
+          "width": 23.34,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 611.9,
+          "width": 397.25,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 622.49,
+          "width": 322.8,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s88",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "For the particular case of the ellipse with a maximum reward of A, we derive that the angle of the optimal classifier on the ellipse is given by",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 433.89,
+          "y": 622.8,
+          "width": 70.28,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 633.39,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 644.62,
+          "width": 86.5,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s89",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "This angle θ determines a point on the ellipse, giving us the optimal classifier's cost/reward and accuracy values.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 107.69,
+          "y": 680.47,
+          "width": 396.31,
+          "height": 8.96
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 691.7,
+          "width": 68.09,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s90",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "We implement the reduction in accuracy according to the Pareto frontier by introducing noise through a binomial probability p wrong , a chance of predicting an impossible class for a data point x regardless of the class probabilities.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 183.36,
+          "y": 691.7,
+          "width": 320.98,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 702.29,
+          "width": 396.0,
+          "height": 9.8
+        },
+        {
+          "page": 5,
+          "x": 108.0,
+          "y": 713.17,
+          "width": 213.92,
+          "height": 8.99
+        }
+      ]
+    },
+    {
+      "id": "s91",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "Figure 3: We choose the Pareto frontier to be a quarter ellipse to cover all metric slopes.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 182.62,
+          "width": 355.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s92",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "Note that \"Attribute\" above can either correspond to a cost or a reward.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 466.64,
+          "y": 182.62,
+          "width": 37.36,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 193.53,
+          "width": 241.47,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s93",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "If \"Attribute\" is a reward the vertical y axis is positive, and if \"Attribute\" is a cost then the vertical y axis is negative.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 352.57,
+          "y": 193.53,
+          "width": 151.78,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 204.44,
+          "width": 307.58,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s94",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "Our detailed pseudocode is shown in Algorithm 1.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 255.88,
+          "width": 213.95,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s95",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "For each possible attribute, our algorithm samples five possible weight ratios compared to the class 1 accuracy weight.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 329.16,
+          "y": 255.88,
+          "width": 174.83,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 266.79,
+          "width": 324.36,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s96",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "It constructs an RBO classifier for accuracy attributes or a cost-accuracy/reward-accuracy optimal classifier for non-accuracy attributes.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 439.39,
+          "y": 266.79,
+          "width": 64.61,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 277.69,
+          "width": 396.17,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 288.6,
+          "width": 97.44,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s97",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "Then we use the outputs of the queries to narrow the search space of the optimal weight ratio in a binary search based approach similar to prior work (Hiranandani et al., 2019a), (Hiranandani et al., 2019b).",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 209.14,
+          "y": 288.6,
+          "width": 294.86,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 299.51,
+          "width": 397.25,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 310.42,
+          "width": 142.76,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s98",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "Given n possible classifier attributes, including k class accuracies and other cost and reward attributes, our algorithm runs an independent binary search on each attribute.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 337.4,
+          "width": 397.24,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 348.63,
+          "width": 261.61,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s99",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "Therefore, the runtime to achieve error ϵ is O(n log( 1 ϵ ))",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 372.7,
+          "y": 348.63,
+          "width": 131.3,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 359.22,
+          "width": 73.65,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 182.85,
+          "y": 357.34,
+          "width": 3.97,
+          "height": 6.12
+        },
+        {
+          "page": 6,
+          "x": 183.17,
+          "y": 364.7,
+          "width": 3.32,
+          "height": 6.12
+        },
+        {
+          "page": 6,
+          "x": 188.01,
+          "y": 359.22,
+          "width": 7.75,
+          "height": 8.74
+        }
+      ]
+    },
+    {
+      "id": "s100",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "Similar to Hiranandani et al. (2019a) and Hiranandani et al. (2019b), we utilize synthetic data to verify our approach.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 410.28,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 421.19,
+          "width": 55.77,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s101",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "To represent our input, we generate a set {x i } n i=1 of 10-dimensional vectors, where the entries of a given x i are sampled from N (0, 1).",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 166.87,
+          "y": 420.87,
+          "width": 177.61,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 344.48,
+          "y": 419.27,
+          "width": 2.53,
+          "height": 6.14
+        },
+        {
+          "page": 6,
+          "x": 347.51,
+          "y": 420.87,
+          "width": 4.98,
+          "height": 8.74
+        },
+        {
+          "page": 6,
+          "x": 352.49,
+          "y": 419.29,
+          "width": 4.92,
+          "height": 6.12
+        },
+        {
+          "page": 6,
+          "x": 352.49,
+          "y": 425.5,
+          "width": 12.91,
+          "height": 6.12
+        },
+        {
+          "page": 6,
+          "x": 368.39,
+          "y": 421.19,
+          "width": 135.61,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 431.75,
+          "width": 207.57,
+          "height": 9.68
+        }
+      ]
+    },
+    {
+      "id": "s102",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "For our experiments, we set n = 10, 000, 000.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 319.02,
+          "y": 431.78,
+          "width": 186.73,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s103",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "For our output, we assume that there are k classes.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 442.69,
+          "width": 197.27,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s104",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "To derive η i (x), we first generate a k × 10 weight matrix with entries sampled from U[-1.5, 1.5].",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 308.35,
+          "y": 442.69,
+          "width": 195.65,
+          "height": 9.65
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 453.6,
+          "width": 185.6,
+          "height": 9.3
+        }
+      ]
+    },
+    {
+      "id": "s105",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "We then multiply this weight matrix by each of our n input vectors and take the softmax result to generate the desired probabilities.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 296.69,
+          "y": 453.91,
+          "width": 207.31,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 464.82,
+          "width": 309.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s106",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "We specify the lower bound -B i for cost attributes and the upper bound A i for reward attributes.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 420.14,
+          "y": 464.82,
+          "width": 84.02,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 475.41,
+          "width": 297.09,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s107",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "These bounds determine the shape of the quarter ellipse described earlier in section 4.2.2.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 408.17,
+          "y": 475.73,
+          "width": 95.83,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 486.64,
+          "width": 256.48,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s108",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "Classes k = 2, Reward/Cost Attributes = 2 Classes k = 3, Reward/Cost Attributes = 3 ψ* = a* ψ = â ψ* = a* ψ = â (0.10, 0.05, 0.05, 0.80) (0.10, 0.05, 0.05, 0.80) (0.12, 0.08, 0.07, 0.32, 0.19, 0.22) (0.12, 0.08, 0.07, 0.32, 0.19, 0.22) (0.32, 0.17, 0.28, 0.23) (0.32, 0.17, 0.28, 0.23) (0.12, 0.08, 0.07, 0.32, 0.19, 0.22) (0.12, 0.08, 0.07, 0.32, 0.19, 0.22)",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 125.62,
+          "y": 510.35,
+          "width": 131.75,
+          "height": 7.03
+        },
+        {
+          "page": 6,
+          "x": 323.57,
+          "y": 510.35,
+          "width": 131.75,
+          "height": 7.03
+        },
+        {
+          "page": 6,
+          "x": 137.86,
+          "y": 523.49,
+          "width": 25.89,
+          "height": 7.05
+        },
+        {
+          "page": 6,
+          "x": 224.75,
+          "y": 521.45,
+          "width": 16.47,
+          "height": 9.09
+        },
+        {
+          "page": 6,
+          "x": 318.22,
+          "y": 523.49,
+          "width": 25.89,
+          "height": 7.05
+        },
+        {
+          "page": 6,
+          "x": 440.3,
+          "y": 521.45,
+          "width": 16.47,
+          "height": 9.09
+        },
+        {
+          "page": 6,
+          "x": 114.96,
+          "y": 536.92,
+          "width": 386.22,
+          "height": 6.78
+        },
+        {
+          "page": 6,
+          "x": 114.96,
+          "y": 549.76,
+          "width": 386.22,
+          "height": 6.78
+        }
+      ]
+    },
+    {
+      "id": "s109",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "Table 1: Cost and reward infused metric elicitation with ϵ = 0.001 for synthetic data.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 107.69,
+          "y": 564.83,
+          "width": 334.89,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s110",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "Table structure inspired by (Hiranandani et al., 2019b).",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 445.68,
+          "y": 565.15,
+          "width": 58.32,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 576.06,
+          "width": 157.16,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s111",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "We first took an approach akin to that of Hiranandani et al. (2019b) to establish the validity of our method, eliciting underlying metrics with varied numbers of classes and additional attributes.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 107.53,
+          "y": 606.17,
+          "width": 396.64,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 617.08,
+          "width": 379.28,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s112",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "We performed experiments with the following setup reflected in Table 1 above Algorithm 1 Cost and Reward Infused Metric Elicitation Input: ϵ > 0, oracle Γ, attribute_spaces (lower and upper bounds) procedure ELICITATION(oracle, ϵ) â = 0 âd 1 = 1 for i ← 2, dim(â) do a, b = 0, 1 while b -a > ϵ do c, d, e = 3a+b 4 , a+b 2 , a+3b 4 for x ∈ (a, c, d, e, b) do // Check if âi is an accuracy attribute",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 490.7,
+          "y": 617.08,
+          "width": 13.3,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 108.0,
+          "y": 627.98,
+          "width": 295.17,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.64,
+          "y": 110.97,
+          "width": 227.93,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 108.0,
+          "y": 124.24,
+          "width": 264.42,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 117.96,
+          "y": 137.14,
+          "width": 139.65,
+          "height": 8.96
+        },
+        {
+          "page": 7,
+          "x": 133.2,
+          "y": 147.98,
+          "width": 24.29,
+          "height": 8.88
+        },
+        {
+          "page": 7,
+          "x": 132.83,
+          "y": 159.0,
+          "width": 10.66,
+          "height": 8.77
+        },
+        {
+          "page": 7,
+          "x": 138.48,
+          "y": 163.54,
+          "width": 3.97,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 146.75,
+          "y": 159.03,
+          "width": 15.5,
+          "height": 8.74
+        },
+        {
+          "page": 7,
+          "x": 132.91,
+          "y": 169.87,
+          "width": 86.24,
+          "height": 8.96
+        },
+        {
+          "page": 7,
+          "x": 147.85,
+          "y": 180.84,
+          "width": 41.64,
+          "height": 8.74
+        },
+        {
+          "page": 7,
+          "x": 147.85,
+          "y": 191.68,
+          "width": 77.24,
+          "height": 8.96
+        },
+        {
+          "page": 7,
+          "x": 162.8,
+          "y": 202.66,
+          "width": 33.51,
+          "height": 8.74
+        },
+        {
+          "page": 7,
+          "x": 200.27,
+          "y": 200.78,
+          "width": 17.91,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 207.24,
+          "y": 208.14,
+          "width": 3.97,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 219.37,
+          "y": 202.66,
+          "width": 2.77,
+          "height": 8.74
+        },
+        {
+          "page": 7,
+          "x": 225.0,
+          "y": 200.78,
+          "width": 13.94,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 229.98,
+          "y": 208.14,
+          "width": 3.97,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 240.13,
+          "y": 202.66,
+          "width": 2.77,
+          "height": 8.74
+        },
+        {
+          "page": 7,
+          "x": 245.76,
+          "y": 200.78,
+          "width": 17.91,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 252.73,
+          "y": 208.14,
+          "width": 3.97,
+          "height": 6.12
+        },
+        {
+          "page": 7,
+          "x": 162.8,
+          "y": 213.5,
+          "width": 94.98,
+          "height": 8.96
+        },
+        {
+          "page": 7,
+          "x": 177.74,
+          "y": 224.34,
+          "width": 147.71,
+          "height": 9.09
+        }
+      ]
+    },
+    {
+      "id": "s113",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "From the table, we can recognize that our elicited weights â well reflect the true weights a*.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 75.02,
+          "width": 360.88,
+          "height": 9.1
+        }
+      ]
+    },
+    {
+      "id": "s114",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "We note that in the table we round our derived metric weights to two decimal places due to spacing constraints, and that the derived weights slightly diverge from the true metric when we include higher precision in the resulting values.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 471.96,
+          "y": 75.48,
+          "width": 32.03,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 86.39,
+          "width": 397.24,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 97.3,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 108.2,
+          "width": 79.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s115",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "Nonetheless, this divergence is slim and the resulting values still closely match the true weights.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 190.63,
+          "y": 108.2,
+          "width": 313.36,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 119.11,
+          "width": 67.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s116",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "In both cases with k = 2 and two attributes, there were 120 total queries.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 178.17,
+          "y": 118.79,
+          "width": 293.83,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s117",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "In both cases with with k = 3 and three attributes, there were 200 total queries.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 475.1,
+          "y": 119.11,
+          "width": 28.9,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 129.7,
+          "width": 284.48,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s118",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "To better illustrate how our algorithm tries to derive the true weights, we plotted both the L1 error ||â -a*|| 1 as the algorithm progressed and a 3D representation of how â moves towards the true metric weights over time as shown in Figure 4.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 107.69,
+          "y": 146.41,
+          "width": 389.26,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 156.86,
+          "width": 396.0,
+          "height": 9.79
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 168.23,
+          "width": 186.98,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s119",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "In this experiment, instead of binary searching until our weights reach a desired precision ϵ, we instead set the number of iterations of binary search.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 298.08,
+          "y": 168.23,
+          "width": 205.92,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 178.82,
+          "width": 379.51,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s120",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "For the L1 error plot, we use the same weights as the first entry in Table 1 for k = 2 with 2 attributes.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 490.61,
+          "y": 179.14,
+          "width": 13.57,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 189.73,
+          "width": 379.7,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s121",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "For the 3D representation, we also utilize k = 2 for our classes with true weights of 0.15 and 0.5 and a single cost with true weight 0.8.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 490.75,
+          "y": 190.05,
+          "width": 13.41,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 200.64,
+          "width": 396.0,
+          "height": 8.96
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 211.87,
+          "width": 127.57,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s122",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "In both representations, we can see the logarithmic runtime of the algorithm at play.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 228.25,
+          "width": 340.88,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s123",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "The L1 error plot shows that the error decreases logarithmically at each step until convergence, as is expected due to binary search.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 452.2,
+          "y": 228.25,
+          "width": 51.97,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 239.16,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 250.07,
+          "width": 83.42,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s124",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "When the estimated metric weights near the true values the L1 error becomes non-monotonic, but we ascribe these fluctuations to floating point precision error.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 194.5,
+          "y": 250.07,
+          "width": 309.5,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 260.98,
+          "width": 339.38,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s125",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "The 3D plot similarly shows logarithmic convergence in all 3 dimensions of the weights.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 453.18,
+          "y": 260.98,
+          "width": 50.82,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 271.89,
+          "width": 298.55,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s126",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "The plot also provides a nice illustration of the binary search based algorithm at play.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 409.64,
+          "y": 271.89,
+          "width": 94.36,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 282.8,
+          "width": 246.7,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s127",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "From iterations 0 through 1, we can deduce that the lower bound of our weight estimate must be updated as the weights increase closer to the goal.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 358.16,
+          "y": 282.8,
+          "width": 145.83,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 293.71,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 304.62,
+          "width": 33.74,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s128",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "By iteration 2, the true weights are overestimated, and instead the upper bound is decreased.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 144.83,
+          "y": 304.62,
+          "width": 360.91,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s129",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "On iteration 3, we again underestimate the true weights as the lower bound is too low.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 315.53,
+          "width": 337.57,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s130",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "By iteration 4, we see that our estimated weights have essentially converged to the true metric weights.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 448.66,
+          "y": 315.53,
+          "width": 56.59,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.64,
+          "y": 326.44,
+          "width": 349.77,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s131",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "In our current implementation, we only adapt the DLPM approach of multiclass metric elicitation Hiranandani et al. (2019b) to account for additional features beyond the confusion matrix.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 598.94,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 609.85,
+          "width": 372.88,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s132",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "This approach does not allow the metric to distinguish between different types of misclassifications (offdiagonal values of the confusion matrix).",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 485.93,
+          "y": 609.85,
+          "width": 18.07,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 620.76,
+          "width": 397.65,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 631.67,
+          "width": 162.08,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s133",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "Thus, our method could be adapted to instead build off the more general LPM to account for these false classifications in the metric.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 273.19,
+          "y": 631.67,
+          "width": 230.81,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 642.58,
+          "width": 297.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s134",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "In a similar vein, future work could also explore adapting Linear-Fractional Performance Metric Elicitation (LFPME) to account for linear-fractional metrics such as F1 score (Hiranandani et al., 2019b).",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 408.36,
+          "y": 642.58,
+          "width": 95.63,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.64,
+          "y": 653.49,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 664.4,
+          "width": 324.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s135",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "As described in our experiments section, we currently only test our approach using synthetic data with the trade-off between a given class accuracy and cost/reward attribute dictated by the quarter ellipse Pareto frontier seen in Figure 3.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 107.64,
+          "y": 680.79,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 691.7,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 702.61,
+          "width": 122.28,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s136",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "To further evaluate the robustness of our method, this experimentation could be extended to real-world datasets.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 233.23,
+          "y": 702.61,
+          "width": 270.77,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 713.51,
+          "width": 165.13,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s137",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "Beyond requiring access to additional model statistics to describe the additional attributes of note such as monetary cost and inference speed, a way to define the true trade-off between model accuracies and these additional cost/reward attributes would be required.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 276.23,
+          "y": 713.51,
+          "width": 227.77,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 75.48,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 86.39,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 97.3,
+          "width": 36.4,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s138",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "If we are only allowed to make queries with respect to classifiers that actually exist, our algorithm with synthetic data wouldn't be applicable.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 147.77,
+          "y": 97.3,
+          "width": 356.4,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 108.2,
+          "width": 210.01,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s139",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "In such cases with an unknown Pareto frontier, we could also run a bisection method to determine the optimum if we assume that the frontier is strictly decreasing.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 321.13,
+          "y": 108.2,
+          "width": 184.11,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 107.64,
+          "y": 119.11,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 130.02,
+          "width": 75.26,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s140",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "Furthermore, if the utilities of these extra features are non-linear, then our method would not be at all applicable, as this linear nature is what allows us to make pairwise comparisons to derive the metric weights.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 146.41,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 157.32,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 107.64,
+          "y": 168.23,
+          "width": 32.81,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s141",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "An example of this type of feature that is neither strictly good nor bad could be the length of a response provided by a large language model (LLM).",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 143.53,
+          "y": 168.23,
+          "width": 360.47,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 179.14,
+          "width": 216.26,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s142",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "Initially, an increase in response length could correspond to an increase in utility due to an increase in clarity and user understanding, but after reaching an inflection point increasing the length could decrease utility due to the response becoming overly complicated and drawn out.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 326.75,
+          "y": 179.14,
+          "width": 177.25,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 190.05,
+          "width": 396.17,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 200.96,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 211.87,
+          "width": 136.59,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s143",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "To address this non-monotonic behavior, an approach that is akin to gradient descent may be of interest.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 247.68,
+          "y": 211.87,
+          "width": 256.31,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 222.77,
+          "width": 150.3,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s144",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "In this vein, we can see how small changes in the value of the non-linear feature affect our resulting estimate of the metric and continuously move in the direction that maximizes our understanding of user preference.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 261.41,
+          "y": 222.77,
+          "width": 242.58,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 233.68,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 244.59,
+          "width": 212.45,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s145",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "However, we leave further exploration of this idea for future work.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 323.56,
+          "y": 244.59,
+          "width": 180.44,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 255.5,
+          "width": 82.34,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s146",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "Lastly, another avenue for potential exploration would be adapting the method to account for groupbased metrics.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 271.89,
+          "width": 397.66,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 282.8,
+          "width": 57.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s147",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "Currently, we assume that costs are a fixed attribute of the classifier but it is possible costs could vary on different subsets of the data, just like accuracies in fair performance metric elicitation (Hiranandani et al., 2020).",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 168.1,
+          "y": 282.8,
+          "width": 335.9,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 293.71,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 304.62,
+          "width": 146.35,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s148",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "For example, consider a setting where different data points are from different countries and costs vary by country.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 257.43,
+          "y": 304.62,
+          "width": 246.57,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 315.53,
+          "width": 201.39,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s149",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "This scenario demonstrates how combining cost and reward infused metric elicitation with the underlying ideas of fair performance metric elicitation of Hiranandani et al. (2020) could be a beneficial expansion of our work.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 312.48,
+          "y": 315.53,
+          "width": 191.52,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 326.44,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 337.35,
+          "width": 290.26,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s150",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "One risk of our metric elicitation tool is that our algorithm learns the preferred metrics and costs of an individual practitioner and an individual practitioner only.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 391.62,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 402.53,
+          "width": 247.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s151",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "We learn and choose the model that best matches a given user's trade-off of accuracies, costs, and rewards.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 358.91,
+          "y": 402.53,
+          "width": 145.09,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 413.44,
+          "width": 285.2,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s152",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "What may be ideal for one group of practitioners is not necessarily aligned with the preferences of all users, such as their firm or organization.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 396.28,
+          "y": 413.44,
+          "width": 107.71,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 424.35,
+          "width": 396.17,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 435.26,
+          "width": 52.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s153",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "As an example, we can imagine a work context where our algorithm is used to help determine which models to employ.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 107.64,
+          "y": 451.65,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 462.56,
+          "width": 71.84,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s154",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "A specific user who has an incentive to finish his given deliverables rapidly would prioritize speed over monetary cost and would reveal those preferences to our algorithm.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 182.95,
+          "y": 462.56,
+          "width": 321.04,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 473.46,
+          "width": 350.78,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s155",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "This could be misaligned with the preferences of his firm, which could have to pay the costs of a more costly but quicker model.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 461.87,
+          "y": 473.46,
+          "width": 42.13,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 484.37,
+          "width": 396.34,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 495.28,
+          "width": 76.69,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s156",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Similarly, a practitioner who neglects the computational power and monetary cost required for a model would cause our algorithm to select a computationally expensive model that presents an environmental cost that may be undesirable for their broader society.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 188.67,
+          "y": 495.28,
+          "width": 315.68,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 506.19,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 517.1,
+          "width": 342.92,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s157",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "In a medical context, a doctor might have a higher preference for model speed, as they would like treat as many patients as possible.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 454.03,
+          "y": 517.1,
+          "width": 49.97,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 528.01,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 538.92,
+          "width": 79.88,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s158",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "However, an individual patient could have a higher preference for maximizing accuracy due to the potential serious consequences of an incorrect diagnosis.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 190.98,
+          "y": 538.92,
+          "width": 313.03,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 549.83,
+          "width": 305.57,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s159",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "To mitigate such scenarios, we recommend a mandatory educational workshop or tutorial that must be completed by any potential users of our algorithm.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 107.69,
+          "y": 566.22,
+          "width": 396.31,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 577.13,
+          "width": 216.46,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s160",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "In such a workshop, we would try to impart an understanding of the existence and preferences of other stakeholders who would be affected by the usage of our metric elicitation algorithm.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 327.55,
+          "y": 577.13,
+          "width": 176.45,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 588.04,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 598.94,
+          "width": 177.32,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s161",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Informing users that any costs they will not personally incur will be incurred somewhere else would help align individual preferences with the preferences of all other potential stakeholders.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 288.43,
+          "y": 598.94,
+          "width": 215.92,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 609.85,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 620.76,
+          "width": 135.76,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s162",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Another risk we identified was the potential reputation damage that could arise from data leaks.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 107.64,
+          "y": 637.15,
+          "width": 398.1,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s163",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Metric elicitation is often used in a medical context to improve diagnosis.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 648.06,
+          "width": 285.8,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s164",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Medical practitioners could potentially apply this algorithm to determine how they are willing to trade off costs/rewards with accuracy and use this metric to select their preferred classifier.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 396.84,
+          "y": 648.06,
+          "width": 107.16,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 658.97,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 669.88,
+          "width": 243.66,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s165",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Metric elicitation in a medical context can reveal the inherent operating trade-offs of accuracy and model costs.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 354.75,
+          "y": 669.88,
+          "width": 149.24,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 680.79,
+          "width": 295.47,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s166",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "If this information were released to the public, it could risk causing a deluge of negative press, as the perceived valuation of false negative or false positive predictions alongside other cost/reward attributes by a medical practitioner or system could be controversial.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 406.95,
+          "y": 680.79,
+          "width": 97.05,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 691.7,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 702.61,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 108.0,
+          "y": 713.51,
+          "width": 180.1,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s167",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Any deployment of our algorithm into real-world contexts must have strict, up-to-date security features to minimize the chance of a data breach causing furor.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 107.64,
+          "y": 75.48,
+          "width": 396.71,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 86.39,
+          "width": 245.2,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s168",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "In addition, our model should encrypt learned values for various parameters as much as possible so that even authorized users of the system cannot go into the code and reveal the exact learned cost trade-off.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 356.28,
+          "y": 86.39,
+          "width": 147.72,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 97.3,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 108.2,
+          "width": 264.24,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s169",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "An additional risk could arise when practitioners are unaware or unsure of their own preferences.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 107.64,
+          "y": 124.59,
+          "width": 398.1,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s170",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "People often struggle to accurately identify what they truly want or what is best in a given situation.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 135.5,
+          "width": 397.75,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s171",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "A practitioner may believe they understand their preferences regarding trade-offs, yet their actual decisions could be misaligned with the trade-offs they intend to prioritize in a specific context.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 107.64,
+          "y": 146.41,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 157.32,
+          "width": 376.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s172",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "To address this, we recommend slowing down the deployment of our algorithm.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 107.69,
+          "y": 173.71,
+          "width": 317.26,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s173",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Before running our algorithm, we will first include a required survey to for users to fill out.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 428.03,
+          "y": 173.71,
+          "width": 76.13,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 184.62,
+          "width": 286.2,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s174",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "This survey would include questions pertaining to the importance to be ascribed to rewards and costs such as speed, accuracy, monetary cost, etc.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 397.31,
+          "y": 184.62,
+          "width": 106.68,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 195.53,
+          "width": 397.25,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 206.44,
+          "width": 76.9,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s175",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "The survey would not affect our algorithm directly, but would serve to get the practitioner to think critically about their own values.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 188.31,
+          "y": 206.44,
+          "width": 315.69,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 217.35,
+          "width": 211.66,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s176",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "This period of reflection will help to align the practitioner's choices with their actual preferences.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 322.76,
+          "y": 217.35,
+          "width": 181.24,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 228.25,
+          "width": 203.07,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s177",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Moreover, yet another risk that arises would be ill-intentioned practitioners using our algorithm to obfuscate responsibility.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 244.64,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 255.55,
+          "width": 111.65,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s178",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Some practitioners may have personal incentives to prefer models with rewards, costs, and accuracies that most benefit themselves even if they know this preference negatively impacts others.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 226.64,
+          "y": 255.55,
+          "width": 277.36,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 107.64,
+          "y": 266.46,
+          "width": 396.36,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 277.37,
+          "width": 105.76,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s179",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "For example, a practitioner could choose a model by prioritizing speed and low monetary cost, even if accuracy takes a hit.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 216.94,
+          "y": 277.37,
+          "width": 287.06,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 288.28,
+          "width": 214.47,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s180",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "To deflect blame from negatively impacted individuals, the practitioner might point to the seemingly black box nature of the elicitation algorithm, even though the algorithm actually is based on their true metric.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 327.36,
+          "y": 288.28,
+          "width": 176.63,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 299.19,
+          "width": 397.24,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 310.1,
+          "width": 254.44,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s181",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "To address this potential ethical concern, we would mandate a clause that must be agreed to before the use of our algorithm.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 107.69,
+          "y": 326.49,
+          "width": 396.31,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 337.39,
+          "width": 102.69,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s182",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "This clause would stipulate that an explanation of what our algorithm accomplishes and how it is used in the specific work pipeline must be provided to any relevant parties.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 215.79,
+          "y": 337.39,
+          "width": 288.21,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 348.3,
+          "width": 397.74,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s183",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "This will ensure these impacted individuals are aware that the algorithm learns the preferences of the practitioner and will help mitigate the possibility of our algorithm being used in poor taste.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 107.69,
+          "y": 359.21,
+          "width": 396.3,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 370.12,
+          "width": 361.63,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s184",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "In this work, we studied current literature in the realm of metric elicitation and proposed a new algorithm, cost and reward infused metric elicitation, that takes into account attributes beyond confusion matrices.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 422.91,
+          "width": 396.35,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 433.81,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 444.72,
+          "width": 79.98,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s185",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "Our proposed algorithm successfully elicited the true metric when tested on synthesized data.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 192.41,
+          "y": 444.72,
+          "width": 311.58,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 455.63,
+          "width": 68.78,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s186",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "Future work can expand upon our approach by testing our algorithm on real data and exploring ways to address non-linear costs and rewards.",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 179.88,
+          "y": 455.63,
+          "width": 324.12,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 466.54,
+          "width": 239.28,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s187",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Figure 1: Cost and reward infused metric elicitation framework adapted from Hiranandani et al. (2019a).",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 108.0,
+          "y": 200.92,
+          "width": 397.75,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 107.67,
+          "y": 211.83,
+          "width": 33.47,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s188",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Figure2: Confusion Space of Classifiers for k = 3(Hiranandani et al., 2019b)",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 149.8,
+          "y": 227.71,
+          "width": 312.41,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s189",
+      "section_id": null,
+      "kind": "caption",
+      "text": ": • k = 2 classes, 1 reward attribute with range [0,5], 1 cost attribute with range [-0.3,0] • k = 2 classes, 2 cost attributes with ranges [-15,0] and [-18,0] • k = 3 classes, 2 cost attributes with ranges [-8,0] and [-20,0], 1 reward attribute with range [0,15.5]",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 403.17,
+          "y": 627.98,
+          "width": 4.38,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 135.4,
+          "y": 647.97,
+          "width": 345.24,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 135.4,
+          "y": 662.44,
+          "width": 255.59,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 135.4,
+          "y": 676.91,
+          "width": 368.6,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 143.87,
+          "y": 688.14,
+          "width": 31.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s190",
+      "section_id": null,
+      "kind": "caption",
+      "text": "• k = 3 classes, 1 cost attribute with range [-0.5,0], 2 reward attributes with ranges [0,20] and [0,30]",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 135.4,
+          "y": 702.29,
+          "width": 368.61,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 143.87,
+          "y": 713.51,
+          "width": 24.07,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s191",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Figure 4: Plot showing the L1 error with each passing iteration (left).",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 524.48,
+          "width": 289.83,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s192",
+      "section_id": null,
+      "kind": "caption",
+      "text": "3D representation of the algorithm learning with two classes and a single additional cost (right).",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 403.29,
+          "y": 524.48,
+          "width": 100.7,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 108.0,
+          "y": 535.39,
+          "width": 282.98,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s193",
+      "section_id": null,
+      "kind": "footnote",
+      "text": "CS329H Final Report (Autumn 2024)",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 108.0,
+          "y": 734.04,
+          "width": 135.99,
+          "height": 7.77
+        }
+      ]
+    },
+    {
+      "id": "lt6-0-0",
+      "section_id": null,
+      "kind": "table",
+      "text": "Classes k = 2, Reward/Cost Attributes = 2 | Classes k = 3, Reward/Cost Attributes = 3",
+      "boxes": []
+    },
+    {
+      "id": "lt6-0-1",
+      "section_id": null,
+      "kind": "table",
+      "text": "ψ* = a* | ψ̂ = â | ψ* = a* | ψ̂ = â",
+      "boxes": []
+    },
+    {
+      "id": "lt6-0-2",
+      "section_id": null,
+      "kind": "table",
+      "text": "(0.10, 0.05, 0.05, 0.80) | (0.10, 0.05, 0.05, 0.80) | (0.12, 0.08, 0.07, 0.32, 0.19, 0.22) | (0.12, 0.08, 0.07, 0.32, 0.19, 0.22)",
+      "boxes": []
+    },
+    {
+      "id": "lt6-0-3",
+      "section_id": null,
+      "kind": "table",
+      "text": "(0.32, 0.17, 0.28, 0.23) | (0.32, 0.17, 0.28, 0.23) | (0.12, 0.08, 0.07, 0.32, 0.19, 0.22) | (0.12, 0.08, 0.07, 0.32, 0.19, 0.22)",
+      "boxes": []
+    }
+  ],
+  "bibliography": [
+    {
+      "id": "b0",
+      "raw": "Matt Baughman, Nifesh Chakubaji, Hong-Linh Truong, Krists Kreics, Kyle Chard, and Ian Fos- ter. 2019. An Empirical Study of measuring predicting quantifying tradeoff. In 2019 IEEE International Conference on Big Data (Big Data), pages 3616-3622.",
+      "title": "An Empirical Study of measuring predicting quantifying tradeoff",
+      "authors": [
+        "Matt Baughman",
+        "Nifesh Chakubaji",
+        "Hong-Linh Truong",
+        "Krists Kreics",
+        "Kyle Chard",
+        "Ian Foster"
+      ],
+      "year": 2019,
+      "venue": "2019 IEEE International Conference on Big Data (Big Data)",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 513.85,
+          "width": 397.65,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 524.58,
+          "width": 386.03,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 117.79,
+          "y": 535.48,
+          "width": 274.69,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b1",
+      "raw": "Pavel Dmitriev and Xian Wu. 2016. An Empirical Study of measuring metrics. In Proceedings of the 25th ACM International on Conference on Information and Knowledge Management, CIKM '16, page 429-437, New York, NY, USA. Association for Computing Machinery.",
+      "title": "An Empirical Study of measuring metrics",
+      "authors": [
+        "Pavel Dmitriev",
+        "Xian Wu"
+      ],
+      "year": 2016,
+      "venue": "Proceedings of the 25th ACM International on Conference on Information and Knowledge Management, CIKM '16",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 555.78,
+          "width": 396.0,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 566.69,
+          "width": 387.29,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 577.78,
+          "width": 198.96,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "raw": "Gaurush Hiranandani, Shant Boodaghians, Ruta Mehta, and Oluwasanmi Koyejo. 2019a. Performance metric elicitation from pairwise classifier comparisons.",
+      "title": "Performance metric elicitation from pairwise classifier comparisons",
+      "authors": [
+        "Gaurush Hiranandani",
+        "Shant Boodaghians",
+        "Ruta Mehta",
+        "Oluwasanmi Koyejo"
+      ],
+      "year": 2019,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 598.08,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 608.99,
+          "width": 219.15,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "raw": "Gaurush Hiranandani, Shant Boodaghians, Ruta Mehta, and Oluwasanmi O Koyejo. 2019b. Multiclass performance metric elicitation. In Advances in Neural Information Processing Systems, volume 32. Curran Associates, Inc.",
+      "title": "Multiclass performance metric elicitation",
+      "authors": [
+        "Gaurush Hiranandani",
+        "Shant Boodaghians",
+        "Ruta Mehta",
+        "Oluwasanmi O Koyejo"
+      ],
+      "year": 2019,
+      "venue": "Advances in Neural Information Processing Systems",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 629.28,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 640.01,
+          "width": 387.78,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 651.1,
+          "width": 92.96,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "raw": "Gaurush Hiranandani, Harikrishna Narasimhan, and Oluwasanmi Koyejo. 2020. Fair performance metric elicitation.",
+      "title": "Fair performance metric elicitation",
+      "authors": [
+        "Gaurush Hiranandani",
+        "Harikrishna Narasimhan",
+        "Oluwasanmi Koyejo"
+      ],
+      "year": 2020,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 671.4,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 682.31,
+          "width": 70.29,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b5",
+      "raw": "Suyun Liu and Luis Vicente. 2022. Accuracy and fairness trade-offs in machine learning: a stochastic multi-objective approach. Computational Management Science, 19.",
+      "title": "Accuracy and fairness trade-offs in machine learning: a stochastic multi-objective approach",
+      "authors": [
+        "Suyun Liu",
+        "Luis Vicente"
+      ],
+      "year": 2022,
+      "venue": "Computational Management Science",
+      "doi": "10.1007/s10287-022-00425-z",
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 10,
+          "x": 108.0,
+          "y": 702.61,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 117.96,
+          "y": 713.34,
+          "width": 270.0,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b6",
+      "raw": "Aditya Krishna Menon and Robert C Williamson. 2018. The cost of fairness in binary classification. In Conference on Fairness, accountability and transparency, pages 107-118. PMLR.",
+      "title": "The cost of fairness in binary classification",
+      "authors": [
+        "Aditya",
+        "Krishna Menon",
+        "Robert C Williamson"
+      ],
+      "year": 2018,
+      "venue": "Conference on Fairness, accountability and transparency",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 11,
+          "x": 108.0,
+          "y": 75.48,
+          "width": 397.74,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 86.21,
+          "width": 339.01,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b7",
+      "raw": "Buyue Qian, Xiang Wang, Fei Wang, Hongfei Li, Jieping Ye, and Ian Davidson. 2013. Active learning from relative queries. In Twenty-Third International Joint Conference on Artificial Intelligence.",
+      "title": "Active learning from relative queries",
+      "authors": [
+        "Buyue Qian",
+        "Xiang Wang",
+        "Fei Wang",
+        "Hongfei Li",
+        "Jieping Ye",
+        "Ian Davidson"
+      ],
+      "year": 2013,
+      "venue": "Twenty-Third International Joint Conference on Artificial Intelligence",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 11,
+          "x": 108.0,
+          "y": 105.27,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 116.0,
+          "width": 380.18,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b8",
+      "raw": "Mehran Salmani, Saeid Ghafouri, Alireza Sanaee, Kamran Razavi, Max Mühlhäuser, Joseph Doyle, Pooyan Jamshidi, and Mohsen Sharifi. 2023. Reconciling high accuracy, cost-efficiency, and low latency of inference serving systems. In Proceedings of the 3rd Workshop on Machine Learning and Systems, EuroMLSys '23, page 78-86, New York, NY, USA. Association for Computing Machinery.",
+      "title": "Reconciling high accuracy, cost-efficiency, and low latency of inference serving systems",
+      "authors": [
+        "Mehran Salmani",
+        "Saeid Ghafouri",
+        "Alireza Sanaee",
+        "Kamran Razavi",
+        "Max Mühlhäuser",
+        "Joseph Doyle",
+        "Pooyan Jamshidi",
+        "Mohsen Sharifi"
+      ],
+      "year": 2023,
+      "venue": "Proceedings of the 3rd Workshop on Machine Learning and Systems, EuroMLSys '23",
+      "doi": "10.1145/3578356.3592578",
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 11,
+          "x": 108.0,
+          "y": 135.05,
+          "width": 397.25,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 145.96,
+          "width": 386.4,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 156.69,
+          "width": 386.04,
+          "height": 8.82
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 167.6,
+          "width": 386.04,
+          "height": 8.82
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 178.69,
+          "width": 45.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b9",
+      "raw": "Ana Valdivia, Javier Sánchez-Monedero, and Jorge Casillas. 2021. How fair can we go in machine learning? assessing the boundaries of accuracy and fairness. International Journal of Intelligent Systems, 36(4):1619-1643.",
+      "title": "How fair can we go in machine learning? assessing the boundaries of accuracy and fairness",
+      "authors": [
+        "Ana Valdivia",
+        "Javier Sánchez-Monedero",
+        "Jorge Casillas"
+      ],
+      "year": 2021,
+      "venue": "International Journal of Intelligent Systems",
+      "doi": "10.1002/int.22354",
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 11,
+          "x": 108.0,
+          "y": 197.57,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 208.3,
+          "width": 386.03,
+          "height": 8.82
+        },
+        {
+          "page": 11,
+          "x": 117.71,
+          "y": 219.21,
+          "width": 108.19,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b10",
+      "raw": "Sitan Yang and Daniel Q Naiman. 2014. Multiclass cancer classification based on gene expression comparison. Stat. Appl. Genet. Mol. Biol., 13(4):477-496.",
+      "title": "Multiclass cancer classification based on gene expression comparison",
+      "authors": [
+        "Sitan Yang",
+        "Daniel Q Naiman"
+      ],
+      "year": 2014,
+      "venue": "Stat. Appl. Genet. Mol. Biol",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 11,
+          "x": 108.0,
+          "y": 238.27,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 249.0,
+          "width": 232.44,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b11",
+      "raw": "Yunfeng Zhang, Rachel Bellamy, and Kush Varshney. 2020. Joint optimization of ai fairness and utility: A human-centered approach. In Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society, AIES '20, page 400-406, New York, NY, USA. Association for Computing Machinery.",
+      "title": "Joint optimization of ai fairness and utility: A human-centered approach",
+      "authors": [
+        "Yunfeng Zhang",
+        "Rachel Bellamy",
+        "Kush Varshney"
+      ],
+      "year": 2020,
+      "venue": "Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society, AIES '20",
+      "doi": "10.1145/3375627.3375862",
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 11,
+          "x": 108.0,
+          "y": 268.05,
+          "width": 396.0,
+          "height": 8.64
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 278.79,
+          "width": 387.78,
+          "height": 8.82
+        },
+        {
+          "page": 11,
+          "x": 117.96,
+          "y": 289.69,
+          "width": 387.78,
+          "height": 8.82
+        }
+      ]
+    }
+  ],
+  "citations": [
+    {
+      "id": "c0",
+      "sentence_id": "s7",
+      "start": 98,
+      "end": 121,
+      "marker": "(Yang and Naiman, 2014)",
+      "bib_ids": [
+        "b10"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c1",
+      "sentence_id": "s11",
+      "start": 55,
+      "end": 97,
+      "marker": "(Zhang et al., 2020;Dmitriev and Wu, 2016)",
+      "bib_ids": [
+        "b11",
+        "b1"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c2",
+      "sentence_id": "s12",
+      "start": 146,
+      "end": 173,
+      "marker": "(Hiranandani et al., 2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c3",
+      "sentence_id": "s13",
+      "start": 169,
+      "end": 196,
+      "marker": "(Hiranandani et al., 2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c4",
+      "sentence_id": "s14",
+      "start": 65,
+      "end": 91,
+      "marker": "Hiranandani et al. (2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c5",
+      "sentence_id": "s15",
+      "start": 100,
+      "end": 119,
+      "marker": "(Qian et al., 2013)",
+      "bib_ids": [
+        "b7"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c6",
+      "sentence_id": "s15",
+      "start": 233,
+      "end": 260,
+      "marker": "(Hiranandani et al., 2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c7",
+      "sentence_id": "s16",
+      "start": 149,
+      "end": 176,
+      "marker": "(Hiranandani et al., 2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c8",
+      "sentence_id": "s17",
+      "start": 0,
+      "end": 26,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c9",
+      "sentence_id": "s19",
+      "start": 90,
+      "end": 162,
+      "marker": "(Valdivia et al., 2021;Liu and Vicente, 2022;Menon and Williamson, 2018)",
+      "bib_ids": [
+        "b9",
+        "b5",
+        "b6"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c10",
+      "sentence_id": "s20",
+      "start": 9,
+      "end": 34,
+      "marker": "Hiranandani et al. (2020)",
+      "bib_ids": [
+        "b4"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c11",
+      "sentence_id": "s23",
+      "start": 0,
+      "end": 22,
+      "marker": "Baughman et al. (2019)",
+      "bib_ids": [
+        "b0"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c12",
+      "sentence_id": "s24",
+      "start": 146,
+      "end": 169,
+      "marker": "(Baughman et al., 2019)",
+      "bib_ids": [
+        "b0"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c13",
+      "sentence_id": "s25",
+      "start": 0,
+      "end": 21,
+      "marker": "Salmani et al. (2023)",
+      "bib_ids": [
+        "b8"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c14",
+      "sentence_id": "s27",
+      "start": 158,
+      "end": 180,
+      "marker": "(Salmani et al., 2023)",
+      "bib_ids": [
+        "b8"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c15",
+      "sentence_id": "s35",
+      "start": 71,
+      "end": 97,
+      "marker": "Hiranandani et al. (2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c16",
+      "sentence_id": "s45",
+      "start": 16,
+      "end": 42,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c17",
+      "sentence_id": "s60",
+      "start": 187,
+      "end": 214,
+      "marker": "(Hiranandani et al., 2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c18",
+      "sentence_id": "s61",
+      "start": 36,
+      "end": 63,
+      "marker": "(Hiranandani et al., 2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c19",
+      "sentence_id": "s66",
+      "start": 75,
+      "end": 78,
+      "marker": "[k]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c20",
+      "sentence_id": "s67",
+      "start": 63,
+      "end": 89,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c21",
+      "sentence_id": "s75",
+      "start": 26,
+      "end": 52,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c22",
+      "sentence_id": "s81",
+      "start": 12,
+      "end": 38,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c23",
+      "sentence_id": "s97",
+      "start": 150,
+      "end": 206,
+      "marker": "(Hiranandani et al., 2019a), (Hiranandani et al., 2019b)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c24",
+      "sentence_id": "s100",
+      "start": 11,
+      "end": 37,
+      "marker": "Hiranandani et al. (2019a)",
+      "bib_ids": [
+        "b2"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c25",
+      "sentence_id": "s100",
+      "start": 42,
+      "end": 68,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c26",
+      "sentence_id": "s110",
+      "start": 28,
+      "end": 55,
+      "marker": "(Hiranandani et al., 2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c27",
+      "sentence_id": "s111",
+      "start": 42,
+      "end": 68,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c28",
+      "sentence_id": "s131",
+      "start": 96,
+      "end": 122,
+      "marker": "Hiranandani et al. (2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c29",
+      "sentence_id": "s134",
+      "start": 174,
+      "end": 201,
+      "marker": "(Hiranandani et al., 2019b)",
+      "bib_ids": [
+        "b3"
+      ],
+      "link_method": "heuristic"
+    },
+    {
+      "id": "c30",
+      "sentence_id": "s147",
+      "start": 202,
+      "end": 228,
+      "marker": "(Hiranandani et al., 2020)",
+      "bib_ids": [
+        "b4"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c31",
+      "sentence_id": "s149",
+      "start": 152,
+      "end": 177,
+      "marker": "Hiranandani et al. (2020)",
+      "bib_ids": [
+        "b4"
+      ],
+      "link_method": "parser"
+    }
+  ],
+  "tables": [
+    {
+      "id": "layout-p6-0",
+      "label": "Table 1",
+      "row_ids": [
+        "lt6-0-0",
+        "lt6-0-1",
+        "lt6-0-2",
+        "lt6-0-3"
+      ],
+      "page": 6
+    }
+  ],
+  "links": [
+    {
+      "url": "https://github.com/chethus/metric",
+      "page": 1,
+      "sentence_id": "s5",
+      "source": "text"
+    },
+    {
+      "url": "https://doi.org/10.1109/BigData47090.2019.9006370",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1145/2983323.2983356",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "http://arxiv.org/abs/1806.01827",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2019/file/1fd09c5f59a8ff35d499c0ee25a1d47e-Paper.pdf",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "http://arxiv.org/abs/2006.12732",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10287-022-00425-z",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1145/3578356.3592578",
+      "page": 11,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/https://doi.org/10.1002/int.22354",
+      "page": 11,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1145/3375627.3375862",
+      "page": 11,
+      "sentence_id": null,
+      "source": "annotation"
+    }
+  ],
+  "layout": {
+    "pages": [
+      {
+        "number": 1,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.67,
+        "text_top": 99.43,
+        "text_right": 504.17,
+        "text_bottom": 741.81
+      },
+      {
+        "number": 2,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.53,
+        "text_top": 199.6,
+        "text_right": 505.75,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 3,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.64,
+        "text_top": 74.15,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 4,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.53,
+        "text_top": 226.48,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 5,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.53,
+        "text_top": 74.08,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 6,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.53,
+        "text_top": 181.3,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 7,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.64,
+        "text_top": 109.96,
+        "text_right": 533.08,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 8,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.64,
+        "text_top": 73.79,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 9,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.64,
+        "text_top": 74.15,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 10,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 107.64,
+        "text_top": 74.15,
+        "text_right": 505.75,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 11,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 108.0,
+        "text_top": 74.15,
+        "text_right": 505.74,
+        "text_bottom": 752.04
+      }
+    ],
+    "fonts": [
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 10.0,
+        "chars": 25296
+      },
+      {
+        "name": "NimbusRomNo9L-ReguItal",
+        "size": 10.0,
+        "chars": 897
+      },
+      {
+        "name": "NimbusRomNo9L-Medi",
+        "size": 10.0,
+        "chars": 523
+      },
+      {
+        "name": "CMR10",
+        "size": 10.0,
+        "chars": 407
+      },
+      {
+        "name": "CMMI10",
+        "size": 10.0,
+        "chars": 378
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 7.8,
+        "chars": 282
+      },
+      {
+        "name": "NimbusRomNo9L-Medi",
+        "size": 12.0,
+        "chars": 180
+      },
+      {
+        "name": "CMMI7",
+        "size": 7.0,
+        "chars": 120
+      },
+      {
+        "name": "CMBX10",
+        "size": 10.0,
+        "chars": 115
+      },
+      {
+        "name": "CMSY10",
+        "size": 10.0,
+        "chars": 87
+      },
+      {
+        "name": "SFTT1000",
+        "size": 10.0,
+        "chars": 82
+      },
+      {
+        "name": "CMBX7",
+        "size": 7.0,
+        "chars": 61
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 8.0,
+        "chars": 55
+      },
+      {
+        "name": "CMR7",
+        "size": 7.0,
+        "chars": 41
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 7.0,
+        "chars": 39
+      },
+      {
+        "name": "NimbusRomNo9L-Medi",
+        "size": 17.2,
+        "chars": 37
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 9.0,
+        "chars": 29
+      },
+      {
+        "name": "CMSY7",
+        "size": 7.0,
+        "chars": 14
+      },
+      {
+        "name": "CMEX10",
+        "size": 10.0,
+        "chars": 9
+      },
+      {
+        "name": "CMR5",
+        "size": 5.0,
+        "chars": 7
+      },
+      {
+        "name": "CMMI5",
+        "size": 5.0,
+        "chars": 6
+      },
+      {
+        "name": "CMMI10",
+        "size": 7.8,
+        "chars": 6
+      },
+      {
+        "name": "CMBX10",
+        "size": 7.8,
+        "chars": 4
+      },
+      {
+        "name": "CMR10",
+        "size": 7.8,
+        "chars": 4
+      },
+      {
+        "name": "MSBM10",
+        "size": 10.0,
+        "chars": 2
+      },
+      {
+        "name": "CMBX5",
+        "size": 5.0,
+        "chars": 2
+      }
+    ]
+  }
+}

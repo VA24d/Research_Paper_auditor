@@ -1126,3 +1126,66 @@ Session 7 leftovers still relevant:
   NOT P2's file.
 
 
+
+
+Session 8 progress notes (running):
+- Merged origin/main (bf1b3b5) into p2-citation-checker cleanly (merge commit 45de838);
+  merged tree fully green: 1349 passed / 1 skipped / 9 deselected, ruff + format clean,
+  mypy 0 (239 files). P4 added src/auditor/{evaluation,reporting,ui}, the verifier,
+  ~100 tests, results/p4, docs/p4-results.md, FULL_SYSTEM_AUDIT_REPORT.md (repo root).
+- Finding 1 mechanism understood: P4's set C runs set Settings.skip_parts=("citation",)
+  (deliberate: set C labels no citation classes; config.py:302-306 documents it). The
+  runner only REPORTS mocked_parts. citation_llm_enabled defaults True. So the citation
+  agent is NOT broken; what is missing is (a) the set B data is uncommitted
+  (gitignore /data/ + datasets/set_b/papers/), (b) only 6 claim-level labels,
+  (c) no set B run through the P4 pipeline.
+- Verifier interaction CONFIRMED OK: agents/verifier/policy.py NEEDS maps
+  CLAIM_NOT_SUPPORTED/CLAIM_NUMBER_MISMATCH to PaperSide.ANCHOR + CITED_WORK, and
+  grounding.py _cited_quote grounds via the citation agent's recorded char offsets —
+  no network at verify time. A set B run through the P4 full system would verify
+  citation findings properly.
+- Dataset sizes: data/set_b 135 files 49.2 MB; datasets/set_b/papers 119 files 35.4 MB
+  (originals duplicated in both trees, paths both referenced by scripts). Plan: commit
+  both (local solution per Anurag's preference; no cloud).
+- Claim-label growth measured (runs/_grow_dryrun.py): naive propose-style re-mining of
+  the 47 non-subset papers gives 89 proposals but they are JUNK-dominated (year
+  perturbations like 2022->1516). With a metric-like filter (% or decimal) only 4 clean
+  proposals remain (2 number, 2 direction). CONCLUSION: the deterministic builder
+  already took what the 60-paper pool yields; the audit's ">=100 claim-source pairs"
+  needs HAND-WRITTEN claim injections (the README/audit both point to `inject` taking
+  any claim text). Plan: hand-adjudicate a candidate pool (no LLM — reading cached
+  sources), apply accepted ones, verify, mark reviewed_by=p2-review-agent (this session
+  is the independent reviewer per Anurag's standing instruction), validate -> freeze
+  again. Growth is restricted to the 47 papers OUTSIDE the paused T6 subset so the
+
+Session 8 progress (continued — Finding 1 remediation, DONE before merge):
+- Grew set B claim labels 6 -> 8 with the 2 hand-adjudicated direction reversals
+  (2501.00911 s231/b23 Kirk-RLHF improves->degrades; 2501.00961 s166/b10
+  Hooker-pruning reduces->increases), applied via inject_claim on the existing injected
+  copies, marked reviewed_by=p2-review-agent, dataset frozen again at 159 labels / 113
+  records, `scripts/set_b.py validate` exits 0. Growth restricted to the 47 non-subset
+  papers (the paused 13-pair subset untouched). All other candidates REJECTED with
+  reasons in runs/_adjudicate.txt + datasets/set_b/README.md.
+- FIXED a real P2 machinery bug found by the growth: `_sentence_edited_copy` left later
+  in-sentence citation markers stale on length-changing whole-sentence rewrites; it now
+  re-locates every marker in the edited text (tests:
+  test_inject_claim_relocates_later_markers_when_the_rewrite_changes_the_length,
+  test_inject_claim_fails_when_the_marker_is_gone). Also repaired the interrupted first
+  growth attempt's orphan edit on 2501.00911-injected.json.
+- COMMITTED the set B data into the repo (Finding 1 step 1, local solution):
+  data/set_b/papers (60 originals), data/set_b/sources (59 text files), and
+  datasets/set_b/papers (60 injected + originals) — 84.6 MB total; .gitignore got
+  /data/* exceptions. Build logs stay uncommitted.
+- Audit's ">=100 claim-source pairs": NOT reachable from this 60-paper pool at verified
+  quality (measured: 89 mechanical candidates all junk years; 13 hand-adjudicated, 2
+  accepted). Documented in datasets/set_b/README.md with the exact larger-pool pipeline
+  (fetch_arxiv -> GROBID parse -> citation_eval fetch -> set_b_build -> adjudicate ->
+  validate; ~0.1 verified claim label/paper, so 300+ papers needed).
+- Evaluation NOT run (Anurag's instruction: no full set B/B1 runs, credits uncertain).
+  Runbook written into docs/p2-mid-results.md §8 (one batch command + scorer command);
+  P4-verifier interaction verified in code (policy.py NEEDS + grounding.py _cited_quote
+  ground citation findings from the recorded char offsets — no network at verify time).
+- The paused session-7 run (runs/setb-final-full-r1, 25/26) remains resumable; its 13
+  papers' labels are unchanged by the growth.
+
+  13-pair subset stays exactly as the paused run needs it (25/26 entries on disk).

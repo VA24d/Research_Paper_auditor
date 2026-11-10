@@ -9,8 +9,8 @@ whose claim sentences or bibliography carry planted errors (decision D1).
 | Item | Count |
 |---|---|
 | Papers (arXiv ids in `arxiv_ids.txt`) | 60 |
-| Gold labels in `labels.jsonl` | 157 |
-| Injected errors | 111: `reference_not_found` 96, `reference_metadata_mismatch` 9, `claim_number_mismatch` 3, `claim_not_supported` 3 |
+| Gold labels in `labels.jsonl` | 159 |
+| Injected errors | 113: `reference_not_found` 96, `reference_metadata_mismatch` 9, `claim_not_supported` 5, `claim_number_mismatch` 3 |
 | Clean controls (`none`) | 46 |
 | Bibliography entries fetched with their cited work's text | 2,743 (one JSON line per entry under `data/set_b/sources/`) |
 
@@ -23,9 +23,12 @@ whose claim sentences or bibliography carry planted errors (decision D1).
   and the gold evidence passage of the cited work (text + exact char offsets), which the
   Recall@5 measurement uses.
 - `dataset.jsonl` — the `auditor batch` experiment file (injected copies and originals;
-  the parsed papers live in `data/set_b/papers/`, fetched not committed, D13 — rebuild
-  the injected copies from `injections.jsonl` and a fresh parse with
-  `scripts/set_b_build.py`).
+  the parsed papers are COMMITTED since 2026-11-03: the originals under
+  `data/set_b/papers/`, the injected copies under `datasets/set_b/papers/`, and the
+  fetched source texts under `data/set_b/sources/` — the Finding 1 remediation in
+  `FULL_SYSTEM_AUDIT_REPORT.md` asked for the set B data to live in the repository, and
+  these three trees (84.6 MB) are all an offline evaluation needs; the raw fetched PDFs
+  and the HTTP cache stay uncommitted under `data/`).
 
 ## How it was built
 
@@ -82,9 +85,49 @@ source text. Resolutions:
 - The other 29 sampled labels agreed exactly (agreement 32/32 on the final sample set).
 - `scripts/set_b.py validate datasets/set_b --sources data/set_b/sources` now exits 0.
 
+## The claim-label growth (2026-11-03, Finding 1 remediation)
+
+The full-system audit (Finding 1) asked for more claim-level labels. Measured result on
+this 60-paper pool: the deterministic builder already took what the pool yields. Re-mining
+the 47 papers outside the evaluation subset gave 89 mechanically-"verified" number
+candidates, every one of them a junk year perturbation (2022 -> 1516, 2024 -> 2530 ...),
+and a metric-shaped filter (percentages/decimals only) left just 2 — both junk too
+(Theorem 6.1 renumbered). A hand-adjudication pass over all 13 direction/metric
+candidates with the recorded sources in hand accepted exactly 2 direction reversals:
+
+- 2501.00911 s231/b23: "Kirk et al. (2023) observed that RLHF improves generalization at
+  the cost of reduced diversity compared to SFT." -> improves/degrades. The source states
+  verbatim: "RLHF generalises better than SFT to new inputs ... However, RLHF
+  significantly reduces output diversity compared to SFT".
+- 2501.00961 s166/b10: "...the observation Hooker et al. [2019] that pruning reduces a
+  model's prediction accuracy on rare and atypical instances..." -> reduces/increases.
+  The source (Hooker et al., "What Do Compressed Deep Neural Networks Forget?") finds
+  compression disproportionately harms rarely-learned, atypical examples (its PIE study).
+
+Both were applied with `inject_claim`, verified (`scripts/set_b.py validate` exits 0),
+and marked `reviewed_by: ["p2-review-agent"]` (the session performed the second review:
+hand-adjudication + the machinery's checks). The growth intentionally touched ONLY the
+papers outside the paused 13-pair evaluation subset, so that subset's labels and papers
+are unchanged.
+
+Reaching the audit's "at least 100 claim-source pairs" is NOT possible from this
+60-paper pool at verified quality (measured above); it needs a larger paper pool —
+roughly 300+ papers at the measured ~0.1 verified claim label per paper. The pipeline to
+do it is exactly the one that built this set: `scripts/fetch_arxiv.py` (more ids) ->
+parse with GROBID -> `scripts/citation_eval.py fetch` (source texts) ->
+`scripts/set_b_build.py` (propose + verify) -> hand adjudication -> `scripts/set_b.py
+validate`.
+
+The growth also surfaced a real bug in the injection machinery
+(`_sentence_edited_copy`): a whole-sentence rewrite that changes the length BEFORE a
+later in-sentence citation marker left that marker's span stale (the earlier build only
+escaped it because its swaps were same-length or sat after the markers). The machinery
+now re-locates every marker of the edited sentence in the new text, with a regression
+test.
+
 ## What is not done yet
 
-- The claim classes are thin (6 of 157): most claim sentences do not state a
+- The claim classes are thin (8 of 159): most claim sentences do not state a
   specific number the source confirms, and few contain a direction phrase the source
   contradicts. Growing them needs claim-level injections written by hand (the `inject`
   subcommand of `scripts/set_b.py` takes any claim text) or a larger paper pool.

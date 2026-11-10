@@ -134,16 +134,26 @@ def _sentence_edited_copy(paper: ParsedPaper, anchor: SentenceAnchor, new_text: 
     if original == new_text:
         raise ValueError(f"the new text is the same as the old one ({original})")
     text = sentence.text[: anchor.start] + new_text + sentence.text[anchor.end :]
-    delta = len(new_text) - len(original)
     data = paper.model_dump()
     data["variant"] = PaperVariant.INJECTED.value
     for row in data["sentences"]:
         if row["id"] == anchor.sentence_id:
             row["text"] = text
-    for mention in data["citations"]:
-        if mention["sentence_id"] == anchor.sentence_id and mention["start"] >= anchor.end:
-            mention["start"] += delta
-            mention["end"] += delta
+    # Every citation marker of the edited sentence keeps pointing at its own marker
+    # text: shifting only the markers after the edited span misses the ones a
+    # whole-sentence rewrite moves (a length change before a later marker shifts every
+    # marker after it, whatever the anchor covers). Re-locate each marker in order.
+    moved = sorted(
+        (m for m in data["citations"] if m["sentence_id"] == anchor.sentence_id),
+        key=lambda m: m["start"],
+    )
+    cursor = 0
+    for mention in moved:
+        found = text.find(mention["marker"], cursor)
+        if found < 0:
+            raise ValueError(f"marker {mention['marker']!r} is not in the edited sentence")
+        mention["start"], mention["end"] = found, found + len(mention["marker"])
+        cursor = found + len(mention["marker"])
     return ParsedPaper.model_validate(data)
 
 

@@ -1,0 +1,6963 @@
+{
+  "schema_version": 1,
+  "paper_id": "2501.00709",
+  "variant": "injected",
+  "parser": {
+    "name": "grobid",
+    "version": "0.9.1",
+    "pdf_sha256": "9e652e3b3e737667a7cb7c209cb29a73ce18792319a204118beca6dcaeac5655"
+  },
+  "metadata": {
+    "title": "KAN KAN BUFF SIGNED GRAPH NEURAL NETWORKS?",
+    "authors": [
+      "Muhieddine Shebaro",
+      "Jelena Tešić"
+    ],
+    "year": 2025,
+    "venue": null,
+    "doi": null,
+    "arxiv_id": "2501.00709"
+  },
+  "sections": [
+    {
+      "id": "sec0",
+      "title": "Related Work",
+      "number": "0.1"
+    },
+    {
+      "id": "sec1",
+      "title": "Introducing the Kolmogorov Arnold Signed Graph Convolutional Networks 1.Kolmogorov-Arnold Networks",
+      "number": "1"
+    },
+    {
+      "id": "sec2",
+      "title": "Signed Graph Convolutional Neural Networks",
+      "number": "1.2"
+    },
+    {
+      "id": "sec3",
+      "title": "Outline of the KASGCN Method",
+      "number": "1.3"
+    },
+    {
+      "id": "sec4",
+      "title": "Parameters",
+      "number": "2.2"
+    },
+    {
+      "id": "sec5",
+      "title": "Evaluation Metrics",
+      "number": "2.3"
+    },
+    {
+      "id": "sec6",
+      "title": "Signed Graphs",
+      "number": "2.4"
+    },
+    {
+      "id": "sec7",
+      "title": "Community Detection",
+      "number": "3.1"
+    },
+    {
+      "id": "sec8",
+      "title": "Link Sign Prediction",
+      "number": "3.2"
+    },
+    {
+      "id": "sec9",
+      "title": "Efficiency Examination",
+      "number": "3.3"
+    },
+    {
+      "id": "sec10",
+      "title": "Embeddings Comparison",
+      "number": "3.4"
+    },
+    {
+      "id": "sec11",
+      "title": "KAGCN Robustness",
+      "number": "3.5"
+    },
+    {
+      "id": "sec12",
+      "title": "Conclusion and Future Work",
+      "number": "4"
+    }
+  ],
+  "sentences": [
+    {
+      "id": "s0",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Graph Representation Learning aims to create effective embeddings for nodes and edges that encapsulate their features and relationships.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 252.43,
+          "width": 396.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 263.34,
+          "width": 153.88,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Graph Neural Networks (GNNs) leverage neural networks to model complex graph structures.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 267.16,
+          "y": 263.34,
+          "width": 236.98,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 274.25,
+          "width": 141.53,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Recently, the Kolmogorov-Arnold Neural Network (KAN) has emerged as a promising alternative to the traditional Multilayer Perceptron (MLP), offering improved accuracy and interpretability with fewer parameters.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 253.12,
+          "y": 274.25,
+          "width": 251.02,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 285.16,
+          "width": 396.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 296.07,
+          "width": 240.51,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "In this paper, we propose the integration of KANs into Signed Graph Convolutional Networks (SGCNs), leading to the development of KAN-enhanced SGCNs (KASGCN).",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 352.98,
+          "y": 296.07,
+          "width": 151.16,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 306.98,
+          "width": 396.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 317.89,
+          "width": 147.37,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "We evaluate KASGCN on tasks such as signed community detection and link sign prediction to improve embedding quality in signed networks.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 257.4,
+          "y": 317.89,
+          "width": 246.73,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 328.8,
+          "width": 323.69,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "Our experimental results indicate that KASGCN exhibits competitive or comparable performance to standard SGCNs across the tasks evaluated, with performance variability depending on the specific characteristics of the signed graph and the choice of parameter settings.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 434.56,
+          "y": 328.8,
+          "width": 69.58,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 339.71,
+          "width": 396.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 350.62,
+          "width": 396.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 361.52,
+          "width": 215.94,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "section_id": null,
+      "kind": "abstract",
+      "text": "These findings suggest that KASGCNs hold promise for enhancing signed graph analysis with context-dependent effectiveness.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 327.46,
+          "y": 361.52,
+          "width": 176.68,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 107.87,
+          "y": 372.43,
+          "width": 330.39,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "section_id": null,
+      "kind": "body",
+      "text": "Graph Representation Learning is creating embeddings for nodes and edges based on the features and connections in a graph.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 408.01,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 418.92,
+          "width": 45.81,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "section_id": null,
+      "kind": "body",
+      "text": "These embeddings capture the graph's local and global features and are useful for node classification and link prediction tasks.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 126.12,
+          "y": 418.92,
+          "width": 413.89,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 429.83,
+          "width": 124.62,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "section_id": null,
+      "kind": "body",
+      "text": "One of the most well-known methods for learning graph embeddings is through Graph Neural Networks (GNNs) [Xu, 2021].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 204.55,
+          "y": 429.83,
+          "width": 335.45,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 440.74,
+          "width": 184.55,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "section_id": null,
+      "kind": "body",
+      "text": "GNNs have proven to understand complex graph relationships and structures effectively.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 263.87,
+          "y": 440.74,
+          "width": 276.13,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 451.65,
+          "width": 86.62,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "section_id": null,
+      "kind": "body",
+      "text": "Graph neural networks gather information from neighboring nodes, gradually refining the embeddings through multiple layers [Fan et al., 2019, Bessadok et al., 2023].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 166.52,
+          "y": 451.65,
+          "width": 373.49,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 462.56,
+          "width": 310.56,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "section_id": null,
+      "kind": "body",
+      "text": "The Kolmogorov-Arnold Neural Network (KAN) has emerged recently as an alternative to the traditional Multilayer Perceptron (MLP) architecture [Liu et al., 2024].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 387.95,
+          "y": 462.56,
+          "width": 152.05,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 473.46,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 484.37,
+          "width": 69.73,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "section_id": null,
+      "kind": "body",
+      "text": "In contrast to traditional multilayer perceptrons (MLPs), KAN utilizes learnable univariate functions instead of fixed activation functions.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 147.15,
+          "y": 484.37,
+          "width": 392.86,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 495.28,
+          "width": 174.59,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "section_id": null,
+      "kind": "body",
+      "text": "KANs have outperformed MLPs for the numerical analysis and partial differential equation solving [Ji et al., 2024] as the learnable activation functions on edges show more flexibility in learning complex models, and KAN can also handle high-dimensional data.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 254.54,
+          "y": 495.28,
+          "width": 285.46,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 506.19,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 517.1,
+          "width": 354.55,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "section_id": null,
+      "kind": "body",
+      "text": "The fusion of KANs and graph neural networks in several ways has improved the performance and the quality of the GNN embeddings [De Carlo et al., 2024, Kiamari et al., 2024, Bresson et al., 2024] in the node classification, link prediction, and graph classification tasks.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 434.73,
+          "y": 517.1,
+          "width": 105.27,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 528.01,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 538.92,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 549.83,
+          "width": 76.93,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "section_id": null,
+      "kind": "body",
+      "text": "This paper introduces the first known integration of the Kolmogorov-Arnold Neural Network (KAN) and its variants into signed Graph Neural Networks (GNNs), evaluating their impact on tasks such as signed clustering and link sign prediction.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 566.22,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 577.13,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 588.03,
+          "width": 42.89,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "section_id": null,
+      "kind": "body",
+      "text": "Additionally, we investigate how KANs can enhance the quality of embeddings generated by signed GNNs.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 117.81,
+          "y": 588.03,
+          "width": 422.2,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s18",
+      "section_id": null,
+      "kind": "body",
+      "text": "Signed GNNs are particularly suited for graphs where edges represent positive or negative interactions, capturing the dynamics of various relationships.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 598.94,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 609.85,
+          "width": 136.23,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s19",
+      "section_id": null,
+      "kind": "body",
+      "text": "The Signed Graph Convolutional Networks (SGCNs) method, proposed by Derr et al., adapts Graph Convolutional Networks to signed networks by leveraging balance theory [Derr et al., 2018].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 211.3,
+          "y": 609.85,
+          "width": 328.71,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 620.76,
+          "width": 433.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s20",
+      "section_id": null,
+      "kind": "body",
+      "text": "Balance theory, which addresses the dynamics of attitudes within networks, has applications in edge sentiment prediction and anomaly detection.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 507.91,
+          "y": 620.76,
+          "width": 32.09,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 631.67,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 642.58,
+          "width": 77.15,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s21",
+      "section_id": null,
+      "kind": "body",
+      "text": "In this context, a signed network is considered strongly balanced if every fundamental cycle contains an even number of negative edges.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 156.24,
+          "y": 642.58,
+          "width": 383.76,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 653.49,
+          "width": 173.03,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s22",
+      "section_id": null,
+      "kind": "body",
+      "text": "Signed Graph Convolutional Neural Network (SGCN) is the baseline and the most robust variant of signed GNNs in the field, as it adapts the Graph Convolutional Neural Network for signed networks based on the balance theory [Derr et al., 2018].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 669.88,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 680.79,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 691.7,
+          "width": 74.14,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s23",
+      "section_id": null,
+      "kind": "body",
+      "text": "Balance theory is pivotal in explaining attitudes' evolution within signed graph networks.",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 150.07,
+          "y": 691.7,
+          "width": 358.9,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s24",
+      "section_id": null,
+      "kind": "body",
+      "text": "Heider formalized the balance theory in [Abelson and Rosenberg, 1958], and Harary introduced the mathematical formulation and the k-way balancing [Cartwright andHarary, 1956, Harary andCartwright, 1968].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 512.89,
+          "y": 691.7,
+          "width": 27.11,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 702.61,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 1,
+          "x": 72.0,
+          "y": 713.2,
+          "width": 347.25,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s25",
+      "section_id": null,
+      "kind": "body",
+      "text": "The balance theory has been widely applied in various domains, including edge sentiment prediction, content and product recommendations, and anomaly detection [Derr et al., 2020, Garimella et al., 2021, Interian et al., 2022, Amelkin and Singh, 2019].",
+      "boxes": [
+        {
+          "page": 1,
+          "x": 424.15,
+          "y": 713.51,
+          "width": 115.85,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 75.48,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 86.39,
+          "width": 437.37,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s26",
+      "section_id": null,
+      "kind": "body",
+      "text": "In the context of signed networks, a network is considered strongly balanced if every fundamental cycle consists of an even number of negative edges.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 515.89,
+          "y": 86.39,
+          "width": 24.11,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 97.3,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 108.2,
+          "width": 107.5,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s27",
+      "section_id": null,
+      "kind": "body",
+      "text": "The Signed Graph Convolutional Network (SGCN) incorporates the balance theory by maintaining two distinct representations at each layer: one for the suggested friends, where the path connecting the node contains an even number of negative links, and another for the suggested enemies, where the path includes an odd number of negative links.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 185.53,
+          "y": 108.2,
+          "width": 354.47,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 119.11,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 130.02,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 140.93,
+          "width": 118.66,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s28",
+      "section_id": null,
+      "kind": "body",
+      "text": "This research project is the first to integrate KAN (with its variants) into signed graph neural networks and empirically evaluate its impact on performance on two downstream tasks: signed clustering and link sign prediction for signed networks.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 403.36,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 414.27,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 425.18,
+          "width": 38.91,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s29",
+      "section_id": null,
+      "kind": "body",
+      "text": "Next, the project outlines KANs' potential to increase the expressive power of the embeddings generated by signed graph neural networks.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 115.45,
+          "y": 425.18,
+          "width": 424.56,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 436.09,
+          "width": 137.75,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s30",
+      "section_id": null,
+      "kind": "body",
+      "text": "Section 0.1 discusses the related work regarding KAN integration into several architectures, their uses, and the background on KAN and SGCN.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 216.83,
+          "y": 436.09,
+          "width": 323.18,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 446.99,
+          "width": 264.04,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s31",
+      "section_id": null,
+      "kind": "body",
+      "text": "In Section 1.3, we present the methodology of our work and pose research questions for this study.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 338.71,
+          "y": 446.99,
+          "width": 201.29,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 457.9,
+          "width": 196.91,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s32",
+      "section_id": null,
+      "kind": "body",
+      "text": "In Section 3, we empirically evaluate the KAN-integrated signed GNN and its variants in several tasks, including efficiency examination and embedding comparison.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 274.66,
+          "y": 457.9,
+          "width": 265.34,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 468.81,
+          "width": 397.67,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s33",
+      "section_id": null,
+      "kind": "body",
+      "text": "We structure this section by presenting the hypothesis, results, and observations.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 472.76,
+          "y": 468.81,
+          "width": 67.25,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 479.72,
+          "width": 249.85,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s34",
+      "section_id": null,
+      "kind": "body",
+      "text": "In Section 4, we summarize our findings.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 324.94,
+          "y": 479.72,
+          "width": 163.82,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s35",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Cheon et al. proposed a method that combines Kolmogorov-Arnold Networks (KANs) with pre-trained Convolutional Neural Networks (CNNs), specifically VGG16 and MobileNetV2 models, for scene classification in satellite imagery [Cheon, 2024].",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 560.79,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 571.7,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 582.61,
+          "width": 60.04,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s36",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The proposed approach demonstrated high accuracy, requiring fewer epochs and parameters than traditional Multilayer Perceptrons (MLPs) that do not integrate KANs [Cheon, 2024].",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 139.05,
+          "y": 582.61,
+          "width": 400.95,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 593.51,
+          "width": 343.89,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s37",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "KANs have been explored for data representation using autoencoders and compared against conventional Convolutional Neural Networks (CNNs) on datasets such as MNIST, SVHN, and CIFAR-10.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 419.83,
+          "y": 593.51,
+          "width": 120.17,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 604.42,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 615.33,
+          "width": 196.53,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s38",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "And it is shown that KAN-based autoencoders deliver competitive reconstruction accuracy [Moradi et al., 2024].",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 272.81,
+          "y": 615.33,
+          "width": 267.2,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 626.24,
+          "width": 184.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s39",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Dong et al. evaluated the performance of KANs on time series data and found that KANs can match or even surpass the performance of MLP across 128 different time series datasets [Dong et al., 2024].",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 261.58,
+          "y": 626.24,
+          "width": 278.42,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 637.15,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 648.06,
+          "width": 78.03,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s40",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "Lu et al. assessed using KANs for fraud detection and concluded that their performance varies depending on the context [Lu and Zhan, 2024].",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 154.87,
+          "y": 648.06,
+          "width": 385.13,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 658.97,
+          "width": 191.41,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s41",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The study in [Anonymous, 2024] presented a proof of concept for employing KANs in graphs to predict molecules' binding affinity to protein targets.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 269.27,
+          "y": 658.97,
+          "width": 270.73,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 669.88,
+          "width": 336.9,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s42",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "The model in this study did not attain state-of-the-art performance, but it emphasized its promising method in computational drug discovery.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 413.14,
+          "y": 669.88,
+          "width": 126.86,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 680.79,
+          "width": 435.48,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s43",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "For the Graph Neural Network integration, Bresson et al. integrated KAN layers into unsigned graph neural networks (GNNs) for the node and graph classification tasks [Bresson et al., 2024], and Li et al. integrated Fourier series-based KANs to optimize GNNs further for the molecular property prediction.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 511.38,
+          "y": 680.79,
+          "width": 28.62,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 691.7,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 702.61,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 2,
+          "x": 72.0,
+          "y": 713.51,
+          "width": 255.38,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s44",
+      "section_id": "sec0",
+      "kind": "body",
+      "text": "[Li et al., 2024].",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 330.47,
+          "y": 713.51,
+          "width": 64.75,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s45",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The Kolmogorov-Arnold representation theorem states that any multivariate function can be formulated as a combination of continuous univariate functions [Kolmogorov, 1956], as defined in Eq. 1.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 119.36,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 130.27,
+          "width": 328.48,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s46",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The parameters α and ϕ are the univariate functions and d is the dimension of the input.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 197.73,
+          "width": 353.05,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s47",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The output is an aggregated output of each input after it passes through an univariate and non-linear spline function.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 428.74,
+          "y": 198.05,
+          "width": 111.26,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 208.96,
+          "width": 355.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s48",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The main hyperparameters for the spline function are the spline order (degree of B-splines) and the grid size (number of intervals to approximate the real function).",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 432.21,
+          "y": 208.96,
+          "width": 107.8,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 219.87,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 230.78,
+          "width": 71.1,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s49",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Kolmogorov-Arnold Networks (KANs) demonstrate greater expressiveness than standard multilayer perceptrons (MLPs) and superior performance with significantly fewer parameters [Liu et al., 2024].",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 247.17,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 258.07,
+          "width": 362.23,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s50",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Where MLPs adjust the weights globally based on the training data, KANs spline control points impact only local regions, thereby preserving more information [Fong and Seidel, 1991].",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 441.48,
+          "y": 258.07,
+          "width": 98.52,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 268.98,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 279.89,
+          "width": 171.14,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s51",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "Next, ϕ(x) from Eq. 1 is defined in Eq. 2.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 246.23,
+          "y": 279.57,
+          "width": 166.17,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s52",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "The SiLU(x) is the SiLU activation function x/(1 + e) and spline(x) is defined as the is a linear combination of B-splines, spline(x) = i c i B i (x) where c i , w b , and w s are trainable and control the magnitude of the activation function.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 329.37,
+          "width": 468.0,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 340.28,
+          "width": 93.12,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 180.05,
+          "y": 345.31,
+          "width": 2.82,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 185.02,
+          "y": 340.28,
+          "width": 354.98,
+          "height": 9.65
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 351.51,
+          "width": 35.7,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s53",
+      "section_id": "sec1",
+      "kind": "body",
+      "text": "w s = 1 and w b are initialized using Xavier initialization.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 110.78,
+          "y": 351.19,
+          "width": 225.98,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s54",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "Derr et al. apply balance theory to effectively aggregate features from a node's neighbors in signed networks [Derr et al., 2018].",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 397.06,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 407.97,
+          "width": 74.14,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s55",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "Each node has a positive embedding and a negative embedding representation.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 149.04,
+          "y": 407.97,
+          "width": 306.76,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s56",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "During the messagepassing process, the positive embedding updates by aggregating the positive embeddings from its positive neighbors.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 458.7,
+          "y": 407.97,
+          "width": 81.3,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 418.88,
+          "width": 468.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s57",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "The negative embeddings update from its negative neighbors, concatenating the resulting aggregate to the node's positive representation.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 429.78,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 440.69,
+          "width": 79.48,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s58",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "By aggregating the negative embeddings from positive neighbors and the positive embeddings from negative neighbors concatenate with the node's negative representation.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 156.8,
+          "y": 440.69,
+          "width": 383.2,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 451.6,
+          "width": 306.75,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s59",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "Conversely, the negative embedding is updated.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 467.99,
+          "width": 195.53,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s60",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "The final node embedding is obtained by concatenating both the positive and negative embeddings.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 274.11,
+          "y": 467.99,
+          "width": 265.89,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 478.9,
+          "width": 135.07,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s61",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "The signed graph convolutional network (GCN) formulation is described as follows.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 209.97,
+          "y": 478.9,
+          "width": 330.03,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s62",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "For",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 495.29,
+          "width": 13.69,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s63",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "])",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 417.39,
+          "y": 650.78,
+          "width": 6.64,
+          "height": 8.74
+        }
+      ]
+    },
+    {
+      "id": "s64",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "The number of layers is l, h B(l) i and h",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 689.67,
+          "width": 115.23,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 187.23,
+          "y": 686.53,
+          "width": 15.15,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 187.23,
+          "y": 694.49,
+          "width": 2.82,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 206.04,
+          "y": 689.67,
+          "width": 23.29,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s65",
+      "section_id": "sec2",
+      "kind": "body",
+      "text": "are the positive and negative representations of node i in layer l respectively, σ is an activation function, W B(l) and W U (l) are the weight matrices for updating the positive and negative representations respectively, N + i and N - i are the sets of positive and negative neighbors of i respectively.",
+      "boxes": [
+        {
+          "page": 3,
+          "x": 247.96,
+          "y": 689.67,
+          "width": 292.04,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 702.29,
+          "width": 149.58,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 222.96,
+          "y": 700.71,
+          "width": 15.15,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 241.79,
+          "y": 702.29,
+          "width": 26.98,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 270.15,
+          "y": 700.71,
+          "width": 14.96,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 288.79,
+          "y": 702.61,
+          "width": 251.21,
+          "height": 8.64
+        },
+        {
+          "page": 3,
+          "x": 72.0,
+          "y": 713.2,
+          "width": 122.88,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 195.97,
+          "y": 710.97,
+          "width": 6.12,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 194.88,
+          "y": 718.01,
+          "width": 2.82,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 205.07,
+          "y": 713.2,
+          "width": 24.88,
+          "height": 8.96
+        },
+        {
+          "page": 3,
+          "x": 231.04,
+          "y": 710.97,
+          "width": 6.23,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 229.96,
+          "y": 718.01,
+          "width": 2.82,
+          "height": 6.12
+        },
+        {
+          "page": 3,
+          "x": 240.26,
+          "y": 713.2,
+          "width": 251.79,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s66",
+      "section_id": "sec3",
+      "kind": "body",
+      "text": "In this section, we introduce the Kolmogorov-Arnold Signed Graph Convolutional Network (KASGCN) method to integrate the Kolmogorov-Arnold layer (KAN) in the signed graph convolutional neural network (SGCN) by replacing the weight matrix W with the KAN layer in the formulation.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 95.45,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 106.36,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 116.95,
+          "width": 239.39,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s67",
+      "section_id": "sec3",
+      "kind": "body",
+      "text": "The KAN layers have trainable parameters and introduce non-linearity, superseding the role of the weight matrix illustrated for the unsigned example in [Bresson et al., 2024].",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 314.38,
+          "y": 117.27,
+          "width": 225.61,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 128.18,
+          "width": 468.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s68",
+      "section_id": "sec3",
+      "kind": "body",
+      "text": "We formalize the Kolmogorov-Arnold signed graph convolutional network (KASGCN) method as follows:",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 139.09,
+          "width": 426.37,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s69",
+      "section_id": "sec3",
+      "kind": "body",
+      "text": "the ϕ B(l) and ϕ U (l) here represent the KAN layer used to update the positive and negative representations, respectively.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 354.16,
+          "width": 21.4,
+          "height": 8.96
+        },
+        {
+          "page": 4,
+          "x": 93.4,
+          "y": 352.59,
+          "width": 15.15,
+          "height": 6.12
+        },
+        {
+          "page": 4,
+          "x": 112.33,
+          "y": 354.16,
+          "width": 23.61,
+          "height": 8.96
+        },
+        {
+          "page": 4,
+          "x": 135.95,
+          "y": 352.59,
+          "width": 14.96,
+          "height": 6.12
+        },
+        {
+          "page": 4,
+          "x": 154.7,
+          "y": 354.48,
+          "width": 385.3,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 365.39,
+          "width": 24.14,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s70",
+      "section_id": "sec3",
+      "kind": "body",
+      "text": "This layer can be any state-",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 103.54,
+          "y": 365.39,
+          "width": 116.95,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s71",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "Each KAN layer consists of a grid of splines.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 669.88,
+          "width": 180.22,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s72",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "The degree of each spline is the spline order, and the number of splines for each function is known as grid size.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 255.35,
+          "y": 669.7,
+          "width": 284.65,
+          "height": 8.82
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 680.79,
+          "width": 159.13,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s73",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "For the implementation of B-splines and other variants of KAN, we rely on the publicly available implementations in [Blealtan, 2024] and [Yin et al., 2024], respectively.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 235.42,
+          "y": 680.79,
+          "width": 304.59,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 691.7,
+          "width": 372.59,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s74",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "The parameters used in the experiments are: layers = [32,32], weight decay = 10 -5 , learning rate = 0.001, lamb = 1.0, epochs = 1000, seed = 42, reduction iterations = 10, reduction dimensions = 15, spectral features = True, norm = True, norm embed = True, grid size = 5, spline order = 3, scale noise = 0.1, scale base = 1.0, scale spline = 1.0, base activation = torch.nn.SiLU, grid eps = 0.02, grid range= [-1, 1], Kmeans++ is used for clustering and with default parameters.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 447.65,
+          "y": 691.7,
+          "width": 92.35,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 702.29,
+          "width": 226.47,
+          "height": 8.96
+        },
+        {
+          "page": 4,
+          "x": 298.47,
+          "y": 700.71,
+          "width": 10.2,
+          "height": 6.12
+        },
+        {
+          "page": 4,
+          "x": 309.16,
+          "y": 702.61,
+          "width": 230.83,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 713.51,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 75.48,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 86.39,
+          "width": 396.41,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s75",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "Each experiment is repeated 10 times and averaged.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 472.57,
+          "y": 86.39,
+          "width": 67.44,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 97.3,
+          "width": 140.7,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s76",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "The test size split for each positive and negative for link sign prediction (using multinomial logistic regression) is 0.2.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 218.09,
+          "y": 97.3,
+          "width": 321.91,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 108.2,
+          "width": 158.51,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s77",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "t-SNE parameters are random state = 0, n iter = 1000, metric = 'cosine'.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 237.18,
+          "y": 108.2,
+          "width": 302.82,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s78",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "Pre-processing of the signed network includes Removing duplicates and keeping a first edge, treating neutral edges as positive, dropping self-loops, reindex nodes from 0 to n -1 where n is the number of nodes in the signed network.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 119.11,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 129.7,
+          "width": 468.01,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s79",
+      "section_id": "sec4",
+      "kind": "body",
+      "text": "The embedding passes through the KAN layer and the tanh activation function.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 140.93,
+          "width": 315.49,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s80",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "We use two metrics to gauge the quality of our clustering assignments: fraction of positive edges within clusters and fraction of negative edges between clusters).",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 189.3,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 200.21,
+          "width": 177.02,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s81",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "They are the following:",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 252.1,
+          "y": 200.21,
+          "width": 93.4,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s82",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "where pos within and pos between are the number of positive edges within and between clusters, respectively.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 294.09,
+          "width": 424.96,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s83",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "neg within and neg between are the negative edges within and between clusters.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 499.94,
+          "y": 294.09,
+          "width": 39.56,
+          "height": 9.65
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 305.0,
+          "width": 271.28,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s84",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "To measure the overall clustering quality Q, we add both to obtain:",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 347.6,
+          "y": 305.0,
+          "width": 192.4,
+          "height": 8.96
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 316.22,
+          "width": 75.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s85",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "Moreover, we rely on the AUC score that summarizes the GNN's effectiveness across all possible classification thresholds to evaluate the link sign prediction performance.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 355.0,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 365.91,
+          "width": 216.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s86",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "In addition, we use the F1 score for this as well, which is as follows:",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 293.57,
+          "y": 365.91,
+          "width": 246.43,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 376.82,
+          "width": 32.41,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s87",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "where P recision is the ratio of true positive instances to the sum of true positive and false positive instances.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 439.84,
+          "width": 446.12,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s88",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "And Recall is the ratio of true positive instances to the sum of true positive and false negative instances.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 522.84,
+          "y": 440.16,
+          "width": 17.16,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 450.75,
+          "width": 400.65,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s89",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "We use seconds to measure and compare the training time of the graph neural network (GNN) models.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 476.6,
+          "y": 451.07,
+          "width": 63.4,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 461.97,
+          "width": 346.19,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s90",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "The average cosine similarity is employed to measure the similarity between the embeddings generated by two different GNNs for each node in the signed network, and the formula is:",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 422.02,
+          "y": 461.97,
+          "width": 117.99,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 472.88,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 483.79,
+          "width": 141.02,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s91",
+      "section_id": "sec5",
+      "kind": "body",
+      "text": "where N is the set of all nodes in the network, e A i and e B i are the embeddings of node i generated from GNN A and GNN B respectively.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 555.71,
+          "width": 194.79,
+          "height": 8.99
+        },
+        {
+          "page": 5,
+          "x": 266.79,
+          "y": 554.17,
+          "width": 5.99,
+          "height": 6.12
+        },
+        {
+          "page": 5,
+          "x": 266.79,
+          "y": 560.37,
+          "width": 2.82,
+          "height": 6.12
+        },
+        {
+          "page": 5,
+          "x": 275.98,
+          "y": 555.71,
+          "width": 22.34,
+          "height": 8.99
+        },
+        {
+          "page": 5,
+          "x": 298.32,
+          "y": 554.17,
+          "width": 6.02,
+          "height": 6.12
+        },
+        {
+          "page": 5,
+          "x": 298.32,
+          "y": 560.37,
+          "width": 2.82,
+          "height": 6.12
+        },
+        {
+          "page": 5,
+          "x": 307.88,
+          "y": 555.74,
+          "width": 232.12,
+          "height": 8.96
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 566.65,
+          "width": 84.2,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s92",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "Table 1 describes the Konect and other signed graphs and their characteristics [Kunegis, 2013].",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 615.33,
+          "width": 390.63,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s93",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "BitcoinAlpha is a user-user trust/distrust network from the Bitcoin Alpha platform for trading bitcoins.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 468.78,
+          "y": 615.15,
+          "width": 71.22,
+          "height": 8.59
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 626.06,
+          "width": 352.38,
+          "height": 8.59
+        }
+      ]
+    },
+    {
+      "id": "s94",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "BitcoinOTC is a user-user trust/distrust network from the Bitcoin OTC platform for trading Bitcoins.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 431.87,
+          "y": 626.24,
+          "width": 108.12,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 637.15,
+          "width": 297.34,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s95",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "WikiRFA describes voting information for electing Wikipedia managers [He et al., 2022].",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 373.2,
+          "y": 636.97,
+          "width": 166.81,
+          "height": 8.82
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 648.06,
+          "width": 185.54,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s96",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "WikiElec is the network of users from the English Wikipedia that voted for and against each other in admin elections.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 260.61,
+          "y": 647.88,
+          "width": 279.39,
+          "height": 8.59
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 658.79,
+          "width": 182.3,
+          "height": 8.59
+        }
+      ]
+    },
+    {
+      "id": "s97",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "In the Chess network, each vertex is a chess player, and a directed edge represents a game with the white player having an outgoing edge and the black player having an ingoing edge.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 257.32,
+          "y": 658.79,
+          "width": 282.68,
+          "height": 8.82
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 669.7,
+          "width": 448.87,
+          "height": 8.59
+        }
+      ]
+    },
+    {
+      "id": "s98",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "The weight of the edge represents the outcome.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 525.06,
+          "y": 669.7,
+          "width": 14.94,
+          "height": 8.59
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 680.61,
+          "width": 168.3,
+          "height": 8.59
+        }
+      ]
+    },
+    {
+      "id": "s99",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "Congress is a signed network where vertices are politicians speaking in the United States Congress, and a directed edge denotes that a speaker mentions another speaker.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 243.33,
+          "y": 680.79,
+          "width": 296.67,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 691.7,
+          "width": 369.44,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s100",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "PPI models the proteinprotein interaction network [He et al., 2022].",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 444.49,
+          "y": 691.52,
+          "width": 95.52,
+          "height": 8.82
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 702.61,
+          "width": 181.16,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s101",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "Preprocessing removes duplicates (keep first), treats neutral edges as positive, removes self-loops, and reindexes nodes from 0 to the maximum number of nodes in the signed graph.",
+      "boxes": [
+        {
+          "page": 5,
+          "x": 259.06,
+          "y": 702.61,
+          "width": 280.95,
+          "height": 8.64
+        },
+        {
+          "page": 5,
+          "x": 72.0,
+          "y": 713.51,
+          "width": 444.5,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s102",
+      "section_id": "sec6",
+      "kind": "body",
+      "text": "3 Experimental Results",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 72.0,
+          "y": 222.73,
+          "width": 127.85,
+          "height": 10.75
+        }
+      ]
+    },
+    {
+      "id": "s103",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "• Hypothesis: KASGCN learns representations that enhance the clustering of vertices by minimizing the negative edges between different clusters and maximizing the number of positive edges within the same cluster.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 99.4,
+          "y": 267.91,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 6,
+          "x": 107.87,
+          "y": 279.21,
+          "width": 430.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s104",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "• Results: The clustering results are summarized in Table 2, Table 3, and Table 4 for K = 5, K = 10, K = 15 respectively where K is the predefined number of clusters parameter as input for the Kmeans++ algorithm.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 99.4,
+          "y": 296.3,
+          "width": 440.61,
+          "height": 9.03
+        },
+        {
+          "page": 6,
+          "x": 107.87,
+          "y": 307.28,
+          "width": 426.18,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s105",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "Table 2: Average pos in and neg out over 10 runs for SGCN and KASGCN node embeddings using Kmeans++ clustering (K = 5).",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 72.0,
+          "y": 337.75,
+          "width": 468.0,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 72.0,
+          "y": 350.97,
+          "width": 78.35,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s106",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "Gain is computed using 100•(Q KASGCN -Q SGCN ) Q SGCN .",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 153.44,
+          "y": 351.29,
+          "width": 94.37,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 251.49,
+          "y": 348.18,
+          "width": 93.49,
+          "height": 6.73
+        },
+        {
+          "page": 6,
+          "x": 284.34,
+          "y": 356.45,
+          "width": 26.75,
+          "height": 6.73
+        },
+        {
+          "page": 6,
+          "x": 346.17,
+          "y": 351.29,
+          "width": 2.49,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s107",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "GNN SGCN KASGCN Quality pos neg pos neg Gain BitcoinAlpha 0.388 ± 0.0003 0.8015 ± 0.003 0.4093 ± 0.011 0.659 ± 0.05 -10.18%",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 367.91,
+          "width": 22.14,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 224.8,
+          "y": 367.91,
+          "width": 27.68,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 369.22,
+          "y": 367.91,
+          "width": 42.62,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 378.82,
+          "width": 32.11,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 194.14,
+          "y": 378.89,
+          "width": 14.51,
+          "height": 8.74
+        },
+        {
+          "page": 6,
+          "x": 268.02,
+          "y": 378.89,
+          "width": 15.37,
+          "height": 8.74
+        },
+        {
+          "page": 6,
+          "x": 346.02,
+          "y": 378.89,
+          "width": 14.51,
+          "height": 8.74
+        },
+        {
+          "page": 6,
+          "x": 422.4,
+          "y": 378.89,
+          "width": 15.37,
+          "height": 8.74
+        },
+        {
+          "page": 6,
+          "x": 488.56,
+          "y": 379.21,
+          "width": 19.37,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 394.8,
+          "width": 280.47,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 403.97,
+          "y": 394.8,
+          "width": 52.58,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 473.89,
+          "y": 395.12,
+          "width": 34.03,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s108",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "BitcoinOTC 0.513 ± 0.011 0.820 ± 0.054 0.523 ± 0.00033 0.707 ± 0.001 -7.70% WikiElec 0.507 ± 0.0002 0.773 ± 0.0004 0.5221 ± 0.004 0.784 ± 0.0009 2.03% WikiRFA 0.410 ± 0.0025 0.843 ± 0.0021 0.391 ± 0.0010 0.795 ± 0.0006 -5.34% Chess 0.434 ± 0.002 0.641 ± 0.014 0.409 ± 0.015 0.619 ± 0.034 -4.27%",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 406.03,
+          "width": 48.87,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 172.61,
+          "y": 405.71,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 247.11,
+          "y": 405.71,
+          "width": 211.94,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 478.87,
+          "y": 406.03,
+          "width": 29.05,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 416.94,
+          "width": 37.23,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 170.12,
+          "y": 416.62,
+          "width": 291.42,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 482.19,
+          "y": 416.94,
+          "width": 25.73,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 427.85,
+          "width": 38.17,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 170.12,
+          "y": 427.53,
+          "width": 291.42,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 478.87,
+          "y": 427.85,
+          "width": 29.05,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 438.75,
+          "width": 23.8,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 172.61,
+          "y": 438.44,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 247.11,
+          "y": 438.44,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 324.5,
+          "y": 438.44,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 401.48,
+          "y": 438.44,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 478.87,
+          "y": 438.75,
+          "width": 29.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s109",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "Congress 0.616 ± 0.028 0.961 ± 0.009 0.566 ± 0.029 0.9584 ± 0.017 -3.33% PPI 0.495 ± 0.001 0.709 ± 0.010 0.385 ± 0.084 0.87 ± 0.0109 4.23% • Observations: Improvement in the clustering quality highly depends on the choice of K.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 449.66,
+          "width": 37.08,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 172.61,
+          "y": 449.34,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 247.11,
+          "y": 449.34,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 324.5,
+          "y": 449.34,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 398.99,
+          "y": 449.34,
+          "width": 62.54,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 478.87,
+          "y": 449.66,
+          "width": 29.05,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 104.08,
+          "y": 460.57,
+          "width": 14.4,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 172.61,
+          "y": 460.25,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 247.11,
+          "y": 460.25,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 324.5,
+          "y": 460.25,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 401.48,
+          "y": 460.25,
+          "width": 57.56,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 482.19,
+          "y": 460.57,
+          "width": 25.73,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 99.4,
+          "y": 660.41,
+          "width": 358.06,
+          "height": 9.03
+        }
+      ]
+    },
+    {
+      "id": "s110",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "For relatively higher values of K, Kmeans++ using embeddings from KASGCN seems to do slightly better.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 459.51,
+          "y": 660.8,
+          "width": 80.49,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 107.87,
+          "y": 671.71,
+          "width": 351.65,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s111",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "In comparison, for relatively lower values of K, Kmeans++ using embeddings from SGCN appears to do slightly better.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 464.62,
+          "y": 671.71,
+          "width": 75.39,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 107.87,
+          "y": 682.62,
+          "width": 396.9,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s112",
+      "section_id": "sec7",
+      "kind": "body",
+      "text": "Overall, the difference in the clustering quality between SGCN and KASGCN is negligible or meager except in PPI, where KASGCN outperforms SGCN regardless of K.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 507.78,
+          "y": 682.62,
+          "width": 32.22,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 107.87,
+          "y": 693.52,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 107.87,
+          "y": 704.43,
+          "width": 213.68,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s113",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "• Hypothesis: The expressiveness of KASGCN's embeddings allows logistic regression to better predict the sign of the edge than that of SGCN.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 405.63,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 416.92,
+          "width": 142.78,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s114",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "• Results: The link sign prediction results are presented in Table 5, where a Multinomial Logistic Regression is trained on the embeddings of both SGCN and KASGCN with random 0.2 test size splits over 10 runs.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 432.45,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 443.75,
+          "width": 415.34,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s115",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "• Observations: Logistic Regression with embeddings from KASGCN shows consistent improvement in AUC across most datasets, indicating better overall performance in distinguishing between classes.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 459.27,
+          "width": 440.61,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 470.57,
+          "width": 379.12,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s116",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "The highest AUC improvement is observed in the WikiElec dataset, with a 3.46% increase.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 492.44,
+          "y": 470.57,
+          "width": 47.56,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 481.48,
+          "width": 316.32,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s117",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "The F1 score improvements are mixed.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 428.03,
+          "y": 481.48,
+          "width": 111.97,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 492.39,
+          "width": 42.82,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s118",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "While there are gains in datasets like WikiElec (0.76%) and Chess (2.12%), there are notable declines in datasets like BitcoinAlpha (-4.29%) and BitcoinOTC (-3.91%).",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 156.51,
+          "y": 492.39,
+          "width": 383.49,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 503.29,
+          "width": 300.49,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s119",
+      "section_id": "sec8",
+      "kind": "body",
+      "text": "While Logistic Regression with embeddings from KASGCN generally enhances AUC, the impact on F1 scores is graph-dependent.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 412.56,
+          "y": 503.29,
+          "width": 127.44,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 514.2,
+          "width": 395.67,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s120",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "• Hypothesis: Incorporating the KAN layer into the Signed Graph Neural Network increases the model's complexity, leading to longer execution times for training embeddings.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 556.87,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 568.17,
+          "width": 282.26,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s121",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "• Results: We visualize the efficiency of training SGCN and KASGCN embeddings in Figure 2 with varying numbers of aggregator layers.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 583.7,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 594.99,
+          "width": 118.76,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s122",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "• Observations: As expected, due to the spline function, KAGCN takes a significantly longer time to train and generate embeddings.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 610.52,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 621.82,
+          "width": 87.43,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s123",
+      "section_id": "sec9",
+      "kind": "body",
+      "text": "Increasing the aggregation layers increases the execution time for the KASGCN but not for the SGCN.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 200.06,
+          "y": 621.82,
+          "width": 339.94,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 632.72,
+          "width": 73.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s124",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "• Hypothesis: The embeddings generated by SGCN and KASGCN are similar.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 675.39,
+          "width": 317.88,
+          "height": 9.03
+        }
+      ]
+    },
+    {
+      "id": "s125",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "• Results: The embeddings for SGCN (Red) and KASGCN (Blue) are visualized using t-SNE for BitcoinAlpha, BitcoinOTC, and WikiElec in Figure 3.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 99.4,
+          "y": 691.31,
+          "width": 440.61,
+          "height": 9.03
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 702.61,
+          "width": 173.95,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s126",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "The average cosine similarity between the embeddings of SGCN and KASGCN for these three signed graphs is -0.02, 0.01, and 0.072, respectively.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 284.78,
+          "y": 702.61,
+          "width": 255.22,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 107.87,
+          "y": 713.51,
+          "width": 328.5,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s127",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "• Observations: Similarities are near zero, which indicates orthogonality.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 99.4,
+          "y": 493.16,
+          "width": 299.96,
+          "height": 9.03
+        }
+      ]
+    },
+    {
+      "id": "s128",
+      "section_id": "sec10",
+      "kind": "body",
+      "text": "The t-SNE scatter plots show that the red and blue points are significantly dissimilar, highlighting that the embeddings do not match across the board.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 403.8,
+          "y": 493.55,
+          "width": 136.2,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 504.46,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 515.37,
+          "width": 25.18,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s129",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "• Hypothesis: The embeddings generated by other SGCN integrated with other KAN variants outperform those generated by SGCN integrated with the original KAN layer in the community detection and link sign prediction tasks in the signed network.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 99.4,
+          "y": 559.7,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 571.0,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 581.91,
+          "width": 153.75,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s130",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "• Results: The comparison of the community detection results between all the variants of the Kolmogorov-Arnold Layer is presented in Table 6, Table 7, and Table 8 for K = 5, K = 10, K = 15 respectively.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 99.4,
+          "y": 598.23,
+          "width": 440.61,
+          "height": 9.03
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 609.21,
+          "width": 432.13,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s131",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "Table 9 shows the link sign prediction results of the Kolmogorov-Arnold Layer variants where a Multinomial Logistic Regression is trained on the embeddings of both SGCN and KASGCN with random 0.2 test size splits over 10 runs.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 620.44,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 631.35,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 642.26,
+          "width": 75.53,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s132",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "• Observations: In the community detection task, identifying the best KASGCN variant is challenging, as performance appears to be influenced by both the K value and the signed graph.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 99.4,
+          "y": 658.58,
+          "width": 440.6,
+          "height": 9.03
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 669.88,
+          "width": 316.25,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s133",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "However, LaplaceKASGCN consistently underperforms across various graphs.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 427.17,
+          "y": 669.88,
+          "width": 112.84,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 680.79,
+          "width": 201.66,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s134",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "For the link sign prediction task and across all datasets, LaplaceKASGCN also shows poor performance, which may not be suitable for this task.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 314.43,
+          "y": 680.79,
+          "width": 225.57,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 691.7,
+          "width": 355.89,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s135",
+      "section_id": "sec11",
+      "kind": "body",
+      "text": "In contrast, Fouri-erKASGCN and WaveletKASGCN demonstrate superior performance on most graphs, as evidenced by their higher F1 and AUC metrics.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 467.47,
+          "y": 691.7,
+          "width": 72.54,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 702.61,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 107.87,
+          "y": 713.51,
+          "width": 112.63,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s136",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "In this work, we investigated the integration of the Kolmogorov-Arnold Neural Network (KAN) within the Signed Graph Convolutional Network (SGCN) framework, aiming to evaluate its effectiveness in community detection and link sign prediction in signed networks.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 99.08,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 109.99,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 120.9,
+          "width": 157.77,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s137",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "Our empirical results show that KAN-enhanced SGCNs perform comparably to traditional, unmodified SGCNs.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 232.93,
+          "y": 120.9,
+          "width": 307.08,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 131.81,
+          "width": 138.65,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s138",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "However, the variability in performance, highlighted by relatively large standard deviations, suggests that the effectiveness of this approach is highly context-dependent, influenced by factors such as the specific characteristics of the signed graph and model parameters.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 215.26,
+          "y": 131.81,
+          "width": 324.74,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 142.72,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 153.63,
+          "width": 302.21,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s139",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "Notably, the LaplaceKASGCN variant consistently performs poorly in signed network downstream tasks.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 381.72,
+          "y": 153.63,
+          "width": 158.29,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 164.54,
+          "width": 265.88,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s140",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "The findings in this paper lay the groundwork for future exploration into the broader applicability of KANs in various domains.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 341.7,
+          "y": 164.54,
+          "width": 198.31,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 175.45,
+          "width": 308.68,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s141",
+      "section_id": "sec12",
+      "kind": "body",
+      "text": "Specifically for signed graph networks, this research offers valuable insights for further refining the integration of KANs into graph-based learning models, paving the way for more sophisticated and effective analysis in the future.",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 383.77,
+          "y": 175.45,
+          "width": 156.23,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 186.35,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 197.26,
+          "width": 294.0,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s142",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Figure 1: Illustration of SGCN and KAN-enhanced SGCN of a signed network of 4 nodes and three edges.",
+      "boxes": [
+        {
+          "page": 2,
+          "x": 92.98,
+          "y": 357.23,
+          "width": 426.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s143",
+      "section_id": null,
+      "kind": "caption",
+      "text": "of-the-art variant such as OriginalKAN ϕ o[Liu et al., 2024], FourierKAN ϕ f[Xu et al., 2024], LaplaceKAN ϕ l[Yin et al., 2024], and WaveletKAN ϕ w[Bozorgasl and Chen, 2024].",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 220.5,
+          "y": 365.07,
+          "width": 318.23,
+          "height": 9.65
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 375.98,
+          "width": 415.13,
+          "height": 9.65
+        }
+      ]
+    },
+    {
+      "id": "s144",
+      "section_id": null,
+      "kind": "caption",
+      "text": "We later experimented with these variants to determine how each performed when integrated into SGCN.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 491.11,
+          "y": 376.3,
+          "width": 48.89,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 387.21,
+          "width": 375.02,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s145",
+      "section_id": null,
+      "kind": "caption",
+      "text": "As an illustration, Figure 1 depicts both the SGCN and the KAN-enhanced SGCN starting from l = 1.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 449.57,
+          "y": 387.21,
+          "width": 90.43,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 397.8,
+          "width": 325.93,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s146",
+      "section_id": null,
+      "kind": "caption",
+      "text": "In addition, we pose the following research questions, and we answer them in Section 3:1.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 401.94,
+          "y": 398.11,
+          "width": 138.06,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 409.02,
+          "width": 212.77,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 95.41,
+          "y": 430.0,
+          "width": 7.47,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s147",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Does incorporating the KAN layer into the signed graph convolutional network improve the clustering quality when using Kmeans++ on the embeddings? 2. Do the embeddings generated from integrating the KAN layer into SGCN increase the predictive power of logistic regression for sign classification?",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 107.87,
+          "y": 430.0,
+          "width": 432.14,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 107.87,
+          "y": 440.91,
+          "width": 174.22,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 95.41,
+          "y": 455.64,
+          "width": 444.59,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 107.87,
+          "y": 466.55,
+          "width": 164.77,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s148",
+      "section_id": null,
+      "kind": "caption",
+      "text": "3. How efficient is KASGCN compared to SGCN? 4. How similar do SGCN and KASGCN produce the embeddings? 5. Does integrating other KAN variants into SGCN perform just as well as integrating the original KAN layer? 2 Proof Of Concept Setup 2.1 Setup The operating system used for the experiments is Linux Ubuntu 20.04.3, running on the 11th Gen Intel(R) Core(TM) i9-11900K @ 3.50GHz with 16 physical cores.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 95.41,
+          "y": 481.29,
+          "width": 204.54,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 95.41,
+          "y": 496.02,
+          "width": 267.88,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 95.41,
+          "y": 510.76,
+          "width": 443.55,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 537.24,
+          "width": 140.25,
+          "height": 10.75
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 561.59,
+          "width": 46.77,
+          "height": 8.96
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 581.95,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 592.86,
+          "width": 188.57,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s149",
+      "section_id": null,
+      "kind": "caption",
+      "text": "It is one socket, with two threads per core and eight cores per socket.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 264.01,
+          "y": 592.86,
+          "width": 275.99,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s150",
+      "section_id": null,
+      "kind": "caption",
+      "text": "The architecture is X86 x64.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 603.77,
+          "width": 116.18,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s151",
+      "section_id": null,
+      "kind": "caption",
+      "text": "The GPU is Nvidia GeForce RTX 3070 and has 8GB of memory.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 192.65,
+          "y": 603.77,
+          "width": 264.86,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s152",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Its driver version is 495.29.05, and the CUDA version is 11.5.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 461.98,
+          "y": 603.77,
+          "width": 78.03,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 614.68,
+          "width": 167.01,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s153",
+      "section_id": null,
+      "kind": "caption",
+      "text": "The cache configuration is L1d : 384 KiB, L1i : 256 KiB, L2 : 4 MiB, L3 : 16 MiB.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 242.08,
+          "y": 614.68,
+          "width": 297.92,
+          "height": 8.64
+        },
+        {
+          "page": 4,
+          "x": 72.0,
+          "y": 625.59,
+          "width": 33.22,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s154",
+      "section_id": null,
+      "kind": "caption",
+      "text": "The CPU op is 32-bit and 64-bit.",
+      "boxes": [
+        {
+          "page": 4,
+          "x": 107.71,
+          "y": 625.59,
+          "width": 130.9,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s155",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Figure 2: The embedding generation time of SGCN and KASGCN with varying aggregator layers.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 109.47,
+          "y": 301.54,
+          "width": 393.06,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s156",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Figure 3: t-SNE visualizations of the embeddings generated by SGCN (Red) and KASGCN (Blue) for different signed graphs.",
+      "boxes": [
+        {
+          "page": 8,
+          "x": 72.0,
+          "y": 448.78,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 8,
+          "x": 72.0,
+          "y": 459.68,
+          "width": 29.05,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s157",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Konect plus WikiRFA and PPI properties.Vertices, edges, and cycles represent the signed graph, not just the largest connected component (LCC).The rest of the metrics correspond to the LCC.Graph Vertices Edges Cycles Density Triads Avg Deg.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 107.22,
+          "y": 79.28,
+          "width": 432.79,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 72.0,
+          "y": 90.19,
+          "width": 335.17,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 115.75,
+          "y": 104.47,
+          "width": 261.06,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s158",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Median deg.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 378.8,
+          "y": 104.47,
+          "width": 52.43,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s159",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Max deg.",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 433.23,
+          "y": 104.47,
+          "width": 39.14,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s160",
+      "section_id": null,
+      "kind": "caption",
+      "text": "% of e -",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 474.36,
+          "y": 104.47,
+          "width": 27.89,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 502.25,
+          "y": 102.97,
+          "width": 6.23,
+          "height": 6.12
+        }
+      ]
+    },
+    {
+      "id": "s161",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinAlpha 3,775 14,120 10,346 < 0.01 22,153 | 7.48 | 2 | 511 | 8.39",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s162",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinOTC 5,875 21,489 15,615 0.01 | 33,493 | 7.31 | 2 | 795 | 13.57",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s163",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiRFA | 7,634 167,936 160,303 < 0.01 1,240,033 43.99 | 13 | 1,223 | 22.98",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s164",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiElec | 7,066 100,667 93,602 < 0.01 607,279 28.49 | 4 | 1,065 | 21.94",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s165",
+      "section_id": null,
+      "kind": "table",
+      "text": "Chess | 7,115 55,779 48,665 < 0.01 108,584 15.67 | 7 | 181 | 24.15",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s166",
+      "section_id": null,
+      "kind": "table",
+      "text": "Congress | 219 | 521 | 303 | 0.021 | 212 | 4.71 | 3 | 33 | 20.34",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s167",
+      "section_id": null,
+      "kind": "table",
+      "text": "PPI | 3,058 11,860 8,803 < 0.01 3,837 | 3.87 | 2 | 55 | 32.5",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 103.02,
+          "y": 120.45,
+          "width": 399.86,
+          "height": 74.41
+        }
+      ]
+    },
+    {
+      "id": "s168",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Average pos in and neg out over 10 runs for SGCN and KASGCN node embeddings using Kmeans++ clustering (K = 10).",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 110.52,
+          "y": 505.61,
+          "width": 429.48,
+          "height": 8.96
+        },
+        {
+          "page": 6,
+          "x": 72.0,
+          "y": 518.82,
+          "width": 83.33,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s169",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Gain is computed using 100•(Q KASGCN -Q SGCN )",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 158.42,
+          "y": 519.14,
+          "width": 94.37,
+          "height": 8.64
+        },
+        {
+          "page": 6,
+          "x": 256.47,
+          "y": 516.03,
+          "width": 93.49,
+          "height": 6.73
+        }
+      ]
+    },
+    {
+      "id": "s170",
+      "section_id": null,
+      "kind": "table",
+      "text": "Q SGCN | .",
+      "boxes": [
+        {
+          "page": 6,
+          "x": 289.32,
+          "y": 519.14,
+          "width": 64.33,
+          "height": 11.89
+        }
+      ]
+    },
+    {
+      "id": "s171",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Average pos in and neg out over 10 runs for SGCN and KASGCN node embeddings using Kmeans++ clustering (K = 15).",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 110.52,
+          "y": 78.96,
+          "width": 429.48,
+          "height": 8.96
+        },
+        {
+          "page": 7,
+          "x": 72.0,
+          "y": 92.18,
+          "width": 83.33,
+          "height": 8.96
+        }
+      ]
+    },
+    {
+      "id": "s172",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Gain is computed using 100•(Q KASGCN -Q SGCN )",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 158.42,
+          "y": 92.5,
+          "width": 94.37,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 256.47,
+          "y": 89.39,
+          "width": 93.49,
+          "height": 6.73
+        }
+      ]
+    },
+    {
+      "id": "s173",
+      "section_id": null,
+      "kind": "table",
+      "text": "Q SGCN | .",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 289.32,
+          "y": 92.5,
+          "width": 64.33,
+          "height": 11.89
+        }
+      ]
+    },
+    {
+      "id": "s174",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Average AUC and F1 score over 10 runs for SGCN and KASGCN node embeddings using Multinomial Logistic Regression with random 0.2 test size split.",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 110.42,
+          "y": 234.31,
+          "width": 429.59,
+          "height": 8.64
+        },
+        {
+          "page": 7,
+          "x": 72.0,
+          "y": 245.22,
+          "width": 203.8,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "s175",
+      "section_id": null,
+      "kind": "table",
+      "text": "GNN | SGCN | KASGCN |  | Gain | ",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s176",
+      "section_id": null,
+      "kind": "table",
+      "text": "Metric | AUC | F1 | AUC | F1 | AUC | F1",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s177",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinAlpha 0.783 ± 0.014 | 0.721 ± 0.042 | 0.799 ± 0.022 0.690 ± 0.094 | 2.04% -4.29%",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s178",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinOTC | 0.840 ± 0.005 | 0.792 ± 0.014 0.859 ± 0.0075 0.761 ± 0.068 | 2.26% -3.91%",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s179",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiElec | 0.809 ± 0.0044 0.781 ± 0.0087 0.837 ± 0.0045 0.787 ± 0.032 | 3.46% | 0.76%",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s180",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiRFA | 0.820 ± 0.0031 0.7623 ± 0.014 0.830 ± 0.0037 0.759 ± 0.017 | 1.21% | -0.434",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s181",
+      "section_id": null,
+      "kind": "table",
+      "text": "Chess | 0.542 ± 0.005 | 0.612 ± 0.017 0.548 ± 0.0064 0.625 ± 0.041 | 1.10% | 2.12%",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s182",
+      "section_id": null,
+      "kind": "table",
+      "text": "Congress | 0.570 ± 0.055 | 0.63 ± 0.058 | 0.499 ± 0.046 0.602 ± 0.077 -12.29% -4.44%",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s183",
+      "section_id": null,
+      "kind": "table",
+      "text": "PPI | 0.679 ± 0.015 | 0.614 ± 0.067 | 0.692 ± 0.015 0.654 ± 0.037 | 1.91% | 6.51%",
+      "boxes": [
+        {
+          "page": 7,
+          "x": 88.56,
+          "y": 259.2,
+          "width": 434.89,
+          "height": 101.3
+        }
+      ]
+    },
+    {
+      "id": "s184",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Average pos in",
+      "boxes": [
+        {
+          "page": 11,
+          "x": 242.24,
+          "y": 652.16,
+          "width": 8.64,
+          "height": 32.86
+        },
+        {
+          "page": 11,
+          "x": 241.92,
+          "y": 635.33,
+          "width": 8.74,
+          "height": 14.51
+        },
+        {
+          "page": 11,
+          "x": 241.92,
+          "y": 622.33,
+          "width": 8.74,
+          "height": 9.41
+        }
+      ]
+    },
+    {
+      "id": "s185",
+      "section_id": null,
+      "kind": "table",
+      "text": "and neg out over 10 runs for KASGCN, FourierKASGCN, LaplaceKASGCN, and WaveletKASGCN node embeddings using Kmeans++ | clustering (K = 5). Numbers in bold indicate that the clustering quality Q is the highest. | GNN KASGCN FourierKASGCN LaplaceKASGCN WaveletKASGCN | Quality pos neg pos neg pos neg pos neg | BitcoinAlpha 0.4093 ± 0.011 0.659 ± 0.05 0.37 ± 0.0003 0.766 ± 0.0007 0.462 ± 0.014 0.716 ± 0.019 0.3879 ± 0.0016 0.786 ± 0.0011 | BitcoinOTC 0.523 ± 0.00033 0.707 ± 0.001 0.515 ± 0.004 0.841 ± 0.0004 0.467 ± 0.019 0.721 ± 0.062 0.511 ± 0.0003 0.833 ± 0.0001 | WikiElec 0.5221 ± 0.004 0.784 ± 0.0009 0.546 ± 0.0021 0.7844 ± 0.0014 0.418 ± 0.0071 0.725 ± 0.003 0.472 ± 0.0 0.781 ± 0.0 | WikiRFA 0.391 ± 0.0010 0.795 ± 0.0006 0.425 ± 0.0003 0.807 ± 0.0003 0.409 ± 0.0062 0.708 ± 0.010 0.422 ± 0.019 0.853 ± 0.0016 | Chess 0.409 ± 0.015 0.619 ± 0.034 0.380 ± 0.091 0.759 ± 0.017 0.551 ± 0.007 0.451 ± 0.0078 0.345 ± 0.00043 0.717 ± 0.00039 | Congress 0.566 ± 0.029 0.9584 ± 0.017 0.554 ± 0.031 0.988 ± 0.0097 0.290 ± 0.054 0.647 ± 0.033 0.648 ± 0.057 0.977 ± 0.014 | PPI 0.385 ± 0.084 0.87 ± 0.0109 0.445 ± 0.015 0.781 ± 0.0027 0.838 ± 0.061 0.223 ± 0.101 0.365 ± 0.0023 0.810 ± 0.0067",
+      "boxes": [
+        {
+          "page": 11,
+          "x": 241.92,
+          "y": 72.0,
+          "width": 126.51,
+          "height": 648.0
+        }
+      ]
+    },
+    {
+      "id": "s186",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Average pos in and neg out over 10 runs for KASGCN, FourierKASGCN, LaplaceKASGCN, and WaveletKASGCN node embeddings using Kmeans++ clustering (K = 15).",
+      "boxes": [
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 652.16,
+          "width": 8.64,
+          "height": 32.86
+        },
+        {
+          "page": 13,
+          "x": 241.92,
+          "y": 635.33,
+          "width": 8.74,
+          "height": 14.51
+        },
+        {
+          "page": 13,
+          "x": 241.92,
+          "y": 622.33,
+          "width": 8.74,
+          "height": 9.41
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 605.62,
+          "width": 8.64,
+          "height": 14.39
+        },
+        {
+          "page": 13,
+          "x": 241.92,
+          "y": 587.92,
+          "width": 8.74,
+          "height": 15.37
+        },
+        {
+          "page": 13,
+          "x": 241.92,
+          "y": 569.84,
+          "width": 8.74,
+          "height": 14.13
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 550.11,
+          "width": 8.64,
+          "height": 17.4
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 537.82,
+          "width": 8.64,
+          "height": 9.96
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 518.34,
+          "width": 8.64,
+          "height": 17.16
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 504.39,
+          "width": 8.64,
+          "height": 11.62
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 458.61,
+          "width": 8.64,
+          "height": 43.45
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 383.65,
+          "width": 8.64,
+          "height": 72.63
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 306.35,
+          "width": 8.64,
+          "height": 74.98
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 289.64,
+          "width": 8.64,
+          "height": 14.39
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 214.3,
+          "width": 8.64,
+          "height": 73.01
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 192.61,
+          "width": 8.64,
+          "height": 19.37
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 142.13,
+          "width": 8.64,
+          "height": 48.15
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 118.21,
+          "width": 8.64,
+          "height": 21.59
+        },
+        {
+          "page": 13,
+          "x": 242.24,
+          "y": 72.0,
+          "width": 8.64,
+          "height": 43.89
+        },
+        {
+          "page": 13,
+          "x": 253.15,
+          "y": 680.71,
+          "width": 8.64,
+          "height": 39.29
+        },
+        {
+          "page": 13,
+          "x": 253.15,
+          "y": 666.44,
+          "width": 8.64,
+          "height": 11.78
+        },
+        {
+          "page": 13,
+          "x": 252.83,
+          "y": 655.21,
+          "width": 8.74,
+          "height": 7.75
+        },
+        {
+          "page": 13,
+          "x": 252.83,
+          "y": 636.67,
+          "width": 8.74,
+          "height": 15.77
+        }
+      ]
+    },
+    {
+      "id": "s187",
+      "section_id": null,
+      "kind": "table",
+      "text": "Numbers in bold indicate that the clustering quality Q is the highest. | GNN KASGCN FourierKASGCN LaplaceKASGCN WaveletKASGCN | Quality pos neg pos neg pos neg pos neg | BitcoinAlpha 0.245 ± 0.0074 0.921 ± 0.006 0.219 ± 0.0095 0.932 ± 0.0074 0.277 ± 0.024 0.837 ± 0.020 0.227 ± 0.0089 0.933 ± 0.0053 | BitcoinOTC 0.380 ± 0.17 0.93 ± 0.014 0.317 ± 0.012 0.965 ± 0.0041 0.316 ± 0.020 0.874 ± 0.011 0.337 ± 0.0136 0.954 ± 0.0041 | WikiElec 0.227 ± 0.0090 0.942 ± 0.04 0.214 ± 0.0081 0.946 ± 0.0042 0.189 ± 0.018 0.866 ± 0.010 0.166 ± 0.0081 0.937 ± 0.0012 | WikiRFA 0.203 ± 0.0051 0.9470 ± 0.0050 0.194 ± 0.0074 0.954 ± 0.0018 0.301 ± 0.0071 0.813 ± 0.0072 0.198 ± 0.0090 0.948 ± 0.0028 | Chess 0.181 ± 0.0024 0.922 ± 0.0020 0.191 ± 0.0035 0.919 ± 0.0020 0.374 ± 0.018 0.631 ± 0.019 0.178 ± 0.0048 0.912 ± 0.0026 | Congress 0.392 ± 0.034 0.996 ± 0.0048 0.4286 ± 0.029 0.999 ± 0.0029 0.149 ± 0.023 0.906 ± 0.029 0.439 ± 0.0300 1.0 ± 0.0 | PPI 0.309 ± 0.031 0.959 ± 0.0049 0.307 ± 0.023 0.909 ± 0.006 0.684 ± 0.026 0.458 ± 0.0396 0.251 ± 0.014 0.941 ± 0.0020",
+      "boxes": [
+        {
+          "page": 13,
+          "x": 252.76,
+          "y": 99.75,
+          "width": 115.68,
+          "height": 592.49
+        }
+      ]
+    },
+    {
+      "id": "s188",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Average AUC and F1 score over 10 runs for KASGCN, FourierKASGCN, LaplaceKASGCN, and WaveletKASGCN node embeddings using Multinomial Logistic Regression with random 0.2 test size split.",
+      "boxes": [
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 652.11,
+          "width": 8.64,
+          "height": 32.86
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 629.27,
+          "width": 8.64,
+          "height": 20.48
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 612.51,
+          "width": 8.64,
+          "height": 14.39
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 599.63,
+          "width": 8.64,
+          "height": 10.52
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 576.25,
+          "width": 8.64,
+          "height": 21.02
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 556.47,
+          "width": 8.64,
+          "height": 17.4
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 544.15,
+          "width": 8.64,
+          "height": 9.96
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 524.63,
+          "width": 8.64,
+          "height": 17.16
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 510.65,
+          "width": 8.64,
+          "height": 11.62
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 464.84,
+          "width": 8.64,
+          "height": 43.45
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 389.85,
+          "width": 8.64,
+          "height": 72.63
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 312.51,
+          "width": 8.64,
+          "height": 74.98
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 295.75,
+          "width": 8.64,
+          "height": 14.39
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 220.39,
+          "width": 8.64,
+          "height": 73.01
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 198.66,
+          "width": 8.64,
+          "height": 19.37
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 148.14,
+          "width": 8.64,
+          "height": 48.15
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 124.19,
+          "width": 8.64,
+          "height": 21.59
+        },
+        {
+          "page": 14,
+          "x": 242.24,
+          "y": 72.0,
+          "width": 8.64,
+          "height": 49.82
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 687.34,
+          "width": 8.64,
+          "height": 32.66
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 640.73,
+          "width": 8.64,
+          "height": 44.12
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 620.52,
+          "width": 8.64,
+          "height": 17.71
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 587.6,
+          "width": 8.64,
+          "height": 30.44
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 572.65,
+          "width": 8.64,
+          "height": 12.45
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 556.32,
+          "width": 8.64,
+          "height": 13.84
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 538.34,
+          "width": 8.64,
+          "height": 15.49
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 516.2,
+          "width": 8.64,
+          "height": 19.66
+        }
+      ]
+    },
+    {
+      "id": "s189",
+      "section_id": null,
+      "kind": "caption",
+      "text": "Numbers in bold indicate that the AUC/F1 metric is the highest.",
+      "boxes": [
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 476.58,
+          "width": 8.64,
+          "height": 36.52
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 466.34,
+          "width": 8.64,
+          "height": 7.75
+        },
+        {
+          "page": 14,
+          "x": 252.76,
+          "y": 445.02,
+          "width": 8.96,
+          "height": 18.83
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 410.99,
+          "width": 8.64,
+          "height": 31.54
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 393.56,
+          "width": 8.64,
+          "height": 14.94
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 378.89,
+          "width": 8.64,
+          "height": 12.17
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 342.63,
+          "width": 8.64,
+          "height": 33.77
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 314.68,
+          "width": 8.64,
+          "height": 25.45
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 305.55,
+          "width": 8.64,
+          "height": 6.65
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 290.88,
+          "width": 8.64,
+          "height": 12.17
+        },
+        {
+          "page": 14,
+          "x": 253.15,
+          "y": 257.12,
+          "width": 8.64,
+          "height": 31.27
+        }
+      ]
+    },
+    {
+      "id": "s190",
+      "section_id": null,
+      "kind": "table",
+      "text": "LaplaceKASGCN WaveletKASGCN | AUC F1 AUC F1 | 0.19 0.582 ± 0.039 0.095 ± 0.302 0.782 ± 0.020 0.705 ± 0.090 | 0.082 0.513 ± 0.046 0.0020 ± 0.0044 0.855 ± 0.0088 0.773 ± 0.065 | 0.046 0.488 ± 0.024 0.00030 ± 0.0009 0.828 ± 0.015 0.800 ± 0.043 | 0.030 0.496 ± 0.02 0.0 ± 0.0 0.836 ± 0.0046 0.765 ± 0.0338 | 0.068 0.508 ± 0.012 0.018 ± 0.035 0.552 ± 0.0049 0.610 ± 0.047 | 0.074 0.493 ± 0.086 0.013 ± 0.042 0.563 ± 0.083 0.590 ± 0.069 | 0.071 0.513 ± 0.030 0.0 ± 0.0 0.694 ± 0.016 0.641 ± 0.047",
+      "boxes": [
+        {
+          "page": 14,
+          "x": 267.13,
+          "y": 104.74,
+          "width": 101.3,
+          "height": 582.53
+        }
+      ]
+    },
+    {
+      "id": "s191",
+      "section_id": null,
+      "kind": "table",
+      "text": "FourierKASGCN | AUC F1 | 0.094 0.796 ± 0.018 0.656 ± | 0.068 0.848 ± 0.0082 0.785 ± | 0.032 0.819 ± 0.014 0.793 ± | 0.017 0.830 ± 0.0040 0.782 ± | 0.041 0.550 ± 0.0059 0.635 ± | 0.077 0.544 ± 0.059 0.656 ± | 0.037 0.689 ± 0.019 0.661 ±",
+      "boxes": [
+        {
+          "page": 14,
+          "x": 267.13,
+          "y": 104.74,
+          "width": 101.3,
+          "height": 582.53
+        }
+      ]
+    },
+    {
+      "id": "s192",
+      "section_id": null,
+      "kind": "table",
+      "text": "GNN KASGCN | Quality AUC F1 | BitcoinAlpha 0.799 ± 0.022 0.690 ± | BitcoinOTC 0.859 ± 0.0075 0.761 ± | WikiElec 0.837 ± 0.0045 0.787 ± | WikiRFA 0.830 ± 0.0037 0.759 ± | Chess 0.548 ± 0.0064 0.625 ± | Congress 0.499 ± 0.046 0.602 ± | PPI 0.692 ± 0.015 0.654 ±",
+      "boxes": [
+        {
+          "page": 14,
+          "x": 267.13,
+          "y": 104.74,
+          "width": 101.3,
+          "height": 582.53
+        }
+      ]
+    },
+    {
+      "id": "lt7-0-0",
+      "section_id": null,
+      "kind": "table",
+      "text": "QSGCN | .",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-1",
+      "section_id": null,
+      "kind": "table",
+      "text": "GNN | SGCN | KASGCN",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-2",
+      "section_id": null,
+      "kind": "table",
+      "text": "Quality | pos | neg | pos | neg | Gain",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-3",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinAlpha | 0.2266 ± 0.010 | 0.943 ± 0.0070 | 0.245 ± 0.0074 | 0.921 ± 0.006 | -0.30%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-4",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinOTC | 0.335 ± 0.015 | 0.956 ± 0.005 | 0.380 ± 0.17 | 0.93 ± 0.014 | 1.47%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-5",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiElec | 0.249 ± 0.067 | 0.935 ± 0.002 | 0.227 ± 0.0090 | 0.942 ± 0.04 | -1.20%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-6",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiRFA | 0.197 ± 0.0072 | 0.9407 ± 0.037 | 0.203 ± 0.0051 | 0.9470 ± 0.0050 | 1.08%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-7",
+      "section_id": null,
+      "kind": "table",
+      "text": "Chess | 0.195 ± 0.003 | 0.853 ± 0.0033 | 0.181 ± 0.0024 | 0.922 ± 0.0020 | 5.24%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-8",
+      "section_id": null,
+      "kind": "table",
+      "text": "Congress | 0.438 ± 0.027 | 0.997 ± 0.0045 | 0.392 ± 0.034 | 0.996 ± 0.0048 | -3.27%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-0-9",
+      "section_id": null,
+      "kind": "table",
+      "text": "PPI | 0.333 ± 0.01 | 0.833 ± 0.0064 | 0.309 ± 0.031 | 0.959 ± 0.0049 | 8.74",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-0",
+      "section_id": null,
+      "kind": "table",
+      "text": "GNN | SGCN | KASGCN | Gain",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-1",
+      "section_id": null,
+      "kind": "table",
+      "text": "Metric | AUC | F1 | AUC | F1 | AUC | F1",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-2",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinAlpha | 0.783 ± 0.014 | 0.721 ± 0.042 | 0.799 ± 0.022 | 0.690 ± 0.094 | 2.04% | -4.29%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-3",
+      "section_id": null,
+      "kind": "table",
+      "text": "BitcoinOTC | 0.840 ± 0.005 | 0.792 ± 0.014 | 0.859 ± 0.0075 | 0.761 ± 0.068 | 2.26% | -3.91%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-4",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiElec | 0.809 ± 0.0044 | 0.781 ± 0.0087 | 0.837 ± 0.0045 | 0.787 ± 0.032 | 3.46% | 0.76%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-5",
+      "section_id": null,
+      "kind": "table",
+      "text": "WikiRFA | 0.820 ± 0.0031 | 0.7623 ± 0.014 | 0.830 ± 0.0037 | 0.759 ± 0.017 | 1.21% | -0.434",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-6",
+      "section_id": null,
+      "kind": "table",
+      "text": "Chess | 0.542 ± 0.005 | 0.612 ± 0.017 | 0.548 ± 0.0064 | 0.625 ± 0.041 | 1.10% | 2.12%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-7",
+      "section_id": null,
+      "kind": "table",
+      "text": "Congress | 0.570 ± 0.055 | 0.63 ± 0.058 | 0.499 ± 0.046 | 0.602 ± 0.077 | -12.29% | -4.44%",
+      "boxes": []
+    },
+    {
+      "id": "lt7-1-8",
+      "section_id": null,
+      "kind": "table",
+      "text": "PPI | 0.679 ± 0.015 | 0.614 ± 0.067 | 0.692 ± 0.015 | 0.654 ± 0.037 | 1.91% | 6.51%",
+      "boxes": []
+    }
+  ],
+  "bibliography": [
+    {
+      "id": "b0",
+      "raw": "References [Abelson and Rosenberg, 1958] Abelson, R. P. and Rosenberg, M. J. (1958). An Empirical Study of logic model psycho symbolic. Behavioral Science, 3(1):1-13.",
+      "title": "An Empirical Study of logic model psycho symbolic",
+      "authors": [
+        "R P Rosenberg ; Abelson",
+        "M J Rosenberg"
+      ],
+      "year": 1958,
+      "venue": "Behavioral Science",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 224.71,
+          "width": 55.54,
+          "height": 10.75
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 250.08,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 260.81,
+          "width": 210.42,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b1",
+      "raw": "Amelkin and Singh, 2019] Amelkin, V. and Singh, A. K. (2019). An Empirical Study of networks opinion recommendation social. In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, KDD '19, page 677-685, New York, NY, USA. Association for Computing Machinery. [Cartwright and Harary, 1956] Cartwright, D. and Harary, F. (1956). Structural balance: a generalization of Heider's theory. Psychological Rev., 63:277-293.",
+      "title": "An Empirical Study of networks opinion recommendation social",
+      "authors": [
+        "Amelkin Singh ; Amelkin",
+        "V Singh",
+        "A K ; Cartwright",
+        "D Harary",
+        "F"
+      ],
+      "year": 1956,
+      "venue": "Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, KDD '19",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 276.61,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 287.34,
+          "width": 456.39,
+          "height": 8.82
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 298.25,
+          "width": 404.03,
+          "height": 8.82
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 314.06,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 324.79,
+          "width": 161.19,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "raw": "Harary and Cartwright, 1968] Harary, F. and Cartwright, D. (1968). On the coloring of signed graphs. Elemente der Mathematik, 23:85-89.",
+      "title": "On the coloring of signed graphs",
+      "authors": [
+        "Harary",
+        "F Cartwright ; Harary",
+        "D Cartwright"
+      ],
+      "year": 1968,
+      "venue": "Elemente der Mathematik",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 340.41,
+          "width": 468.0,
+          "height": 8.82
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 351.32,
+          "width": 92.7,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "raw": "Garimella et al., 2021] Garimella, K., Smith, T., Weiss, R., and West, R. (2021). Political polarization in online news consumption. In Proceedings of the International AAAI Conference on Web and Social Media, volume 15, pages 152-162.",
+      "title": "Political polarization in online news consumption",
+      "authors": [
+        "Garimella"
+      ],
+      "year": 2021,
+      "venue": "Proceedings of the International AAAI Conference on Web and Social Media",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 367.12,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 377.85,
+          "width": 456.39,
+          "height": 8.82
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 388.94,
+          "width": 37.36,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "raw": "Kunegis, 2013] Kunegis, J. (2013). Konect: the koblenz network collection. In Proceedings of the 22nd international conference on world wide web, pages 1343-1350.",
+      "title": "Konect: the koblenz network collection",
+      "authors": [
+        "J Kunegis ; Kunegis"
+      ],
+      "year": 2013,
+      "venue": "Proceedings of the 22nd international conference on world wide web",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 404.38,
+          "width": 468.0,
+          "height": 8.82
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 415.29,
+          "width": 198.86,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b5",
+      "raw": "He et al., 2022] He, Y., Reinert, G., Wang, S., and Cucuringu, M. (2022). Sssnet: Semi-supervised signed network clustering.",
+      "title": "Sssnet: Semi-supervised signed network clustering",
+      "authors": [
+        "He"
+      ],
+      "year": 2022,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 431.09,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 442.0,
+          "width": 41.78,
+          "height": 8.64
+        }
+      ]
+    },
+    {
+      "id": "b6",
+      "raw": "Interian et al., 2022] Interian, R., Marzo, R. G., Mendoza, I., and Ribeiro, C. C. (2022). Network polarization, filter bubbles, and echo chambers: An annotated review of measures, models, and case studies. arXiv preprint arXiv:2207.13799.",
+      "title": "Network polarization, filter bubbles, and echo chambers: An annotated review of measures, models, and case studies",
+      "authors": [
+        "Interian"
+      ],
+      "year": 2022,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": "2207.13799",
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 457.62,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 468.35,
+          "width": 456.38,
+          "height": 8.82
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 479.26,
+          "width": 75.27,
+          "height": 8.59
+        }
+      ]
+    },
+    {
+      "id": "b7",
+      "raw": "Derr et al., 2020] Derr, T., Wang, Z., Dacon, J., and Tang, J. (2020). Link and interaction polarity predictions in signed networks. Social Network Analysis and Mining, 10(1):1-14.",
+      "title": "Link and interaction polarity predictions in signed networks",
+      "authors": [
+        "Derr"
+      ],
+      "year": 2020,
+      "venue": "Social Network Analysis and Mining",
+      "doi": null,
+      "arxiv_id": null,
+      "url": null,
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 495.06,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 505.79,
+          "width": 268.87,
+          "height": 8.82
+        }
+      ]
+    },
+    {
+      "id": "b8",
+      "raw": "Derr et al., 2018] Derr, T., Ma, Y., and Tang, J. (2018). Signed Graph Convolutional Network. https://arxiv. org/abs/1808.06354.",
+      "title": "Signed Graph Convolutional Network",
+      "authors": [
+        "Derr"
+      ],
+      "year": 2018,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/1808.06354",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 521.6,
+          "width": 468.0,
+          "height": 8.7
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 532.9,
+          "width": 96.64,
+          "height": 8.3
+        }
+      ]
+    },
+    {
+      "id": "b9",
+      "raw": "Bresson et al., 2024] Bresson, R., Nikolentzos, G., Panagopoulos, G., Chatzianastasis, M., Pang, J., and Vazirgiannis, M. (2024). KAGNNs: Kolmogorov-Arnold Networks meet Graph Learning. https://arxiv.org/abs/2406. 18380. [Liu et al., 2024] Liu, Z., Wang, Y., Vaidya, S., Ruehle, F., Halverson, J., Soljačić, M., Hou, T. Y., and Tegmark, M. (2024). KAN: Kolmogorov-Arnold Networks. https://arxiv.org/abs/2404.19756.",
+      "title": "KAGNNs: Kolmogorov-Arnold Networks meet Graph Learning",
+      "authors": [
+        "Bresson"
+      ],
+      "year": 2024,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2404.19756",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 548.13,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 559.04,
+          "width": 456.38,
+          "height": 8.7
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 570.34,
+          "width": 28.64,
+          "height": 8.3
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 585.57,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 596.48,
+          "width": 358.5,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b10",
+      "raw": "Xu et al., 2024] Xu, J., Chen, Z., Li, J., Yang, S., Wang, W., Hu, X., and Ngai, E. C. H. (2024). FourierKAN-GCF: Fourier Kolmogorov-Arnold Network -An Effective and Efficient Feature Transformation for Graph Collaborative Filtering. https://arxiv.org/abs/2406.01034.",
+      "title": "FourierKAN-GCF: Fourier Kolmogorov-Arnold Network -An Effective and Efficient Feature Transformation for Graph Collaborative Filtering",
+      "authors": [
+        "Xu"
+      ],
+      "year": 2024,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2406.01034",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 612.1,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 623.01,
+          "width": 456.39,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 633.92,
+          "width": 210.26,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b11",
+      "raw": "Yin et al., 2024] Yin, B., et al. (2024). Toy-KAN. https://github.com/byin-cwi/Toy-KAN, Accessed: 2024- 12-08. [Bozorgasl and Chen, 2024] Bozorgasl, Z., and Chen, H. (2024). Wav-KAN: Wavelet Kolmogorov-Arnold Networks. https://arxiv.org/abs/2405.12832.",
+      "title": "Toy-KAN",
+      "authors": [
+        "Yin"
+      ],
+      "year": 2024,
+      "venue": "Wav-KAN",
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2405.12832",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 649.54,
+          "width": 468.0,
+          "height": 8.7
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 660.45,
+          "width": 25.73,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 72.0,
+          "y": 676.07,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 687.38,
+          "width": 169.86,
+          "height": 8.3
+        }
+      ]
+    },
+    {
+      "id": "b12",
+      "raw": "Blealtan, 2024] Blealtan, (2024). Efficient-KAN: An Efficient Implementation of Kolmogorov-Arnold Network. https://github.com/Blealtan/efficient-kan, GitHub repository.",
+      "title": "Efficient-KAN: An Efficient Implementation of Kolmogorov-Arnold Network",
+      "authors": [
+        "Blealtan"
+      ],
+      "year": 2024,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://github.com/Blealtan/efficient-kan",
+      "boxes": [
+        {
+          "page": 9,
+          "x": 75.9,
+          "y": 702.61,
+          "width": 464.1,
+          "height": 8.64
+        },
+        {
+          "page": 9,
+          "x": 83.62,
+          "y": 713.51,
+          "width": 294.54,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b13",
+      "raw": "Li et al., 2024] Li, L., Zhang, Y., Wang, G., and Xia, K. (2024). KA-GNN: Kolmogorov-Arnold Graph Neural Networks for Molecular Property Prediction. https://arxiv.org/abs/2410.11323. [Liu et al., 2024] Liu, Z., Ma, P., Wang, Y., Matusik, W., and Tegmark, M. (2024). KAN 2.0: Kolmogorov-Arnold Networks Meet Science. https://arxiv.org/abs/2408.10205.",
+      "title": "KA-GNN: Kolmogorov-Arnold Graph Neural Networks for Molecular Property Prediction",
+      "authors": [
+        "Li"
+      ],
+      "year": 2024,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2408.10205",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 75.48,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 86.39,
+          "width": 352.37,
+          "height": 8.7
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 101.28,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 112.19,
+          "width": 271.01,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b14",
+      "raw": "Dong et al., 2024] Dong, C., Zheng, L., and Chen, W. (2024). Kolmogorov-Arnold Networks (KAN) for Time Series Classification and Robust Analysis. https://arxiv.org/abs/2408.07314. [Moradi et al., 2024] Moradi, M., Panahi, S., Bollt, E., and Lai, Y.-C. (2024). Kolmogorov-Arnold Network Autoen- coders. https://arxiv.org/abs/2410.02077.",
+      "title": "Kolmogorov-Arnold Networks (KAN)",
+      "authors": [
+        "Dong"
+      ],
+      "year": 2024,
+      "venue": "Kolmogorov-Arnold Network Autoencoders",
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2410.02077",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 127.08,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 137.99,
+          "width": 314.95,
+          "height": 8.7
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 152.89,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 163.8,
+          "width": 201.94,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b15",
+      "raw": "Lu and Zhan, 2024] Lu, Y., and Zhan, F. (2024). Kolmogorov Arnold Networks in Fraud Detection: Bridging the Gap Between Theory and Practice. https://arxiv.org/abs/2408.10263. [Anonymous, 2024] Anonymous, (2024). GraphKAN: Graph Kolmogorov Arnold Network for Small Molecule- Protein Interaction Predictions. In ICML'24 Workshop ML for Life and Material Science: From Theory to Industry Applications. https://openreview.net/forum?id=d5uz4wrYeg.",
+      "title": "GraphKAN: Graph Kolmogorov Arnold Network for Small Molecule-Protein Interaction Predictions",
+      "authors": [
+        "Zhan ; Lu",
+        "Y Lu",
+        "F Zhan"
+      ],
+      "year": 2024,
+      "venue": "ICML'24 Workshop ML for Life and Material Science: From Theory to Industry Applications",
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://openreview.net/forum?id=d5uz4wrYeg",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 178.69,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 189.6,
+          "width": 312.61,
+          "height": 8.7
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 204.49,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 215.22,
+          "width": 456.39,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 226.13,
+          "width": 278.61,
+          "height": 8.88
+        }
+      ]
+    },
+    {
+      "id": "b16",
+      "raw": "Cheon, 2024] Cheon, M. (2024). Kolmogorov-Arnold Network for Satellite Image Classification in Remote Sensing. https://arxiv.org/abs/2406.00600.",
+      "title": "Kolmogorov-Arnold Network for Satellite Image Classification in Remote Sensing",
+      "authors": [
+        "M Cheon ; Cheon"
+      ],
+      "year": 2024,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2406.00600",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 241.21,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 252.51,
+          "width": 169.86,
+          "height": 8.3
+        }
+      ]
+    },
+    {
+      "id": "b17",
+      "raw": "Xu, 2021] Xu, M. (2021). Understanding Graph Embedding Methods and Their Applications. SIAM Review, 63(4):825-853. https://doi.org/10.1137/20M1386062.",
+      "title": "Understanding Graph Embedding Methods and Their Applications",
+      "authors": [
+        "M Xu ; Xu"
+      ],
+      "year": 2021,
+      "venue": "SIAM Review",
+      "doi": "10.1137/20M1386062",
+      "arxiv_id": null,
+      "url": "https://doi.org/10.1137/20M1386062",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 76.5,
+          "y": 266.83,
+          "width": 463.5,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 277.92,
+          "width": 243.95,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b18",
+      "raw": "Fan et al., 2019] Fan, W., Ma, Y., Li, Q., He, Y., Zhao, E., Tang, J., and Yin, D. (2019). Graph Neural Networks for Social Recommendation. In The World Wide Web Conference, pages 417-426, San Francisco, CA, USA. Association for Computing Machinery. https://doi.org/10.1145/3308558.3313488. [Bessadok et al., 2023] Bessadok, A., Mahjoub, M. A., and Rekik, I. (2023). Graph Neural Networks in Network Neuroscience. IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(5):5833-5848. https:// doi.org/10.1109/TPAMI.2022.3209686.",
+      "title": "Graph Neural Networks for Social Recommendation",
+      "authors": [
+        "Fan"
+      ],
+      "year": 2019,
+      "venue": "The World Wide Web Conference",
+      "doi": "10.1109/TPAMI.2022.3209686",
+      "arxiv_id": null,
+      "url": "https://doi.org/10.1109/TPAMI.2022.3209686",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 292.81,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 303.54,
+          "width": 456.38,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 314.63,
+          "width": 366.03,
+          "height": 8.7
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 329.52,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 340.25,
+          "width": 456.38,
+          "height": 8.88
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 351.74,
+          "width": 180.32,
+          "height": 8.3
+        }
+      ]
+    },
+    {
+      "id": "b19",
+      "raw": "De Carlo et al., 2024] De Carlo, G., Mastropietro, A., and Anagnostopoulos, A. (2024). Kolmogorov-Arnold Graph Neural Networks. https://arxiv.org/abs/2406.18354. [Kiamari et al., 2024] Kiamari, M., Kiamari, M., and Krishnamachari, B. (2024). GKAN: Graph Kolmogorov-Arnold Networks. https://arxiv.org/abs/2406.06470.",
+      "title": "Kolmogorov-Arnold Graph Neural Networks",
+      "authors": [
+        "Carlo De"
+      ],
+      "year": 2024,
+      "venue": null,
+      "doi": null,
+      "arxiv_id": null,
+      "url": "https://arxiv.org/abs/2406.06470",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 76.98,
+          "y": 366.24,
+          "width": 463.03,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 377.15,
+          "width": 244.17,
+          "height": 8.7
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 392.04,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 402.95,
+          "width": 214.57,
+          "height": 8.7
+        }
+      ]
+    },
+    {
+      "id": "b20",
+      "raw": "Ji et al., 2024] Ji, T., Hou, Y., and Zhang, D. (2024). A Comprehensive Survey on Kolmogorov Arnold Networks (KAN). arXiv preprint arXiv:2407.11075. Available at: https://arxiv.org/abs/2407.11075. [Fong and Seidel, 1991] Fong, P. and Seidel, H.-P. (1991). Control Points for Multivariate B-Spline Surfaces over Arbitrary Triangulations. Computer Graphics Forum, 10(4):309-317. doi: 10.1111/1467-8659.1040309. [Kolmogorov, 1956] Kolmogorov, A. N. (1956). On the representation of continuous functions of several variables as superpositions of continuous functions of a smaller number of variables. Dokl. Akad. Nauk, 108(2):1956.",
+      "title": "On the representation of continuous functions of several variables as superpositions of continuous functions of a smaller number of variables",
+      "authors": [
+        "Ji"
+      ],
+      "year": 1956,
+      "venue": "A Comprehensive Survey on Kolmogorov Arnold Networks (KAN)",
+      "doi": "10.1111/1467-8659.1040309",
+      "arxiv_id": "2407.11075",
+      "url": "https://arxiv.org/abs/2407.11075",
+      "boxes": [
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 417.84,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 428.57,
+          "width": 357.33,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 443.65,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 454.38,
+          "width": 418.27,
+          "height": 8.82
+        },
+        {
+          "page": 10,
+          "x": 72.0,
+          "y": 469.45,
+          "width": 468.0,
+          "height": 8.64
+        },
+        {
+          "page": 10,
+          "x": 83.62,
+          "y": 480.18,
+          "width": 419.22,
+          "height": 8.82
+        }
+      ]
+    }
+  ],
+  "citations": [
+    {
+      "id": "c0",
+      "sentence_id": "s9",
+      "start": 105,
+      "end": 115,
+      "marker": "[Xu, 2021]",
+      "bib_ids": [
+        "b17"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c1",
+      "sentence_id": "s11",
+      "start": 123,
+      "end": 140,
+      "marker": "[Fan et al., 2019",
+      "bib_ids": [
+        "b18"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c2",
+      "sentence_id": "s11",
+      "start": 140,
+      "end": 164,
+      "marker": ", Bessadok et al., 2023]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c3",
+      "sentence_id": "s12",
+      "start": 142,
+      "end": 160,
+      "marker": "[Liu et al., 2024]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c4",
+      "sentence_id": "s14",
+      "start": 97,
+      "end": 114,
+      "marker": "[Ji et al., 2024]",
+      "bib_ids": [
+        "b20"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c5",
+      "sentence_id": "s15",
+      "start": 128,
+      "end": 195,
+      "marker": "[De Carlo et al., 2024, Kiamari et al., 2024, Bresson et al., 2024]",
+      "bib_ids": [
+        "b19",
+        "b9"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c6",
+      "sentence_id": "s19",
+      "start": 68,
+      "end": 87,
+      "marker": "Derr et al., adapts",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c7",
+      "sentence_id": "s19",
+      "start": 165,
+      "end": 184,
+      "marker": "[Derr et al., 2018]",
+      "bib_ids": [
+        "b8"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c8",
+      "sentence_id": "s22",
+      "start": 222,
+      "end": 241,
+      "marker": "[Derr et al., 2018]",
+      "bib_ids": [
+        "b8"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c9",
+      "sentence_id": "s24",
+      "start": 40,
+      "end": 69,
+      "marker": "[Abelson and Rosenberg, 1958]",
+      "bib_ids": [
+        "b0"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c10",
+      "sentence_id": "s24",
+      "start": 146,
+      "end": 161,
+      "marker": "[Cartwright and",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c11",
+      "sentence_id": "s24",
+      "start": 161,
+      "end": 202,
+      "marker": "Harary, 1956, Harary andCartwright, 1968]",
+      "bib_ids": [
+        "b1",
+        "b2"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c12",
+      "sentence_id": "s25",
+      "start": 159,
+      "end": 250,
+      "marker": "[Derr et al., 2020, Garimella et al., 2021, Interian et al., 2022, Amelkin and Singh, 2019]",
+      "bib_ids": [
+        "b7",
+        "b3",
+        "b6",
+        "b1"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c13",
+      "sentence_id": "s35",
+      "start": 223,
+      "end": 236,
+      "marker": "[Cheon, 2024]",
+      "bib_ids": [
+        "b16"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c14",
+      "sentence_id": "s36",
+      "start": 162,
+      "end": 175,
+      "marker": "[Cheon, 2024]",
+      "bib_ids": [
+        "b16"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c15",
+      "sentence_id": "s38",
+      "start": 88,
+      "end": 109,
+      "marker": "[Moradi et al., 2024]",
+      "bib_ids": [
+        "b14"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c16",
+      "sentence_id": "s39",
+      "start": 177,
+      "end": 196,
+      "marker": "[Dong et al., 2024]",
+      "bib_ids": [
+        "b14"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c17",
+      "sentence_id": "s40",
+      "start": 0,
+      "end": 18,
+      "marker": "Lu et al. assessed",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c18",
+      "sentence_id": "s40",
+      "start": 119,
+      "end": 138,
+      "marker": "[Lu and Zhan, 2024]",
+      "bib_ids": [
+        "b15"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c19",
+      "sentence_id": "s41",
+      "start": 13,
+      "end": 30,
+      "marker": "[Anonymous, 2024]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c20",
+      "sentence_id": "s43",
+      "start": 166,
+      "end": 188,
+      "marker": "[Bresson et al., 2024]",
+      "bib_ids": [
+        "b9"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c21",
+      "sentence_id": "s44",
+      "start": 0,
+      "end": 17,
+      "marker": "[Li et al., 2024]",
+      "bib_ids": [
+        "b13"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c22",
+      "sentence_id": "s45",
+      "start": 153,
+      "end": 171,
+      "marker": "[Kolmogorov, 1956]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c23",
+      "sentence_id": "s49",
+      "start": 174,
+      "end": 192,
+      "marker": "[Liu et al., 2024]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c24",
+      "sentence_id": "s50",
+      "start": 157,
+      "end": 180,
+      "marker": "[Fong and Seidel, 1991]",
+      "bib_ids": [
+        "b20"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c25",
+      "sentence_id": "s54",
+      "start": 110,
+      "end": 129,
+      "marker": "[Derr et al., 2018]",
+      "bib_ids": [
+        "b8"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c26",
+      "sentence_id": "s67",
+      "start": 152,
+      "end": 174,
+      "marker": "[Bresson et al., 2024]",
+      "bib_ids": [
+        "b9"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c27",
+      "sentence_id": "s73",
+      "start": 116,
+      "end": 132,
+      "marker": "[Blealtan, 2024]",
+      "bib_ids": [
+        "b12"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c28",
+      "sentence_id": "s73",
+      "start": 137,
+      "end": 155,
+      "marker": "[Yin et al., 2024]",
+      "bib_ids": [
+        "b11"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c29",
+      "sentence_id": "s74",
+      "start": 53,
+      "end": 60,
+      "marker": "[32,32]",
+      "bib_ids": [],
+      "link_method": "none"
+    },
+    {
+      "id": "c30",
+      "sentence_id": "s92",
+      "start": 79,
+      "end": 94,
+      "marker": "[Kunegis, 2013]",
+      "bib_ids": [
+        "b4"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c31",
+      "sentence_id": "s95",
+      "start": 69,
+      "end": 86,
+      "marker": "[He et al., 2022]",
+      "bib_ids": [
+        "b5"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c32",
+      "sentence_id": "s100",
+      "start": 50,
+      "end": 67,
+      "marker": "[He et al., 2022]",
+      "bib_ids": [
+        "b5"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c33",
+      "sentence_id": "s143",
+      "start": 76,
+      "end": 93,
+      "marker": "[Xu et al., 2024]",
+      "bib_ids": [
+        "b10"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c34",
+      "sentence_id": "s143",
+      "start": 109,
+      "end": 127,
+      "marker": "[Yin et al., 2024]",
+      "bib_ids": [
+        "b11"
+      ],
+      "link_method": "parser"
+    },
+    {
+      "id": "c35",
+      "sentence_id": "s143",
+      "start": 147,
+      "end": 173,
+      "marker": "[Bozorgasl and Chen, 2024]",
+      "bib_ids": [
+        "b11"
+      ],
+      "link_method": "parser"
+    }
+  ],
+  "tables": [
+    {
+      "id": "t0",
+      "label": "Table 1",
+      "row_ids": [
+        "s161",
+        "s162",
+        "s163",
+        "s164",
+        "s165",
+        "s166",
+        "s167"
+      ],
+      "page": null
+    },
+    {
+      "id": "t1",
+      "label": "Table 3",
+      "row_ids": [
+        "s170"
+      ],
+      "page": null
+    },
+    {
+      "id": "t2",
+      "label": "Table 4",
+      "row_ids": [
+        "s173"
+      ],
+      "page": null
+    },
+    {
+      "id": "t3",
+      "label": "Table 5",
+      "row_ids": [
+        "s175",
+        "s176",
+        "s177",
+        "s178",
+        "s179",
+        "s180",
+        "s181",
+        "s182",
+        "s183"
+      ],
+      "page": null
+    },
+    {
+      "id": "t4",
+      "label": "Table 6",
+      "row_ids": [
+        "s185"
+      ],
+      "page": null
+    },
+    {
+      "id": "t5",
+      "label": "Table 8",
+      "row_ids": [
+        "s187"
+      ],
+      "page": null
+    },
+    {
+      "id": "t6",
+      "label": "Table 9",
+      "row_ids": [
+        "s190",
+        "s191",
+        "s192"
+      ],
+      "page": null
+    },
+    {
+      "id": "layout-p6",
+      "label": "Table 1; Table 2; Table 3",
+      "row_ids": [],
+      "page": 6
+    },
+    {
+      "id": "layout-p7-0",
+      "label": "Table 4",
+      "row_ids": [
+        "lt7-0-0",
+        "lt7-0-1",
+        "lt7-0-2",
+        "lt7-0-3",
+        "lt7-0-4",
+        "lt7-0-5",
+        "lt7-0-6",
+        "lt7-0-7",
+        "lt7-0-8",
+        "lt7-0-9"
+      ],
+      "page": 7
+    },
+    {
+      "id": "layout-p7-1",
+      "label": "Table 5",
+      "row_ids": [
+        "lt7-1-0",
+        "lt7-1-1",
+        "lt7-1-2",
+        "lt7-1-3",
+        "lt7-1-4",
+        "lt7-1-5",
+        "lt7-1-6",
+        "lt7-1-7",
+        "lt7-1-8"
+      ],
+      "page": 7
+    },
+    {
+      "id": "layout-p11",
+      "label": "Table 6",
+      "row_ids": [],
+      "page": 11
+    },
+    {
+      "id": "layout-p12",
+      "label": "Table 7",
+      "row_ids": [],
+      "page": 12
+    },
+    {
+      "id": "layout-p13",
+      "label": "Table 8",
+      "row_ids": [],
+      "page": 13
+    },
+    {
+      "id": "layout-p14",
+      "label": "Table 9",
+      "row_ids": [],
+      "page": 14
+    }
+  ],
+  "links": [
+    {
+      "url": "http://arxiv.org/abs/2207.13799",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/1808.06354",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2406.18380",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2404.19756",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2406.01034",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://github.com/byin-cwi/Toy-KAN",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2405.12832",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://github.com/Blealtan/efficient-kan",
+      "page": 9,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2410.11323",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2408.10205",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2408.07314",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2410.02077",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2408.10263",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://openreview.net/forum?id=d5uz4wrYeg",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2406.00600",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1137/20M1386062",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1145/3308558.3313488",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1109/TPAMI.2022.3209686",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2406.18354",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2406.06470",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "http://arxiv.org/abs/2407.11075",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2407.11075",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    },
+    {
+      "url": "https://doi.org/10.1111/1467-8659.1040309",
+      "page": 10,
+      "sentence_id": null,
+      "source": "annotation"
+    }
+  ],
+  "layout": {
+    "pages": [
+      {
+        "number": 1,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 97.39,
+        "text_right": 540.0,
+        "text_bottom": 722.15
+      },
+      {
+        "number": 2,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 3,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 4,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 5,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.01,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 6,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 7,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.01,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 8,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 9,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 10,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 72.0,
+        "text_top": 35.7,
+        "text_right": 540.0,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 11,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 301.02,
+        "text_top": 35.7,
+        "text_right": 539.75,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 12,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 301.02,
+        "text_top": 35.7,
+        "text_right": 539.75,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 13,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 301.02,
+        "text_top": 35.7,
+        "text_right": 539.75,
+        "text_bottom": 752.04
+      },
+      {
+        "number": 14,
+        "width": 612.0,
+        "height": 792.0,
+        "text_left": 301.02,
+        "text_top": 35.7,
+        "text_right": 539.75,
+        "text_bottom": 752.04
+      }
+    ],
+    "fonts": [
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 10.0,
+        "chars": 24244
+      },
+      {
+        "name": "NimbusRomNo9L-ReguItal",
+        "size": 10.0,
+        "chars": 938
+      },
+      {
+        "name": "CMTT10",
+        "size": 10.0,
+        "chars": 649
+      },
+      {
+        "name": "NimbusRomNo9L-Medi",
+        "size": 10.0,
+        "chars": 612
+      },
+      {
+        "name": "CMMI10",
+        "size": 10.0,
+        "chars": 285
+      },
+      {
+        "name": "CMMI7",
+        "size": 7.0,
+        "chars": 249
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 8.0,
+        "chars": 182
+      },
+      {
+        "name": "CMSY10",
+        "size": 10.0,
+        "chars": 146
+      },
+      {
+        "name": "NimbusRomNo9L-Medi",
+        "size": 12.0,
+        "chars": 138
+      },
+      {
+        "name": "CMR7",
+        "size": 7.0,
+        "chars": 130
+      },
+      {
+        "name": "CMR10",
+        "size": 10.0,
+        "chars": 128
+      },
+      {
+        "name": "CMMI5",
+        "size": 5.0,
+        "chars": 54
+      },
+      {
+        "name": "CMSY7",
+        "size": 7.0,
+        "chars": 38
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 13.8,
+        "chars": 24
+      },
+      {
+        "name": "CMEX10",
+        "size": 10.0,
+        "chars": 20
+      },
+      {
+        "name": "NimbusRomNo9L-Regu",
+        "size": 17.2,
+        "chars": 12
+      },
+      {
+        "name": "CMR5",
+        "size": 5.0,
+        "chars": 8
+      },
+      {
+        "name": "NimbusRomNo9L-Medi",
+        "size": 9.6,
+        "chars": 7
+      },
+      {
+        "name": "CMBX10",
+        "size": 10.0,
+        "chars": 6
+      },
+      {
+        "name": "CMSY5",
+        "size": 5.0,
+        "chars": 4
+      }
+    ]
+  }
+}

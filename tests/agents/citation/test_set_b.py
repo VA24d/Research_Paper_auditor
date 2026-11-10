@@ -121,6 +121,51 @@ def test_inject_claim_rewrites_the_claim_sentence() -> None:
     assert injected.sentence("s3").text[mention.start : mention.end] == "[7]"
 
 
+def test_inject_claim_relocates_later_markers_when_the_rewrite_changes_the_length() -> None:
+    """A whole-sentence rewrite that changes the length BEFORE a later in-sentence
+    marker must still leave every marker's span on its own marker text (the session-8
+    set B growth hit exactly this: reduces->increases with a [Sohn, 2016] later in the
+    sentence)."""
+    p = paper()
+    sentence = p.sentence("s3")
+    # both markers of s3 sit before AND after the phrase; rewrite the whole sentence
+    anchor = SentenceAnchor(sentence_id="s3", start=0, end=len(sentence.text))
+    swapped = sentence.text.replace("improves factual accuracy", "harms factual accuracy")
+    assert len(swapped) != len(sentence.text)
+    injected, _label, _record = inject_claim(
+        p,
+        anchor,
+        swapped,
+        bib_id="b1",
+        rationale="the claim's direction was reversed",
+        evidence=EVIDENCE,
+        gold_passage=GOLD_PASSAGE,
+        source_text=SOURCE_TEXT,
+    )
+    new_sentence = injected.sentence("s3")
+    assert new_sentence.text == swapped
+    for mention in injected.citations:
+        if mention.sentence_id == "s3":
+            assert new_sentence.text[mention.start : mention.end] == mention.marker
+
+
+def test_inject_claim_fails_when_the_marker_is_gone() -> None:
+    p = paper()
+    sentence = p.sentence("s3")
+    anchor = SentenceAnchor(sentence_id="s3", start=0, end=len(sentence.text))
+    with pytest.raises(ValueError, match="is not in the edited sentence"):
+        inject_claim(
+            p,
+            anchor,
+            "a rewrite that drops every citation marker entirely",
+            bib_id="b1",
+            rationale="r",
+            evidence=EVIDENCE,
+            gold_passage=GOLD_PASSAGE,
+            source_text=SOURCE_TEXT,
+        )
+
+
 def test_inject_metadata_edits_the_field_and_the_raw_text() -> None:
     p = paper()
     injected, label, record = inject_metadata(

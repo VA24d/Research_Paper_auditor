@@ -1,5 +1,11 @@
 # P2 mid-term results (2026-10-30, end of the fix session)
 
+> **Session 8 update (2026-11-03)** — see §8 at the bottom for the Finding 1 remediation
+> (dataset committed to the repo, claim labels grown 6 → 8, injection-machinery marker
+> fix) and the current state of the full-system set B run.
+
+# P2 mid-term results (2026-10-30, end of the fix session)
+
 All measured numbers for the P2 citation checker as of this date, on branch
 `p2-citation-checker` at commit `2b659de` (see git log for the full fix-session series
 `598b04d`..`2b659de`). Companion to [p2_audit_report.md](p2_audit_report.md) (the audit
@@ -213,6 +219,56 @@ no difference at B1's granularity; the module-level ablation needs the full syst
   paper — the bounded failure mode is a failed paper, not a hang. Reported to
   Bhaskar/Vijay.
 - **B1 drops** model-reported errors whose `sentence_id`/`bib_id` is empty (logged
+
+## 8. Session 8 (2026-11-03): the Finding 1 remediation and the state of the full-system run
+
+The full-system audit (`FULL_SYSTEM_AUDIT_REPORT.md`, Finding 1, CRITICAL) found that
+P4's set C experiments ran with the citation agent mocked (`skip_parts=("citation",)` —
+deliberate: set C labels no citation classes, `config.py` documents the cost reason) and
+that the promised set B evaluation never ran in the final pipeline, with the raw dataset
+uncommitted and too few claim-level labels. Remediation, as landed here:
+
+- **The dataset is committed** (session 8): `data/set_b/papers/` (60 originals, 17 MB),
+  `data/set_b/sources/` (59 cited-work text files, 2,743 entries, 32 MB) and
+  `datasets/set_b/papers/` (60 injected copies + kept originals, 35 MB) are in the
+  repository now (`.gitignore` exception; build logs stay out). Everything an offline
+  set B evaluation needs is versioned; no PDFs or caches are committed.
+- **Claim labels 6 → 8**: measured pool exhaustion (89 mechanical number candidates =
+  all junk years; 13 hand-adjudicated candidates, 2 accepted direction reversals with
+  verbatim source support — Kirk et al. 2023 on RLHF generalisation, Hooker et al. 2019
+  on compression vs atypical examples). Both verified, marked second-reviewed, dataset
+  frozen again at **159 labels / 113 records, validate exits 0**. The audit's ">= 100
+  claim-source pairs" is not reachable from this 60-paper pool at verified quality; the
+  exact pipeline and measured yield for a larger pool are documented in
+  `datasets/set_b/README.md`.
+- **Injection-machinery fix (P2, with regression tests)**: `_sentence_edited_copy` now
+  re-locates every citation marker of an edited sentence in the new text — a
+  length-changing whole-sentence rewrite before a later marker used to leave the marker
+  span stale and fail paper validation (the earlier build escaped it only because its
+  swaps were same-length or sat after the markers).
+- **Verdict on the "citation mocking" itself**: not a defect — `skip_parts` is an
+  explicit, documented per-experiment setting, and the citation agent is ON by default
+  (`citation_llm_enabled = True`, `skip_parts = ()`). What was missing is the set B run,
+  which is prepared and ready but deliberately NOT executed here (LLM credits).
+- **P4 verifier interaction confirmed in code**: `agents/verifier/policy.py` maps
+  `CLAIM_NOT_SUPPORTED`/`CLAIM_NUMBER_MISMATCH` to flagged-sentence + CITED_WORK
+  evidence, and `grounding.py` `_cited_quote` grounds via the citation agent's recorded
+  char offsets — no network at verify time. A set B run through the P4 full system will
+  produce verified citation flags.
+- **The runbook for the deferred evaluation** (when credits allow — estimated ~60 model
+  calls + ~50k input tokens per paper pair):
+  1. Full system (citation enabled is the default):
+     `.\.venv\Scripts\auditor.exe batch --experiment setb-p4 --systems full --runs 1 datasets/set_b/dataset.jsonl`
+     (26 entries, 13 paper pairs; add `AUDITOR_LLM_MAX_CALLS`/`AUDITOR_LLM_MAX_COST_USD`).
+  2. Score: `.\.venv\Scripts\python.exe scripts\citation_eval.py score --labels datasets\set_b\labels.jsonl --run runs\setb-p4-full-r1 --before-verifier`
+     and the P4 runner on the same run for the D14/coverage/grounding treatment.
+- **The paused session-7 subset run** (`runs/setb-final-full-r1`, 25/26 entries on
+  disk): intermediate results were analysed (RNF 15/15, metadata 8/9, claim 2/6 — 3 of
+  the 4 claim misses are Part 1 planner claim FRAGMENTS, documented for Bhaskar; 1
+  agent-level miss on 00773; 2 tasks lost to a network blip in 00941-injected). It ran
+  against the pre-growth dataset for those 13 papers, whose labels are unchanged, so it
+  remains resumable and scoreable; the growth does not touch its universe.
+
   warning). Part 1's `baselines/common.py`.
 - The `embed` extra (`AUDITOR_CITATION_EMBEDDER=minilm`) is still not synced; the default
   stays BM25. A BM25-vs-MiniLM Recall@5 comparison is offline and cheap once synced.
