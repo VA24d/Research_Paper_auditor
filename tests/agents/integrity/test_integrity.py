@@ -86,6 +86,18 @@ async def test_a_caption_saying_the_results_are_simulated_is_flagged(tmp_path: P
     assert f"[c1] {CAPTION}" in sent  # captions are read, not only the body
 
 
+async def test_text_that_looks_cut_off_goes_to_review(tmp_path: Path) -> None:
+    # A GROBID split from set C: "The global parsing map is shown in Figs. 5(b-c), ..."
+    cut = Sentence(id="s3", section_id="exp", text="The global parsing map is shown in Figs.")
+    found = [
+        {"sentence_id": "s3", "quote": "The global parsing map is shown", "kind": "unfinished_text"}
+    ]
+    ctx, model = run(tmp_path, found, paper(cut))
+    (finding,) = (await check(screen_task(ctx.paper), ctx)).findings
+    assert finding.uncertain
+    assert "extracted from the PDF" in str(model.received[0][0].content)
+
+
 async def test_quotes_that_are_not_verbatim_are_dropped(tmp_path: Path) -> None:
     found = [
         {"sentence_id": "s1", "quote": "results are placeholders", "kind": "placeholder_results"}
