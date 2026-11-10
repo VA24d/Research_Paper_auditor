@@ -310,3 +310,51 @@ async def test_evidence_guards_against_start_line_below_one(tmp_path: Path) -> N
         confidence="high",
     )
     assert _evidence(paper, snapshot, ["model.py"], disc) is None
+
+
+async def test_method_check_deduplicates_overlapping_code_spans(tmp_path: Path) -> None:
+    paper = method_paper()
+    d1 = {**DISCREPANCY, "code_start_line": 4, "code_end_line": 5, "description": "Desc 1"}
+    d2 = {
+        **DISCREPANCY,
+        "code_start_line": 5,
+        "code_end_line": 5,
+        "description": "Desc 2 on overlap",
+    }
+    ctx, _ = context(tmp_path, paper, [{"discrepancies": [d1, d2]}])
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    assert result.outcome is TaskOutcome.CHECKED
+    assert len(result.findings) == 1
+    assert result.findings[0].summary == "Desc 1"
+
+
+async def test_method_check_deduplicates_identical_summaries(tmp_path: Path) -> None:
+    paper = method_paper()
+    d1 = {
+        **DISCREPANCY,
+        "code_start_line": 1,
+        "code_end_line": 1,
+        "description": "The paper uses focal loss; the code uses plain cross-entropy.",
+    }
+    d2 = {
+        **DISCREPANCY,
+        "code_start_line": 4,
+        "code_end_line": 5,
+        "description": "  The paper uses focal loss; the code uses plain cross-entropy.  ",
+    }
+    ctx, _ = context(tmp_path, paper, [{"discrepancies": [d1, d2]}])
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    assert result.outcome is TaskOutcome.CHECKED
+    assert len(result.findings) == 1
+    assert result.findings[0].evidence[1].line_start == 1
+
+
+async def test_rag_mode_deduplicates_overlapping_discrepancies(tmp_path: Path) -> None:
+    paper = method_paper()
+    d1 = {**DISCREPANCY, "code_start_line": 4, "code_end_line": 5, "description": "RAG Desc 1"}
+    d2 = {**DISCREPANCY, "code_start_line": 4, "code_end_line": 4, "description": "RAG Desc 2"}
+    ctx, _ = rag_context(tmp_path, paper, [{"discrepancies": [d1, d2]}])
+    result = await check(task(paper, repo(tmp_path)), ctx)
+    assert result.outcome is TaskOutcome.CHECKED
+    assert len(result.findings) == 1
+    assert result.findings[0].summary == "RAG Desc 1"

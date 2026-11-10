@@ -119,6 +119,7 @@ def test_the_answer_guide_gives_the_anchors_and_targets_the_specialists_use() ->
         anchor_id=None,
         target_kind="setting",
         target="method",
+        summary="The loss differs: the paper specifies a focal loss.",
     )
     (prediction,), _ = to_predictions(
         ReportedErrors.model_validate({"errors": [answer]}),
