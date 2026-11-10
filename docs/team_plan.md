@@ -137,11 +137,13 @@ Integration and baselines:
 
 ### Part 2 — Anurag: citation agent and retrieval
 
-Status: P2.1-P2.7 are implemented and tested on the `p2-citation-checker` branch (not yet
-merged). P2.8's dataset is BUILT and validated (201 labels; awaiting the D18 20% second
-review and the LLM-backed module runs); P2.9's offline machinery is done and set A was
-measured (HALLMARK test_public: accuracy 0.726, flagging P 0.732 / R 0.891 / F1 0.804,
-FPR on valid 0.557).
+Status: P2.1-P2.9 are implemented and tested, and MERGED into main (the audit's Finding 1
+remediation). The set B dataset is built, second-reviewed (D18) and frozen at 159 labels
+/ 113 injections, validate exits 0, and the data (parsed papers + cited-work source
+texts) is committed to the repository since 2026-11-03. Set A was re-measured after the
+fix session (HALLMARK test_public: accuracy 0.851, flagging P 0.902 / R 0.857 / F1 0.879,
+FPR on valid 0.160). The only open P2 item is the LLM-backed set B evaluation through the
+full system (deferred for credit reasons; the runbook is in docs/p2-mid-results.md §8).
 
 - [x] **P2.1** Clients for arXiv, OpenAlex, Crossref and Semantic Scholar, all through the
   shared HTTP client (P1.4).
@@ -159,20 +161,22 @@ FPR on valid 0.557).
   resolved from the marker text where possible, otherwise returned as `unverifiable` (D6).
 - [x] **P2.6** Citation tools for B1 (D7).
 - [x] **P2.7** HALLMARK test split: loader and existence-check evaluation.
-- [ ] **P2.8** Set B: 60 recent arXiv papers, about 600 claim–source pairs, injection scripts
+- [x] **P2.8** Set B: 60 recent arXiv papers, about 600 claim–source pairs, injection scripts
   that edit `ParsedPaper` copies (the unchanged originals are kept too), `GoldLabel`s
   including clean controls, and the gold evidence passage for each pair (needed for
   Recall@5). Every label is validated against its source and a sample is reviewed by a
-  second person before freezing (D18). *(DONE except the second review: 60 papers built,
-  201 labels (154 injected: 96 reference_not_found, 38 reference_metadata_mismatch,
-  15 claim_number_mismatch, 5 claim_not_supported; 47 clean) validated by
-  `scripts/set_b.py validate` — the only open D18 item is the 20% second review
-  (`reviewed_by`), and the claim classes are thin and can be grown by hand.)*
-- [ ] **P2.9** Citation module evaluation: Recall@5, precision, recall and F1, full text
+  second person before freezing (D18). *(DONE and FROZEN: 60 papers, 159 labels
+  (113 injections: 96 reference_not_found, 9 reference_metadata_mismatch,
+  3 claim_number_mismatch, 5 claim_not_supported; 46 clean controls), D18 second review
+  done (32+2 labels marked `reviewed_by`), validate exits 0, and the whole dataset is
+  committed to the repository. The claim classes are thin (8 of 159) — measured pool
+  exhaustion and the growth path are documented in `datasets/set_b/README.md`.)*
+- [x] **P2.9** Citation module evaluation: Recall@5, precision, recall and F1, full text
   against abstract only, and tool-call accuracy of reference lookups (D8). *(Machinery
-  done and set A measured (HALLMARK test_public, 831 entries: accuracy 0.726, P 0.732 /
-  R 0.891 / F1 0.804, FPR 0.557). The set B module runs (full-text vs abstract-only)
-  need an LLM configured (AUDITOR_LLM_*) and are the last step.)*
+  done; set A measured (831 entries: accuracy 0.851, P 0.902 / R 0.857 / F1 0.879, FPR
+  0.160); Recall@5 measured (BM25 1.000 vs MiniLM 0.667 on the gold-passage records —
+  BM25 ships). The set B LLM runs (full-text vs abstract-only) are prepared with a
+  runbook in docs/p2-mid-results.md §8 and deferred for credit reasons.)*
 
 ### Part 3 — Vijay: code agent and template checker
 
