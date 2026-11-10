@@ -379,6 +379,18 @@ async def test_the_second_reading_drops_and_escalates(ctx: RunContext) -> None:
     assert "the passage agrees" in decisions[1].reason
 
 
+async def test_an_unusable_second_reading_sends_the_flags_to_review(ctx: RunContext) -> None:
+    from langchain_core.messages import AIMessage
+
+    # Prose instead of the verdicts, every attempt: the paper still gets its decisions.
+    model = ScriptedChatModel(replies=[AIMessage("I cannot tell.")] * 3)
+    settings = ctx.settings.model_copy(update={"verifier_recheck": True})
+    failing = replace(ctx, settings=settings, llm=StructuredLLM(model, name="test:r"))
+    decisions = await verify([result(claim("s1")), result(claim("s2", 1))], failing)
+    assert [d.state for d in decisions] == [VerificationState.NEEDS_HUMAN_REVIEW] * 2
+    assert all("second reading failed" in d.reason for d in decisions)
+
+
 async def test_without_the_setting_no_model_is_called(ctx: RunContext) -> None:
     model = ScriptedChatModel(replies=[])
     quiet = replace(ctx, llm=StructuredLLM(model, name="test:r"))

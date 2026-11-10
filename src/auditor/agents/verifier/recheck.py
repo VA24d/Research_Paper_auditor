@@ -8,8 +8,11 @@ its accepted evidence, in one call per paper, and answers whether that evidence 
 shows the stated problem. "not_shown" drops the flag, "unclear" sends it to human review.
 
 It runs only with AUDITOR_VERIFIER_RECHECK=true, since it costs a model call per paper.
+An answer that cannot be used sends the flags to human review: they were not confirmed,
+and one bad answer must not fail the paper.
 """
 
+import logging
 from collections.abc import Sequence
 from typing import Literal
 
@@ -18,7 +21,10 @@ from pydantic import BaseModel
 
 from auditor.agents.verifier.policy import MODEL_JUDGED
 from auditor.infra.context import RunContext
+from auditor.infra.llm import StructuredOutputError
 from auditor.schemas import VerificationState, VerifiedFinding
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You check the work of other reviewers of a research paper. Each item
 below is a problem a reviewer reported, with the evidence they gave: quotes from the
@@ -65,12 +71,23 @@ async def recheck(verified: Sequence[VerifiedFinding], ctx: RunContext) -> list[
     if not positions or (ctx.llm is None and ctx.review_llm is None):
         return out
     listing = "\n\n".join(_item(n, out[i]) for n, i in enumerate(positions, start=1))
-    result = await ctx.require_review_llm().generate(
-        Rechecks,
-        [SystemMessage(SYSTEM_PROMPT), HumanMessage(listing)],
-        effort="low",
-        purpose="verifier-recheck",
-    )
+    try:
+        result = await ctx.require_review_llm().generate(
+            Rechecks,
+            [SystemMessage(SYSTEM_PROMPT), HumanMessage(listing)],
+            effort="low",
+            purpose="verifier-recheck",
+        )
+    except StructuredOutputError as exc:
+        logger.warning("the second reading failed (%s); its flags go to human review", exc)
+        for i in positions:
+            out[i] = out[i].model_copy(
+                update={
+                    "state": VerificationState.NEEDS_HUMAN_REVIEW,
+                    "reason": "The second reading failed, so the flag was not confirmed.",
+                }
+            )
+        return out
     by_number = dict(enumerate(positions, start=1))
     answered: set[int] = set()
     for verdict in result.value.verdicts:
