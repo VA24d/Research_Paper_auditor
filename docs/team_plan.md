@@ -214,13 +214,14 @@ one; record the commit hash actually checked out.
 - [x] **P3.7** Code and template tools for B1 (D7): `auditor.agents.code.tools` (list,
   search, read, find setting, data report) and `auditor.agents.template.tools`
   (`check_template_rule`, `layout_summary`).
-- [ ] **P3.8** Set C: 40 repositories, 160 instances, injected mismatches (paper side by
+- [x] **P3.8** Set C: 40 repositories, 160 instances, injected mismatches (paper side by
   editing `ParsedPaper` copies, or code side by patching a pinned copy; the unchanged
   originals are kept too), `GoldLabel`s including clean controls. Every label is validated
   against the paper and the code the experiment actually uses, and a sample is reviewed by
   a second person before freezing (D18). Built from SciCoQA: 40 pairs, 63 injected setting
   errors, 36 clean controls and 92 method discrepancies (`datasets/set_c/README.md`).
-  Waiting for the 20% second review (`datasets/set_c/review.jsonl`) before freezing.
+  Frozen: 47 labels (20%) have a second review (`reviewed_by`), and
+  `scripts/set_c.py validate datasets/set_c` reports no problems.
 - [ ] **P3.9** Template fixtures and evaluation; code module evaluation (precision, recall,
   F1, false positives on matching settings, tool-call accuracy of repository searches).
   Done: template fixtures (`auditor.agents.template.fixtures`, `scripts/template_eval.py`)
@@ -230,8 +231,8 @@ one; record the commit hash actually checked out.
 - [ ] **P3.10** Theory checker (D21): `auditor.agents.theory` checks the mathematics of a
   paper's formal claims for `math_error` (plan, screen, deep check, challenge), opt-in with `AUDITOR_THEORY_CHECK_ENABLED`.
   Outside benchmark: SPOT's math and CS proof subset (`datasets/spot`, 26 papers, 29
-  errors), scored by an LLM judge whose grades a person checks. Open: the first run, which
-  needs the team's Vertex credentials.
+  errors), scored by an LLM judge whose grades a person checks. Run on SPOT's dev and test
+  halves (results in D21). Open: no person has checked the judge's grades yet.
 
 ### Part 4 — Sudheera: verifier, report, evaluation
 

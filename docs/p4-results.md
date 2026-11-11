@@ -5,15 +5,23 @@
 ## Summary
 
 On set C (40 papers, each as an injected copy and as the unchanged original), the full
-system reaches Macro-F1 **0.703 ± 0.006** over three runs, against **0.048 ± 0.015** for B0
+system reaches Macro-F1 **0.636 ± 0.004** over three runs, against **0.048 ± 0.015** for B0
 (three runs) and **0.046 ± 0.007** for B1 (two runs). The proposal's target of +10 points is
-met against both baselines, by about 65 points. No system flags any of the 72 clean control
+met against both baselines, by about 59 points. No system flags any of the 72 clean control
 items. On the unchanged originals the full system raises more flags that no label covers
 (3.1 per paper, against 1.6 for B0 and 0.4 for B1); how many of those are false alarms needs
 the hand adjudication of S5, so the "no increase in false alarms on clean papers" half of
-the target is not settled. The verifier verifies 229 of the 255 findings that match a
-planted error, drops none, and cuts unlabelled flags by 36% at a cost of 3.3 points of
+the target is not settled. The verifier verifies 180 of the 203 findings that match a
+planted error, drops none, and cuts unlabelled flags by 35% at a cost of 3.1 points of
 Macro-F1. The experiments cost $125.04 on the team's Vertex credits.
+
+**Rescored on 11 November 2026.** The numbers here are the same runs scored with the
+current code. The first version of this file (0.703 for the full system) was scored before
+d2f93cd made method matching stricter (#76); B0 and B1 are unchanged. Coverage is now the
+share of tasks checked by the parts that ran: the citation agent's placeholder tasks used
+to be counted as checked (cf52612). `results/p4/set_c-rq1.*` and `set_c-failures.md` still
+hold the first scoring: "flags backed" needs the 40 repository snapshots cached offline to
+score again, and the failure stages need the runs' `tasks.jsonl`, which is not committed.
 
 ## What is new
 
@@ -54,9 +62,8 @@ uv run python scripts/p4_analysis.py datasets/set_c/labels.jsonl runs/p4-setc-*-
 
 - **Data.** Set C as frozen in `datasets/set_c/labels.jsonl`: 163 planted errors (100
   `method_mismatch`, 60 `setting_mismatch`, 3 `metric_mismatch`) and 72 clean controls, on
-  80 paper versions (40 papers × injected and original). The labels have not had their D18
-  second review yet (sample ready in `datasets/set_c/review.jsonl`); scoring can be redone at
-  no cost if a label changes.
+  80 paper versions (40 papers × injected and original). 47 of the labels (20%) have had
+  their D18 second review; scoring can be redone at no cost if a label changes.
 - **Systems.** Full system, B0, B1; the no-verifier ablation is scored from the full runs.
   Full and B0 ran three times, B1 twice (see Cost). B1's partial third run (10 of 80
   versions, `p4-setc-b1-r3`) is not scored.
@@ -84,21 +91,21 @@ Mean ± sample standard deviation over runs (`results/p4/set_c-rq1.md`, `.json`)
 | | Full system | Full without verifier | B0 | B1 |
 |---|---|---|---|---|
 | Runs | 3 | 3 | 3 | 2 |
-| **Macro-F1** | **0.703 ± 0.006** | 0.736 ± 0.006 | 0.048 ± 0.015 | 0.046 ± 0.007 |
+| **Macro-F1** | **0.636 ± 0.004** | 0.667 ± 0.003 | 0.048 ± 0.015 | 0.046 ± 0.007 |
 | Precision (labelled items) | 1.000 | 1.000 | 1.000 | 1.000 |
-| Recall | 0.468 ± 0.009 | 0.521 ± 0.011 | 0.029 ± 0.009 | 0.028 ± 0.004 |
-| F1 method / metric / setting | 0.536 / 0.800 / 0.771 | 0.551 / 0.800 / 0.857 | 0 / 0 / 0.144 | 0 / 0 / 0.139 |
+| Recall | 0.368 ± 0.006 | 0.415 ± 0.004 | 0.029 ± 0.009 | 0.028 ± 0.004 |
+| F1 method / metric / setting | 0.338 / 0.800 / 0.771 | 0.343 / 0.800 / 0.857 | 0 / 0 / 0.144 | 0 / 0 / 0.139 |
 | False positives on 72 clean controls | 0 | 0 | 0 | 0 |
 | Flags per original paper | 3.12 ± 0.04 | 4.71 ± 0.04 | 1.63 ± 0.25 | 0.39 ± 0.23 |
 | Original papers with a flag | 94% | 95% | 76% | 21% |
-| Unlabelled flags per run | 238 ± 12 | 374 ± 12 | 125 ± 19 | 29 ± 21 |
+| Unlabelled flags per run | 255 ± 12 | 391 ± 13 | 125 ± 19 | 29 ± 21 |
 | Items for human review per paper | 1.68 | - | - | - |
-| Tasks checked (coverage) | 95% | 95% | - | - |
-| Flags backed by evidence found in its source | 100% | 100% | 0% | 0% |
+| Tasks checked (coverage) of the parts that ran | 63% | 63% | - | - |
+| Flags backed by evidence found in its source (first scoring) | 100% | 100% | 0% | 0% |
 | Model calls per paper version | 13.2 | 13.2 | 1.0 | 20.1 |
 | Cost per paper version | $0.079 | $0.079 | $0.047 | $0.542 |
 
-**RQ1.** Against B1 (D14) the full system gains 65.7 points of Macro-F1, against B0 65.5.
+**RQ1.** Against B1 (D14) the full system gains 59.0 points of Macro-F1, against B0 58.8.
 Neither baseline finds a single method or metric error; both find 3 to 6 of the 60 changed
 settings. The full system is also the cheaper of the two tool-using systems: B1 sends the
 whole paper with every one of its 20 calls (about 670,000 input tokens per paper version).
@@ -109,6 +116,10 @@ against 76% and 1.6 for B0 and 21% and 0.4 for B1. These flags match no label: s
 discrepancies already in the papers (set C's SciCoQA pairs include reported real ones), the
 rest false alarms. Until S5 adjudicates a sample, the paper-level part of the target ("no
 increase in false alarms on clean papers") is open, and leans against the full system.
+Most of those flags are one kind: in each run 68 to 71 of the 124 to 127 verified flags on
+the originals are "Unfinished text", mostly sentences GROBID split or ran into table text.
+Since c04359c (10 November) such findings are uncertain and go to human review, so these
+runs overstate what the current code flags on clean papers.
 
 **Flags without evidence.** Every verified flag of the full system rests on a quote of the
 paper and code lines that were found again in their sources. B0 and B1 attach no evidence to
@@ -120,19 +131,19 @@ Every full-system finding over the three runs, by what its gold label says it is
 
 | Finding | Verified | Human review | Dropped |
 |---|---|---|---|
-| Matches a planted error | 229 | 26 | 0 |
+| Matches a planted error | 180 | 23 | 0 |
 | Matches a clean control | 0 | 0 | 0 |
-| Matches no label | 691 | 377 | 0 |
+| Matches no label | 740 | 380 | 0 |
 
 - The verifier drops nothing: every piece of evidence the specialists gave was found again
-  in its source. All 26 planted errors it holds back are held because the code agent marked
-  them uncertain.
-- Taking it out raises Macro-F1 from 0.703 to 0.736 and unlabelled flags from 238 to 374 per
-  run (flags per original paper from 3.1 to 4.7). So on set C it trades 3.3 points of recall
-  for 36% fewer flags that no label covers. Whether that improves precision depends on how
-  many of the 136 held-back unlabelled flags per run are false alarms (S5).
+  in its source. Every planted error it holds back is held because the code agent marked
+  it uncertain.
+- Taking it out raises Macro-F1 from 0.636 to 0.667 and unlabelled flags from 255 to 391 per
+  run (flags per original paper from 3.1 to 4.7). So on set C it trades 3.1 points of
+  Macro-F1 for 35% fewer flags that no label covers. Whether that improves precision depends
+  on how many of the 136 held-back unlabelled flags per run are false alarms (S5).
 - **D23's open question** (should uncertain findings count as flags): counting them gives
-  Macro-F1 0.729, 0.739 and 0.739 instead of 0.698, 0.709 and 0.701, and 131 to 133 more
+  Macro-F1 0.668, 0.668 and 0.663 instead of 0.641, 0.636 and 0.632, and 131 to 134 more
   unlabelled flags per run. This is a choice between recall and review load, to settle with
   Vijay.
 
@@ -143,13 +154,13 @@ pass (`results/p4/set_c-failures.md`):
 
 | Stage | method | metric | setting | All |
 |---|---|---|---|---|
-| Found (verified) | 110 | 6 | 113 | 229 |
+| Found (verified) | 61 | 6 | 113 | 180 |
 | Human review (marked uncertain) | 4 | 0 | 22 | 26 |
-| Task finished, no matching finding | 186 | 0 | 0 | 186 |
+| Task finished, no matching finding | 235 | 0 | 0 | 235 |
 | Task unverifiable | 0 | 3 | 45 | 48 |
 | Total | 300 | 9 | 180 | 489 |
 
-- **Method changes** are the main loss: 186 of 300 times the method check raised nothing
+- **Method changes** are the main loss: 235 of 300 times the method check raised nothing
   that matches. P3's diagnosis of 57 method misses (`docs/p3_example_audit_report.md`): 26 were
   in code shown to the model but not reported, 14 were never retrieved, 7 were dropped by
   the evidence gate.
@@ -160,8 +171,8 @@ pass (`results/p4/set_c-failures.md`):
 - **Metric**: one of the three planted metric changes is unverifiable in every run (the
   repository computes several metrics and the code does not say which one the paper
   reports).
-- **Stability**: of the 163 planted errors, the full system finds 74 in all 3 runs, 2 in 2
-  runs, 3 in 1 run and 84 in none. B0 finds 3 errors in all of its runs and 5 more once; B1
+- **Stability**: of the 163 planted errors, the full system finds 57 in all 3 runs, 2 in 2
+  runs, 5 in 1 run and 99 in none. B0 finds 3 errors in all of its runs and 5 more once; B1
   finds 2 in both runs and 5 more once.
 
 ### Cost
@@ -187,7 +198,8 @@ Before the fresh runs, two earlier runs were replayed through the verifier at no
 `auditor evaluate` gives the numbers `scripts/set_c.py score` gives (Macro-F1 0.600 before
 and 0.521 after the verifier on set C, 0.576 and 0.375 on the RQ1 pilot, as in D23). That set
 C run had no model for the method check, so all its method labels were unverifiable; the
-fresh runs above replace it.
+fresh runs above replace it. Those replayed numbers come from before d2f93cd; their runs are
+not in the repository, so they were not scored again.
 
 ## What is left
 
@@ -196,10 +208,12 @@ fresh runs above replace it.
 - **S5**: adjudicate a sample of the unlabelled flags on original papers, the remaining part
   of the false-alarm question. The audit reports (`report.md` in each paper folder) show each
   flag with its evidence.
-- **D18**: second review of the 47 sampled set C labels (`scripts/review_sheet.py`).
-- **Set B and the abstract-only ablation** (P2.9, P4.7) need `data/set_b` (the parsed and
-  injected papers and fetched sources), which is not in `data-archive/` and exists only on
-  Anurag's machine. With it, the same `auditor batch` and `auditor evaluate` commands apply,
-  with `AUDITOR_CITATION_ABSTRACT_ONLY=true` for the ablation. It needs new credits:
-  Anurag's mini-run used about 60 model calls per paper pair.
+- **Set B and the abstract-only ablation** (P2.9, P4.7): the set B papers are committed in
+  `datasets/set_b` (11 November). The same `auditor batch` and `auditor evaluate` commands
+  apply, with `AUDITOR_CITATION_ABSTRACT_ONLY=true` for the ablation. It needs new credits:
+  Anurag's mini-run used about 60 model calls per paper pair. The verifier sends every
+  `reference_not_found` finding to human review (it rests on a record not being found), and
+  96 of set B's 113 planted errors are of that class. Since only verified flags count, the
+  full system can score at most the other 17 unless D23 or that rule changes; B0 and B1
+  count every flag.
 - **B1's third run** would cost about $44 more if three B1 runs are wanted.

@@ -131,8 +131,10 @@ docs/              plans and design decisions
 
 ## Using the Auditor
 
-Every command accepts a PDF (parsed with GROBID, so start it first) or a `ParsedPaper`
-JSON file such as `tests/fixtures/schemas/parsed_paper.json`.
+Every command accepts a PDF, a `ParsedPaper` JSON file such as
+`tests/fixtures/schemas/parsed_paper.json`, or a paper's main LaTeX file (`.tex`). A PDF
+is parsed with GROBID, so start it first; a PDF parsed before is read from the cache in
+`data/cache/grobid` without GROBID (`auditor parse --refresh` parses it again).
 
 | Task | Command |
 |---|---|
