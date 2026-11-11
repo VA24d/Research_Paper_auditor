@@ -209,6 +209,24 @@ def test_a_run_folder_is_read_with_its_incomplete_papers_failures_and_cost(tmp_p
     assert run.task_outcomes()[TaskOutcome.CHECKED] == 3
 
 
+def test_coverage_leaves_out_the_tasks_of_placeholder_parts(tmp_path: Path) -> None:
+    # Runs made before placeholders said so recorded a left-out part's tasks as checked.
+    run_dir = full_run(tmp_path)
+    results = next(run_dir.glob("*/results.jsonl"))
+    placeholder = TaskResult(
+        task_id="c0",
+        paper_id=PID,
+        variant=PaperVariant.INJECTED,
+        kind=TaskKind.REFERENCE,
+        outcome=TaskOutcome.CHECKED,
+    )
+    with results.open("a", encoding="utf-8") as handle:
+        handle.write(placeholder.model_dump_json() + "\n")
+    outcomes = load_run(run_dir).task_outcomes()
+    assert outcomes[TaskOutcome.CHECKED] == 3
+    assert sum(outcomes.values()) == 4
+
+
 def test_without_the_verifier_every_finding_counts_but_math_review_drops(tmp_path: Path) -> None:
     predictions = load_run(full_run(tmp_path)).predictions_without_verifier()
     assert [p.finding_id for p in predictions] == ["t0-f0", "t1-f0"]

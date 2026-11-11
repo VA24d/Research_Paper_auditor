@@ -239,7 +239,9 @@ async def test_planner_runs_inside_the_audit_graph(tmp_path: Path) -> None:
     outcome = await run_audit(pipeline, example_paper(), run_id="r1", system=SystemName.FULL)
     assert len(outcome.tasks) == 16
     assert len(outcome.results) == 16
-    assert all(r.outcome is TaskOutcome.CHECKED for r in outcome.results)
+    # Every part is a placeholder here, so nothing counts as checked.
+    assert all(r.outcome is TaskOutcome.UNVERIFIABLE for r in outcome.results)
+    assert all((r.reason or "").startswith("not checked") for r in outcome.results)
 
 
 @pytest.mark.parametrize(

@@ -13,13 +13,17 @@ from auditor.schemas import (
 
 
 async def check_nothing(task: AuditTask, ctx: RunContext) -> TaskResult:
-    """A specialist that runs and finds nothing."""
+    """Stands in for a part that is left out (AUDITOR_SKIP_PARTS) or not installed. Its
+    tasks are not checked, so they say nothing about the paper; reporting them as checked
+    made coverage and the report count work that never ran."""
     return TaskResult(
         task_id=task.task_id,
         paper_id=task.paper_id,
         variant=task.variant,
         kind=task.kind,
-        outcome=TaskOutcome.CHECKED,
+        outcome=TaskOutcome.UNVERIFIABLE,
+        reason="not checked: this part was left out of the run (AUDITOR_SKIP_PARTS) or is "
+        "not installed",
     )
 
 

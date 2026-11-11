@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from auditor.agents.theory.review import NO_ERROR_REASON
 from auditor.config import Settings
+from auditor.orchestration.graph import NODE_FOR_KIND
 from auditor.orchestration.outputs import INCOMPLETE_PREDICTIONS, PREDICTIONS
 from auditor.schemas import (
     LLMCallRecord,
@@ -136,11 +137,15 @@ class RunData:
         return out
 
     def task_outcomes(self) -> dict[TaskOutcome, int]:
-        """How the full system's tasks ended, over the complete papers (coverage)."""
+        """How the full system's tasks ended, over the complete papers (coverage). Tasks of
+        parts that ran as placeholders are left out: runs made before placeholders said so
+        recorded them as checked, which counted work that never ran."""
+        skipped = set(self.mocked_parts)
         counts = dict.fromkeys(TaskOutcome, 0)
         for paper in self.complete_papers:
             for result in paper.results:
-                counts[result.outcome] += 1
+                if NODE_FOR_KIND[result.kind] not in skipped:
+                    counts[result.outcome] += 1
         return counts
 
 
