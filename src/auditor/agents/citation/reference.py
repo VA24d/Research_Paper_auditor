@@ -13,7 +13,6 @@ from auditor.retrieval.clients import Work
 from auditor.retrieval.resolve import (
     Resolution,
     first_surname,
-    title_text,
     title_tokens,
     titles_match,
     venues_match,
@@ -39,6 +38,11 @@ _TRUNCATION = re.compile(r"(?:\b(?:et\s+al\.?|and\s+others|others)\s*)+[\.,]?\s*
 # Above this many authors the work is a collaboration paper; bibliographies legitimately
 # name a few of them, and parser truncation cannot be told from a real omission.
 _MAX_TRUNCATION_AUTHORS = 10
+
+
+def _letters(title: str) -> str:
+    """A title's letters and digits only, lowercased."""
+    return "".join(re.findall(r"[a-z0-9]", title.lower()))
 
 
 def _plausible_surname(surname: str) -> bool:
@@ -118,8 +122,10 @@ def _metadata_findings(task: AuditTask, entry: BibEntry, work: Work) -> list[Can
             # A near-miss title ("...You Nedd" for "...You Need") matches the fuzzy
             # threshold but is still a corrupted title. A legitimately shortened record
             # ("NeRF" for the full title) keeps every word of the shorter side; a
-            # corruption introduces a word the other side does not have.
-            if title_text(entry.title) != title_text(work.title) and not (
+            # corruption introduces a word the other side does not have. Titles that differ
+            # only in punctuation or spacing are the same: PDF text loses hyphens
+            # ("energyefficient" for "energy-efficient") and indexes use other dashes.
+            if _letters(entry.title) != _letters(work.title) and not (
                 title_tokens(entry.title) <= title_tokens(work.title)
                 or title_tokens(work.title) <= title_tokens(entry.title)
             ):

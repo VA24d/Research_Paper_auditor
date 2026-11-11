@@ -289,7 +289,7 @@ with new:
         else:
             labels = [
                 f"{Path(e.paper).stem} "
-                f"({'injected copy' if '/injected/' in e.paper else 'original'})"
+                f"({'injected copy' if Path(e.paper).parent.name == 'injected' else 'original'})"
                 for e in entries
             ]
             choice = st.selectbox(

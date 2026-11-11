@@ -248,3 +248,25 @@ async def test_a_near_miss_title_is_a_mismatch(tmp_path: Path) -> None:
     )
     (finding,) = result.findings
     assert "near-miss" in finding.summary
+
+
+async def test_a_title_that_lost_its_hyphen_is_not_a_near_miss(tmp_path: Path) -> None:
+    # PDF text drops hyphens ("energyefficient" for "energy-efficient" in set B 2501.00742).
+    entry_title = "SQuAD: 100,000+ Questions for MachineComprehension of Text"
+    paper = example_paper().model_copy(
+        update={
+            "bibliography": tuple(
+                b.model_copy(update={"title": entry_title}) if b.id == "b1" else b
+                for b in example_paper().bibliography
+            )
+        }
+    )
+    work = dataclasses.replace(
+        MATCHING_WORK, title="SQuAD: 100,000+ Questions for Machine-Comprehension of Text"
+    )
+    result = await check_reference(
+        reference_task(),
+        offline_context(tmp_path, paper=paper),
+        Resolution(work=work, queries=(("q", "found"),)),
+    )
+    assert result.findings == ()
