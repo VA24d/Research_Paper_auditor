@@ -395,3 +395,54 @@ def test_a_batch_keeps_why_baseline_answers_were_set_aside(
     assert written.read_text(encoding="utf-8") == ""
     (line,) = written.with_name("dropped.jsonl").read_text(encoding="utf-8").splitlines()
     assert "s999" in json.loads(line)["reason"]
+
+
+async def test_a_pdf_parsed_before_needs_no_grobid(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import hashlib
+
+    from auditor import experiments
+    from auditor.infra.http import HttpClient
+    from auditor.parser.grobid import GrobidClient
+    from auditor.parser.pipeline import tei_cache_path
+
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"%PDF-1.4 a paper")
+    settings = Settings(_env_file=None, cache_dir=tmp_path / "cache")
+    cached = tei_cache_path(settings.cache_dir, hashlib.sha256(pdf.read_bytes()).hexdigest())
+    cached.parent.mkdir(parents=True)
+    cached.write_text("<TEI/>", encoding="utf-8")
+
+    async def unreachable(self: object) -> bool:
+        raise AssertionError("GROBID was asked although the TEI is cached")
+
+    async def parsed(path: Path, **kwargs: object) -> object:
+        return example_paper()
+
+    monkeypatch.setattr(GrobidClient, "is_alive", unreachable)
+    monkeypatch.setattr(experiments, "parse_pdf", parsed)
+    async with HttpClient(settings) as http:
+        paper = await experiments.load_paper(pdf, settings, http)
+        assert paper == example_paper()
+        # Without a cached TEI, GROBID is still required.
+        monkeypatch.setattr(GrobidClient, "is_alive", lambda self: _false())
+        cached.unlink()
+        with pytest.raises(InputError, match="GROBID is not reachable"):
+            await experiments.load_paper(pdf, settings, http)
+
+
+async def _false() -> bool:
+    return False
+
+
+async def test_an_unsupported_input_file_is_refused_clearly(tmp_path: Path) -> None:
+    from auditor import experiments
+    from auditor.infra.http import HttpClient
+
+    notes = tmp_path / "README.md"
+    notes.write_text("# notes", encoding="utf-8")
+    settings = Settings(_env_file=None, cache_dir=tmp_path / "cache")
+    async with HttpClient(settings) as http:
+        with pytest.raises(InputError, match="expected a PDF, a ParsedPaper"):
+            await experiments.load_paper(notes, settings, http)

@@ -416,7 +416,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=[s.value for s in BATCH_SYSTEMS],
         choices=[s.value for s in BATCH_SYSTEMS],
     )
-    batch.add_argument("--runs", type=_positive, default=3, help="Repetitions of each system")
+    batch.add_argument(
+        "--runs", type=_positive, default=3, help="Repetitions of each system (default 3)"
+    )
     batch.add_argument(
         "--llm-cache",
         action="store_true",

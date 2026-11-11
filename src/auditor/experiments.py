@@ -55,7 +55,7 @@ from auditor.orchestration.registry import (
 )
 from auditor.parser.grobid import GrobidClient
 from auditor.parser.latex import LatexError, parse_latex
-from auditor.parser.pipeline import ParseError, parse_pdf
+from auditor.parser.pipeline import ParseError, parse_pdf, tei_cache_path
 from auditor.planner.repository import find_repository
 from auditor.planner.tasks import PlannerOptions, make_planner
 from auditor.schemas import (
@@ -78,6 +78,10 @@ class InputError(Exception):
     """A problem with an input (missing file, GROBID down, bad URL), reported plainly."""
 
 
+def _tei_cached(pdf: Path, cache_dir: Path) -> bool:
+    return tei_cache_path(cache_dir, hashlib.sha256(pdf.read_bytes()).hexdigest()).is_file()
+
+
 async def load_paper(
     source: Path, settings: Settings, http: HttpClient, *, refresh: bool = False
 ) -> ParsedPaper:
@@ -85,18 +89,23 @@ async def load_paper(
     formulas stay as written), or by parsing a PDF with GROBID."""
     if not await asyncio.to_thread(source.is_file):
         raise InputError(f"No such file: {source}")
-    if source.suffix.lower() == ".tex":
+    suffix = source.suffix.lower()
+    if suffix == ".tex":
         try:
             return await asyncio.to_thread(parse_latex, source)
         except LatexError as exc:
             raise InputError(f"Could not read the LaTeX source: {exc}") from exc
-    if source.suffix.lower() == ".json":
+    if suffix == ".json":
         try:
             return ParsedPaper.model_validate_json(await asyncio.to_thread(source.read_bytes))
         except ValidationError as exc:
             raise InputError(f"{source} is not a valid ParsedPaper: {exc}") from exc
+    if suffix != ".pdf":
+        raise InputError(f"{source}: expected a PDF, a ParsedPaper .json file or a LaTeX .tex file")
     grobid = GrobidClient(http, settings.grobid_url)
-    if not await grobid.is_alive():
+    # A PDF parsed before needs no GROBID: its TEI is cached by the PDF's hash.
+    cached = not refresh and await asyncio.to_thread(_tei_cached, source, settings.cache_dir)
+    if not cached and not await grobid.is_alive():
         raise InputError(
             f"GROBID is not reachable at {settings.grobid_url}. Start it with: docker compose up -d"
         )
