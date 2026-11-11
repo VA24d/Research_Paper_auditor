@@ -72,9 +72,14 @@ pipeline:
 
 A failed paper was recorded in `failures.jsonl` and the batch went on; running the same
 command again retried it, which is how the first two B1 runs reached all 80 versions. The
-budget failures came from the run's $40 limit and the $125 ledger limit, which counted
-input read from Vertex's prompt cache at the full price. At the cached price, B1's first
-run cost $14.62 rather than $42.59 (#83); `.env.example` now shows the setting.
+budget failures came from the run's $40 limit and the $125 ledger limit. B1 sends the
+paper again on every turn and stops at 20 model calls; 77-82% of its input was read from
+Vertex's prompt cache. Google documents a 90% discount on such input, which would have made
+B1's first run $14.62 instead of $42.59, but the bill for 7 November (Rs 11,805.69 for all
+the set C runs: 137M input tokens, 92M of them cached, 5.5M output) matches the full price
+($123, about Rs 96 to the dollar at the repository's prices for 3.8 Flash) and not the
+discounted one ($61, which would mean Rs 194 to the dollar). The limits count cached input in full, which the
+bill bears out.
 
 **Fixed after these runs.**
 - One failed tool call (a rate-limited GitHub request) ended a B1 paper; the error now goes
