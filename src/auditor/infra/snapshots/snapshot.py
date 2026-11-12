@@ -14,6 +14,7 @@ import os
 import re
 import secrets
 import shutil
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -24,8 +25,14 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, JsonValue, Validation
 
 from auditor.config import Settings
 from auditor.infra.files import atomic_write
-from auditor.infra.http import HttpClient, ResponseTooLargeError
-from auditor.infra.snapshots.hosts import FileUnavailableError, Listing, make_host
+from auditor.infra.http import HttpClient, HttpStatusError, ResponseTooLargeError
+from auditor.infra.snapshots.hosts import (
+    FileUnavailableError,
+    Host,
+    Listing,
+    SnapshotUnavailableError,
+    make_host,
+)
 from auditor.infra.snapshots.policy import (
     DATA_SUFFIXES,
     TOO_LARGE,
@@ -113,6 +120,9 @@ class Snapshot:
 
 
 _locks: dict[tuple[str, ...], asyncio.Lock] = {}
+# Sources that could not be fetched, by key, with when; remembered for FAILURE_MEMORY_S.
+_failures: dict[tuple[str, ...], tuple[float, Exception]] = {}
+FAILURE_MEMORY_S = 600.0
 
 
 async def fetch_snapshot(
@@ -139,71 +149,93 @@ async def fetch_snapshot(
     base = settings.scratch_dir / "snapshots" / spec.kind.value / _name(spec.identity)
     key = (spec.kind.value, spec.identity, spec.ref or "", limits.key(), str(base))
     async with _locks.setdefault(key, asyncio.Lock()):
-        # A local folder's revision is the hash of its files, known only after copying
-        # them; an index from the folder's file sizes and times to that revision avoids
-        # copying an unchanged folder again.
-        signature = None
-        if spec.kind is SourceKind.LOCAL and spec.local_path is not None:
-            signature = await asyncio.to_thread(_local_signature, spec.local_path)
-            known = _local_index(base).get(signature)
-            if known is not None and (found := _existing(base, known, limits)):
-                return found
-        revision = await host.resolve()
-        if revision is not None and (found := _existing(base, revision, limits)):
-            return found
-        listing = await host.listing(revision)
-        revision = revision or listing.revision
-        if revision is not None and (found := _existing(base, revision, limits)):
-            return found
-
-        selection = select_files(listing.files, limits)
-        staging = base / f".partial-{secrets.token_hex(6)}"
+        failed = _failures.get(key)
+        if failed is not None and time.monotonic() - failed[0] < FAILURE_MEMORY_S:
+            # Tasks of one paper share a repository: once it could not be fetched, the
+            # others get the same error instead of asking the host again (a rate-limited
+            # GitHub answered ten identical requests for one paper with 403).
+            raise failed[1].with_traceback(None)
         try:
-            files, skipped, incomplete = await _download(
-                selection.chosen, staging / FILES_DIR, limits
-            )
-            revision = revision or _content_revision(files)
-            all_skipped = [*listing.skipped, *selection.skipped, *skipped]
-            manifest = SnapshotManifest(
-                source=spec.kind,
-                url=spec.url,
-                identity=spec.identity,
-                requested_ref=spec.ref,
-                revision=revision,
-                fetched_at=datetime.now(UTC),
-                limits={
-                    "max_file_bytes": limits.max_file_bytes,
-                    "max_total_bytes": limits.max_total_bytes,
-                    "max_files": limits.max_files,
-                    "max_archive_bytes": limits.max_archive_bytes,
-                },
-                files=tuple(files),
-                skipped=tuple(
-                    SkippedFile(path=s.path, size=s.size, reason=s.reason)
-                    for s in all_skipped[:MAX_SKIPPED_RECORDS]
-                ),
-                skipped_count=len(all_skipped),
-                incomplete=_unique([*listing.incomplete, *selection.incomplete, *incomplete]),
-                metadata=listing.metadata,
-                data_files=_data_files(listing),
-            )
-            atomic_write(
-                staging / MANIFEST_NAME, manifest.model_dump_json(indent=2).encode("utf-8")
-            )
-            target = base / _folder(revision, limits)
-            _publish(staging, target)
-            if signature is not None:
-                _remember_local(base, signature, revision)
-            logger.info(
-                "snapshot of %s at %s: %d files, %d skipped",
-                spec.url,
-                revision,
-                len(files),
-                len(all_skipped),
-            )
-            return _load(target)
-        finally:
-            shutil.rmtree(staging, ignore_errors=True)
+            return await _fetch(spec, host, base, limits)
+        except (SnapshotUnavailableError, HttpStatusError) as exc:
+            # Only failures a quick retry would repeat: the source is not there or not
+            # allowed, or the host's rate limit is spent. Timeouts and server errors are
+            # not remembered, so the orchestrator's retry can still succeed.
+            if isinstance(exc, HttpStatusError) and exc.response.status_code not in (403, 429):
+                raise
+            _failures[key] = (time.monotonic(), exc)
+            if spec.kind is SourceKind.GITHUB and isinstance(exc, HttpStatusError):
+                logger.warning(
+                    "GitHub refused %s (%s); without a token it allows 60 API requests an "
+                    "hour, set AUDITOR_GITHUB_TOKEN for more",
+                    spec.url,
+                    exc,
+                )
+            raise
+
+
+async def _fetch(spec: SourceSpec, host: Host, base: Path, limits: DownloadLimits) -> Snapshot:
+    # A local folder's revision is the hash of its files, known only after copying
+    # them; an index from the folder's file sizes and times to that revision avoids
+    # copying an unchanged folder again.
+    signature = None
+    if spec.kind is SourceKind.LOCAL and spec.local_path is not None:
+        signature = await asyncio.to_thread(_local_signature, spec.local_path)
+        known = _local_index(base).get(signature)
+        if known is not None and (found := _existing(base, known, limits)):
+            return found
+    revision = await host.resolve()
+    if revision is not None and (found := _existing(base, revision, limits)):
+        return found
+    listing = await host.listing(revision)
+    revision = revision or listing.revision
+    if revision is not None and (found := _existing(base, revision, limits)):
+        return found
+
+    selection = select_files(listing.files, limits)
+    staging = base / f".partial-{secrets.token_hex(6)}"
+    try:
+        files, skipped, incomplete = await _download(selection.chosen, staging / FILES_DIR, limits)
+        revision = revision or _content_revision(files)
+        all_skipped = [*listing.skipped, *selection.skipped, *skipped]
+        manifest = SnapshotManifest(
+            source=spec.kind,
+            url=spec.url,
+            identity=spec.identity,
+            requested_ref=spec.ref,
+            revision=revision,
+            fetched_at=datetime.now(UTC),
+            limits={
+                "max_file_bytes": limits.max_file_bytes,
+                "max_total_bytes": limits.max_total_bytes,
+                "max_files": limits.max_files,
+                "max_archive_bytes": limits.max_archive_bytes,
+            },
+            files=tuple(files),
+            skipped=tuple(
+                SkippedFile(path=s.path, size=s.size, reason=s.reason)
+                for s in all_skipped[:MAX_SKIPPED_RECORDS]
+            ),
+            skipped_count=len(all_skipped),
+            incomplete=_unique([*listing.incomplete, *selection.incomplete, *incomplete]),
+            metadata=listing.metadata,
+            data_files=_data_files(listing),
+        )
+        atomic_write(staging / MANIFEST_NAME, manifest.model_dump_json(indent=2).encode("utf-8"))
+        target = base / _folder(revision, limits)
+        _publish(staging, target)
+        if signature is not None:
+            _remember_local(base, signature, revision)
+        logger.info(
+            "snapshot of %s at %s: %d files, %d skipped",
+            spec.url,
+            revision,
+            len(files),
+            len(all_skipped),
+        )
+        return _load(target)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
 
 
 async def _download(

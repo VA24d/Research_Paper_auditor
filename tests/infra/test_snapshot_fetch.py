@@ -204,6 +204,37 @@ async def test_missing_repository_is_unavailable_not_an_error(tmp_path: Path) ->
             )
 
 
+async def test_a_rate_limited_repository_is_not_asked_for_again(tmp_path: Path) -> None:
+    from auditor.infra.http import HttpStatusError
+
+    settings = settings_for(tmp_path)
+    hosts = FakeHosts()
+    hosts.routes["https://api.github.com/repos/owner/repo/commits/main"] = httpx.Response(
+        403, json={"message": "API rate limit exceeded"}, headers={"x-ratelimit-remaining": "0"}
+    )
+    ref = RepositoryRef(url="https://github.com/owner/repo", commit="main")
+    async with client(hosts, settings) as http:
+        # Ten code tasks of one paper used to send ten identical requests.
+        for _ in range(3):
+            with pytest.raises(HttpStatusError, match="HTTP 403"):
+                await fetch_snapshot(ref, http, settings)
+    assert len(hosts.requested) == 1
+
+
+async def test_a_server_error_is_asked_for_again(tmp_path: Path) -> None:
+    from auditor.infra.http import HttpStatusError
+
+    settings = settings_for(tmp_path)
+    hosts = FakeHosts()
+    hosts.routes["https://api.github.com/repos/owner/repo/commits/main"] = httpx.Response(502)
+    ref = RepositoryRef(url="https://github.com/owner/repo", commit="main")
+    async with client(hosts, settings) as http:
+        for _ in range(2):
+            with pytest.raises(HttpStatusError, match="HTTP 502"):
+                await fetch_snapshot(ref, http, settings)
+    assert len(hosts.requested) == 2
+
+
 async def test_github_token_is_sent_only_to_the_api(tmp_path: Path) -> None:
     hosts = FakeHosts()
     seen: dict[str, str | None] = {}
