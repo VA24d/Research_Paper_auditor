@@ -23,7 +23,9 @@ from auditor.infra.llm import ledger_total
 from auditor.reporting import REPORT_JSON
 from auditor.schemas import DatasetEntry, LLMCallRecord
 
-MODELS = ("gemini-3.8-flash", "gemini-2.5-flash")
+# Gemini models on Vertex; not every project serves every model (a project created in
+# November 2026 has no gemini-2.5-flash).
+MODELS = ("gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash")
 DEFAULT_PROJECT = "lmaproject6767"
 RUN_PREFIX = "ui-"
 
@@ -42,6 +44,18 @@ class AuditRequest:
     ledger: Path = Path("data/ui/ledger.jsonl")
     ledger_limit_usd: float = 5.0
     embed_url: str | None = None
+
+
+def model_choices(settings: Settings) -> tuple[str, ...]:
+    """The models the UI offers: the Gemini model configured in `.env` first."""
+    configured = settings.llm_model if settings.llm_provider == "google_genai" else None
+    return tuple(dict.fromkeys(m for m in (configured, *MODELS) if m))
+
+
+def default_project(settings: Settings) -> str:
+    """The Vertex project configured in AUDITOR_LLM_OPTIONS, else the team's first one."""
+    project = settings.llm_options.get("project")
+    return project if isinstance(project, str) and project else DEFAULT_PROJECT
 
 
 def new_run_id(now: datetime | None = None) -> str:

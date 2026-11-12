@@ -9,9 +9,12 @@ from pathlib import Path
 from auditor.config import Settings
 from auditor.schemas import LLMCallRecord
 from auditor.ui.audit import (
+    DEFAULT_PROJECT,
     AuditRequest,
     command,
+    default_project,
     environment,
+    model_choices,
     new_run_id,
     progress,
     report_of,
@@ -129,3 +132,21 @@ def test_tail_drops_the_logging_prefix() -> None:
 
 def test_run_ids_sort_by_time() -> None:
     assert new_run_id(datetime(2026, 11, 8, 3, 4, 5, tzinfo=UTC)) == "ui-20261108-030405"
+
+
+def test_the_configured_gemini_model_and_project_come_first() -> None:
+    from auditor.config import Settings
+
+    configured = Settings(
+        _env_file=None,
+        llm_provider="google_genai",
+        llm_model="gemini-3.5-flash-lite",
+        llm_options={"vertexai": True, "project": "project-new"},
+    )
+    assert model_choices(configured)[0] == "gemini-3.5-flash-lite"
+    assert len(set(model_choices(configured))) == len(model_choices(configured))
+    assert default_project(configured) == "project-new"
+    # Nothing configured: the team's models and first project.
+    bare = Settings(_env_file=None)
+    assert model_choices(bare)[0] == "gemini-3.8-flash"
+    assert default_project(bare) == DEFAULT_PROJECT

@@ -19,12 +19,12 @@ from auditor.reporting import AuditReport
 from auditor.reporting.report import NotChecked, ReportItem, same_text, short_repository
 from auditor.schemas import EvidenceKind, SourceKind
 from auditor.ui.audit import (
-    DEFAULT_PROJECT,
-    MODELS,
     AuditRequest,
     command,
+    default_project,
     demo_papers,
     environment,
+    model_choices,
     new_run_id,
     progress,
     report_of,
@@ -41,7 +41,8 @@ LEDGER = UI_DIR / "ledger.jsonl"
 DEMO_DATASET = ROOT / "configs" / "experiments" / "set_c.jsonl"
 VENUES = sorted((ROOT / "configs" / "venues").glob("*.json"))
 # Rough cost of one audit, from the set C runs (Gemini 3.8 Flash, citation agent left out).
-COST_PER_AUDIT = {"gemini-3.8-flash": 0.08, "gemini-2.5-flash": 0.04}
+# Flash-Lite: one test audit of a set C paper, 33 calls, $0.03.
+COST_PER_AUDIT = {"gemini-3.8-flash": 0.08, "gemini-3.5-flash-lite": 0.03, "gemini-2.5-flash": 0.04}
 
 _MD_SPECIAL = str.maketrans({c: f"\\{c}" for c in "\\`*_{}[]<>()#+-.!|~$"})
 
@@ -255,8 +256,8 @@ with st.sidebar:
         value=True,
         help="Off: free, but the checks that need a model end as 'not checked'.",
     )
-    model = st.selectbox("Model", MODELS, disabled=not use_llm)
-    project = st.text_input("Vertex project", DEFAULT_PROJECT, disabled=not use_llm)
+    model = st.selectbox("Model", model_choices(SETTINGS), disabled=not use_llm)
+    project = st.text_input("Vertex project", default_project(SETTINGS), disabled=not use_llm)
     skip_citation = st.checkbox(
         "Leave out the citation agent",
         value=True,
@@ -330,7 +331,7 @@ with new:
             venue=venue,
             use_llm=use_llm,
             model=model,
-            project=project.strip() or DEFAULT_PROJECT,
+            project=project.strip() or default_project(SETTINGS),
             skip_citation=skip_citation,
             max_cost_usd=float(max_cost),
             ledger=LEDGER,
