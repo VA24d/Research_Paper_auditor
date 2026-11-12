@@ -160,7 +160,13 @@ async def _replay_with(
             logger=logger,
             repository=repository,
         )
-        fresh = await verify(results, ctx)
+        try:
+            fresh = await verify(results, ctx)
+        except AssertionError as exc:
+            # The offline client refuses every request: a file this paper's evidence needs
+            # is not cached here. Skip the paper instead of ending the whole replay.
+            logger.warning("%s: skipped, %s; run again with --online", folder.name, exc)
+            continue
         old = _read(folder / "verified.jsonl", VerifiedFinding, remap)
         verified = synthesise(_carry_over(fresh, old))
         for decision in verified:
