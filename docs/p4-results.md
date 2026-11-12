@@ -19,9 +19,11 @@ Macro-F1. The experiments cost $125.04 on the team's Vertex credits.
 current code. The first version of this file (0.703 for the full system) was scored before
 d2f93cd made method matching stricter (#76); B0 and B1 are unchanged. Coverage is now the
 share of tasks checked by the parts that ran: the citation agent's placeholder tasks used
-to be counted as checked (cf52612). `results/p4/set_c-rq1.*` and `set_c-failures.md` still
-hold the first scoring: "flags backed" needs the 40 repository snapshots cached offline to
-score again, and the failure stages need the runs' `tasks.jsonl`, which is not committed.
+to be counted as checked (cf52612). `results/p4/set_c-rq1.*` hold the rescore; it needs
+the 40 repository snapshots cached and, on another machine, `--remap
+file:///home/dheeruys/Documents/Github/Research_Paper_auditor/=<this checkout as a file URL>/`
+for the patched repositories. `set_c-failures.md` keeps the first scoring: its stages need
+the runs' `tasks.jsonl`, which is not committed.
 
 ## What is new
 
@@ -101,7 +103,7 @@ Mean ± sample standard deviation over runs (`results/p4/set_c-rq1.md`, `.json`)
 | Unlabelled flags per run | 255 ± 12 | 391 ± 13 | 125 ± 19 | 29 ± 21 |
 | Items for human review per paper | 1.68 | - | - | - |
 | Tasks checked (coverage) of the parts that ran | 63% | 63% | - | - |
-| Flags backed by evidence found in its source (first scoring) | 100% | 100% | 0% | 0% |
+| Flags backed by evidence found in its source | 100% | 100% | 0% | 0% |
 | Model calls per paper version | 13.2 | 13.2 | 1.0 | 20.1 |
 | Cost per paper version | $0.079 | $0.079 | $0.047 | $0.542 |
 

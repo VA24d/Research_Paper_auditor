@@ -227,6 +227,21 @@ def test_coverage_leaves_out_the_tasks_of_placeholder_parts(tmp_path: Path) -> N
     assert sum(outcomes.values()) == 4
 
 
+def test_remap_rewrites_the_predictions_of_a_run_made_elsewhere(tmp_path: Path) -> None:
+    # Evidence from a local repository names the folder it was read from on that machine;
+    # without remapping the predictions, grounding left the full system's flags unchecked.
+    run_dir = full_run(tmp_path)
+    path = next(run_dir.glob("*/predictions.jsonl"))
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    for row in rows:
+        for evidence in row["evidence"]:
+            evidence["source"]["id"] = "file:///home/other/repo@content-1"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    run = load_run(run_dir, ("file:///home/other/", "file:///C:/here/"))
+    ids = {e.source.id for paper in run.papers for p in paper.predictions for e in p.evidence}
+    assert ids == {"file:///C:/here/repo@content-1"}
+
+
 def test_without_the_verifier_every_finding_counts_but_math_review_drops(tmp_path: Path) -> None:
     predictions = load_run(full_run(tmp_path)).predictions_without_verifier()
     assert [p.finding_id for p in predictions] == ["t0-f0", "t1-f0"]

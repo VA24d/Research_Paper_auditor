@@ -206,7 +206,7 @@ def _paper(folder: Path, remap: tuple[str, str] | None) -> PaperRun | None:
     if not complete and not (folder / INCOMPLETE_PREDICTIONS).is_file():
         return None
     predictions = read_jsonl(
-        folder / (PREDICTIONS if complete else INCOMPLETE_PREDICTIONS), Prediction
+        folder / (PREDICTIONS if complete else INCOMPLETE_PREDICTIONS), Prediction, remap
     )
     verified = read_jsonl(folder / "verified.jsonl", VerifiedFinding, remap)
     results = read_jsonl(folder / "results.jsonl", TaskResult, remap)
