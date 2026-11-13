@@ -1206,3 +1206,18 @@ Session 8 MERGE OUTCOME (done):
 
 
   13-pair subset stays exactly as the paused run needs it (25/26 entries on disk).
+
+
+Session 8 addendum (2026-11-03, set A results committed):
+- CONFIRMED missing: runs/hallmark/*.jsonl and data/hallmark/test_public.jsonl were
+  never tracked (runs/ and data/ are gitignored). Pushed now: the 4 set A run results
+  (results.jsonl stale audit-session file, results_fresh.jsonl pre-fix baseline,
+  results_fixed_preyear.jsonl intermediate, results_fixed.jsonl the final numbers) plus
+  the HALLMARK benchmark input, via .gitignore exceptions (/runs/* !/runs/hallmark/,
+  !/data/hallmark/) so every documented path in p2-mid-results §6 stays valid.
+- p2 was synced with main FIRST (origin/main had moved 9 commits: ui settings, verifier
+  replay skip, evaluation --remap, citation test additions; fast-forward, suite green
+  1359 passed / 1 skipped / 9 deselected, ruff + mypy clean), then the results commit
+  (718c363) was pushed to p2 and fast-forward-merged to main. Branch NOT deleted.
+- State: p2-citation-checker == origin/p2-citation-checker == origin/main == local main
+  == 718c363; tree clean; on branch p2-citation-checker.
