@@ -2,13 +2,18 @@
 archive/
 # data/ is the fetched-data tree (D13: not committed) — EXCEPT set B, which the
 # FULL_SYSTEM_AUDIT_REPORT Finding 1 remediation commits so the citation evaluation is
-# reproducible from the repository (session 8, 2026-11-03).
+# reproducible from the repository (session 8, 2026-11-03), and the HALLMARK benchmark
+# input (set A) the set A numbers are measured on.
 /data/*
 !/data/set_b/
 /data/set_b/*
 !/data/set_b/papers/
 !/data/set_b/sources/
-/runs/
+!/data/hallmark/
+# runs/ is the working-results tree (not committed) — EXCEPT the set A HALLMARK results
+# the report tables in docs/p2-mid-results.md cite (session 8, 2026-11-03).
+/runs/*
+!/runs/hallmark/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

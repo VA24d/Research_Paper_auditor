@@ -286,15 +286,17 @@ uncommitted and too few claim-level labels. Remediation, as landed here:
 ## 6. How to reproduce
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest tests -q                 # 1229 passed
+.\.venv\Scripts\python.exe -m pytest tests -q                 # 1351+ passed
 .\.venv\Scripts\python.exe -m pytest tests -m network         # needs APIs
 .\.venv\Scripts\python.exe -m pytest tests -m grobid          # needs docker compose up -d
 .\.venv\Scripts\ruff.exe check ; .\.venv\Scripts\ruff.exe format --check
-.\.venv\Scripts\python.exe -m mypy                            # 2 pre-existing Part-1 errors
+.\.venv\Scripts\python.exe -m mypy                            # clean (0 errors since 28248ee)
 
-# Set A
+# Set A (both the benchmark input data/hallmark/test_public.jsonl and the run results
+# runs/hallmark/*.jsonl are committed to the repository since 2026-11-03)
 .\.venv\Scripts\python.exe scripts\hallmark.py run --file data\hallmark\test_public.jsonl --out runs\hallmark\results_fixed.jsonl
 .\.venv\Scripts\python.exe scripts\hallmark.py score --results runs\hallmark\results_fixed.jsonl
+
 
 # Set B mini-run (full system; scoring MUST use --before-verifier until Part 4)
 .\.venv\Scripts\auditor.exe batch --experiment full-mini --systems full --runs 1 --llm-cache runs\full_mini_dataset.jsonl
