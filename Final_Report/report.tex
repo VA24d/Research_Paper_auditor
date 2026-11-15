@@ -165,6 +165,34 @@ evidence in its source, and only verified flags are reported as errors.}
 Figure~\ref{fig:system} shows the pipeline. All records passed between stages are frozen Pydantic
 models, so a malformed finding fails at once instead of reaching the report.
 
+\textbf{Parts of the system and what each looks for.}
+\begin{itemize}
+\item \textbf{Parser.} Reads the paper (PDF or LaTeX) into sentences, tables, references and
+citation markers.
+\item \textbf{Planner.} Splits the paper into small tasks (one per reference, citing sentence,
+stated setting, method section, claim and venue rule) and sends each to its checker.
+\item \textbf{Citation checker.} References that do not exist; references with a wrong title,
+authors, year or venue; cited papers that do not support, or contradict, the sentence citing them;
+numbers credited to a cited paper that differ from that paper.
+\item \textbf{Code checker.} \emph{Setting} errors: a hyperparameter such as the learning rate,
+batch size or number of epochs that differs from the code. \emph{Metric} errors: the code computes
+a different evaluation metric. \emph{Method} errors: the code uses a different loss, model part,
+training step or evaluation than the paper describes. Also data splits that differ, and code that
+would fail as released (a syntax error or an undefined name).
+\item \textbf{Data checker.} Dataset sizes, class counts or class balance that differ from the data,
+and test examples that also appear in the training data.
+\item \textbf{Theory checker.} Wrong equations, derivations and proof steps.
+\item \textbf{Integrity checker.} Leftover placeholder text, means that are impossible for the sample
+size (GRIM), and text that disagrees with the paper's own tables (a wrong number, a reversed
+comparison, a wrong gain).
+\item \textbf{Template checker.} Broken venue rules: page limit, paper size, margins, minimum font
+size, required or forbidden sections, a missing reference list, and anonymity.
+\item \textbf{Verifier.} Checks that every quoted piece of evidence is really in its source, and
+sorts each finding into verified flag, human review or dropped.
+\item \textbf{Report.} Lists the verified flags with their quotes, the items for human review with
+the reason, and the checks that could not be done.
+\end{itemize}
+
 \textbf{Parsing.} GROBID~\cite{grobid} reads PDFs and extracts sentences, references and citation
 markers. LaTeX sources are parsed directly. GROBID's tables lose numbers, so we also read the PDF
 text inside each table's region. This recovers 96\% of table numbers on 39 papers, against 57\%
