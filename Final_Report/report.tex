@@ -52,12 +52,12 @@ that checks a paper (PDF or LaTeX) against the papers it cites and its code repo
 the paper into small items
 and sends each item to a specialist checker. It reports a problem only when it can quote the
 evidence and a verifier finds that quote in the source. We compared it with two baselines on the
-same model. B0 reads the paper once with no tools. B1 is a single agent with the same tools but no
+same model. B0 (LLM) reads the paper once with no tools. B1 (Agent) is a single agent with the same tools but no
 verifier. The test set has 40 papers with their code. Each paper appears twice, as the original
 and as a copy with planted errors (80 paper versions, 163 planted errors, 72 unchanged control
-items). Over three runs the full system scores a Macro-F1 of 0.636, against 0.048 for B0 and
-0.046 for B1. No system flags any control item. The full system also costs about a seventh of
-B1 (\$0.079 against \$0.542 per paper version). On its own, the citation checker scores an F1 of
+items). Over three runs the full system scores a Macro-F1 of 0.636, against 0.048 for B0 (LLM) and
+0.046 for B1 (Agent). No system flags any control item. The full system also costs about a seventh of
+B1 (Agent) (\$0.079 against \$0.542 per paper version). On its own, the citation checker scores an F1 of
 0.879 on the HALLMARK reference benchmark.
 
 \section{Introduction}
@@ -97,7 +97,7 @@ supports the sentence citing it. We use its public test split as our set A.
 \textbf{Claim verification.} SciFact~\cite{scifact} checks a scientific claim against an abstract
 by retrieval followed by entailment. We do the same with the cited paper's full text when it is
 open. BM25~\cite{bm25} ranks its passages, and the model must quote the passage it relies on. Our
-specialists and baseline B1 follow the general patterns of retrieval-augmented
+specialists and baseline B1 (Agent) follow the general patterns of retrieval-augmented
 generation~\cite{rag} and tool-using agents such as ReAct~\cite{react}.
 
 \textbf{LLM reviewers.} Liang et al.~\cite{liang} found that GPT-4 feedback on papers overlaps
@@ -211,7 +211,7 @@ It retries failed calls and saves checkpoints, so a stopped run can resume. It a
 budget per task, a dollar cap per run and a spend limit shared across runs. Replies from scholarly
 APIs and from the model are cached.
 
-\textbf{Baselines.} B0 is the same model reading the whole paper once, with no tools. B1 is one
+\textbf{Baselines.} B0 (LLM) is the same model reading the whole paper once, with no tools. B1 (Agent) is one
 agent with every tool the specialists use, up to 20 model calls, and no verifier. Both use the
 same error classes and answer format.
 
@@ -219,7 +219,7 @@ same error classes and answer format.
 \begin{itemize}
 \item \textbf{Matching.} A prediction matches a label when it names the same paper, anchor
 (sentence, reference or code location) and target; each label matches at most one prediction.
-\item \textbf{What counts.} For the full system only verified flags count; for B0 and B1 every
+\item \textbf{What counts.} For the full system only verified flags count; for B0 (LLM) and B1 (Agent) every
 flag counts. Macro-F1 averages F1 over the error classes present in the labels.
 \item \textbf{False alarms.} A flag on a clean control is a false positive. A flag that matches no
 label is counted separately as \emph{unlabelled}, because it may be a real error we did not plant.
@@ -234,8 +234,8 @@ label is counted separately as \emph{unlabelled}, because it may be a real error
 every run.
 \item \textbf{Data.} Set C: 80 paper versions with 163 planted errors and 72 clean controls.
 \item \textbf{Citation checker off.} Set C has no citation labels, so we switched off the citation
-checker and B1's citation tools alike. The full system and B1 stay matched.
-\item \textbf{Repeats.} The full system and B0 ran three times each, B1 twice. A third B1 run hit
+checker and the citation tools of B1 (Agent) alike. The full system and B1 (Agent) stay matched.
+\item \textbf{Repeats.} The full system and B0 (LLM) ran three times each, B1 (Agent) twice. A third B1 (Agent) run hit
 the shared \$125 spend limit after 10 of 80 versions and is not scored. In every scored run, every
 paper version finished.
 \end{itemize}
@@ -302,16 +302,16 @@ Cost per version & \$0.079 & \$0.079 & \$0.047 & \$0.542 \\
 \caption{F1 per error class (labels in brackets).}
 \end{subfigure}
 \caption{RQ1 on set C, mean over runs. The full system finds far more errors than either
-baseline at a seventh of B1's cost. Both baselines find no method or metric error.}
+baseline at a seventh of the cost of B1 (Agent). Both baselines find no method or metric error.}
 \label{fig:rq1}
 \end{figure}
 
 \begin{itemize}
-\item \textbf{Detection: target met.} The full system scores 59.0 points of Macro-F1 above B1 and
-58.8 above B0. The target was 10.
+\item \textbf{Detection: target met.} The full system scores 59.0 points of Macro-F1 above B1 (Agent) and
+58.8 above B0 (LLM). The target was 10.
 \item \textbf{Baselines miss almost everything.} Neither finds any method or metric error. Each
 finds only 3 to 6 of the 60 changed settings.
-\item \textbf{Cheaper than B1.} B1 sends the whole paper with each of its 20 calls, about 670,000
+\item \textbf{Cheaper than B1 (Agent).} B1 (Agent) sends the whole paper with each of its 20 calls, about 670,000
 input tokens per paper version. That is why it costs \$0.542 a version against \$0.079.
 \item \textbf{Total cost.} All set C runs together cost \$125.04 at list prices.
 \end{itemize}
@@ -372,11 +372,11 @@ We have not checked by hand how many of the held-back flags are false alarms.
 \end{itemize}
 
 \textbf{Model only, and one agent with tools} (ablations for tool calling and agentic abilities).
-These are baselines B0 and B1 in Table~\ref{tab:rq1}. Tools alone did not help: B1 scores no
-better than B0 and costs eleven times as much.
+These are baselines B0 (LLM) and B1 (Agent) in Table~\ref{tab:rq1}. Tools alone did not help: B1 (Agent) scores no
+better than B0 (LLM) and costs eleven times as much.
 
-\textbf{Abstract-only retrieval} (ablation for RAG). We ran this only with B1 on part of set B.
-Full text and abstract both gave a Macro-F1 of 0.026. B1 found almost nothing either way, so this
+\textbf{Abstract-only retrieval} (ablation for RAG). We ran this only with B1 (Agent) on part of set B.
+Full text and abstract both gave a Macro-F1 of 0.026. B1 (Agent) found almost nothing either way, so this
 tells us nothing about the full system, which we did not run on set B
 (Section~\ref{sec:limits}).
 
@@ -454,7 +454,7 @@ only the other 17.
 F1 can move a lot with one item. The data checker is not tested on a labelled set.
 \item \textbf{Labels.} All planted errors are synthetic except the 8 SciCoQA discrepancies reported
 by users.
-\item \textbf{One model family.} All main runs use Gemini 3.8 Flash; B1 has two runs, not three.
+\item \textbf{One model family.} All main runs use Gemini 3.8 Flash; B1 (Agent) has two runs, not three.
 \item \textbf{Method recall is low.} The method F1 is 0.34, and most misses are code the model saw but
 did not report.
 \item \textbf{Parsing.} GROBID splits sentences at abbreviations; we did not change it because the gold
@@ -465,7 +465,7 @@ labels point at sentence ids.\end{itemize}
 \begin{itemize}
 \item On paper--code consistency, checking each item with tools and verifying the quotes works far
 better than giving the same model the whole paper, with or without tools. Macro-F1 is 0.636
-against under 0.05, at a seventh of B1's cost.
+against under 0.05, at a seventh of the cost of B1 (Agent).
 \item No clean control was flagged, and every flag is backed by evidence found in its source.
 \item The verifier makes the output easier for a reviewer to use rather than raising the score. It
 cuts possible false alarms by about a third and makes every flag checkable from its quote, at a
@@ -512,7 +512,7 @@ commands to audit a paper, run a batch and score it (\texttt{auditor audit}, \te
 \toprule
 Member & Work \\
 \midrule
-Itikela Bhaskar & Parser (GROBID, LaTeX, table regions, citation linking), planner, LangGraph orchestration with budgets, checkpoints and the spend ledger, baselines B0 and B1, batch runner, shared schemas, Docker image, failure analysis of Part 1 \\
+Itikela Bhaskar & Parser (GROBID, LaTeX, table regions, citation linking), planner, LangGraph orchestration with budgets, checkpoints and the spend ledger, baselines B0 (LLM) and B1 (Agent), batch runner, shared schemas, Docker image, failure analysis of Part 1 \\
 Anurag Peddi & Citation checker (lookup in four indexes, full-text retrieval, passage ranking, support and number checks), set A scoring, set B construction and review \\
 Vijay Aravynthan & Code, data, template, theory and integrity checkers, the claim loop, sets C and D, SPOT scoring and most ablations \\
 Sudheera Y S & Verifier, audit report, the evaluation runner (\texttt{auditor evaluate}), the set C experiments and their analysis \\
@@ -530,16 +530,16 @@ items or runs than planned (the reason is in the middle column).}
 Promised & Delivered & State \\
 \midrule
 Planner, citation, code and template agents, verifier & All built, plus data, theory and integrity checkers; audit report and web UI & done \\
-Baselines B0 and B1 & Both built on the same model, tools and budgets & done \\
+Baselines B0 (LLM) and B1 (Agent) & Both built on the same model, tools and budgets & done \\
 Set A (HALLMARK) & 831 references scored & done \\
 Set B, about 600 claim--source pairs & 60 papers, 159 labels; full-system run on all of it not done & partial \\
 Set C, 40 repositories, 160 instances & 40 pairs, 80 paper versions, 235 labels; all systems run & done \\
 Metrics: Macro-F1, false alarms, grounding, cost & All four reported by one scorer (\texttt{auditor evaluate}) & done \\
 Ablation: remove the verifier & Scored on every full-system run & done \\
-Ablation: abstract-only retrieval & Run only with B1 on part of set B; the full-system run ran out of credits & partial \\
+Ablation: abstract-only retrieval & Run only with B1 (Agent) on part of set B; the full-system run ran out of credits & partial \\
 Recall@5 of the gold passage & Measured, but only 6 set B records have a gold passage & partial \\
 Tool-call accuracy & Not measured & not done \\
-Three runs of each system & Full system and B0 three runs; B1 two (the third hit the spend limit) & partial \\
+Three runs of each system & Full system and B0 (LLM) three runs; B1 (Agent) two (the third hit the spend limit) & partial \\
 \bottomrule
 \end{tabularx}
 \end{table}
