@@ -41,7 +41,7 @@
 {\LARGE\bfseries Research Paper Auditor}\\[3pt]
 {\large An evidence-gated agent system for checking research papers}\\[6pt]
 Final report, CL3.410 \quad|\quad Team Hood Research Department \quad|\quad 15 November 2026\\[4pt]
-Vijay Aravynthan (2023111007) \quad Anurag Peddi (2023101090) \quad Itikela Bhaskar (2023111032) \quad Sudheera Y S (2023111002)\\[3pt]
+Vijay Aravynthan (2023111007) \quad Itikela Bhaskar (2023111032) \quad Anurag Peddi (2023101090) \quad Sudheera Y S (2023111002)\\[3pt]
 Code: \url{https://github.com/itikelabhaskar/Research_Paper_auditor}
 \end{center}
 
@@ -514,6 +514,7 @@ commands to audit a paper, run a batch and score it (\texttt{auditor audit}, \te
 \texttt{configs/experiments/set\_c.env}, the runs in \texttt{results/p4/runs}, and
 \texttt{auditor evaluate} re-scores them without any model call.
 
+\clearpage
 \begin{thebibliography}{99}\small
 \bibitem{hallmark} HALLMARK: Diagnosing three failure modes in LLM citation verifiers. arXiv:2607.18360, 2026. Data: \url{https://github.com/rpatrik96/hallmark}.
 \bibitem{spot} G.~Son et al. When AI co-scientists fail: SPOT, a benchmark for automated verification of scientific research. arXiv:2505.11855, 2025.
@@ -540,10 +541,10 @@ commands to audit a paper, run a batch and score it (\texttt{auditor audit}, \te
 \toprule
 Member & Work \\
 \midrule
+Vijay Aravynthan & Code, data, template, theory and integrity checkers, the verifier, the claim loop, sets C and D, SPOT scoring and most ablations \\
 Itikela Bhaskar & Parser (GROBID, LaTeX, table regions, citation linking), planner, LangGraph orchestration with budgets, checkpoints and the spend ledger, baselines B0 (LLM) and B1 (Agent), batch runner, shared schemas, Docker image, failure analysis of Part 1 \\
 Anurag Peddi & Citation checker (lookup in four indexes, full-text retrieval, passage ranking, support and number checks), set A scoring, set B construction and review \\
-Vijay Aravynthan & Code, data, template, theory and integrity checkers, the claim loop, sets C and D, SPOT scoring and most ablations \\
-Sudheera Y S & Verifier, audit report, the evaluation runner (\texttt{auditor evaluate}), the set C experiments and their analysis \\
+Sudheera Y S & Audit report, web UI, the evaluation runner (\texttt{auditor evaluate}), the set C experiments and their analysis \\
 \bottomrule
 \end{tabularx}
 
