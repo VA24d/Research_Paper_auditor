@@ -48,16 +48,16 @@ Code: \url{https://github.com/itikelabhaskar/Research_Paper_auditor}
 \section*{Abstract}
 Reviewers rarely open the papers a submission cites or the code it releases, so a wrong
 citation or a setting that differs from the code usually goes unnoticed. We built an auditor
-that checks a paper (PDF or LaTeX) against the papers it cites and its code repository. It splits
+that checks a paper (PDF or LaTeX) \emph{against the papers it cites and its code repository}. It splits
 the paper into small items
-and sends each item to a specialist checker. It reports a problem only when it can quote the
-evidence and a verifier finds that quote in the source. We compared it with two baselines on the
+and sends each item to a specialist checker. It reports a problem \textbf{only when it can quote the
+evidence} and a verifier finds that quote in the source. We compared it with two baselines on the
 same model. B0 (LLM) reads the paper once with no tools. B1 (Agent) is a single agent with the same tools but no
 verifier. The test set has 40 papers with their code. Each paper appears twice, as the original
 and as a copy with planted errors (80 paper versions, 163 labelled errors, 72 unchanged control
-items). Over three runs the full system scores a Macro-F1 of 0.636, against 0.048 for B0 (LLM) and
-0.046 for B1 (Agent). No system flags any control item. The full system also costs about a seventh of
-B1 (Agent) (\$0.079 against \$0.542 per paper version). On its own, the citation checker scores an F1 of
+items). Over three runs the full system scores \textbf{a Macro-F1 of 0.636}, against 0.048 for B0 (LLM) and
+0.046 for B1 (Agent). No system flags any control item. The full system also costs \textbf{about a seventh of
+B1 (Agent)} (\$0.079 against \$0.542 per paper version). On its own, the citation checker scores an F1 of
 0.879 on the HALLMARK reference benchmark.
 
 \section{Introduction}
@@ -83,10 +83,10 @@ model run in a single pass?
 false alarms on clean papers.
 \end{itemize}
 
-\textbf{Design principle.} A false accusation harms an author, so every finding must carry a
-verbatim quote, and the system must say when it cannot decide. Each output is one of three states:
-\emph{verified flag}, \emph{needs human review} or \emph{dropped}. A human makes every final
-decision.
+\textbf{Design principle.} A false accusation harms an author, so \textbf{every finding must carry a
+verbatim quote}, and the system must say when it cannot decide. Each output is one of three states:
+\emph{verified flag}, \emph{needs human review} or \emph{dropped}. \textbf{A human makes every final
+decision.}
 
 \section{Literature review}
 \textbf{Reference checking.} HALLMARK~\cite{hallmark} is a benchmark of fabricated and corrupted
@@ -389,8 +389,8 @@ across an equation the parser lost.
 
 \section{Ablations}
 \textbf{Removing the verifier} (the proposal's ablation for reasoning). The verifier is not meant
-to raise the score. It is meant to give a reviewer fewer flags to check, and only flags they can
-check quickly. We scored every candidate finding of the three full runs with and without it
+to raise the score. It is meant to give a reviewer \textbf{fewer flags to check}, and \textbf{only flags they can
+check quickly}. We scored every candidate finding of the three full runs with and without it
 (Table~\ref{tab:rq1}).
 \begin{itemize}
 \item \textbf{Fewer possible false alarms.} Unlabelled flags are either real errors we did not
@@ -502,11 +502,11 @@ labels point at sentence ids.\end{itemize}
 \section{Conclusions}
 \textbf{What we found.}
 \begin{itemize}
-\item On paper--code consistency, checking each item with tools and verifying the quotes works far
-better than giving the same model the whole paper, with or without tools. Macro-F1 is 0.636
+\item On paper--code consistency, checking each item with tools and verifying the quotes \textbf{works far
+better} than giving the same model the whole paper, with or without tools. Macro-F1 is 0.636
 against under 0.05, at a seventh of the cost of B1 (Agent).
-\item No clean control was flagged, and every flag is backed by evidence found in its source.
-\item The verifier makes the output easier for a reviewer to use rather than raising the score. It
+\item \textbf{No clean control was flagged}, and every flag is backed by evidence found in its source.
+\item The verifier makes the output \emph{easier for a reviewer to use} rather than raising the score. It
 cuts possible false alarms by about a third and makes every flag checkable from its quote, at a
 cost of 3 points of F1.
 \end{itemize}
