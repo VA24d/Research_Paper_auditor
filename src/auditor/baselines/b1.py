@@ -71,7 +71,11 @@ class _Accounted(AgentMiddleware[Any, Any, Any]):
         if self.calls >= self.max_model_calls:
             request = request.override(tools=[])
         return await self.llm.direct_call(
-            lambda: handler(request), _usage, purpose=PURPOSE, prompt=prompt_of(request)
+            lambda: handler(request),
+            _usage,
+            purpose=PURPOSE,
+            prompt=prompt_of(request),
+            tools=request.tools,
         )
 
     async def awrap_tool_call(

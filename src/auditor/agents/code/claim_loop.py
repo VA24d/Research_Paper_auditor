@@ -216,6 +216,8 @@ class _Accounted(AgentMiddleware[Any, Any, Any]):
             effort=self.effort,
             purpose=PURPOSE,
             prompt=prompt_of(request),
+            tools=request.tools,
+            max_output_tokens=TURN_MAX_OUTPUT,
         )
 
 

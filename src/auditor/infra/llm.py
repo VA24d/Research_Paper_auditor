@@ -18,7 +18,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mappin
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, BinaryIO, Literal
 from uuid import UUID
 
 import httpx
@@ -299,13 +299,29 @@ class Spend:
         return (input_tokens * price[0] + output_tokens * price[1]) / 1e6
 
     @contextlib.contextmanager
-    def holding(self, cost: float) -> Iterator[None]:
-        """Counts `cost` against the budget while a call is waiting for its reply."""
+    def holding(self, cost: float, model: str = "") -> Iterator[None]:
+        """Counts `cost` against the budget while a call is waiting for its reply.
+
+        With a ledger limit the reservation is written to the ledger as well, under its
+        lock and only if it fits, so runs sharing the ledger see each other's calls in
+        flight; the reply's real cost replaces it. A run that dies mid-call leaves its
+        reservation counted, which errs on the safe side."""
+        in_ledger = self.ledger is not None and self.ledger_limit_usd is not None and cost > 0
+        if in_ledger:
+            assert self.ledger is not None
+            if not _reserve_in_ledger(self.ledger, model, cost, self.ledger_limit_usd):
+                raise CallLimitReachedError(
+                    f"the next call may cost up to ${cost:.6f}, more than is left of the "
+                    f"ledger's limit of ${self.ledger_limit_usd} (AUDITOR_LLM_LEDGER_LIMIT_USD)"
+                )
         self.reserved_usd += cost
         try:
             yield
         finally:
             self.reserved_usd -= cost
+            if in_ledger:
+                assert self.ledger is not None
+                _append_ledger(self.ledger, model, -cost, kind="released")
 
     def charge(self, model: str, usage: "TokenUsage") -> None:
         price = self.price(model)
@@ -318,22 +334,32 @@ class Spend:
             if self.ledger is not None and cost:
                 _append_ledger(self.ledger, model, cost)
 
+    def fits(self, cost: float) -> bool:
+        """Whether a call that may cost `cost` fits in what is left of the run's budget, so
+        the call that would cross the limit is not sent instead of being charged after it.
+        The ledger limit is held the same way when the call is reserved (`holding`)."""
+        committed = self.spent_usd + self.reserved_usd + cost
+        return self.limit_usd is None or committed <= self.limit_usd
+
     @property
     def exhausted(self) -> bool:
         committed = self.spent_usd + self.reserved_usd
         if self.limit_usd is not None and committed >= self.limit_usd:
             return True
         if self.ledger is not None and self.ledger_limit_usd is not None:
-            return ledger_total(self.ledger) + self.reserved_usd >= self.ledger_limit_usd
+            # The ledger holds this run's reservations as well as its spend.
+            return ledger_total(self.ledger) >= self.ledger_limit_usd
         return False
 
 
-def _append_ledger(path: Path, model: str, cost: float) -> None:
-    """One line per priced call, locked against other runs writing at the same time
-    (unlocked appends from parallel runs lost lines on Windows)."""
+@contextlib.contextmanager
+def _locked_ledger(path: Path, *, read: bool = False) -> Iterator[BinaryIO]:
+    """The ledger open for appending (and reading, with `read`), locked against other
+    runs (unlocked appends from parallel runs lost lines on Windows). Appends open it
+    write-only: a handle that can read is about a hundred times slower to open and
+    close on Windows."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    line = json.dumps({"at": datetime.now(UTC).isoformat(), "model": model, "usd": cost}) + "\n"
-    with path.open("ab") as handle:
+    with path.open("a+b" if read else "ab") as handle:
         if sys.platform == "win32":
             import msvcrt
 
@@ -342,7 +368,7 @@ def _append_ledger(path: Path, model: str, cost: float) -> None:
             handle.seek(0)
             msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
             try:
-                handle.write(line.encode("utf-8"))
+                yield handle
                 handle.flush()
             finally:
                 handle.seek(0)
@@ -351,7 +377,43 @@ def _append_ledger(path: Path, model: str, cost: float) -> None:
             import fcntl
 
             fcntl.flock(handle, fcntl.LOCK_EX)
-            handle.write(line.encode("utf-8"))
+            yield handle
+
+
+def _ledger_line(model: str, cost: float, kind: str | None) -> bytes:
+    record: dict[str, Any] = {"at": datetime.now(UTC).isoformat(), "model": model, "usd": cost}
+    if kind is not None:
+        record["kind"] = kind
+    return (json.dumps(record) + "\n").encode("utf-8")
+
+
+def _total_of(data: bytes) -> float:
+    total = 0.0
+    for line in data.decode("utf-8", errors="replace").splitlines():
+        try:
+            total += float(json.loads(line)["usd"])
+        except (ValueError, KeyError, TypeError):
+            continue
+    return total
+
+
+def _append_ledger(path: Path, model: str, cost: float, *, kind: str | None = None) -> None:
+    """One line per priced call (and per reservation and its release, with their kind)."""
+    with _locked_ledger(path) as handle:
+        handle.write(_ledger_line(model, cost, kind))
+
+
+def _reserve_in_ledger(path: Path, model: str, cost: float, limit: float | None) -> bool:
+    """Writes a reservation of `cost` when the ledger's total leaves room for it. The
+    check and the write happen under one lock, so two runs cannot both take the last
+    of the limit."""
+    with _locked_ledger(path, read=True) as handle:
+        handle.seek(0)
+        total = _total_of(handle.read())
+        if limit is not None and total + cost > limit:
+            return False
+        handle.write(_ledger_line(model, cost, "reserved"))
+        return True
 
 
 def prompt_of(request: Any) -> list[BaseMessage]:
@@ -371,16 +433,14 @@ def _output_cap(options: Mapping[str, Any]) -> int | None:
 
 
 def ledger_total(path: Path) -> float:
-    """The dollars all runs have written to the ledger so far."""
+    """The dollars all runs have written to the ledger so far, with the calls now in
+    flight counted at their reservation. Read under the lock: on Windows a read of the
+    locked byte fails while another run writes."""
     if not path.is_file():
         return 0.0
-    total = 0.0
-    for line in path.read_text(encoding="utf-8").splitlines():
-        try:
-            total += float(json.loads(line)["usd"])
-        except (ValueError, KeyError, TypeError):
-            continue
-    return total
+    with _locked_ledger(path, read=True) as handle:
+        handle.seek(0)
+        return _total_of(handle.read())
 
 
 class PromptTooLongError(StructuredOutputError):
@@ -401,6 +461,21 @@ IMAGE_CHARS = 1_500
 # call nor the settings cap it. Thinking counts as output; set `max_output_tokens` in
 # AUDITOR_LLM_OPTIONS to make the reservation a true upper bound.
 ASSUMED_OUTPUT_TOKENS = 16_384
+# The framing a provider adds around each message (role, separators), in tokens.
+MESSAGE_TOKENS = 8
+
+
+def _tool_tokens(tools: Sequence[Any]) -> int:
+    """About how many tokens the definitions of `tools` take when sent with a call."""
+    from langchain_core.utils.function_calling import convert_to_openai_tool
+
+    chars = 0
+    for tool in tools:
+        try:
+            chars += len(json.dumps(convert_to_openai_tool(tool)))
+        except Exception:  # an unusual tool shape still counts by its text
+            chars += len(str(tool))
+    return int(chars / CHARS_PER_TOKEN)
 
 
 def estimated_tokens(messages: Sequence[BaseMessage]) -> int:
@@ -414,6 +489,14 @@ def estimated_tokens(messages: Sequence[BaseMessage]) -> int:
                     chars += len(str(part.get("text", "")) if isinstance(part, dict) else part)
         else:
             chars += len(str(message.content))
+        # A model turn that called tools is sent back with its calls' arguments (often
+        # whole code files), which its text content does not show.
+        calls = getattr(message, "tool_calls", None)
+        if calls:
+            chars += len(json.dumps(calls, default=str))
+        legacy = message.additional_kwargs.get("function_call")
+        if legacy:
+            chars += len(json.dumps(legacy, default=str))
     return int(chars / CHARS_PER_TOKEN)
 
 
@@ -489,9 +572,18 @@ class StructuredLLM:
         if self.prefix_cache is not None:
             await self.prefix_cache.close()
 
-    def _most_cost(self, messages: Sequence[BaseMessage], max_output_tokens: int | None) -> float:
+    def _most_cost(
+        self,
+        messages: Sequence[BaseMessage],
+        max_output_tokens: int | None,
+        *,
+        extra_tokens: int = 0,
+    ) -> float:
+        """What a call may cost: its messages (each with a little framing), `extra_tokens`
+        for what is sent besides them (a schema, tool definitions), and a full answer."""
         output = max_output_tokens or self.output_cap or ASSUMED_OUTPUT_TOKENS
-        return self.spend.estimate(self.name, estimated_tokens(messages), output)
+        sent = estimated_tokens(messages) + MESSAGE_TOKENS * len(messages) + extra_tokens
+        return self.spend.estimate(self.name, sent, output)
 
     def _check_limits(self) -> None:
         if self.max_calls is not None and self.calls >= self.max_calls:
@@ -503,6 +595,15 @@ class StructuredLLM:
                 f"the budget is used up: ${self.spend.spent_usd:.2f} this run "
                 f"(AUDITOR_LLM_MAX_COST_USD {self.spend.limit_usd}), ledger limit "
                 f"{self.spend.ledger_limit_usd} (AUDITOR_LLM_LEDGER_LIMIT_USD)"
+            )
+
+    def _check_fits(self, most: float) -> None:
+        if not self.spend.fits(most):
+            raise CallLimitReachedError(
+                f"the next call may cost up to ${most:.6f}, more than is left of the budget "
+                f"(${self.spend.spent_usd:.2f} spent this run, AUDITOR_LLM_MAX_COST_USD "
+                f"{self.spend.limit_usd}, AUDITOR_LLM_LEDGER_LIMIT_USD "
+                f"{self.spend.ledger_limit_usd})"
             )
 
     @classmethod
@@ -666,6 +767,7 @@ class StructuredLLM:
             return plain, turns, False
 
         conversation = list(messages)
+        schema_tokens = int(len(json.dumps(schema.model_json_schema())) / CHARS_PER_TOKEN)
         total = TokenUsage()
         problem = ""
         for attempt in range(1, self.max_attempts + 1):
@@ -678,34 +780,46 @@ class StructuredLLM:
                 # Checked again once a slot is free: calls that were waiting for one when
                 # the budget ran out are not sent.
                 self._check_limits()
-                self.calls += 1
-                started_at = datetime.now(UTC)
-                started = time.perf_counter()
-                try:
-                    with self.spend.holding(self._most_cost(sent, max_output_tokens)):
+                # The whole conversation is billed, the cached part included (at its share),
+                # and so is the schema the answer is held to.
+                most = self._most_cost(conversation, max_output_tokens, extra_tokens=schema_tokens)
+                self._check_fits(most)
+                # The reservation is held until the call is charged, so the budget never
+                # shows a gap another call could start in.
+                with self.spend.holding(most, self.name):
+                    self.calls += 1
+                    started_at = datetime.now(UTC)
+                    started = time.perf_counter()
+                    try:
                         output = await runnable.ainvoke(sent)
-                except Exception as exc:
-                    record(
-                        TokenUsage(),
-                        started_at,
-                        time.perf_counter() - started,
-                        error=f"{type(exc).__name__}: {exc}",
+                    except Exception as exc:
+                        record(
+                            TokenUsage(),
+                            started_at,
+                            time.perf_counter() - started,
+                            error=f"{type(exc).__name__}: {exc}",
+                        )
+                        if not from_cache or attempt == self.max_attempts:
+                            raise
+                        # The cache may have expired or been refused: send the message whole.
+                        logger.warning(
+                            "call with a context cache failed (%s); sending it whole", exc
+                        )
+                        assert self.prefix_cache is not None
+                        assert head is not None
+                        self.prefix_cache.forget(self._bare_name, str(head.content))
+                        cache_name = None
+                        continue
+                    usage = (
+                        TokenUsage.from_message(output["raw"])
+                        if isinstance(output, dict)
+                        else TokenUsage()
                     )
-                    if not from_cache or attempt == self.max_attempts:
-                        raise
-                    # The cache may have expired or been refused: send the message whole.
-                    logger.warning("call with a context cache failed (%s); sending it whole", exc)
-                    assert self.prefix_cache is not None
-                    assert head is not None
-                    self.prefix_cache.forget(self._bare_name, str(head.content))
-                    cache_name = None
-                    continue
+                    self.spend.charge(self.name, usage)
             if not isinstance(output, dict):
                 raise TypeError(f"expected a dict from include_raw, got {type(output).__name__}")
             raw = output["raw"]
-            usage = TokenUsage.from_message(raw)
             total += usage
-            self.spend.charge(self.name, usage)
             record(usage, started_at, time.perf_counter() - started)
 
             parsed = output.get("parsed")
@@ -754,36 +868,42 @@ class StructuredLLM:
         effort: Effort | None = None,
         purpose: str | None = None,
         prompt: Sequence[BaseMessage] = (),
+        tools: Sequence[Any] = (),
+        max_output_tokens: int | None = None,
     ) -> R:
         """Run one chat-model call made outside `generate`, such as one turn of a
         tool-using agent, under the same rules: it is charged to the task's budget and to
         the run's call and dollar limits, waits for a concurrency slot, and is recorded in
-        the usage log. `usage_of` reads the token usage from what `call` returns; `prompt`,
-        the messages `call` sends, sizes what the call may cost while it runs."""
+        the usage log. `usage_of` reads the token usage from what `call` returns. What the
+        call may cost is reserved while it runs, sized by `prompt` (the messages `call`
+        sends), `tools` (the tool definitions sent with them) and `max_output_tokens` (the
+        answer cap of the model `call` uses, when it is not the configured one)."""
         active = current_scope()
         if active is not None:
             active.budget.charge_llm_call()
         self._check_limits()
         async with self._gate or contextlib.nullcontext():
             self._check_limits()
-            self.calls += 1
-            started_at = datetime.now(UTC)
-            started = time.perf_counter()
-            try:
-                with self.spend.holding(self._most_cost(prompt, None)):
+            most = self._most_cost(prompt, max_output_tokens, extra_tokens=_tool_tokens(tools))
+            self._check_fits(most)
+            with self.spend.holding(most, self.name):
+                self.calls += 1
+                started_at = datetime.now(UTC)
+                started = time.perf_counter()
+                try:
                     result = await call()
-            except Exception as exc:
-                self._record(
-                    TokenUsage(),
-                    started_at,
-                    time.perf_counter() - started,
-                    error=f"{type(exc).__name__}: {exc}",
-                    effort=effort,
-                    purpose=purpose,
-                )
-                raise
-        usage = usage_of(result)
-        self.spend.charge(self.name, usage)
+                except Exception as exc:
+                    self._record(
+                        TokenUsage(),
+                        started_at,
+                        time.perf_counter() - started,
+                        error=f"{type(exc).__name__}: {exc}",
+                        effort=effort,
+                        purpose=purpose,
+                    )
+                    raise
+                usage = usage_of(result)
+                self.spend.charge(self.name, usage)
         self._record(
             usage, started_at, time.perf_counter() - started, effort=effort, purpose=purpose
         )
