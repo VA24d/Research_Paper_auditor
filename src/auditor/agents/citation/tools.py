@@ -12,7 +12,7 @@ from langchain_core.tools import BaseTool
 from auditor.infra.context import RunContext
 from auditor.infra.tools import tracked_tool
 from auditor.retrieval.embeddings import get_embedder
-from auditor.retrieval.fulltext import SourceLevel, grobid_for, retrieve_source
+from auditor.retrieval.fulltext import SourceLevel, SourceText, grobid_for, retrieve_source
 from auditor.retrieval.passages import rank_passages
 from auditor.retrieval.resolve import Resolution, resolve_entry
 from auditor.schemas import BibEntry
@@ -58,6 +58,16 @@ async def lookup_reference(ctx: RunContext, entry: BibEntry) -> str:
     return json.dumps(resolution_record(resolution), indent=1)
 
 
+def _level_line(source: SourceText) -> str:
+    """What the text is, so the agent knows how much a missing value means."""
+    if source.partial:
+        return (
+            f"source level: {source.level.value} (partial: a publisher page that may hold "
+            "only the abstract; a value missing here may still be in the paper)"
+        )
+    return f"source level: {source.level.value}"
+
+
 @tracked_tool()
 async def retrieve_cited_text(
     ctx: RunContext, entry: BibEntry, abstract_only: bool | None = None
@@ -77,7 +87,7 @@ async def retrieve_cited_text(
     )
     if source.level is SourceLevel.NONE or not source.text:
         return f"No text of the cited work was available ({source.reason})."
-    return _clip(f"source level: {source.level.value}\n\n{source.text}")
+    return _clip(f"{_level_line(source)}\n\n{source.text}")
 
 
 @tracked_tool()
@@ -107,7 +117,7 @@ async def find_supporting_passages(
     block = "\n\n".join(
         f"[{number}] {passage.text}" for number, passage in enumerate(passages, start=1)
     )
-    return f"source level: {source.level.value}\n\n{block}"
+    return f"{_level_line(source)}\n\n{block}"
 
 
 def make_tools(ctx: RunContext) -> list[BaseTool]:

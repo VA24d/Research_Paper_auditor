@@ -10,7 +10,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-from auditor.infra.http import HttpClient
+from auditor.infra.http import HttpClient, HttpError
 from auditor.retrieval.clients import (
     Work,
     arxiv_by_id,
@@ -68,12 +68,22 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
     doi, arxiv_id = _extract_identifiers(citation)
     queries: list[str] = []
 
+    async def by_identifier(name: str, lookup: Callable[[], Awaitable[Work | None]]) -> Work | None:
+        # An index that cannot answer is skipped, like a dead index in the title search.
+        queries.append(name)
+        try:
+            return await lookup()
+        except HttpError as exc:
+            queries.append(f"{name} failed ({type(exc).__name__})")
+            return None
+
     if doi:
-        queries.append(f"crossref doi:{doi}")
-        work = await crossref_by_doi(http, doi)
+        found_doi = doi
+        work = await by_identifier(f"crossref doi:{doi}", lambda: crossref_by_doi(http, found_doi))
         if work is None:
-            queries.append(f"openalex doi:{doi}")
-            work = await openalex_by_doi(http, doi)
+            work = await by_identifier(
+                f"openalex doi:{doi}", lambda: openalex_by_doi(http, found_doi)
+            )
         if work is not None:
             return LookupResult(work=work, queries=tuple(queries))
         # arXiv assigns its DOIs through DataCite, so Crossref and OpenAlex do not know
@@ -84,11 +94,12 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
                 queries.append(f"arxiv id from doi:{doi}")
 
     if arxiv_id:
-        queries.append(f"arxiv id:{arxiv_id}")
-        work = await arxiv_by_id(http, arxiv_id)
+        found_id = arxiv_id
+        work = await by_identifier(f"arxiv id:{arxiv_id}", lambda: arxiv_by_id(http, found_id))
         if work is None:
-            queries.append(f"s2 arxiv:{arxiv_id}")
-            work = await s2_by_identifier(http, arxiv_id=arxiv_id)
+            work = await by_identifier(
+                f"s2 arxiv:{arxiv_id}", lambda: s2_by_identifier(http, arxiv_id=found_id)
+            )
         if work is not None:
             return LookupResult(work=work, queries=tuple(queries))
 
@@ -102,6 +113,8 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
 
     # Queries go out ASCII-folded: bibliographies hold accents and mojibake the search
     # APIs do not match. A shortened retry covers long titles with subtitles.
+    answered: list[str] = []  # the indexes that answered a title search
+
     async def search_all(query: str) -> LookupResult | None:
         searches: list[tuple[str, Callable[[], Awaitable[list[Work]]]]] = [
             ("openalex", lambda: openalex_search(http, query)),
@@ -115,6 +128,7 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
             except Exception as exc:  # one dead index must not sink the lookup
                 queries.append(f"{name} title search failed ({type(exc).__name__})")
                 continue
+            answered.append(name)
             queries.append(f"{name} title search ({len(found)} hits)")
             for work in found:
                 if work.title and titles_match(work.title, title):
@@ -133,6 +147,10 @@ async def lookup_citation(http: HttpClient, citation: str) -> LookupResult:
 
     return LookupResult(
         work=None,
-        reason="no work with this title was found in the scholarly indexes",
+        reason=(
+            "no work with this title was found in the scholarly indexes"
+            if answered
+            else "no scholarly index answered the title search, so the work may still exist"
+        ),
         queries=tuple(queries),
     )

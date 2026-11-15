@@ -179,3 +179,16 @@ async def test_the_abstract_only_setting_reaches_the_tools(tmp_path: Path) -> No
         {"entry_json": ARXIV_ENTRY.model_dump_json()}
     )
     assert text.startswith("source level: full_html")
+
+
+def test_a_partial_text_is_named_as_such_for_the_agent() -> None:
+    """B1 must know a publisher page may hold only the abstract, as the agent does."""
+    from auditor.agents.citation.tools import _level_line
+    from auditor.retrieval.clients import Work
+    from auditor.retrieval.fulltext import SourceLevel, SourceText
+
+    work = Work(id="doi:10.1/x", source="openalex", title="T")
+    page = SourceText(work=work, level=SourceLevel.FULL_HTML, text="t", partial=True)
+    assert "partial" in _level_line(page)
+    full = SourceText(work=work, level=SourceLevel.FULL_HTML, text="t")
+    assert _level_line(full) == "source level: full_html"

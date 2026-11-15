@@ -31,9 +31,12 @@ from auditor.testing import ScriptedChatModel, offline_context, tool_reply
 SOURCE_TEXT = (
     "The Transformer reaches 28.4 BLEU on WMT 2014 English to German. " * 60
     + "Recurrence and convolution were the dominant sequence models before it. " * 60
+    + "The base model reaches 26.4 BLEU after training on 12,000 sentence pairs."
 )
 SUPPORT_QUOTE = "The Transformer reaches 28.4 BLEU on WMT 2014 English to German."
 CONTRA_QUOTE = "Recurrence and convolution were the dominant sequence models before it."
+# The sentence that states other values than the claims below do.
+MISMATCH_QUOTE = "The base model reaches 26.4 BLEU after training on 12,000 sentence pairs."
 
 WORK = Work(id="arxiv:1706.03762", source="arxiv", title="Attention Is All You Need")
 
@@ -245,7 +248,7 @@ async def test_an_unknown_verdict_is_treated_as_insufficient(tmp_path: Path) -> 
 
 
 async def test_a_disagreeing_number_is_a_mismatch_finding(tmp_path: Path) -> None:
-    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=SUPPORT_QUOTE, agrees=False)]
+    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=MISMATCH_QUOTE, agrees=False)]
     task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
     result = await check_citation(
         task,
@@ -261,7 +264,7 @@ async def test_a_disagreeing_number_is_a_mismatch_finding(tmp_path: Path) -> Non
 
 async def test_the_model_saying_agrees_does_not_stop_a_real_mismatch(tmp_path: Path) -> None:
     """The code-side value comparison decides, not the model's hint (known issue 1)."""
-    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=SUPPORT_QUOTE, agrees=True)]
+    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=MISMATCH_QUOTE, agrees=True)]
     task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
     result = await check_citation(
         task,
@@ -276,7 +279,7 @@ async def test_the_model_saying_agrees_does_not_stop_a_real_mismatch(tmp_path: P
 async def test_a_contradiction_and_a_number_mismatch_both_reported(tmp_path: Path) -> None:
     """A task can yield a claim_not_supported finding AND number mismatches; their
     finding ids must stay unique, or the TaskResult rejects them (live-run failure)."""
-    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=SUPPORT_QUOTE, agrees=False)]
+    numbers = [NumberCheck(claimed="28.4", found="26.4", quote=MISMATCH_QUOTE, agrees=False)]
     task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
     result = await check_citation(
         task,
@@ -295,8 +298,8 @@ async def test_a_contradiction_and_a_number_mismatch_both_reported(tmp_path: Pat
 
 async def test_two_number_mismatches_get_unique_finding_ids(tmp_path: Path) -> None:
     numbers = [
-        NumberCheck(claimed="28.4", found="26.4", quote=SUPPORT_QUOTE, agrees=False),
-        NumberCheck(claimed="12,500", found="12,000", quote=SUPPORT_QUOTE, agrees=False),
+        NumberCheck(claimed="28.4", found="26.4", quote=MISMATCH_QUOTE, agrees=False),
+        NumberCheck(claimed="12,500", found="12,000", quote=MISMATCH_QUOTE, agrees=False),
     ]
     task = citation_task("The Transformer reaches 28.4 BLEU on 12,500 examples. [1]")
     result = await check_citation(
@@ -364,3 +367,111 @@ async def test_the_prompt_holds_the_claim_and_numbered_passages(tmp_path: Path) 
     assert "28.4 BLEU" in prompt
     assert "[1]" in prompt  # the passages are numbered
     assert len(chunk_text(SOURCE_TEXT)) >= TOP_PASSAGES
+
+
+async def test_numbers_the_model_made_up_make_no_finding(tmp_path: Path) -> None:
+    """A value the model reports must be where it says: `claimed` in the claim, `found` in
+    the quoted sentence. A genuine quote with invented values is a misread, and the
+    verifier would otherwise accept it on the quote's offsets."""
+    task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
+    for check in (
+        NumberCheck(claimed="9999", found="8888", quote=MISMATCH_QUOTE, agrees=False),
+        NumberCheck(claimed="28.4", found="8888", quote=MISMATCH_QUOTE, agrees=False),
+        NumberCheck(claimed="9999", found="26.4", quote=MISMATCH_QUOTE, agrees=False),
+    ):
+        result = await check_citation(
+            task,
+            offline_context(tmp_path, llm=llm_with(answer(numbers=[check]))),
+            Resolution(work=WORK),
+            source(),
+        )
+        assert result.findings == (), check
+
+
+async def test_a_value_quoted_from_outside_the_source_makes_no_finding(tmp_path: Path) -> None:
+    numbers = [
+        NumberCheck(
+            claimed="28.4",
+            found="26.4",
+            quote="An invented sentence that reports 26.4 BLEU for the model.",
+            agrees=False,
+        )
+    ]
+    task = citation_task("The Transformer reaches 28.4 BLEU on WMT 2014. [1]")
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        source(),
+    )
+    assert result.findings == ()
+
+
+async def test_the_source_scan_is_not_run_against_a_publisher_page(tmp_path: Path) -> None:
+    """A landing page may hold the abstract alone: a number it lacks is not a mismatch."""
+    numbers = [NumberCheck(claimed="31.7", found=None, quote="", agrees=True)]
+    task = citation_task("The Transformer reaches 31.7 BLEU. [1]")
+    page = SourceText(work=WORK, level=SourceLevel.FULL_HTML, text=SOURCE_TEXT, partial=True)
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        page,
+    )
+    assert result.findings == ()
+    # The same text as a complete full text is scanned, and the number is missing.
+    result = await check_citation(
+        task,
+        offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+        Resolution(work=WORK),
+        source(),
+    )
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.CLAIM_NUMBER_MISMATCH
+
+
+async def test_a_value_must_be_a_whole_number_of_its_text(tmp_path: Path) -> None:
+    """Part of a number, a rounded neighbour or a word inside a word is not the value:
+    "2.1" is not in "92.1", "500" not in "12,500", "one" not in "someone"."""
+    text = "Prior work reports 92.1% exact match with 12,500 examples, 13e-4 lr and someone."
+    task = citation_task(text + " [1]")
+    page = SourceText(work=WORK, level=SourceLevel.FULL_HTML, text=SOURCE_TEXT + " " + text)
+    for claimed, found in (
+        ("2.1", "92.1"),
+        ("88,500", "12,500"),
+        ("3e-4", "13e-4"),
+        ("92.9", "92.1"),
+        ("one", "13e-4"),
+    ):
+        numbers = [NumberCheck(claimed=claimed, found=found, quote=text, agrees=False)]
+        result = await check_citation(
+            task,
+            offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+            Resolution(work=WORK),
+            page,
+        )
+        assert result.findings == (), (claimed, found)
+
+
+async def test_values_are_compared_as_their_texts_write_them(tmp_path: Path) -> None:
+    """A percentage keeps both readings, a leading dot and a sign are part of the value,
+    and an exponent's digits are not a number of their own."""
+    cases = (
+        # claim value, quote, claimed, found, a mismatch?
+        ("3e-4", "The learning rate is 3e-4 in this experiment.", "4", "3e-4", False),
+        ("92.1%", "Accuracy is 92.1% on this benchmark.", "92.1%", "92.1", False),
+        ("92.1%", "Accuracy is 92.1% on this benchmark.", "0.921", "92.1", False),
+        (".5", "The weight decay is 0.5 in all runs.", ".5", "0.5", False),
+        ("-0.5", "The correlation is 0.5 on held-out data.", "-0.5", "0.5", True),
+    )
+    for value, quote, claimed, found, mismatch in cases:
+        task = citation_task(f"The cited work reports {value} for this. [1]")
+        page = SourceText(work=WORK, level=SourceLevel.FULL_HTML, text=SOURCE_TEXT + " " + quote)
+        numbers = [NumberCheck(claimed=claimed, found=found, quote=quote, agrees=False)]
+        result = await check_citation(
+            task,
+            offline_context(tmp_path, llm=llm_with(answer(numbers=numbers))),
+            Resolution(work=WORK),
+            page,
+        )
+        assert bool(result.findings) is mismatch, (value, claimed, found)

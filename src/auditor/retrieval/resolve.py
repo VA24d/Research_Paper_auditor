@@ -10,7 +10,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-from auditor.infra.http import HttpClient
+from auditor.infra.http import HttpClient, HttpError
 from auditor.retrieval.clients import (
     Work,
     arxiv_by_id,
@@ -375,6 +375,10 @@ class Resolution:
     # The entry gave a DOI and neither Crossref nor OpenAlex knew it: on its face a
     # fabricated identifier, reported even when a title search later found a work.
     doi_unresolved: bool = False
+    # Nothing was found because nothing could be asked: no index answered the title
+    # search (all refused, rate-limited or down), or the entry gives nothing to look up.
+    # That is not evidence that the work does not exist.
+    unavailable: bool = False
 
     @property
     def found(self) -> bool:
@@ -404,14 +408,30 @@ def _entry_matches(entry: BibEntry, work: Work) -> bool:
     return True
 
 
+async def _identifier_lookup(
+    name: str, lookup: Callable[[], Awaitable[Work | None]], queries: list[tuple[str, str]]
+) -> tuple[Work | None, bool]:
+    """One lookup by identifier: the work, and whether the index answered at all."""
+    try:
+        work = await lookup()
+    except HttpError as exc:
+        logger.info("%s failed: %s", name, exc)
+        queries.append((name, f"failed ({type(exc).__name__})"))
+        return None, False
+    queries.append((name, "found" if work else "not found"))
+    return work, True
+
+
 async def _search_candidates(
     http: HttpClient, query: str, entry: BibEntry, queries: list[tuple[str, str]]
-) -> list[Work]:
-    """The title-search candidates of `query` that plausibly match `entry`.
+) -> tuple[list[Work], bool]:
+    """The title-search candidates of `query` that plausibly match `entry`, and whether
+    any index answered.
 
     The four indexes are tried in order and the loop stops at the first that yields a
     match; one dead or rate-limited index is skipped, not fatal."""
     candidates: list[Work] = []
+    answered = False
     searches: list[tuple[str, Callable[[], Awaitable[list[Work]]]]] = [
         ("openalex", lambda: openalex_search(http, query)),
         ("crossref", lambda: crossref_search(http, query, entry.authors)),
@@ -425,11 +445,12 @@ async def _search_candidates(
             logger.info("%s title search of %r failed: %s", name, query[:40], exc)
             queries.append((f"{name} title search", f"failed ({type(exc).__name__})"))
             continue
+        answered = True
         queries.append((f"{name} title search", f"{len(found)} hits"))
         candidates.extend(w for w in found if _entry_matches(entry, w))
         if candidates:
             break
-    return candidates
+    return candidates, answered
 
 
 async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
@@ -441,11 +462,14 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
 
     if entry.doi and is_doi(entry.doi):
         doi = normalize_doi(entry.doi)
-        work = await crossref_by_doi(http, doi)
-        queries.append((f"crossref doi:{doi}", "found" if work else "not found"))
+        work, crossref_answered = await _identifier_lookup(
+            f"crossref doi:{doi}", lambda: crossref_by_doi(http, doi), queries
+        )
+        openalex_answered = True
         if work is None:
-            work = await openalex_by_doi(http, doi)
-            queries.append((f"openalex doi:{doi}", "found" if work else "not found"))
+            work, openalex_answered = await _identifier_lookup(
+                f"openalex doi:{doi}", lambda: openalex_by_doi(http, doi), queries
+            )
         if work is not None:
             return Resolution(work=work, queries=tuple(queries))
         # arXiv assigns its DOIs through DataCite, so Crossref and OpenAlex do not know
@@ -455,26 +479,44 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
             arxiv_id = arxiv_id_from_doi(doi)
             if arxiv_id is not None:
                 queries.append((f"arxiv id from doi:{doi}", arxiv_id))
-        if arxiv_id is None:
+        # Only two indexes that both answered "no such DOI" make it look fabricated; one
+        # that could not answer says nothing.
+        if arxiv_id is None and crossref_answered and openalex_answered:
             doi_unresolved = True
 
+    arxiv_answered = False
     if arxiv_id:
-        work = await arxiv_by_id(http, arxiv_id)
-        queries.append((f"arxiv id:{arxiv_id}", "found" if work else "not found"))
+        known_id = arxiv_id
+        work, arxiv_answered = await _identifier_lookup(
+            f"arxiv id:{known_id}", lambda: arxiv_by_id(http, known_id), queries
+        )
         if work is not None:
             return Resolution(work=work, queries=tuple(queries))
 
     title = entry.title or entry.raw
     if not title:
+        if arxiv_answered:
+            # arXiv answered that it has no paper with this id: a real miss.
+            return Resolution(
+                reason=f"arXiv has no paper with the id {arxiv_id}",
+                queries=tuple(queries),
+                doi_unresolved=doi_unresolved,
+            )
         return Resolution(
-            reason="the entry has no DOI, arXiv id or title to look up",
+            reason=(
+                "the identifier lookups failed and the entry has no title to search"
+                if any(outcome.startswith("failed") for _, outcome in queries)
+                else "the entry has no DOI, arXiv id or title to look up"
+            ),
             queries=tuple(queries),
+            doi_unresolved=doi_unresolved,
+            unavailable=True,
         )
 
     # Queries go out ASCII-folded: bibliographies hold accents and mojibake the search
     # APIs do not match ("DemoirΘing" finds nothing; "Demoiring" does).
     query = ascii_fold(title)
-    candidates = await _search_candidates(http, query, entry, queries)
+    candidates, answered = await _search_candidates(http, query, entry, queries)
     if not candidates:
         # A long subtitle can push the real title out of the query's useful window;
         # retry once with the first words only.
@@ -482,7 +524,8 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
         if len(words) > 8:
             retry = " ".join(words[:8])
             queries.append(("shortened title retry", retry))
-            candidates = await _search_candidates(http, retry, entry, queries)
+            candidates, answered_retry = await _search_candidates(http, retry, entry, queries)
+            answered = answered or answered_retry
 
     if candidates:
         # A search can return the arXiv preprint record of the proceedings paper the
@@ -496,6 +539,13 @@ async def resolve_entry(http: HttpClient, entry: BibEntry) -> Resolution:
             ),
         )
         return Resolution(work=best, queries=tuple(queries), doi_unresolved=doi_unresolved)
+    if not answered:
+        return Resolution(
+            reason="no scholarly index answered the title search",
+            queries=tuple(queries),
+            doi_unresolved=doi_unresolved,
+            unavailable=True,
+        )
     return Resolution(
         reason="no work with this title was found in the scholarly indexes",
         queries=tuple(queries),

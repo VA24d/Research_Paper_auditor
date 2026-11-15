@@ -10,6 +10,7 @@ Reference tasks are checked without a model: the entry is resolved, and its meta
 compared with the entry's fields.
 """
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -123,7 +124,9 @@ _NUMBER_WORDS = {
 
 # A trailing letter or word that is not part of the value itself: "8x", "10-fold",
 # "50GB" — the numeric head is the value; the suffix says what it counts.
-_NUMBER_HEAD = re.compile(r"(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)")
+# The typographic minus PDFs and HTML use; read as "-".
+MINUS_SIGN = chr(0x2212)
+_NUMBER_HEAD = re.compile(r"([-+]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?)")
 _NUMBER_WORD = re.compile(r"[a-z]+")
 
 
@@ -137,6 +140,7 @@ def _parse_number(text: str) -> float | None:
     text = text.strip().rstrip(".,;")
     is_percent = text.endswith("%")
     text = text.rstrip("%").strip().replace(",", "").replace(" ", "").lower()
+    text = text.replace(MINUS_SIGN, "-")
     if not text:
         return None
     head = _NUMBER_HEAD.search(text)
@@ -259,6 +263,57 @@ def _source_states(source_text: str, claimed: str) -> bool:
     )
 
 
+# A whole number as written: its sign, thousands separators, decimal part, exponent and
+# percent sign belong to it, so "500" is not read out of "12,500", "2.1" out of "92.1" or
+# "4" out of "3e-4". A minus sign counts only where it cannot be a range ("10-20").
+_WHOLE_NUMBER = re.compile(
+    r"(?<![\w.,])[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?(?:\s?%)?"
+    r"(?![\w%]|[.,]\d)"
+)
+# A model's value that is a number and nothing else (else it is words or has a suffix:
+# "eight", "8x", "10-fold").
+_JUST_A_NUMBER = re.compile(r"[-+]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?\s?%?")
+_MARKER = re.compile(r"\[\s*\d+(?:\s*[,\u2013-]\s*\d+)*\s*\]")
+
+
+def _values(text: str) -> set[float]:
+    """The values a number may mean: "92.1%" is 0.921, or 92.1 when written without %."""
+    values = {_parse_number(text), _parse_number(text.replace("%", ""))}
+    return {value for value in values if value is not None}
+
+
+def _bound(text: str, value: str) -> set[float] | None:
+    """What `text` says `value` is, or None when `text` does not state it.
+
+    A number must be a whole number of `text` with exactly its value ("0.0003" for
+    "3e-4"); words and numbers with a suffix ("eight", "8x") must stand on their own (not
+    "one" in "someone"). The values returned are those of the text as written, so a
+    percentage keeps both its readings. No rounding tolerance here: that is for
+    comparing two values once both are found."""
+    value = value.strip().replace(MINUS_SIGN, "-")
+    if not value:
+        return None
+    # Citation markers ("[1]", "[2, 3]") are numbers of the text but state no value.
+    text = _MARKER.sub(" ", text).replace(MINUS_SIGN, "-")
+    wanted = _values(value)
+    if not _JUST_A_NUMBER.fullmatch(value):
+        alone = re.compile(rf"(?<![\w.,]){re.escape(value)}(?![\w]|[.,]\d)", re.IGNORECASE)
+        return wanted if alone.search(text) else None
+    found: set[float] = set()
+    for number in _WHOLE_NUMBER.findall(text):
+        values = _values(number)
+        if any(math.isclose(a, b, rel_tol=1e-9) for a in values for b in wanted):
+            found |= values
+    return found or None
+
+
+def _close(a: float, b: float) -> bool:
+    """Two values a paper and its source would both write: equal, or within 1% (they
+    round differently)."""
+    scale = max(abs(a), abs(b))
+    return a == b or (scale > 0 and abs(a - b) / scale < 0.01)
+
+
 def _number_check(
     task: AuditTask,
     resolution: Resolution,
@@ -270,16 +325,32 @@ def _number_check(
 
     The code-side value comparison decides, not the model's `agrees` hint: a model that
     says the values agree when they do not is exactly the failure this check exists for.
-    When the model gives no value (`found` empty) and the source is a FULL text, the
+    The values themselves are the model's reading, so each is checked against its text
+    before it counts: `claimed` must be in the claim, and `found` in the quoted sentence,
+    which must be in the work's text. A value that is not where the model says it is
+    makes no finding (a misread is not a mismatch).
+
+    When the model gives no value (`found` empty) and the source is a complete text, the
     code scans the text itself: a specific number the claim attributes to the work that
-    the work's text nowhere states is a mismatch. Against an abstract-only source no
-    scan is made (the number may be in the unread full text).
+    the work's text nowhere states is a mismatch. Against an abstract or a publisher page
+    no scan is made (the number may be in the unread full text).
 
     `number` is the finding's number within the task, so its id is unique even when a
     task yields several findings (a contradiction plus number mismatches).
     """
+    claimed = _bound(task.claim or "", check.claimed)
+    if claimed is None:
+        return None
     if check.found:
-        if not numbers_agree(check.claimed, check.found):
+        found = _bound(check.quote, check.found)
+        if found is None or _find_quote(source.text, check.quote) is None:
+            return None
+        # Both values as their texts write them; text that is not a number compares as text.
+        if claimed and found:
+            agree = any(_close(a, b) for a in claimed for b in found)
+        else:
+            agree = numbers_agree(check.claimed, check.found)
+        if not agree:
             return _mismatch_finding(
                 task,
                 resolution,
@@ -290,7 +361,7 @@ def _number_check(
                 f"'{check.found}'",
             )
         return None
-    if source.level not in (SourceLevel.FULL_HTML, SourceLevel.FULL_PDF):
+    if source.partial or source.level not in (SourceLevel.FULL_HTML, SourceLevel.FULL_PDF):
         return None
     if _scan_confident(check.claimed) and not _source_states(source.text, check.claimed):
         return _mismatch_finding(

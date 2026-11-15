@@ -350,3 +350,74 @@ def test_match_marker_to_bibliography_falls_back_to_the_raw_text() -> None:
     entries = (BibEntry(id="b0", raw="J. Smith and K. Lee 2019"),)
     assert match_marker_to_bibliography(entries, "Smith and Lee 2019") is not None
     assert match_marker_to_bibliography(entries, "[7]") is None
+
+
+async def test_resolve_entry_with_every_index_refusing_is_unavailable(tmp_path: Path) -> None:
+    """Refused or rate-limited indexes say nothing about whether the work exists."""
+    for status in (403, 429, 503):
+        routes = {"": httpx.Response(status)}
+        entry = BibEntry(id="b1", title="SQuAD", doi="10.18653/v1/D16-1264")
+        resolution = await resolve_entry(api_client(tmp_path / str(status), routes), entry)
+        assert not resolution.found
+        assert resolution.unavailable, status
+        assert not resolution.doi_unresolved, status
+        assert resolution.queries[0] == (
+            "crossref doi:10.18653/v1/d16-1264",
+            "failed (LookupUnavailableError)",
+        )
+
+
+async def test_resolve_entry_with_one_index_down_still_trusts_the_others(tmp_path: Path) -> None:
+    """One index rate-limited, the others answering "no such work": not found stands."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "api.openalex.org" in str(request.url):
+            return httpx.Response(429)
+        return httpx.Response(404)
+
+    client = HttpClient(
+        Settings(cache_dir=tmp_path / "cache"),
+        transport=httpx.MockTransport(handler),
+        sleep=_no_sleep,
+    )
+    resolution = await resolve_entry(client, BibEntry(id="b9", title="No Such Work Anywhere"))
+    assert not resolution.found
+    assert not resolution.unavailable
+    assert resolution.reason == "no work with this title was found in the scholarly indexes"
+
+
+async def test_resolve_entry_skips_a_doi_index_that_sends_bad_json(tmp_path: Path) -> None:
+    routes = {
+        "api.crossref.org": httpx.Response(200, text="<html>Service unavailable</html>"),
+        "api.openalex.org": httpx.Response(200, json=OPENALEX_HITS),
+    }
+    entry = BibEntry(id="b1", title="SQuAD", doi="10.18653/v1/D16-1264")
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert resolution.found
+    assert resolution.queries[0] == (
+        "crossref doi:10.18653/v1/d16-1264",
+        "failed (LookupUnavailableError)",
+    )
+
+
+async def test_resolve_entry_with_a_doi_one_index_could_not_check(tmp_path: Path) -> None:
+    """Crossref down and OpenAlex without the DOI: not enough to call it fabricated."""
+    routes = {"api.crossref.org": httpx.Response(503)}
+    entry = BibEntry(id="b1", title="No Such Work Anywhere", doi="10.1234/made.up")
+    resolution = await resolve_entry(api_client(tmp_path, routes), entry)
+    assert not resolution.doi_unresolved
+    # Both indexes answering "no such DOI" is what makes it look fabricated.
+    resolution = await resolve_entry(api_client(tmp_path / "both", {}), entry)
+    assert resolution.doi_unresolved
+
+
+async def test_resolve_entry_with_an_arxiv_id_arxiv_does_not_have(tmp_path: Path) -> None:
+    """arXiv answering "no such paper" is a real miss even when the entry has no title."""
+    empty = '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>'
+    routes = {"export.arxiv.org": httpx.Response(200, text=empty)}
+    resolution = await resolve_entry(
+        api_client(tmp_path, routes), BibEntry(id="b1", arxiv_id="9999.99999")
+    )
+    assert not resolution.found
+    assert not resolution.unavailable
+    assert resolution.reason == "arXiv has no paper with the id 9999.99999"

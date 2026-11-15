@@ -7,7 +7,7 @@ import httpx
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
 from auditor.retrieval.clients import Work
-from auditor.retrieval.fulltext import SourceLevel, html_to_text, retrieve_source
+from auditor.retrieval.fulltext import SourceLevel, _store, html_to_text, retrieve_source
 
 HTML_PAGE = (
     "<html><head><style>body { color: red }</style></head><body>"
@@ -158,3 +158,67 @@ async def test_a_dead_grobid_skips_the_pdf_and_falls_back(tmp_path: Path) -> Non
     )
     assert source.level is SourceLevel.ABSTRACT
     assert source.reason == "no full text was available"
+
+
+LOGIN_PAGE = (
+    "<html><body><h1>Sign in to continue</h1>"
+    + "<p>We use cookies to improve your experience. Manage your account settings.</p>" * 60
+    + "</body></html>"
+)
+
+PUBLISHER_WORK = {
+    "id": "doi:10.1000/example",
+    "source": "openalex",
+    "arxiv_id": None,
+    "html_url": "https://www.nature.com/articles/example",
+}
+
+
+async def test_a_publisher_page_that_does_not_show_the_work_is_not_used(tmp_path: Path) -> None:
+    """A long login or cookie page is not the paper: the abstract is used instead."""
+    settings = Settings(cache_dir=tmp_path / "cache", scratch_dir=tmp_path / "scratch")
+    routes = {"nature.com/articles/example": httpx.Response(200, text=LOGIN_PAGE)}
+    source = await retrieve_source(page_client(tmp_path, routes), work(**PUBLISHER_WORK), settings)
+    assert source.level is SourceLevel.ABSTRACT
+    assert source.text == work().abstract
+
+
+async def test_a_publisher_page_is_a_partial_text(tmp_path: Path) -> None:
+    """A landing page that shows the work is read, but may hold the abstract alone."""
+    settings = Settings(cache_dir=tmp_path / "cache", scratch_dir=tmp_path / "scratch")
+    routes = {"nature.com/articles/example": httpx.Response(200, text=HTML_PAGE)}
+    source = await retrieve_source(page_client(tmp_path, routes), work(**PUBLISHER_WORK), settings)
+    assert source.level is SourceLevel.FULL_HTML
+    assert source.partial
+    # arXiv's own rendering is the paper itself.
+    routes = {"arxiv.org/html/1706.03762": httpx.Response(200, text=HTML_PAGE)}
+    arxiv = await retrieve_source(page_client(tmp_path / "arxiv", routes), work(), settings)
+    assert arxiv.level is SourceLevel.FULL_HTML
+    assert not arxiv.partial
+
+
+async def test_a_cached_page_that_does_not_show_the_work_is_not_used(tmp_path: Path) -> None:
+    """Texts cached before the check came in are checked too."""
+    settings = Settings(cache_dir=tmp_path / "cache", scratch_dir=tmp_path / "scratch")
+    _store(settings, work(**PUBLISHER_WORK), SourceLevel.FULL_HTML, html_to_text(LOGIN_PAGE))
+    source = await retrieve_source(refusing_client(tmp_path), work(**PUBLISHER_WORK), settings)
+    assert source.level is SourceLevel.ABSTRACT
+
+
+async def test_the_identity_check_needs_a_distinctive_title(tmp_path: Path) -> None:
+    """A title as short as "On" is on every page; accents written two ways are the same
+    title; titles in other scripts count."""
+    from auditor.retrieval.fulltext import _shows_the_work
+
+    cookie_page = "Sign in to continue. We use cookies on this site. " * 60
+    assert not _shows_the_work(cookie_page, work(**PUBLISHER_WORK, title="On", abstract=None))
+    combining = "Café Models for Coffee Shop Recommendation, the full article. " * 30
+    assert _shows_the_work(
+        combining, work(**PUBLISHER_WORK, title="Café Models for Coffee Shop Recommendation")
+    )
+    cjk_title = "基于深度学习的研究方法综述与展望"
+    assert _shows_the_work(f"{cjk_title} 正文 " * 40, work(**PUBLISHER_WORK, title=cjk_title))
+    assert not _shows_the_work(
+        "\u03b2-learning for robots everywhere " * 40,
+        work(**PUBLISHER_WORK, title="\u03b1-learning for robots everywhere", abstract=None),
+    )

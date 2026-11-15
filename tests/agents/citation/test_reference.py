@@ -270,3 +270,52 @@ async def test_a_title_that_lost_its_hyphen_is_not_a_near_miss(tmp_path: Path) -
         Resolution(work=work, queries=(("q", "found"),)),
     )
     assert result.findings == ()
+
+
+async def test_a_reference_no_index_could_look_up_is_unverifiable(tmp_path: Path) -> None:
+    """Every index refused or was down: that is no evidence the work is missing."""
+    resolution = Resolution(
+        reason="no scholarly index answered the title search",
+        queries=(("openalex title search", "failed (LookupUnavailableError)"),),
+        unavailable=True,
+    )
+    result = await check_reference(
+        reference_task(), offline_context(tmp_path, paper=example_paper()), resolution
+    )
+    assert result.outcome is TaskOutcome.UNVERIFIABLE
+    assert result.findings == ()
+    assert result.reason is not None
+    assert "could not be looked up" in result.reason
+
+
+async def test_a_doi_both_indexes_deny_is_reported_when_the_search_is_down(
+    tmp_path: Path,
+) -> None:
+    """Crossref and OpenAlex both answered "no such DOI": that stands on its own."""
+    resolution = Resolution(
+        reason="no scholarly index answered the title search",
+        doi_unresolved=True,
+        unavailable=True,
+    )
+    result = await check_reference(
+        reference_task(), offline_context(tmp_path, paper=example_paper()), resolution
+    )
+    (finding,) = result.findings
+    assert finding.error_class is ErrorClass.REFERENCE_NOT_FOUND
+    assert "DOI" in finding.summary
+
+
+async def test_a_metadata_mismatch_shows_the_index_record_and_queries(tmp_path: Path) -> None:
+    """The reviewer sees what the index returned and how it was found, not only the entry."""
+    work = dataclasses.replace(MATCHING_WORK, year=2021)
+    result = await check_reference(
+        reference_task(),
+        offline_context(tmp_path, paper=example_paper()),
+        Resolution(work=work, queries=(("crossref doi:10.18653/v1/d16-1264", "found"),)),
+    )
+    (finding,) = result.findings
+    (lookup,) = finding.evidence
+    assert "crossref doi:10.18653/v1/d16-1264" in lookup.text
+    assert "year 2021" in lookup.text
+    assert MATCHING_WORK.title is not None
+    assert MATCHING_WORK.title in lookup.text

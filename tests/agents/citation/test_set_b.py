@@ -484,3 +484,82 @@ def test_read_jsonl_and_write_paper_round_trip(tmp_path: Path) -> None:
     paper_path = write_paper(injected, tmp_path)
     loaded = ParsedPaper.model_validate_json(paper_path.read_bytes())
     assert loaded == injected
+
+
+def test_validate_against_papers_checks_bibliography_edits() -> None:
+    """A bibliography injection has no sentence; its edit is checked in the entry."""
+    p = paper()
+    injected, label, record = inject_metadata(
+        p, "b0", field_name="year", new_value="2019", rationale="r", evidence=EVIDENCE
+    )
+    label = label.model_copy(update={"reviewed_by": ("second",)})
+    assert record.sentence_id is None
+    assert validate([label], [record], papers={label.paper_id: injected}) == []
+
+    # The original paper, marked injected, still says 2017: the edit was never applied.
+    unedited = p.model_copy(update={"variant": PaperVariant.INJECTED})
+    problems = validate([label], [record], papers={label.paper_id: unedited})
+    assert any("injected value is not in the entry" in problem for problem in problems)
+
+
+def test_score_citation_module_agrees_with_the_shared_evaluation() -> None:
+    """A task can flag a wrong class before the right one on the same claim; the label
+    goes to the matching class, as `auditor evaluate` assigns it."""
+    from auditor.agents.citation.set_b import CITATION_CLASSES
+    from auditor.evaluation.metrics import score
+
+    p = paper()
+    _, number_label, _ = inject_number(
+        p, span(p, "s2", "92.1%"), "88.4%", bib_id="b1", rationale="r", evidence=EVIDENCE
+    )
+
+    def prediction(error_class: ErrorClass) -> Prediction:
+        return Prediction(
+            run_id="r1",
+            system=SystemName.B1,
+            paper_id=number_label.paper_id,
+            variant=number_label.variant,
+            error_class=error_class,
+            anchor=number_label.anchor,
+            target=number_label.target,
+            summary="found it",
+        )
+
+    for predictions in (
+        [prediction(ErrorClass.CLAIM_NOT_SUPPORTED), prediction(ErrorClass.CLAIM_NUMBER_MISMATCH)],
+        [prediction(ErrorClass.CLAIM_NUMBER_MISMATCH), prediction(ErrorClass.CLAIM_NOT_SUPPORTED)],
+    ):
+        ours = score_citation_module([number_label], predictions)
+        shared = score([number_label], predictions, classes=CITATION_CLASSES)
+        assert ours.per_class[ErrorClass.CLAIM_NUMBER_MISMATCH].true_positives == 1
+        assert ours.macro_f1 == pytest.approx(shared.macro_f1)
+        assert ours.unlabelled == shared.unlabelled == 1
+
+
+def test_validate_against_papers_needs_the_structured_field_edited() -> None:
+    """An edit that reached the raw text but not the entry's field is not applied."""
+    p = paper()
+    injected, label, record = inject_metadata(
+        p, "b0", field_name="year", new_value="2019", rationale="r", evidence=EVIDENCE
+    )
+    label = label.model_copy(update={"reviewed_by": ("second",)})
+    data = injected.model_dump()
+    data["bibliography"][0]["year"] = 2017  # the raw text still says 2019
+    half_done = ParsedPaper.model_validate(data)
+    problems = validate([label], [record], papers={label.paper_id: half_done})
+    assert any("injected value is not in the entry" in problem for problem in problems)
+
+
+def test_an_injected_value_elsewhere_in_the_entry_does_not_hide_a_missing_edit() -> None:
+    """The year edit is missing, though "2019" happens to be inside the DOI."""
+    p = paper()
+    injected, label, record = inject_metadata(
+        p, "b0", field_name="year", new_value="2019", rationale="r", evidence=EVIDENCE
+    )
+    label = label.model_copy(update={"reviewed_by": ("second",)})
+    data = injected.model_dump()
+    data["bibliography"][0]["year"] = 2017
+    data["bibliography"][0]["doi"] = "10.1234/2019.forecast"
+    half_done = ParsedPaper.model_validate(data)
+    problems = validate([label], [record], papers={label.paper_id: half_done})
+    assert any("injected value is not in the entry" in problem for problem in problems)

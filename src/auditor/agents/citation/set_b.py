@@ -34,6 +34,7 @@ from auditor.agents.citation.support import _scan_confident, extract_numbers, nu
 from auditor.retrieval.passages import Embedder, Passage, rank_passages
 from auditor.retrieval.resolve import title_tokens
 from auditor.schemas import (
+    BibEntry,
     BibliographyAnchor,
     BibTarget,
     ErrorClass,
@@ -688,7 +689,31 @@ def _validate_against_papers(
         if label.target.bib_id not in entry_ids:
             problems.append(f"{label.label_id}: entry {label.target.bib_id} is not in the paper")
         record = records.get(label.label_id)
-        if record is None or record.sentence_id is None:
+        if record is None:
+            continue
+        if record.kind in (
+            InjectionKind.REFERENCE_METADATA_MISMATCH,
+            InjectionKind.REFERENCE_NOT_FOUND,
+        ):
+            # A bibliography injection has no sentence; its edit is in the entry.
+            if label.target.bib_id not in entry_ids:
+                continue
+            entry = paper.bib_entry(label.target.bib_id)
+            if not _entry_states(entry, record.injected) or _entry_holds(entry, record.original):
+                problems.append(f"{label.label_id}: the injected value is not in the entry")
+            if entry.raw is not None and record.injected not in entry.raw:
+                problems.append(
+                    f"{label.label_id}: the entry's raw text was not edited with the field (D1)"
+                )
+            if record.kind is InjectionKind.REFERENCE_NOT_FOUND and (
+                entry.title != record.injected or entry.doi or entry.arxiv_id
+            ):
+                problems.append(
+                    f"{label.label_id}: the fabricated entry keeps its identifiers or title"
+                )
+            continue
+        if record.sentence_id is None:
+            problems.append(f"{label.label_id}: a sentence injection without its sentence")
             continue
         sentence = next((s for s in paper.sentences if s.id == record.sentence_id), None)
         if sentence is None:
@@ -698,16 +723,27 @@ def _validate_against_papers(
             problems.append(
                 f"{label.label_id}: the injected text is not in sentence {record.sentence_id}"
             )
-        if record.kind in (
-            InjectionKind.REFERENCE_METADATA_MISMATCH,
-            InjectionKind.REFERENCE_NOT_FOUND,
-        ):
-            entry = paper.bib_entry(label.target.bib_id)
-            if entry.raw is not None and record.injected not in entry.raw:
-                problems.append(
-                    f"{label.label_id}: the entry's raw text was not edited with the field (D1)"
-                )
     return problems
+
+
+def _entry_holds(entry: BibEntry, value: str) -> bool:
+    """Whether one of the entry's structured fields is still exactly `value`: the field
+    an edit was meant to change (an injected value elsewhere, say inside the DOI, does
+    not show that the edit was applied)."""
+    fields = (entry.title, entry.venue, entry.doi, *entry.authors)
+    year = str(entry.year) if entry.year is not None else None
+    return bool(value.strip()) and value.strip() in {
+        field.strip() for field in (*fields, year) if field
+    }
+
+
+def _entry_states(entry: BibEntry, value: str) -> bool:
+    """Whether one of the entry's structured fields holds an injected value (the raw text
+    is checked on its own: an edit there alone never reached the field)."""
+    fields = (entry.title, entry.venue, entry.doi, *entry.authors)
+    return any(value in field for field in fields if field) or (
+        entry.year is not None and value == str(entry.year)
+    )
 
 
 @dataclass
@@ -753,45 +789,27 @@ def score_citation_module(
 ) -> CitationScores:
     """Scores of the citation classes (decision D3 matching, one to one; only positive
     predictions count). A positive prediction matching a clean control is a false
-    positive; one matching no label is unlabelled, not a false positive."""
-    from auditor.schemas.evaluation import matches
+    positive; one matching no label is unlabelled, not a false positive.
+
+    The matching is the shared evaluation's (`auditor.evaluation.metrics.score`), so this
+    module's numbers and `auditor evaluate --area citation` agree. `before_verifier`
+    counts every finding the verifier did not drop as a flag."""
+    from auditor.evaluation.metrics import score
     from auditor.schemas.findings import VerificationState
 
-    scores = CitationScores()
-    in_scope = [
-        label for label in labels if not label.is_error or label.error_class in CITATION_CLASSES
-    ]
-    for label in in_scope:
-        if label.is_error:
-            scores.per_class.setdefault(ErrorClass(label.error_class), ClassScore())
-    unmatched = list(in_scope)
-    clean_hit = 0
-
-    def positive(prediction: Prediction) -> bool:
-        if before_verifier:
-            return prediction.state is not VerificationState.DROPPED
-        return prediction.is_positive
-
-    for prediction in (p for p in predictions if positive(p) and p.error_class in CITATION_CLASSES):
-        matched = next((lbl for lbl in unmatched if matches(prediction, lbl)), None)
-        if matched is None:
-            scores.unlabelled += 1
-            continue
-        score = scores.per_class.setdefault(prediction.error_class, ClassScore())
-        unmatched.remove(matched)
-        if not matched.is_error:
-            clean_hit += 1
-            score.false_positives += 1
-        elif matched.error_class == prediction.error_class:
-            score.true_positives += 1
-        else:
-            score.false_positives += 1
-            scores.per_class[ErrorClass(matched.error_class)].false_negatives += 1
-    for label in unmatched:
-        if label.is_error:
-            scores.per_class[ErrorClass(label.error_class)].false_negatives += 1
-    clean = sum(1 for label in in_scope if not label.is_error)
-    scores.false_positive_rate = clean_hit / clean if clean else 0.0
+    if before_verifier:
+        predictions = [
+            p.model_copy(update={"state": VerificationState.VERIFIED_FLAG})
+            for p in predictions
+            if p.state is not VerificationState.DROPPED
+        ]
+    shared = score(labels, predictions, classes=CITATION_CLASSES)
+    scores = CitationScores(unlabelled=shared.unlabelled)
+    for error_class, counts in shared.per_class.items():
+        scores.per_class[error_class] = ClassScore(
+            counts.true_positives, counts.false_positives, counts.false_negatives
+        )
+    scores.false_positive_rate = shared.false_positive_rate
     return scores
 
 

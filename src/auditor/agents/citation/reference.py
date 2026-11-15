@@ -99,19 +99,38 @@ def _lookup_evidence(entry: BibEntry, resolution: Resolution) -> Evidence:
     """The LOOKUP evidence for a reference check: what was looked up and what came back."""
     work = resolution.work
     identifier = work.id if work else entry.id
+    outcome = (
+        f"found: {_record_of(work)}"
+        if work is not None
+        else "not found: " + (resolution.reason or "unknown")
+    )
     return Evidence(
         kind=EvidenceKind.LOOKUP,
-        source=SourceRef(kind=SourceKind.SCHOLARLY_INDEX, id=identifier),
+        source=SourceRef(
+            kind=SourceKind.SCHOLARLY_INDEX, id=identifier, title=work.title if work else None
+        ),
         text=(
             f"Resolved '{entry.raw or entry.title}' "
-            f"(queries: {', '.join(q for q, _ in resolution.queries) or 'none'}); "
-            f"{'found' if resolution.found else 'not found: ' + (resolution.reason or 'unknown')}"
+            f"(queries: {', '.join(q for q, _ in resolution.queries) or 'none'}); {outcome}"
         ),
     )
 
 
-def _metadata_findings(task: AuditTask, entry: BibEntry, work: Work) -> list[CandidateFinding]:
+def _record_of(work: Work) -> str:
+    """The index record the entry was compared with, as the reviewer needs to see it."""
+    authors = ", ".join(work.authors[:6]) + (" et al." if len(work.authors) > 6 else "")
+    return (
+        f"{work.source} record with title '{work.title or '?'}', authors '{authors or '?'}', "
+        f"year {work.year or '?'}, venue '{work.venue or '?'}'"
+    )
+
+
+def _metadata_findings(
+    task: AuditTask, entry: BibEntry, resolution: Resolution
+) -> list[CandidateFinding]:
     """Findings for the metadata fields that do not match."""
+    work = resolution.work
+    assert work is not None
     findings: list[CandidateFinding] = []
     problems: list[str] = []
 
@@ -152,7 +171,7 @@ def _metadata_findings(task: AuditTask, entry: BibEntry, work: Work) -> list[Can
             summary="The reference's metadata does not match the scholarly indexes: "
             + "; ".join(problems),
             explanation=entry.raw or entry.title or entry.id,
-            evidence=(_lookup_evidence(entry, Resolution(work=work)),),
+            evidence=(_lookup_evidence(entry, resolution),),
         )
     )
     return findings
@@ -181,8 +200,15 @@ async def check_reference(
             TaskOutcome.UNVERIFIABLE,
             reason=f"the bibliography entry {task.target.bib_id} is not in the paper",
         )
+    if not resolution.found and resolution.unavailable and not resolution.doi_unresolved:
+        # The indexes could not be asked: their silence does not make the work missing.
+        return TaskResult.for_task(
+            task,
+            TaskOutcome.UNVERIFIABLE,
+            reason=f"the reference could not be looked up: {resolution.reason}",
+        )
     findings: list[CandidateFinding] = []
-    if not resolution.found:
+    if not resolution.found and not resolution.unavailable:
         findings.append(
             CandidateFinding.for_task(
                 task,
@@ -208,7 +234,7 @@ async def check_reference(
         )
     else:
         assert resolution.work is not None
-        findings.extend(_metadata_findings(task, entry, resolution.work))
+        findings.extend(_metadata_findings(task, entry, resolution))
 
     if not findings:
         return TaskResult.for_task(task, TaskOutcome.CHECKED, findings=[])

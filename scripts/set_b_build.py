@@ -143,8 +143,12 @@ async def _verify(
         fabricated = entry.model_copy(
             update={"title": proposal.new_value, "doi": None, "arxiv_id": None}
         )
-        if await _resolved_work(http, fabricated) is not None:
+        resolution = await resolve_entry(http, fabricated)
+        if resolution.found:
             return "the fabricated title resolves to a real work"
+        if resolution.unavailable:
+            # No index answered, so "nothing resolves" was never checked.
+            return "the indexes could not be asked whether the fabricated title resolves"
         return None
     return "unknown proposal kind"
 

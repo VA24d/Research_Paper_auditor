@@ -146,7 +146,13 @@ def _validate(args: argparse.Namespace) -> int:
                 row = json.loads(line)
                 if row.get("source_text"):
                     sources[(row["paper_id"], row["bib_id"])] = row["source_text"]
-    problems = validate(labels, records, sources=sources or None)
+    # The injected copies the labels were built from, so each edit is checked in place.
+    papers: dict[str, ParsedPaper] = {}
+    for path in sorted((args.folder / "papers").glob("*-injected.json")):
+        paper = ParsedPaper.model_validate_json(path.read_text(encoding="utf-8"))
+        papers[paper.paper_id] = paper
+    # A missing copy is a problem, not a reason to skip the check.
+    problems = validate(labels, records, papers=papers, sources=sources or None)
     for problem in problems:
         print(problem)
     print(f"{len(labels)} labels, {len(problems)} problems")

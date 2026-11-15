@@ -11,6 +11,7 @@ import hashlib
 import html.parser
 import logging
 import re
+import unicodedata
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -44,6 +45,10 @@ class SourceText:
     level: SourceLevel
     text: str = ""
     reason: str | None = None  # why a lower level was used, when it was
+    # The text may not be the whole work: a publisher's landing page often holds only
+    # the abstract, the references and the site's own text. What it lacks says nothing
+    # about what the work states.
+    partial: bool = False
 
 
 class _TextExtractor(html.parser.HTMLParser):
@@ -183,6 +188,36 @@ async def _html_full_text(http: HttpClient, work: Work) -> str | None:
     return text if len(text) > 2000 else None
 
 
+def _letters(text: str) -> str:
+    """The letters and digits of `text` in any script, with accents composed the same way
+    ("Café" written with a combining accent is the same title)."""
+    return "".join(re.findall(r"\w", unicodedata.normalize("NFKC", text).casefold())).replace(
+        "_", ""
+    )
+
+
+# A title shorter than this (in letters) is too common to identify a page on its own
+# ("On", "BERT"): the abstract must be on the page too.
+MIN_IDENTIFYING_TITLE = 12
+
+
+def _is_publisher_page(work: Work) -> bool:
+    """Whether the work's HTML is a publisher or repository page rather than arXiv's
+    rendering of the paper itself."""
+    return not work.arxiv_id
+
+
+def _shows_the_work(text: str, work: Work) -> bool:
+    """Whether a publisher page is about the work at all: it gives the work's title or
+    the start of its abstract. A login, cookie or error page gives neither."""
+    page = _letters(text)
+    title = _letters(work.title or "")
+    abstract = _letters(work.abstract or "")[:120]
+    if len(abstract) >= 40 and abstract in page:
+        return True
+    return len(title) >= MIN_IDENTIFYING_TITLE and title in page
+
+
 def grobid_for(settings: Settings, http: HttpClient) -> GrobidClient | None:
     """A GROBID client for the run's settings, or None when none is configured.
 
@@ -242,13 +277,21 @@ async def retrieve_source(
             (SourceLevel.FULL_HTML, fetch_html),
             (SourceLevel.FULL_PDF, fetch_pdf),
         ):
+            # A publisher page is used only when it shows the work, and then as a partial
+            # text: it may be a landing page with the abstract alone.
+            publisher = level is SourceLevel.FULL_HTML and _is_publisher_page(work)
             cached = _cached(settings, work, level)
             if cached is not None:
-                return SourceText(work=work, level=level, text=cached)
+                if publisher and not _shows_the_work(cached, work):
+                    continue
+                return SourceText(work=work, level=level, text=cached, partial=publisher)
             text = await fetch()
+            if text and publisher and not _shows_the_work(text, work):
+                logger.info("the page of %s does not show the work; not used", work.id)
+                text = None
             if text:
                 _store(settings, work, level, text)
-                return SourceText(work=work, level=level, text=text)
+                return SourceText(work=work, level=level, text=text, partial=publisher)
 
     if work.abstract:
         return SourceText(

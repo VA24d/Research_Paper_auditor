@@ -200,6 +200,7 @@ async def _fetch(args: argparse.Namespace) -> int:
                         "paper_id": paper.paper_id,
                         "bib_id": entry.id,
                         "level": source.level.value,
+                        "partial": source.partial,
                         "source_text": source.text,
                     },
                     ensure_ascii=False,

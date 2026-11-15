@@ -204,7 +204,10 @@ async def plan_paper(
 ) -> list[AuditTask]:
     options = options or PlannerOptions()
     candidates = citation_candidates(paper)
-    if options.use_llm and ctx.llm is not None and candidates and ctx.settings.citation_llm_enabled:
+    # Refining the citation claims serves the citation agent only; a run that leaves it
+    # out (AUDITOR_SKIP_PARTS) would pay for model calls whose tasks a placeholder ends.
+    refine = ctx.settings.citation_llm_enabled and "citation" not in ctx.settings.skip_parts
+    if options.use_llm and ctx.llm is not None and candidates and refine:
         candidates = await refine_candidates(paper, candidates, ctx.llm)
 
     repository = options.repository

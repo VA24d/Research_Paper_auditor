@@ -196,6 +196,12 @@ async def test_the_citation_pass_can_be_left_out(
     )
     await plan_paper(ctx.paper, off)
     assert called == []
+    # Leaving the citation agent out leaves out its planner pass too.
+    skipped = dataclasses.replace(
+        ctx, settings=ctx.settings.model_copy(update={"skip_parts": ("citation",)})
+    )
+    await plan_paper(ctx.paper, skipped)
+    assert called == []
     await plan_paper(ctx.paper, ctx)
     assert len(called) == 1
 

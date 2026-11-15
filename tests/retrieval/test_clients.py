@@ -3,10 +3,12 @@
 from pathlib import Path
 
 import httpx
+import pytest
 
 from auditor.config import Settings
 from auditor.infra.http import HttpClient
 from auditor.retrieval.clients import (
+    LookupUnavailableError,
     arxiv_by_id,
     arxiv_id_from_doi,
     arxiv_search,
@@ -142,12 +144,27 @@ async def test_arxiv_by_id_parses_the_feed(tmp_path: Path) -> None:
     assert "id_list=1706.03762v2" in requested[0]
 
 
-async def test_arxiv_by_id_returns_none_for_an_empty_or_bad_feed(tmp_path: Path) -> None:
+async def test_arxiv_by_id_returns_none_for_an_empty_feed(tmp_path: Path) -> None:
     empty = '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>'
     http = api_client(tmp_path, {"export.arxiv.org": httpx.Response(200, text=empty)}, [])
     assert await arxiv_by_id(http, "9999.99999") is None
+
+
+async def test_an_index_that_cannot_answer_is_not_a_miss(tmp_path: Path) -> None:
+    """A broken reply or a refusal says nothing about whether the work exists, so it
+    raises instead of reading as "no such work"; a 404 is a real miss."""
     http = api_client(tmp_path, {"export.arxiv.org": httpx.Response(200, text="<feed>")}, [])
-    assert await arxiv_by_id(http, "1706.03762") is None
+    with pytest.raises(LookupUnavailableError):
+        await arxiv_by_id(http, "1706.03762")
+    for status in (403, 429, 503):
+        routes = {"api.crossref.org": httpx.Response(status)}
+        with pytest.raises(LookupUnavailableError):
+            await crossref_by_doi(api_client(tmp_path / str(status), routes, []), "10.1/x")
+    routes = {"api.crossref.org": httpx.Response(200, text="not json")}
+    with pytest.raises(LookupUnavailableError):
+        await crossref_by_doi(api_client(tmp_path / "json", routes, []), "10.1/x")
+    routes = {"api.crossref.org": httpx.Response(404)}
+    assert await crossref_by_doi(api_client(tmp_path / "404", routes, []), "10.1/x") is None
 
 
 async def test_arxiv_search_returns_every_entry(tmp_path: Path) -> None:
@@ -258,3 +275,23 @@ def test_ascii_fold_and_short_title_make_searchable_queries() -> None:
     assert short_title("One Two Three Four Five Six Seven Eight Nine Ten", words=8) == (
         "One Two Three Four Five Six Seven Eight"
     )
+
+
+async def test_a_reply_without_its_usual_parts_is_not_a_miss(tmp_path: Path) -> None:
+    """An error page sent with status 200 is not an answer; a search with no hits is."""
+    error = {"error": "service unavailable"}
+    routes = {"api.crossref.org": httpx.Response(200, json=error)}
+    with pytest.raises(LookupUnavailableError):
+        await crossref_by_doi(api_client(tmp_path / "crossref", routes, []), "10.1/x")
+    routes = {"api.openalex.org": httpx.Response(200, json=error)}
+    with pytest.raises(LookupUnavailableError):
+        await openalex_by_doi(api_client(tmp_path / "openalex", routes, []), "10.1/x")
+    routes = {"export.arxiv.org": httpx.Response(200, text="<html>Service unavailable</html>")}
+    with pytest.raises(LookupUnavailableError):
+        await arxiv_by_id(api_client(tmp_path / "arxiv", routes, []), "1706.03762")
+    # A null record is skipped, not a crash.
+    routes = {"api.openalex.org": httpx.Response(200, json={"results": [None]})}
+    assert await openalex_by_doi(api_client(tmp_path / "null", routes, []), "10.1/x") is None
+    # Semantic Scholar gives no "data" when a search has no hits.
+    routes = {"api.semanticscholar.org": httpx.Response(200, json={"total": 0, "offset": 0})}
+    assert await s2_search(api_client(tmp_path / "s2", routes, []), "nothing") == []

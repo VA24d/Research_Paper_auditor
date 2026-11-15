@@ -3,15 +3,19 @@
 Every request goes through the shared HTTP client (`auditor.infra.http`), so the host
 allowlist, per-host rate limits, retries and the request log apply to all of them. Each
 client returns a `Work` or None; network failures raise, so the caller decides what a
-failed lookup means for the task at hand.
+failed lookup means for the task at hand. None (or no hits) means the index answered and
+has no such record; an index that could not answer (refused, rate-limited, down, or sent
+a reply it does not serve) raises `LookupUnavailableError`, because that says nothing
+about whether the work exists.
 """
 
 import re
 import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
+from typing import Any
 
-from auditor.infra.http import HttpClient
+from auditor.infra.http import HttpClient, HttpError, HttpResponse
 
 ARXIV_API = "https://export.arxiv.org/api/query"
 OPENALEX_API = "https://api.openalex.org/works"
@@ -25,6 +29,47 @@ _ARXIV_DOI = re.compile(r"^10\.48550/arxiv\.(\d{4}\.\d{4,5})(v\d+)?$", re.IGNORE
 _ARXIV_NS = "{http://www.w3.org/2005/Atom}"
 _ARXIV_ID = re.compile(r"^\d{4}\.\d{4,5}(v\d+)?$")
 _DOI = re.compile(r"^10\.\d{4,9}/\S+$")
+
+# Statuses an index gives for a record it does not have (or an id it cannot parse). Any
+# other failure (401, 403, 429, 5xx after the retries) means it could not answer.
+_NO_RECORD = frozenset({400, 404, 410})
+
+
+class LookupUnavailableError(HttpError):
+    """An index could not answer the lookup, so its silence is not a "not found"."""
+
+
+def _answered(response: HttpResponse) -> bool:
+    """True when the index answered with a record, False when it answered that it has
+    none; raises when it could not answer."""
+    if response.ok:
+        return True
+    if response.status_code in _NO_RECORD:
+        return False
+    raise LookupUnavailableError(f"HTTP {response.status_code} for {response.url}")
+
+
+def _json(response: HttpResponse) -> dict[str, Any]:
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise LookupUnavailableError(f"{response.url} sent a reply that is not JSON") from exc
+    if not isinstance(data, dict):
+        raise LookupUnavailableError(f"{response.url} sent JSON that is not an object")
+    return data
+
+
+def _part[T](data: dict[str, Any], key: str, kind: type[T], response: HttpResponse) -> T:
+    """A part every reply of an index has; a reply without it is an error page, not an
+    answer, so it says nothing about the work."""
+    value = data.get(key)
+    if not isinstance(value, kind):
+        raise LookupUnavailableError(f"{response.url} sent a reply without its '{key}'")
+    return value
+
+
+def _records(items: list[Any]) -> list[dict[str, Any]]:
+    return [item for item in items if isinstance(item, dict)]
 
 
 @dataclass(frozen=True)
@@ -137,8 +182,10 @@ def _arxiv_links(entry: ET.Element) -> tuple[str | None, str | None]:
 def _parse_arxiv_feed(xml_text: str) -> list[Work]:
     try:
         root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return []
+    except ET.ParseError as exc:
+        raise LookupUnavailableError("arXiv sent a reply that is not an Atom feed") from exc
+    if root.tag != f"{_ARXIV_NS}feed":
+        raise LookupUnavailableError("arXiv sent a reply that is not an Atom feed")
     works = []
     for entry in root.findall(f"{_ARXIV_NS}entry"):
         entry_id = _arxiv_entry_id(entry.findtext(f"{_ARXIV_NS}id") or "")
@@ -172,7 +219,7 @@ def _parse_arxiv_feed(xml_text: str) -> list[Work]:
 async def arxiv_by_id(http: HttpClient, arxiv_id: str) -> Work | None:
     """Look up one arXiv paper by its id (new or old form, version suffix allowed)."""
     response = await http.get(ARXIV_API, params={"id_list": arxiv_id.strip()})
-    if not response.ok:
+    if not _answered(response):
         return None
     works = _parse_arxiv_feed(response.text)
     return works[0] if works else None
@@ -188,7 +235,7 @@ async def arxiv_search(http: HttpClient, query: str, *, limit: int = 3) -> list[
             "max_results": limit,
         },
     )
-    if not response.ok:
+    if not _answered(response):
         return []
     return _parse_arxiv_feed(response.text)
 
@@ -260,9 +307,9 @@ def _openalex_work(record: dict[str, object]) -> Work | None:
 
 async def openalex_by_doi(http: HttpClient, doi: str) -> Work | None:
     response = await http.get(OPENALEX_API, params={"filter": f"doi:{normalize_doi(doi)}"})
-    if not response.ok:
+    if not _answered(response):
         return None
-    results = response.json().get("results", [])
+    results = _records(_part(_json(response), "results", list, response))
     return _openalex_work(results[0]) if results else None
 
 
@@ -271,9 +318,10 @@ async def openalex_search(http: HttpClient, title: str, *, limit: int = 3) -> li
         OPENALEX_API,
         params={"filter": f"title.search:{title}", "per-page": limit},
     )
-    if not response.ok:
+    if not _answered(response):
         return []
-    return [w for r in response.json().get("results", []) if (w := _openalex_work(r))]
+    results = _records(_part(_json(response), "results", list, response))
+    return [w for r in results if (w := _openalex_work(r))]
 
 
 # --- Crossref ----------------------------------------------------------------
@@ -335,10 +383,9 @@ def _crossref_work(record: dict[str, object]) -> Work | None:
 
 async def crossref_by_doi(http: HttpClient, doi: str) -> Work | None:
     response = await http.get(f"{CROSSREF_API}/{normalize_doi(doi)}")
-    if not response.ok:
+    if not _answered(response):
         return None
-    message = response.json().get("message", {})
-    return _crossref_work(message) if isinstance(message, dict) else None
+    return _crossref_work(_part(_json(response), "message", dict, response))
 
 
 async def crossref_search(
@@ -352,9 +399,10 @@ async def crossref_search(
     if authors:
         params["query.author"] = " ".join(authors[:3])
     response = await http.get(CROSSREF_API, params=params)
-    if not response.ok:
+    if not _answered(response):
         return []
-    items = response.json().get("message", {}).get("items", [])
+    message = _part(_json(response), "message", dict, response)
+    items = _records(_part(message, "items", list, response))
     return [w for r in items if isinstance(r, dict) and (w := _crossref_work(r))]
 
 
@@ -419,9 +467,11 @@ async def s2_by_identifier(
     else:
         return None
     response = await http.get(f"{S2_API}/{path_id}", params={"fields": _S2_FIELDS})
-    if not response.ok:
+    if not _answered(response):
         return None
-    return _s2_work(response.json())
+    data = _json(response)
+    _part(data, "paperId", str, response)
+    return _s2_work(data)
 
 
 async def s2_search(http: HttpClient, title: str, *, limit: int = 3) -> list[Work]:
@@ -429,7 +479,9 @@ async def s2_search(http: HttpClient, title: str, *, limit: int = 3) -> list[Wor
         f"{S2_API}/search",
         params={"query": title, "limit": limit, "fields": _S2_FIELDS},
     )
-    if not response.ok:
+    if not _answered(response):
         return []
-    data = response.json().get("data", [])
-    return [w for r in data if isinstance(r, dict) and (w := _s2_work(r))]
+    reply = _json(response)
+    if "data" not in reply and isinstance(reply.get("total"), int):
+        return []  # a search with no hits gives its total and no "data"
+    return [w for r in _records(_part(reply, "data", list, response)) if (w := _s2_work(r))]

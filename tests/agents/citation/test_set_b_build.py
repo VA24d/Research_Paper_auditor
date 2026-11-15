@@ -74,3 +74,34 @@ async def test_number_proposal_accepted_when_the_source_states_the_original_only
         ctx.http,
     )
     assert problem is None
+
+
+async def test_a_fabricated_title_is_not_accepted_while_the_indexes_are_down(
+    tmp_path: Path,
+) -> None:
+    """ "Nothing resolves" is only verified when an index answered the search."""
+    import httpx
+
+    from auditor.config import Settings
+    from auditor.infra.http import HttpClient
+
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    proposal = Proposal(
+        kind=InjectionKind.REFERENCE_NOT_FOUND,
+        bib_id="b0",
+        sentence_id=None,
+        anchor=None,
+        new_value="A Fabricated Study of Nothing Real",
+    )
+    for status, expected in (
+        (503, "the indexes could not be asked whether the fabricated title resolves"),
+        (404, None),
+    ):
+        http = HttpClient(
+            Settings(_env_file=None, cache_dir=tmp_path / str(status)),
+            transport=httpx.MockTransport(lambda request, s=status: httpx.Response(s)),
+            sleep=no_sleep,
+        )
+        assert await set_b_build._verify(proposal, PAPER, None, http) == expected

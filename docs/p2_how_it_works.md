@@ -79,6 +79,9 @@ planner.tasks.reference_tasks(paper)          # one task per bibliography entry
           (KeyError -> TaskResult UNVERIFIABLE "entry ... is not in the paper")
        2. retrieval.resolve.resolve_entry(ctx.http, entry)   # see 3.4
        3. reference.check_reference(task, ctx, resolution)   # agents/citation/reference.py
+            no index could answer -> UNVERIFIABLE (every title search refused,
+                                    rate-limited or down, or nothing to look up: the
+                                    silence is not evidence the work is missing)
             resolution not found -> CandidateFinding REFERENCE_NOT_FOUND
                                     + LOOKUP evidence (every query and its outcome)
             resolution found     -> _metadata_findings: title (titles_match, token
@@ -119,7 +122,12 @@ planner.claims.citation_candidates -> planner.tasks.citation_tasks  # claim = se
                     the Evidence carries char_start/char_end; quotes shorter than
                     MIN_QUOTE_CHARS=20 get LOOKUP evidence only
                 numbers -> _number_check per NumberCheck:
-                    found is None                -> no finding (cannot confirm in code)
+                    claimed not in the claim, or found not in the quoted sentence, or
+                    the sentence not in the source -> no finding (a misread value);
+                    "in" means a whole number of exactly that value ("2.1" is not in
+                    "92.1", "500" not in "12,500"), citation markers left out
+                    found is None                -> a scan of a complete full text
+                                                    (not an abstract or publisher page)
                     numbers_agree(claimed,found) -> no finding
                     otherwise                    -> CLAIM_NUMBER_MISMATCH
                     (the model's `agrees` hint is ignored: a model that says "agrees"
@@ -178,7 +186,10 @@ the agent actually read:
    rendering); HTML is reduced to text with the standard library only (`html.parser`;
    block tags become line breaks, `script`/`style` dropped, whitespace collapsed,
    `&nbsp;` included). Pages whose text is under 2000 characters are treated as "no HTML
-   rendering" stubs.
+   rendering" stubs. For a work not on arXiv the index's landing page is fetched instead;
+   it is used only when it shows the work's title or the start of its abstract (a login
+   or cookie page does not), and then as a partial text (`SourceText.partial`): it may
+   hold the abstract alone, so a number it lacks is never reported as missing.
 2. **full_pdf**: `work.pdf_url` -> `http.download_to` (50 MB cap) into
    `scratch_dir/citation/<sha>.pdf` -> Part 1's `parser.pipeline.parse_pdf` (GROBID must
    be running, `docker compose up -d`) -> the sentences joined with newlines.
@@ -426,4 +437,3 @@ uv run python scripts/hallmark.py download --split test_public --out data/hallma
 uv run python scripts/hallmark.py run --file data/hallmark/test_public.jsonl --out runs/hallmark/results.jsonl
 uv run python scripts/hallmark.py score --results runs/hallmark/results.jsonl
 ```
-
