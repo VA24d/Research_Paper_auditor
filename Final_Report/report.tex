@@ -138,7 +138,7 @@ A: HALLMARK~\cite{hallmark} & Reference exists, metadata right & 831 entries (52
 B: claim--source & Citations: existence, metadata, support, numbers & 60 arXiv papers (cs.LG, cs.CL, 2025); 113 planted (96 not found, 9 metadata, 5 unsupported, 3 number), 46 clean & planted by us; 34 double-checked \\
 C: paper--code (SciCoQA) & Settings, metrics and method against the code & 40 pairs, 80 versions; 60 setting, 3 metric, 100 method, 72 clean & planted by us and from SciCoQA; 47 double-checked, all agreed \\
 D: integrity plants & Placeholder text, impossible means, text against tables, broken code & the 40 set C papers; 195 plants & planted by us; not double-checked \\
-SPOT~\cite{spot} & Errors in proofs and derivations & 26 papers, 29 errors; dev and test halves of 13 & from the benchmark; matched by LLM judges \\
+SPOT~\cite{spot} & Errors in proofs and derivations & its maths and CS papers: 26 of 83 papers, 29 of 91 errors; dev and test halves of 13 & from the benchmark; matched by LLM judges \\
 Parser fixtures & Citation linking & 10 arXiv papers, 797 markers, 100 checked by hand & by hand \\
 \bottomrule
 \end{tabularx}
@@ -521,7 +521,7 @@ commands to audit a paper, run a batch and score it (\texttt{auditor audit}, \te
 
 \clearpage
 \begin{thebibliography}{99}\small
-\bibitem{hallmark} HALLMARK: Diagnosing three failure modes in LLM citation verifiers. arXiv:2607.18360, 2026. Data: \url{https://github.com/rpatrik96/hallmark}.
+\bibitem{hallmark} K.~Kim, W.~Brendel and P.~Reizinger. HALLMARK: How to diagnose LLM citation verifiers and when to deploy them. arXiv:2607.18360, 2026. Data: \url{https://github.com/rpatrik96/hallmark}.
 \bibitem{spot} G.~Son et al. When AI co-scientists fail: SPOT, a benchmark for automated verification of scientific research. arXiv:2505.11855, 2025.
 \bibitem{scicoqa} T.~Baumg\"artner and I.~Gurevych. SciCoQA: Quality assurance for scientific paper--code alignment. arXiv:2601.12910, 2026.
 \bibitem{pat} R.~Jayaram et al. Towards automating scientific review with Google's Paper Assistant Tool. arXiv:2606.28277, 2026.
@@ -537,7 +537,7 @@ commands to audit a paper, run a batch and score it (\texttt{auditor audit}, \te
 \bibitem{langgraph} LangChain. LangGraph. \url{https://github.com/langchain-ai/langgraph}.
 \bibitem{the-iclr} Anger at `arbitrary' conference rejections after submissions soar. Times Higher Education, 2026. \url{https://www.timeshighereducation.com/node/745948}.
 \bibitem{iclrfacts} ICLR 2026 fact sheet. \url{https://media.iclr.cc/Conferences/ICLR2026/ICLR2026_Fact_Sheet.pdf}.
-\bibitem{nature-iclr} Major AI conference flooded with peer reviews written fully by AI. Nature news, November 2025 (reporting Pangram Labs' analysis of the ICLR 2026 reviews).
+\bibitem{nature-iclr} Major AI conference flooded with peer reviews written fully by AI. Nature news, November 2025, doi:10.1038/d41586-025-03506-6 (reporting Pangram Labs' analysis of the ICLR 2026 reviews).
 \end{thebibliography}
 
 \appendix
