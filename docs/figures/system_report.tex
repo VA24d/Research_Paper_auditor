@@ -1,0 +1,63 @@
+\documentclass[tikz,border=5pt,10pt]{standalone}
+\input{figstyle}
+% Final-report version of the system figure: names match the report's Methodology
+% (Citations, Code and data, Theory, Integrity and template) and the verifier's three outcomes.
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm, font=\sffamily\footnotesize]
+
+% ---- row 1: submission to tasks, plus the outside sources the checkers read
+\node[dat=2.2cm] (pdf) at (0.4,0) {\faFilePdf\ Submission\sub{PDF or LaTeX}};
+\node[act=2.3cm] (parse) at (3.35,0) {\ic{\faCogs}{Parser}{sentences, references,\\citations, tables}};
+\node[act=2.6cm] (plan) at (6.5,0) {\ic{\faSitemap}{Planner}{one task per reference,\\citation, setting, method,\\claim and venue rule}};
+\draw[ar] (pdf) -- (parse);
+\draw[ar] (parse) -- (plan);
+
+\node[dat=3.0cm] (cited) at (10.2,0) {\faBook\ Cited papers\sub{Crossref, OpenAlex, arXiv,\\Semantic Scholar; full text}};
+\node[dat=3.0cm] (repo) at (14.3,0) {\faGithub\ Code repository\sub{pinned commit,\\never run}};
+
+% ---- row 2: the four checkers
+\def\yy{-2.75}
+\tikzset{spec/.style={act=3.45cm, minimum height=1.45cm}}
+\node[rule=3.45cm, minimum height=1.45cm] (integ) at (1.6,\yy) {\ic{\faSearch}{Integrity and template}{placeholders, impossible means,\\text against tables; pages,\\fonts, anonymity (rules only)}};
+\node[spec] (theory) at (5.8,\yy) {\ic{\faSquareRoot*}{Theory}{picks up to four claims,\\checks each against the paper;\\sandbox with no network}};
+\node[spec] (cite) at (10.0,\yy) {\ic{\faBookOpen}{Citations}{reference exists, details right;\\cited passage supports the\\claim; numbers match}};
+\node[spec] (code) at (14.2,\yy) {\ic{\faCode}{Code and data}{settings, metrics and method\\against the code}};
+
+\coordinate (bus) at (0,-1.45);
+\draw[black!65, line width=0.6pt] (plan.south) -- (plan.south |- bus);
+\draw[black!65, line width=0.6pt] (integ.north |- bus) -- (code.north |- bus);
+\foreach \n in {integ, theory, cite, code} \draw[ar] (\n.north |- bus) -- (\n.north);
+\draw[ar, preaction={draw=white, line width=3.2pt, -}] (11.3,-0.5) -- (11.3,\yy+0.725);
+\draw[ar, preaction={draw=white, line width=3.2pt, -}] (15.5,-0.5) -- (15.5,\yy+0.725);
+
+% ---- row 3: verifier and its three outcomes
+\def\yz{-5.6}
+\node[act=3.4cm, minimum height=1.4cm, line width=1pt] (ver) at (2.6,\yz) {\ic{\faCheckDouble}{Verifier}{finds every quote again in\\its source; merges repeats;\\adds a severity}};
+
+\coordinate (bus2) at (0,-3.95);
+\draw[black!65, line width=0.6pt] (integ.south |- bus2) -- (code.south |- bus2);
+\foreach \n in {integ, theory, cite, code} \draw[black!65, line width=0.6pt] (\n.south) -- (\n.south |- bus2);
+\draw[ar] (ver.north |- bus2) -- (ver.north)
+  node[lab, pos=0.5, right, align=left] {findings with quoted evidence,\\or \textit{unverifiable}};
+
+\tikzset{oc/.style={act=3.1cm, minimum height=0.62cm, inner sep=2pt}}
+\tikzset{oc/.style={act=4.2cm, minimum height=0.78cm, inner sep=2pt}}
+\node[oc, draw=pGreenD, fill=pGreen] (okf) at (8.4,\yz+0.95) {\faCheck\ \textbf{Verified flag}\sub{quote found in its source}};
+\node[oc, draw=pYellowD, fill=pYellow] (hum) at (8.4,\yz) {\faUserCheck\ \textbf{Needs human review}\sub{quote missing, or rests on ``not found''}};
+\node[oc, draw=pGreyD, fill=pGrey] (drp) at (8.4,\yz-0.95) {\faTimes\ \textbf{Dropped}\sub{evidence refuted}};
+\coordinate (fork) at ($(ver.east)+(0.55,0)$);
+\draw[black!65, line width=0.6pt] (ver.east) -- (fork);
+\draw[ar] (fork) |- (okf.west);
+\draw[ar] (fork) -- (hum.west);
+\draw[ar] (fork) |- (drp.west);
+
+\node[out=3.6cm, minimum height=1.4cm] (rep) at (14.4,\yz+0.45) {\ic{\faClipboardList}{Report}{each finding with its sentence\\or code lines and its quote;\\a human decides}};
+\draw[ar] (okf.east) -- (rep.west |- okf.east);
+\draw[ar] (hum.east) -- (rep.west |- hum.east);
+
+% ---- shared strip
+\node[act=17.4cm, draw=pGreyD, fill=pGrey, minimum height=0.6cm, inner sep=2pt] (shared) at (8.0,-7.5)
+  {\faProjectDiagram\ \textbf{LangGraph} runs the checkers in parallel, with retries, checkpoints,
+   call and dollar budgets and cached replies \quad$\cdot$\quad model: Gemini 3.8 Flash};
+\end{tikzpicture}
+\end{document}

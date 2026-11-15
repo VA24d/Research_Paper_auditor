@@ -131,14 +131,14 @@ B and C.
 \label{tab:data}
 \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.1cm}@{}}
 \toprule
-Set & What it tests & Size & Labels from \\
+Set & What it tests & Size & Labels \\
 \midrule
-A: HALLMARK~\cite{hallmark} & Reference exists, metadata right & 831 entries (524 corrupted, 307 valid) & released \\
-B: claim--source & Citations: existence, metadata, support, numbers & 60 arXiv papers (cs.LG, cs.CL, 2025); 113 planted (96 not found, 9 metadata, 5 unsupported, 3 number), 46 clean & injection log; 34 reviewed \\
-C: paper--code (SciCoQA) & Settings, metrics and method against the code & 40 pairs, 80 versions; 60 setting, 3 metric, 100 method, 72 clean & injection log, SciCoQA; 47 reviewed (all agreed) \\
-D: integrity plants & Placeholder text, impossible means, text against tables, broken code & the 40 set C papers; 195 plants & templates; not reviewed \\
-SPOT~\cite{spot} & Errors in proofs and derivations & 26 papers, 29 errors; dev and test halves of 13 & released, LLM judges \\
-Parser fixtures & Citation linking & 10 arXiv papers, 797 markers, 100 checked by hand & hand \\
+A: HALLMARK~\cite{hallmark} & Reference exists, metadata right & 831 entries (524 corrupted, 307 valid) & from the benchmark \\
+B: claim--source & Citations: existence, metadata, support, numbers & 60 arXiv papers (cs.LG, cs.CL, 2025); 113 planted (96 not found, 9 metadata, 5 unsupported, 3 number), 46 clean & planted by us; 34 double-checked \\
+C: paper--code (SciCoQA) & Settings, metrics and method against the code & 40 pairs, 80 versions; 60 setting, 3 metric, 100 method, 72 clean & planted by us and from SciCoQA; 47 double-checked, all agreed \\
+D: integrity plants & Placeholder text, impossible means, text against tables, broken code & the 40 set C papers; 195 plants & planted by us; not double-checked \\
+SPOT~\cite{spot} & Errors in proofs and derivations & 26 papers, 29 errors; dev and test halves of 13 & from the benchmark; matched by LLM judges \\
+Parser fixtures & Citation linking & 10 arXiv papers, 797 markers, 100 checked by hand & by hand \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -155,11 +155,10 @@ so the data checker is tested only on small hand-built examples.
 \section{Methodology}
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{../docs/figures/system.pdf}
-\caption{The auditor. The parser turns the submission into sentences with their positions on the
-page. The planner makes one task per reference, citation, stated setting, method, claim and venue
-rule, and sends each task to the checker for its kind. Every finding names its sentence or code
-lines and quotes its evidence. The verifier checks that evidence before anything is reported.}
+\includegraphics[width=\textwidth]{../docs/figures/system_report.pdf}
+\caption{The auditor. The planner turns the paper into tasks and each checker reads the source it
+needs: the paper itself, the cited papers or the code. The verifier looks for every quoted piece of
+evidence in its source, and only verified flags are reported as errors.}
 \label{fig:system}
 \end{figure}
 
@@ -248,7 +247,7 @@ standard deviation over runs.}
 \label{tab:rq1}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
- & Full system & No verifier & B0 & B1 \\
+ & Full system & No verifier & B0 (LLM) & B1 (Agent) \\
 \midrule
 Runs & 3 & 3 & 3 & 2 \\
 \textbf{Macro-F1} & \textbf{0.636 $\pm$ 0.004} & 0.667 $\pm$ 0.003 & 0.048 $\pm$ 0.015 & 0.046 $\pm$ 0.007 \\
@@ -282,8 +281,8 @@ Cost per version & \$0.079 & \$0.079 & \$0.047 & \$0.542 \\
 \addplot[only marks,mark=*,mark size=2.6pt,cbone] coordinates {(0.542,0.046)};
 \node[anchor=west] at (axis cs:0.088,0.60) {Full system, 0.636};
 \node[anchor=west] at (axis cs:0.088,0.70) {No verifier, 0.667};
-\node[anchor=south west] at (axis cs:0.040,0.07) {B0, 0.048};
-\node[anchor=south] at (axis cs:0.542,0.07) {B1, 0.046};
+\node[anchor=south west] at (axis cs:0.034,0.13) {B0 (LLM), 0.048};
+\node[anchor=south east] at (axis cs:0.9,0.07) {B1 (Agent), 0.046};
 \end{semilogxaxis}
 \end{tikzpicture}
 \caption{Detection against cost.}
@@ -294,13 +293,13 @@ Cost per version & \$0.079 & \$0.079 & \$0.047 & \$0.542 \\
   ybar,bar width=5pt,ymin=0,ymax=1,area legend,
   symbolic x coords={Method (100),Metric (3),Setting (60)},xtick=data,
   enlarge x limits=0.25,ylabel={F1},
-  legend style={at={(0.5,1.03)},anchor=south,legend columns=4,draw=none,font=\scriptsize},
+  legend style={at={(0.5,1.03)},anchor=south,legend columns=2,cells={anchor=west},draw=none,font=\scriptsize},
   ymajorgrids,grid style={gray!25}]
 \addplot[fill=cfull,draw=none] coordinates {(Method (100),0.34) (Metric (3),0.80) (Setting (60),0.77)};
 \addplot[fill=cnover,draw=none] coordinates {(Method (100),0.34) (Metric (3),0.80) (Setting (60),0.86)};
 \addplot[fill=cbzero,draw=none] coordinates {(Method (100),0) (Metric (3),0) (Setting (60),0.14)};
 \addplot[fill=cbone,draw=none] coordinates {(Method (100),0) (Metric (3),0) (Setting (60),0.14)};
-\legend{Full,No verifier,B0,B1}
+\legend{Full,No verifier,B0 (LLM),B1 (Agent)}
 \end{axis}
 \end{tikzpicture}
 \caption{F1 per error class (labels in brackets).}
@@ -317,9 +316,7 @@ baseline at a seventh of B1's cost. Both baselines find no method or metric erro
 finds only 3 to 6 of the 60 changed settings.
 \item \textbf{Cheaper than B1.} B1 sends the whole paper with each of its 20 calls, about 670,000
 input tokens per paper version. That is why it costs \$0.542 a version against \$0.079.
-\item \textbf{Total cost.} All set C runs cost \$125.04 at list prices. The full system's three
-runs cost \$18.84, B0's three \$11.35 and B1's two \$86.78. A pilot cost \$1.70 and the stopped
-B1 run \$6.36.
+\item \textbf{Total cost.} All set C runs together cost \$125.04 at list prices.
 \end{itemize}
 
 \subsection{False alarms: not settled}
@@ -467,16 +464,13 @@ other 17.
 \item \textbf{Small classes.} Set C has only 3 metric errors and set B only 8 claim labels, so their
 F1 can move a lot with one item. The data checker is not tested on a labelled set.
 \item \textbf{Labels.} All planted errors are synthetic except the 8 SciCoQA discrepancies reported
-by users. The set B second review was done by an AI agent session that Anurag set up, not by a
-teammate. Set D has no second review, and SPOT matches are graded by LLM judges with no human
+by users. The set B second review was done by an AI agent, not a person. Set D has no second review, and SPOT matches are graded by LLM judges with no human
 check.
 \item \textbf{One model family.} All main runs use Gemini 3.8 Flash; B1 has two runs, not three.
 \item \textbf{Method recall is low.} The method F1 is 0.34, and most misses are code the model saw but
 did not report.
 \item \textbf{Parsing.} GROBID splits sentences at abbreviations; we did not change it because the gold
-labels point at sentence ids.
-\item \textbf{Cost.} Costs are priced at Gemini list rates; our bill matched full price for cached input.
-\end{itemize}
+labels point at sentence ids.\end{itemize}
 
 \section{Conclusions}
 \textbf{What we found.}
@@ -576,11 +570,11 @@ Full system & 1 & 0.641 & 61 & 251 & 1,047 & \$6.26 \\
             & 2 & 0.636 & 60 & 245 & 1,080 & \$6.30 \\
             & 3 & 0.632 & 59 & 268 & 1,044 & \$6.28 \\
 \midrule
-B0 & 1 & 0.051 & 5 & 104 & 80 & \$3.68 \\
+B0 (LLM) & 1 & 0.051 & 5 & 104 & 80 & \$3.68 \\
    & 2 & 0.061 & 6 & 140 & 80 & \$3.74 \\
    & 3 & 0.032 & 3 & 132 & 80 & \$3.93 \\
 \midrule
-B1 & 1 & 0.042 & 4 & 43 & 1,610 & \$42.59 \\
+B1 (Agent) & 1 & 0.042 & 4 & 43 & 1,610 & \$42.59 \\
    & 2 & 0.051 & 5 & 14 & 1,610 & \$44.19 \\
 \bottomrule
 \end{tabular}
