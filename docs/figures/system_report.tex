@@ -18,7 +18,7 @@
 % ---- row 2: the four checkers
 \def\yy{-2.75}
 \tikzset{spec/.style={act=3.45cm, minimum height=1.45cm}}
-\node[rule=3.45cm, minimum height=1.45cm] (integ) at (1.6,\yy) {\ic{\faSearch}{Integrity and template}{placeholders, impossible means,\\text against tables; pages,\\fonts, anonymity (rules only)}};
+\node[rule=3.45cm, minimum height=1.45cm] (integ) at (1.6,\yy) {\ic{\faSearch}{Integrity and template}{placeholders, impossible means,\\text against tables; pages,\\fonts, anonymity (mostly rules)}};
 \node[spec] (theory) at (5.8,\yy) {\ic{\faSquareRoot*}{Theory}{picks up to four claims,\\checks each against the paper;\\sandbox with no network}};
 \node[spec] (cite) at (10.0,\yy) {\ic{\faBookOpen}{Citations}{reference exists, details right;\\cited passage supports the\\claim; numbers match}};
 \node[spec] (code) at (14.2,\yy) {\ic{\faCode}{Code and data}{settings, metrics and method\\against the code}};
@@ -44,7 +44,7 @@
 \tikzset{oc/.style={act=4.2cm, minimum height=0.78cm, inner sep=2pt}}
 \node[oc, draw=pGreenD, fill=pGreen] (okf) at (8.4,\yz+0.95) {\faCheck\ \textbf{Verified flag}\sub{quote found in its source}};
 \node[oc, draw=pYellowD, fill=pYellow] (hum) at (8.4,\yz) {\faUserCheck\ \textbf{Needs human review}\sub{quote missing, or rests on ``not found''}};
-\node[oc, draw=pGreyD, fill=pGrey] (drp) at (8.4,\yz-0.95) {\faTimes\ \textbf{Dropped}\sub{evidence refuted}};
+\node[oc, draw=pGreyD, fill=pGrey] (drp) at (8.4,\yz-0.95) {\faTimes\ \textbf{Dropped}\sub{quote not in its source}};
 \coordinate (fork) at ($(ver.east)+(0.55,0)$);
 \draw[black!65, line width=0.6pt] (ver.east) -- (fork);
 \draw[ar] (fork) |- (okf.west);
