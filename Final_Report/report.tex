@@ -38,14 +38,18 @@ Reviewers rarely open the papers a submission cites or the code it releases, so 
 citation or a setting that differs from the code usually goes unnoticed. We built an auditor
 that reads a paper (PDF or LaTeX) and its repository, splits it into checkable items, sends
 each item to a specialist checker and reports a finding only with quoted evidence that a
-verifier has found again in its source. We compared it with the same model in one pass
-without tools (B0) and as one agent with all the tools (B1). On 40 paper--code pairs (80
-paper versions, 163 planted errors, 72 clean controls) the full system reaches a Macro-F1 of
-0.636 $\pm$ 0.004 over three runs, against 0.048 $\pm$ 0.015 for B0 and 0.046 $\pm$ 0.007 for
-B1, and no system flags a clean control. It costs \$0.079 per paper version, against \$0.542
-for B1. The weak points are clear too: it finds about a third of planted method changes, and
-it raises 3.1 flags per unchanged paper that no label covers and that we have not yet judged
-by hand. The citation checker scores F1 0.879 on the HALLMARK reference benchmark.
+verifier has found again in its source. We compared this full system with two baselines that
+use the same model: B0, which reads the paper in one pass with no tools, and B1, a single agent
+with all the same tools but no verifier. We tested all three on 40 papers paired with their
+code, each in an original and a copy with errors we planted (80 paper versions, 163 planted
+errors, 72 unchanged control items). The full system reaches a Macro-F1 of 0.636 over three
+runs, against 0.048 for B0 and 0.046 for B1, and no system wrongly flags a control item. It
+also costs less than B1: \$0.079 per paper version against \$0.542. It has two clear weak
+points. It still misses most planted changes to a paper's method, finding about a third of
+them. And on the original, unedited papers it raises about 3 flags per paper that match none
+of our labels; these may be real problems in the papers or false alarms, and we have not yet
+checked them by hand. Separately, the citation checker scores F1 0.879 on the HALLMARK
+reference benchmark.
 
 \section{Introduction}
 \textbf{The problem.} ICLR 2026 received 19,525 submissions, up from 11,603 a year
