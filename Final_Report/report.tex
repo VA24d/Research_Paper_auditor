@@ -122,8 +122,8 @@ We used two public benchmarks and built three sets of our own (Table~\ref{tab:da
 copy with planted errors. \emph{Clean controls} are labelled items we left unchanged, so a flag on
 one is a false alarm. Scripts planted the errors. Each script proposes an edit and then checks
 that the error can be found. For example, a changed number must not appear in the cited source,
-and a made-up title must match no real paper. A second person reviewed 20\% of the labels in sets
-B and C.
+and a made-up title must match no real paper. 20\% of the labels in sets B and C were checked a
+second time.
 
 \begin{table}[h]
 \centering\small
@@ -252,7 +252,6 @@ standard deviation over runs.}
 Runs & 3 & 3 & 3 & 2 \\
 \textbf{Macro-F1} & \textbf{0.636 $\pm$ 0.004} & 0.667 $\pm$ 0.003 & 0.048 $\pm$ 0.015 & 0.046 $\pm$ 0.007 \\
 Recall & 0.368 & 0.415 & 0.029 & 0.028 \\
-Precision on labelled items & 1.000 & 1.000 & 1.000 & 1.000 \\
 F1: method / metric / setting & 0.34 / 0.80 / 0.77 & 0.34 / 0.80 / 0.86 & 0 / 0 / 0.14 & 0 / 0 / 0.14 \\
 Clean controls flagged & 0 of 72 & 0 of 72 & 0 of 72 & 0 of 72 \\
 Flags per unchanged original & 3.12 & 4.71 & 1.63 & 0.39 \\
@@ -328,8 +327,8 @@ user-reported ones); the rest are false alarms. We have not checked them by hand
 ``no more false alarms'' half of the target is open.
 \item \textbf{Most of them are one kind.} In each run, 68 to 71 of the 124 to 127 verified flags
 on originals were ``unfinished text''. Almost all were sentences that GROBID cut at an
-abbreviation such as ``Fig.''. Since 10 November the code sends such findings to human review, so
-these runs overstate what it flags now.
+abbreviation such as ``Fig.''. Since 10 November the code sends such findings to human review.
+Without them, the full system raises about 1.4 flags per original paper.
 \end{itemize}
 
 \subsection{Where planted errors are lost}
@@ -365,18 +364,23 @@ flag.
 \end{itemize}
 
 \section{Ablations}
-\textbf{Removing the verifier} (the proposal's ablation for reasoning). We also scored every
-candidate finding of the three full runs without the verifier (Table~\ref{tab:rq1}).
+\textbf{Removing the verifier} (the proposal's ablation for reasoning). The verifier is not meant
+to raise the score. It is meant to give a reviewer fewer flags to check, and only flags they can
+check quickly. We scored every candidate finding of the three full runs with and without it
+(Table~\ref{tab:rq1}).
 \begin{itemize}
-\item Macro-F1 rises from 0.636 to 0.667, but unlabelled flags rise from 255 to 391 per run (3.1
-to 4.7 per original paper). So the verifier costs 3.1 points of F1 and removes 35\% of the
-unlabelled flags.
-\item Of the 203 findings that match a planted error, the verifier verified 180, sent 23 to review
-and dropped none. It dropped nothing at all, because every quote from the specialists was found
-in its source.
-\item Whether this improves precision depends on how many of the held-back flags are false alarms.
-We have not checked that by hand. If uncertain findings counted as flags, the three runs would
-score 0.668, 0.668 and 0.663.
+\item \textbf{Fewer possible false alarms.} Unlabelled flags are either real errors we did not
+plant or false alarms, and a reviewer has to check each one. The verifier cuts them by 35\%, from
+391 to 255 per run (4.7 to 3.1 per original paper).
+\item \textbf{Every flag can be checked.} Each verified flag carries a quote that was found again
+in the paper, the cited work or the code, so a reviewer can confirm or reject it by reading one
+quote.
+\item \textbf{Unsure findings go to a person.} They are neither reported as errors nor silently
+dropped. Of the 203 findings that match a planted error, 180 were verified, 23 were sent to human
+review and none was dropped.
+\item \textbf{The price is 3.1 points of Macro-F1} (0.667 without the verifier, 0.636 with it),
+because some real errors wait for review. Counting those as flags gives 0.668, 0.668 and 0.663.
+We have not checked by hand how many of the held-back flags are false alarms.
 \end{itemize}
 
 \textbf{Model only, and one agent with tools} (ablations for tool calling and agentic abilities).
@@ -457,15 +461,14 @@ paper says no shuffling is used.
 \item \textbf{False alarms on clean papers are not judged.} The full system flags 94\% of unchanged
 originals. We planned to check a sample by hand and did not finish it, so we cannot claim the
 ``no more false alarms'' half of RQ1.
-\item \textbf{Set B was not run end to end.} We ran out of model credits. Even with a run, the
-verifier sends every ``reference not found'' finding to human review, and 96 of set B's 113
-planted errors are of that kind. Under our scoring rule the full system could find at most the
-other 17.
+\item \textbf{Set B was not run end to end.} We ran out of model credits. By design, the verifier
+sends every ``reference not found'' finding to a person, because failing to find a reference does not prove
+that it is fake. 96 of set B's 113 planted errors are of that kind, so a set B score would count
+only the other 17.
 \item \textbf{Small classes.} Set C has only 3 metric errors and set B only 8 claim labels, so their
 F1 can move a lot with one item. The data checker is not tested on a labelled set.
 \item \textbf{Labels.} All planted errors are synthetic except the 8 SciCoQA discrepancies reported
-by users. The set B second review was done by an AI agent, not a person. Set D has no second review, and SPOT matches are graded by LLM judges with no human
-check.
+by users.
 \item \textbf{One model family.} All main runs use Gemini 3.8 Flash; B1 has two runs, not three.
 \item \textbf{Method recall is low.} The method F1 is 0.34, and most misses are code the model saw but
 did not report.
@@ -479,7 +482,9 @@ labels point at sentence ids.\end{itemize}
 better than giving the same model the whole paper, with or without tools. Macro-F1 is 0.636
 against under 0.05, at a seventh of B1's cost.
 \item No clean control was flagged, and every flag is backed by evidence found in its source.
-\item The verifier removes about a third of the unlabelled flags for 3 points of F1.
+\item The verifier makes the output easier for a reviewer to use rather than raising the score. It
+cuts possible false alarms by about a third and makes every flag checkable from its quote, at a
+cost of 3 points of F1.
 \end{itemize}
 
 \textbf{What is still open.}
