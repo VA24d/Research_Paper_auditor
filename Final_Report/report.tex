@@ -484,10 +484,10 @@ paper says no shuffling is used.
 
 \section{Limitations}\label{sec:limits}
 \begin{itemize}
-\item \textbf{Set B was not run end to end.} We ran out of model credits. By design, the verifier
-sends every ``reference not found'' finding to a person, because failing to find a reference does not prove
-that it is fake. 96 of set B's 113 planted errors are of that kind, so a set B score would count
-only the other 17.
+\item \textbf{Set B was not run end to end.} We ran out of model credits. Most of its planted
+errors (96 of 113) are fake references. The system sends these to human review by design, because
+failing to find a reference in the indexes does not prove that it is fake, so a run would be scored
+mostly on what reaches review.
 \item \textbf{Small classes.} Set C has only 3 metric errors and set B only 8 claim labels, so their
 F1 can move a lot with one item. The data checker is not tested on a labelled set.
 \item \textbf{Labels.} All labelled errors are synthetic except the 8 discrepancies that SciCoQA
