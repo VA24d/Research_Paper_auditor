@@ -54,7 +54,7 @@ and sends each item to a specialist checker. It reports a problem only when it c
 evidence and a verifier finds that quote in the source. We compared it with two baselines on the
 same model. B0 (LLM) reads the paper once with no tools. B1 (Agent) is a single agent with the same tools but no
 verifier. The test set has 40 papers with their code. Each paper appears twice, as the original
-and as a copy with planted errors (80 paper versions, 163 planted errors, 72 unchanged control
+and as a copy with planted errors (80 paper versions, 163 labelled errors, 72 unchanged control
 items). Over three runs the full system scores a Macro-F1 of 0.636, against 0.048 for B0 (LLM) and
 0.046 for B1 (Agent). No system flags any control item. The full system also costs about a seventh of
 B1 (Agent) (\$0.079 against \$0.542 per paper version). On its own, the citation checker scores an F1 of
@@ -103,9 +103,9 @@ generation~\cite{rag} and tool-using agents such as ReAct~\cite{react}.
 \textbf{LLM reviewers.} Liang et al.~\cite{liang} found that GPT-4 feedback on papers overlaps
 with human reviews, but such reviewers see only the submission. Google's Paper Assistant
 Tool~\cite{pat} is an agent that reads a whole manuscript and checks its theory and experiments.
-On SPOT's mathematics subset it reports finding 89.7\% of errors, against 55.2\% for a single
-Gemini 3.1 Pro call. SPOT~\cite{spot} collects real errors that led to errata or retractions; we
-use its mathematics and computer science papers as our theory test.
+On SPOT's 26 mathematics and computer science papers it reports finding 89.7\% of the errors,
+against 55.2\% for a single Gemini 3.1 Pro call. SPOT~\cite{spot} collects real errors that led to
+errata or retractions; we use the same 26 papers as our theory test.
 
 \textbf{Paper--code consistency.} SciReplicate-Bench~\cite{scireplicate} asks models to write code
 from a paper's method, which is a different task. SciCoQA~\cite{scicoqa} pairs papers with their
@@ -118,10 +118,11 @@ together, and none holds back a finding it cannot back with a quote. Our system 
 
 \section{Datasets}
 We used two public benchmarks and built three sets of our own (Table~\ref{tab:data}). A
-\emph{pair} is a paper with its official code. Our sets keep each paper twice: the original and a
-copy with planted errors. \emph{Clean controls} are labelled items we left unchanged, so a flag on
-one is a false alarm. Scripts planted the errors. Each script proposes an edit and then checks
-that the error can be found. For example, a changed number must not appear in the cited source,
+\emph{pair} is a paper with its official code. Our sets keep each paper as the original and a copy with
+planted errors (set B has no copy for one of its 60 papers). \emph{Clean controls} are labelled
+items we left unchanged, so a flag on one is a false alarm. Our scripts planted the errors of sets
+B and D and the settings and metrics of set C; set C's method errors come from SciCoQA. Each
+script proposes an edit and then checks that the error can be found. For example, a changed number must not appear in the cited source,
 and a made-up title must match no real paper. 20\% of the labels in sets B and C were checked a
 second time.
 
@@ -219,18 +220,21 @@ at a fixed commit, without running the code. The model is asked only when the sc
 which value belongs to the paper's experiment. For method checks, each method sentence retrieves
 the most similar code chunks with nomic embeddings~\cite{nomic}, and the model compares the two.
 A finding is kept only if the model was really shown its code lines.
-\item \emph{Theory.} Two triage calls pick up to four claims per paper. A deep check reads each
-claim with the whole paper and may test it in a sandbox with no network access. A last call drops
-findings that turn out to be wrong.
-\item \emph{Integrity and template.} These use rules and no model. They catch leftover placeholder
-text, impossible means (GRIM), text that contradicts its own table, and venue rule breaks (pages,
-fonts, margins, anonymity).
+\item \emph{Theory.} A triage call reads the whole paper and picks up to four claims it suspects.
+A deep check reads each claim with the whole paper and may test it in a sandbox with no network
+access. A last call drops findings that turn out to be wrong. The default now runs this twice per
+paper (two looks); the SPOT result in Table~\ref{tab:checkers} used one look.
+\item \emph{Integrity and template.} Template checks use rules only. Integrity checks use rules
+plus one cheap model call per paper, and a model pulls the claims out of the text for the table
+check. They catch leftover placeholder text, impossible means (GRIM), text that contradicts its own
+table, and venue rule breaks (pages, fonts, margins, anonymity).
 \end{itemize}
 
 \textbf{Verifier.} Every quote must be found again in its source: the paper's sentence, the cited
-work's text or the code lines. A finding whose evidence is missing goes to human review; one whose
-evidence is refuted is dropped. Findings that rest on something \emph{not} being found (a
-reference that resolves to nothing) always go to human review. The verifier merges repeats and
+work's text or the code lines. A finding is dropped when a quote it rests on is not in its source,
+or when a finished check gives no evidence at all. It goes to human review when one side of the
+evidence is missing, when the checker marked it uncertain, or when it rests on something
+\emph{not} being found (a reference that resolves to nothing). The verifier merges repeats and
 gives each flag a severity. A second model can re-read support and method findings, but this was
 off in our runs.
 
@@ -260,7 +264,7 @@ label is counted separately as \emph{unlabelled}, because it may be a real error
 \begin{itemize}
 \item \textbf{Model.} Gemini 3.8 Flash on Vertex AI for every system, and the same code version for
 every run.
-\item \textbf{Data.} Set C: 80 paper versions with 163 planted errors and 72 clean controls.
+\item \textbf{Data.} Set C: 80 paper versions with 163 labelled errors and 72 clean controls.
 \item \textbf{Citation checker off.} Set C has no citation labels, so we switched off the citation
 checker and the citation tools of B1 (Agent) alike. The full system and B1 (Agent) stay matched.
 \item \textbf{Repeats.} The full system and B0 (LLM) ran three times each, B1 (Agent) twice. A third B1 (Agent) run hit
@@ -270,7 +274,7 @@ paper version finished.
 
 \begin{table}[h]
 \centering\small
-\caption{RQ1 on set C (80 versions, 163 planted errors, 72 clean controls). Mean $\pm$ sample
+\caption{RQ1 on set C (80 versions, 163 labelled errors, 72 clean controls). Mean $\pm$ sample
 standard deviation over runs.}
 \label{tab:rq1}
 \begin{tabular}{@{}lcccc@{}}
@@ -335,8 +339,9 @@ baseline at a seventh of the cost of B1 (Agent). Both baselines find no method o
 \end{figure}
 
 \begin{itemize}
-\item \textbf{Detection: target met.} The full system scores 59.0 points of Macro-F1 above B1 (Agent) and
-58.8 above B0 (LLM). The target was 10.
+\item \textbf{Detection: the Macro-F1 target is met.} The full system scores 59.0 points of
+Macro-F1 above B1 (Agent) and 58.9 above B0 (LLM). The target was 10. The false-alarm half of the
+target is not settled (Section~\ref{sec:fa}).
 \item \textbf{Baselines miss almost everything.} Neither finds any method or metric error. Each
 finds only 3 to 6 of the 60 changed settings.
 \item \textbf{Cheaper than B1 (Agent).} B1 (Agent) sends the whole paper with each of its 20 calls, about 670,000
@@ -344,38 +349,41 @@ input tokens per paper version. That is why it costs \$0.542 a version against \
 \item \textbf{Total cost.} All set C runs together cost \$125.04 at list prices.
 \end{itemize}
 
-\subsection{False alarms}
-No system flags any of the 72 clean control items.
+\subsection{False alarms}\label{sec:fa}
+No system flags any of the 72 clean control items. On the unchanged original papers, the full
+system raises more flags that match no label than the baselines: 3.1 per paper, against 1.6 for
+B0 (LLM) and 0.4 for B1 (Agent). Some may be real problems in those papers. We have not checked
+them by hand, so we cannot yet say the full system has no more false alarms on clean papers.
 
-\subsection{Where planted errors are lost}
-Over the three full runs (489 planted-error instances, Figure~\ref{fig:fate}):
+\subsection{Where labelled errors are lost}
+Over the three full runs (489 labelled-error instances, Figure~\ref{fig:fate}):
 \begin{figure}[h]
 \centering\footnotesize
 \begin{tikzpicture}
 \begin{axis}[xbar stacked,area legend,width=\textwidth,height=2.6cm,font=\footnotesize,
   xmin=0,xmax=489,ytick=\empty,bar width=12pt,
-  xlabel={Planted-error instances over three runs (of 489)},
-  legend style={at={(0.5,1.08)},anchor=south,legend columns=4,draw=none,font=\scriptsize}]
+  xlabel={Labelled-error instances over three runs (of 489)},
+  legend style={at={(0.5,1.08)},anchor=south,legend columns=3,draw=none,font=\scriptsize}]
 \addplot[fill=cfull,draw=white] coordinates {(180,0)};
-\addplot[fill=crev,draw=white] coordinates {(26,0)};
-\addplot[fill=cmiss,draw=white] coordinates {(235,0)};
-\addplot[fill=cunver,draw=white] coordinates {(48,0)};
-\legend{Verified flag (180; 37\%),Human review (26; 5\%),No matching finding (235; 48\%),Unverifiable (48; 10\%)}
+\addplot[fill=crev,draw=white] coordinates {(23,0)};
+\addplot[fill=cmiss,draw=white] coordinates {(286,0)};
+\legend{Verified flag (180; 37\%),Human review (23; 5\%),Not found or unverifiable (286; 58\%)}
 \end{axis}
 \end{tikzpicture}
-\caption{What happened to each planted error in the full system.}
+\caption{What happened to each labelled error in the full system.}
 \label{fig:fate}
 \end{figure}
 \begin{itemize}
-\item \textbf{180 verified}, and \textbf{26 sent to human review} because the checker was unsure.
-\item \textbf{235 got no matching finding}, almost all of them method changes. We looked at 57 of
-these method misses. In 26 the model was shown the changed code but did not report it, in 14 the
-code was never retrieved, and in 7 the finding was removed because its code lines had not been
-shown to the model.
-\item \textbf{48 ended unverifiable}, mostly settings. In 45 of them, every value in the
-repository was judged to belong to a different experiment. This kind of miss never raises a wrong
-flag.
-\item \textbf{Stability.} Of the 163 planted errors, the full system finds 57 in all three runs and
+\item \textbf{180 verified}, and \textbf{23 sent to human review} because the checker was unsure.
+\item \textbf{286 lost}: the check either raised no matching finding or ended unverifiable.
+Most lost method changes got no matching finding. Most lost settings ended unverifiable: every
+value in the repository was judged to belong to a different experiment, a miss that never raises a
+wrong flag.
+\item \textbf{Why method changes are missed.} An earlier test on 57 synthetic method changes found
+and kept 10. Of the 47 misses, 26 were in code the model was shown but did not report, 14 were
+never retrieved, and 7 were dropped because their quote of the paper ran past one sentence or
+across an equation the parser lost.
+\item \textbf{Stability.} Of the 163 labelled errors, the full system finds 57 in all three runs and
 99 in none.
 \end{itemize}
 
@@ -392,9 +400,9 @@ plant or false alarms, and a reviewer has to check each one. The verifier cuts t
 in the paper, the cited work or the code, so a reviewer can confirm or reject it by reading one
 quote.
 \item \textbf{Unsure findings go to a person.} They are neither reported as errors nor silently
-dropped. Of the 203 findings that match a planted error, 180 were verified, 23 were sent to human
+dropped. Of the 203 findings that match a labelled error, 180 were verified, 23 were sent to human
 review and none was dropped.
-\item \textbf{The price is 3.1 points of Macro-F1} (0.667 without the verifier, 0.636 with it),
+\item \textbf{The price is 3.0 points of Macro-F1} (0.667 without the verifier, 0.636 with it),
 because some real errors wait for review. Counting those as flags gives 0.668, 0.668 and 0.663.
 We have not checked by hand how many of the held-back flags are false alarms.
 \end{itemize}
@@ -403,10 +411,10 @@ We have not checked by hand how many of the held-back flags are false alarms.
 These are baselines B0 (LLM) and B1 (Agent) in Table~\ref{tab:rq1}. Tools alone did not help: B1 (Agent) scores no
 better than B0 (LLM) and costs eleven times as much.
 
-\textbf{Abstract-only retrieval} (ablation for RAG). We ran this only with B1 (Agent) on part of set B.
-Full text and abstract both gave a Macro-F1 of 0.026. B1 (Agent) found almost nothing either way, so this
-tells us nothing about the full system, which we did not run on set B
-(Section~\ref{sec:limits}).
+\textbf{Abstract-only retrieval} (ablation for RAG). We ran this only once, early, with B1 (Agent)
+on part of set B and the old labels, before the citation checker's fixes: full text and abstract
+both gave a Macro-F1 of 0.026. That run is out of date and says nothing about the full system,
+which we did not run on all of set B (Section~\ref{sec:limits}).
 
 \begin{table}[h]
 \centering\small
@@ -419,8 +427,8 @@ Question & Variants & Result \\
 Finding the code for a method sentence (84 known differences; changed line shown) & word overlap / BM25 / nomic embeddings / BM25+embeddings / +reranker & 35 / 48 / \textbf{59} / 57 / 57 \\
 Model reading the code (57 known differences found) & 3.8 Flash / 3.1 Pro / DeepSeek V4.1 / Kimi K2 / GLM-5 / 3.5 Flash-Lite & 17 / 19 / 19 / 13 / 11 / 7 \\
 Code shown to the model (57 differences) & 60k / 120k characters & 17 / 16 \\
-Reading tables from a PDF (numbers recovered, 12 papers) & GROBID / layout text / both / text in table region / page image & 41 / 20 / 51 / \textbf{98} / 96\% \\
-Citation passage ranking (Recall@5, 6 records) & BM25 / MiniLM embeddings & \textbf{6} / 4 of 6 \\
+Reading tables from a PDF (numbers recovered, 12 papers) & GROBID / layout text / both / text in table region / page image & 41 / 20 / 51 / \textbf{98} / 97\% \\
+Citation passage ranking (Recall@5, 8 records) & BM25 / MiniLM embeddings & \textbf{8} / 4 of 8 \\
 Citation fixes on set A (author, year, venue rules) & before / after & FPR 31\% / 16\%; F1 0.80 / 0.88 \\
 Claim-loop effort (3 papers) & medium / low with a time limit per claim & 17--32 / \textbf{0} timeouts; \$0.63 / \$0.47 \\
 Theory checker shape (SPOT test half, first judge) & triage then deep check / two triage calls pooled & \textbf{8} / 7 of 14 \\
@@ -431,10 +439,11 @@ Theory checker shape (SPOT test half, first judge) & triage then deep check / tw
 What these changed in the final system:
 \begin{itemize}
 \item \textbf{Method retrieval} uses embedding search, which showed the changed line most often.
-\item \textbf{Citation passages} use BM25. It matched or beat MiniLM on our few gold passages (6 of
-6 against 4 of 6). Those gold passages were picked from BM25's top result, which favours it.
-\item \textbf{The reading model} stays Gemini 3.8 Flash. The best two alternatives find only 2 more
-of the 57 differences and cost three to four times as much.
+\item \textbf{Citation passages} use BM25. It beat MiniLM on our few gold passages (8 of 8 against
+4 of 8). Those gold passages were picked from BM25's top result, which favours it.
+\item \textbf{The reading model} stays Gemini 3.8 Flash. Gemini 3.1 Pro finds 2 more of the 57
+differences at about 3.6 times the cost. DeepSeek V4.1 also finds 2 more for less (about \$0.65
+against \$1), but with about twice as many findings to check.
 \end{itemize}
 
 \section{Evaluations of the individual checkers}
@@ -455,7 +464,7 @@ Set D reversed comparison / wrong gain & 94\% (31 of 33) / 55\% (18 of 33) & \\
 Set D number differs from its table & 20\% (2 of 10) & no false alarm on 254 real papers \\
 Set D undefined name / syntax error in code & 100\% (26 of 26) / 100\% (13 of 13) & \\
 Template rules (hand-built fixtures) & 100\% (15 of 15) & \\
-SPOT proof errors, test half & 57\% (8 of 14) one judge; 36\% (5 of 14) both & \$1.68 for 13 papers \\
+SPOT proof errors, test half, one look & 57\% (8 of 14) one judge; 36\% (5 of 14) both & \$1.68 for 13 papers \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -466,7 +475,8 @@ own templates, so these numbers are an upper bound for real papers.
 \item \textbf{HALLMARK.} The weakest types are nonexistent venues (recall 0.38) and preprints cited
 as published (0.50).
 \item \textbf{SPOT.} The two LLM judges disagree on several matches, so we report both counts.
-Google's tool reports 55.2\% for one Gemini 3.1 Pro call on the same subset~\cite{pat}.
+Google reports 55.2\% for one Gemini 3.1 Pro call on all 26 papers~\cite{pat}; our figure is for
+the 13-paper test half.
 \item \textbf{Real papers.} The checks also found real errors. arXiv 2312.11580 says ``PlaNet-S
 (0.73) is higher than U-Net (0.78)''. The code of arXiv 2006.06958 shuffles its data, although the
 paper says no shuffling is used.
@@ -480,8 +490,9 @@ that it is fake. 96 of set B's 113 planted errors are of that kind, so a set B s
 only the other 17.
 \item \textbf{Small classes.} Set C has only 3 metric errors and set B only 8 claim labels, so their
 F1 can move a lot with one item. The data checker is not tested on a labelled set.
-\item \textbf{Labels.} All planted errors are synthetic except the 8 SciCoQA discrepancies reported
-by users.
+\item \textbf{Labels.} All labelled errors are synthetic except the 8 discrepancies that SciCoQA
+users reported. Each of those is in both copies of its paper, so they make 16 of set C's 163
+labels.
 \item \textbf{One model family.} All main runs use Gemini 3.8 Flash; B1 (Agent) has two runs, not three.
 \item \textbf{Method recall is low.} The method F1 is 0.34, and most misses are code the model saw but
 did not report.
@@ -502,6 +513,8 @@ cost of 3 points of F1.
 
 \textbf{What is still open.}
 \begin{itemize}
+\item Whether the flags on unchanged papers that match no label are real problems or false
+alarms. This needs a hand check.
 \item The citation side end to end on set B; so far it is tested on its own and on HALLMARK.
 \item Better recall for method changes.
 \end{itemize}
@@ -558,14 +571,14 @@ items or runs than planned (the reason is in the middle column).}
 Promised & Delivered & State \\
 \midrule
 Planner, citation, code and template agents, verifier & All built, plus data, theory and integrity checkers; audit report and web UI & done \\
-Baselines B0 (LLM) and B1 (Agent) & Both built on the same model, tools and budgets & done \\
+Baselines B0 (LLM) and B1 (Agent) & Both built on the same model; B0 has no tools, B1 has the full system's tools & done \\
 Set A (HALLMARK) & 831 references scored & done \\
 Set B, about 600 claim--source pairs & 60 papers, 159 labels; full-system run on all of it not done & partial \\
 Set C, 40 repositories, 160 instances & 40 pairs, 80 paper versions, 235 labels; all systems run & done \\
 Metrics: Macro-F1, false alarms, grounding, cost & All four reported by one scorer (\texttt{auditor evaluate}) & done \\
 Ablation: remove the verifier & Scored on every full-system run & done \\
 Ablation: abstract-only retrieval & Run only with B1 (Agent) on part of set B; the full-system run ran out of credits & partial \\
-Recall@5 of the gold passage & Measured, but only 6 set B records have a gold passage & partial \\
+Recall@5 of the gold passage & Measured, but only 8 set B records have a gold passage & partial \\
 Tool-call accuracy & Not measured & not done \\
 Three runs of each system & Full system and B0 (LLM) three runs; B1 (Agent) two (the third hit the spend limit) & partial \\
 \bottomrule
@@ -581,7 +594,7 @@ controls.
 \caption{Every scored run on set C.}
 \begin{tabular}{@{}llccccc@{}}
 \toprule
-System & Run & Macro-F1 & \makecell{Planted errors\\found (of 163)} & \makecell{Unlabelled\\flags} & \makecell{Model\\calls} & Cost \\
+System & Run & Macro-F1 & \makecell{Labelled errors\\found (of 163)} & \makecell{Unlabelled\\flags} & \makecell{Model\\calls} & Cost \\
 \midrule
 Full system & 1 & 0.641 & 61 & 251 & 1,047 & \$6.26 \\
             & 2 & 0.636 & 60 & 245 & 1,080 & \$6.30 \\
