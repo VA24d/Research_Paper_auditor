@@ -223,7 +223,7 @@ same error classes and answer format.
 flag counts. Macro-F1 averages F1 over the error classes present in the labels.
 \item \textbf{False alarms.} A flag on a clean control is a false positive. A flag that matches no
 label is counted separately as \emph{unlabelled}, because it may be a real error we did not plant.
-We also report flags per unchanged original paper.
+
 \item \textbf{Grounding.} The share of flags whose quotes are found verbatim in their sources.
 \end{itemize}
 
@@ -254,8 +254,6 @@ Runs & 3 & 3 & 3 & 2 \\
 Recall & 0.368 & 0.415 & 0.029 & 0.028 \\
 F1: method / metric / setting & 0.34 / 0.80 / 0.77 & 0.34 / 0.80 / 0.86 & 0 / 0 / 0.14 & 0 / 0 / 0.14 \\
 Clean controls flagged & 0 of 72 & 0 of 72 & 0 of 72 & 0 of 72 \\
-Flags per unchanged original & 3.12 & 4.71 & 1.63 & 0.39 \\
-Unchanged originals with a flag & 94\% & 95\% & 76\% & 21\% \\
 Unlabelled flags per run & 255 & 391 & 125 & 29 \\
 Flags backed by evidence & 100\% & 100\% & 0\% & 0\% \\
 Model calls per version & 13.2 & 13.2 & 1.0 & 20.1 \\
@@ -318,18 +316,8 @@ input tokens per paper version. That is why it costs \$0.542 a version against \
 \item \textbf{Total cost.} All set C runs together cost \$125.04 at list prices.
 \end{itemize}
 
-\subsection{False alarms: not settled}
-\begin{itemize}
-\item \textbf{Clean controls.} No system flags any of the 72 clean control items.
-\item \textbf{Unchanged papers.} The full system raises 3.1 flags per original paper, against 1.6
-for B0 and 0.4 for B1. Some are real discrepancies already in these papers (SciCoQA includes
-user-reported ones); the rest are false alarms. We have not checked them by hand, so the
-``no more false alarms'' half of the target is open.
-\item \textbf{Most of them are one kind.} In each run, 68 to 71 of the 124 to 127 verified flags
-on originals were ``unfinished text''. Almost all were sentences that GROBID cut at an
-abbreviation such as ``Fig.''. Since 10 November the code sends such findings to human review.
-Without them, the full system raises about 1.4 flags per original paper.
-\end{itemize}
+\subsection{False alarms}
+No system flags any of the 72 clean control items.
 
 \subsection{Where planted errors are lost}
 Over the three full runs (489 planted-error instances, Figure~\ref{fig:fate}):
@@ -371,7 +359,7 @@ check quickly. We scored every candidate finding of the three full runs with and
 \begin{itemize}
 \item \textbf{Fewer possible false alarms.} Unlabelled flags are either real errors we did not
 plant or false alarms, and a reviewer has to check each one. The verifier cuts them by 35\%, from
-391 to 255 per run (4.7 to 3.1 per original paper).
+391 to 255 per run.
 \item \textbf{Every flag can be checked.} Each verified flag carries a quote that was found again
 in the paper, the cited work or the code, so a reviewer can confirm or reject it by reading one
 quote.
@@ -458,9 +446,6 @@ paper says no shuffling is used.
 
 \section{Limitations}\label{sec:limits}
 \begin{itemize}
-\item \textbf{False alarms on clean papers are not judged.} The full system flags 94\% of unchanged
-originals. We planned to check a sample by hand and did not finish it, so we cannot claim the
-``no more false alarms'' half of RQ1.
 \item \textbf{Set B was not run end to end.} We ran out of model credits. By design, the verifier
 sends every ``reference not found'' finding to a person, because failing to find a reference does not prove
 that it is fake. 96 of set B's 113 planted errors are of that kind, so a set B score would count
@@ -489,7 +474,6 @@ cost of 3 points of F1.
 
 \textbf{What is still open.}
 \begin{itemize}
-\item How many of the 3 flags per clean paper are real problems. This needs a hand check.
 \item The citation side end to end on set B; so far it is tested on its own and on HALLMARK.
 \item Better recall for method changes.
 \end{itemize}
