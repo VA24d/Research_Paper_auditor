@@ -87,7 +87,7 @@ AGENTS.md
 .gemini/
 .trail/
 
-
-
-# Report drafts for the submission, kept out of the repository
-Final_Report/
+# LaTeX build files of the report
+Final_Report/*.aux
+Final_Report/*.log
+Final_Report/*.out
