@@ -27,8 +27,8 @@
 \newcommand{\codeurl}{https://github.com/itikelabhaskar/Research_Paper_auditor}
 \newcommand{\websiteurl}{https://example.com/research-paper-auditor}
 
-% ---- money: US$ list prices converted at Rs 88 per US$ (rounded)
-%   full system $0.079 -> Rs 7.0; B0 $0.047 -> Rs 4.1; B1 $0.542 -> Rs 47.7
+% ---- money: US$ list prices converted at Rs 94 per US$ (mid-market rate, November 2026)
+%   full system $0.079 -> Rs 7.4; B0 $0.047 -> Rs 4.4; B1 $0.542 -> Rs 50.9
 \newcommand{\rs}{\faRupeeSign\hspace{0.04em}}
 
 % ---- colours: one blue for the poster; chart colours match the report
@@ -92,9 +92,10 @@
 \end{minipage}\hspace{6mm}%
 \begin{minipage}[c]{\dimexpr\linewidth-200mm\relax}\raggedright
   {\fontsize{82}{88}\selectfont\bfseries\color{ink}Research Paper Auditor}\\[6mm]
-  {\fontsize{38}{46}\selectfont\color{blue} Does the paper match its citations and its code?}\\[9mm]
-  {\fontsize{30}{37}\selectfont\bfseries\color{ink} Vijay Aravynthan \quad Itikela Bhaskar \quad Anurag Peddi \quad Sudheera Y S}\\[2mm]
-  {\fontsize{25}{31}\selectfont\color{black!60} Team Hood Research Department \quad$\cdot$\quad CL3.410 final project \quad$\cdot$\quad November 2026}
+  {\fontsize{38}{46}\selectfont\color{blue} Does the paper match its citations and its code?}\\[6mm]
+  {\fontsize{40}{48}\selectfont\bfseries\color{ink} Team Hood Research Department}%
+  {\fontsize{26}{32}\selectfont\color{black!55}\quad CL3.410 \quad$\cdot$\quad November 2026}\\[2mm]
+  {\fontsize{28}{35}\selectfont\color{ink} Vijay Aravynthan \quad Itikela Bhaskar \quad Anurag Peddi \quad Sudheera Y S}
 \end{minipage}\hfill
 \begin{minipage}[c]{54mm}\centering
   \qrcode[height=46mm]{\codeurl}\\[3mm]
@@ -146,12 +147,12 @@
 \end{tikzpicture}}
 
 \vspace{9mm}
-Our auditor flagged this mismatch and quoted both sides. Nobody planted it: \hlmark{it is in the
-authors' released code.} Every flag must quote its evidence, and \textbf{a human makes the final decision}.
+The paper says the data is not shuffled, and the released code shuffles it. \hlmark{We did not plant
+this error.} Our auditor found it and quoted both lines, and a reviewer decides whether to raise it.
 
 \vspace{6mm}
-ICLR 2027 received \textbf{62,000+} abstracts. Reviewers rarely have time to open the cited papers or
-the code, and an LLM reviewer only sees the submission.
+ICLR 2027 received \textbf{62,000+} abstracts. Few reviewers have time to open the cited papers or
+the code, and an LLM reviewer sees only the submission.
 \end{col}\hfill
 \begin{col}{0.36\linewidth}{r1}
 \sect{Results}
@@ -160,10 +161,10 @@ the code, and an LLM reviewer only sees the submission.
 
 \vspace{14mm}
 \begin{minipage}[t]{0.5\linewidth}\stat{blue}{100\%}{flags with a quote}{baselines: 0\%}\end{minipage}%
-\begin{minipage}[t]{0.5\linewidth}\stat{ink}{\rs7}{per paper}{B1 (Agent): \rs48}\end{minipage}
+\begin{minipage}[t]{0.5\linewidth}\stat{ink}{\rs7.4}{per paper}{B1 (Agent): \rs51}\end{minipage}
 
 \vspace{14mm}
-{\smalltext\color{black!70} On 40 papers with their code, each also copied with planted errors (163 in all).\par}
+{\smalltext\color{black!70} Tested on 40 papers with their code, plus a copy of each with planted errors (163 errors).\par}
 \end{col}
 
 \vspace{8mm}
@@ -205,10 +206,10 @@ the code, and an LLM reviewer only sees the submission.
 \end{tikzpicture}
 
 \vspace{7mm}
-Target: +10 points of Macro-F1. We got \hlmark{+59.}
+We aimed for 10 points of Macro-F1 above the baselines and got \hlmark{59.}
 
 \vspace{4mm}
-{\smalltext Neither baseline finds a method or metric error. The citation checker alone scores \textbf{F1 0.879} on HALLMARK.\par}
+{\smalltext Neither baseline finds a method or metric error. On its own, the citation checker scores \textbf{F1 0.879} on HALLMARK.\par}
 \end{col}\hfill
 \begin{col}{0.315\linewidth}{r3}
 \sect{Better and cheaper}
@@ -219,9 +220,9 @@ Target: +10 points of Macro-F1. We got \hlmark{+59.}
   ytick={0,0.2,0.4,0.6,0.8},
   xlabel={Cost per paper (log scale)}, ylabel={Macro-F1},
   grid=major, axis x line*=bottom, axis y line*=left]
-\addplot[only marks, mark=*, mark size=7pt, cfull] coordinates {(7.0,0.636)};
-\addplot[only marks, mark=*, mark size=7pt, cbzero] coordinates {(4.1,0.048)};
-\addplot[only marks, mark=*, mark size=7pt, cbone] coordinates {(47.7,0.046)};
+\addplot[only marks, mark=*, mark size=7pt, cfull] coordinates {(7.4,0.636)};
+\addplot[only marks, mark=*, mark size=7pt, cbzero] coordinates {(4.4,0.048)};
+\addplot[only marks, mark=*, mark size=7pt, cbone] coordinates {(50.9,0.046)};
 \node[anchor=south west, font=\fontsize{24}{28}\selectfont\bfseries\color{cfull}] at (axis cs:7.6,0.64) {Ours};
 \node[anchor=south west, font=\fontsize{23}{27}\selectfont\bfseries\color{cbzero}] at (axis cs:3.3,0.09) {B0 (LLM)};
 \node[anchor=south east, font=\fontsize{23}{27}\selectfont\bfseries\color{cbone}] at (axis cs:70,0.09) {B1 (Agent)};
@@ -229,10 +230,10 @@ Target: +10 points of Macro-F1. We got \hlmark{+59.}
 \end{tikzpicture}
 
 \vspace{7mm}
-Ours: \textbf{\rs7} a paper. B1 (Agent): \hlmark{\rs48.}
+Ours costs \textbf{\rs7.4} a paper and B1 (Agent) costs \hlmark{\rs51.}
 
 \vspace{4mm}
-{\smalltext B1 sends the whole paper with each of its 20 calls. Prices at \rs88 per US\$.\par}
+{\smalltext B1 sends the whole paper with each of its 20 calls. Converted at \rs94 per US\$.\par}
 \end{col}\hfill
 \begin{col}{0.32\linewidth}{r3}
 \sect{Fewer flags to check}
@@ -248,10 +249,10 @@ Ours: \textbf{\rs7} a paper. B1 (Agent): \hlmark{\rs48.}
 \end{tikzpicture}
 
 \vspace{7mm}
-The verifier cuts flags to check by \hlmark{35\%.}
+With the verifier, a reviewer has \hlmark{35\% fewer} flags to check.
 
 \vspace{4mm}
-{\smalltext Of the 203 planted errors found, 180 were verified and 23 went to a human. It costs 3 points of F1.\par}
+{\smalltext Of the 203 planted errors found, 180 were verified and 23 went to a human. The verifier costs 3 points of F1.\par}
 \end{col}
 
 \end{document}
