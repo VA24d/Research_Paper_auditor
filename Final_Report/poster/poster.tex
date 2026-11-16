@@ -154,7 +154,7 @@ this error.} Our auditor found it and quoted both lines, and a reviewer decides 
 
 \vspace{6mm}
 ICLR 2027 received \textbf{62,000+} abstracts. Few reviewers have time to open the cited papers or
-the code, and an LLM reviewer sees only the submission.
+the code.
 \end{col}\hfill
 \begin{col}{0.36\linewidth}{r1}
 \sect{Results}
@@ -172,11 +172,16 @@ the code, and an LLM reviewer sees only the submission.
 \vspace{8mm}
 
 % ================================================================ row 2: how it works | web app
-\begin{col}{0.755\linewidth}{r2}
+\begin{col}{0.77\linewidth}{r2}
 \sect{\raisebox{-0.18em}{\includegraphics[height=1.15em]{../logo.png}}\hspace{0.3em}Our system}
-\includegraphics[width=\linewidth]{../../docs/figures/system_report.pdf}
+You give the auditor a paper (PDF or LaTeX) and its code. It checks every reference, citation,
+stated setting and claim against the cited paper or the code, and \textbf{reports a problem only
+when it can quote both sides}.
+
+\vspace{4mm}
+{\centering\includegraphics[width=0.88\linewidth]{../../docs/figures/system_report.pdf}\par}
 \end{col}\hfill
-\begin{col}{0.23\linewidth}{r2}
+\begin{col}{0.215\linewidth}{r2}
 \sect{The web app}
 \setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.6mm}\centering
 \fcolorbox{rulegrey}{white}{\includegraphics[width=\dimexpr\linewidth-1.2mm\relax, trim=273 48 58 60, clip]{../app_screenshots/report_result.png}}\\[3mm]
