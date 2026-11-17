@@ -273,7 +273,7 @@ if DEMO:
             "turned off here."
         )
         st.write("Papers named *injected* are copies with errors we planted.")
-        st.markdown("[Code](https://github.com/itikelabhaskar/Research_Paper_auditor)")
+        st.markdown("[Code](https://github.com/VA24d/Research_Paper_auditor)")
     show_saved_reports(key="demo")
     st.stop()
 

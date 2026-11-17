@@ -37,7 +37,7 @@
         <a class="button is-dark is-rounded" href="static/pdf/poster.pdf">
           <span class="icon"><i class="fas fa-image"></i></span><span>Poster</span>
         </a>
-        <a class="button is-dark is-rounded" href="https://github.com/itikelabhaskar/Research_Paper_auditor">
+        <a class="button is-dark is-rounded" href="https://github.com/VA24d/Research_Paper_auditor">
           <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
         </a>
         <span class="button is-dark is-rounded soon" title="Coming soon">
@@ -201,6 +201,31 @@
 
 <section class="section">
   <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Each checker alone</h2>
+    <p class="content has-text-centered">Share of labelled errors each checker finds when run on its own.</p>
+    <div class="table-container">
+      <table class="table is-fullwidth is-narrow">
+        <thead><tr><th>What we test</th><th>Result</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Set A: reference corrupted or fake (831 entries)</td><td>F1 0.879 (P 0.902, R 0.857)</td><td>49 of 307 valid entries flagged (16%)</td></tr>
+          <tr><td>Citation marker linked to its reference (10 papers)</td><td>96% (765 of 797)</td><td>99 of 100 correct by hand</td></tr>
+          <tr><td>Set C settings, static check only</td><td>100% (60 of 60)</td><td>0 of 72 clean controls flagged</td></tr>
+          <tr><td>Set C metrics, static check only</td><td>67% (2 of 3)</td><td></td></tr>
+          <tr><td>Set D placeholder text / impossible mean (GRIM)</td><td>100% (40 of 40) / 100% (40 of 40)</td><td></td></tr>
+          <tr><td>Set D reversed comparison / wrong gain</td><td>94% (31 of 33) / 55% (18 of 33)</td><td></td></tr>
+          <tr><td>Set D number differs from its table</td><td>20% (2 of 10)</td><td>no false alarm on 254 real papers</td></tr>
+          <tr><td>Set D undefined name / syntax error in code</td><td>100% (26 of 26) / 100% (13 of 13)</td><td></td></tr>
+          <tr><td>Template rules (hand-built fixtures)</td><td>100% (15 of 15)</td><td></td></tr>
+          <tr><td>SPOT proof errors, test half, one look</td><td>57% (8 of 14) one judge; 36% (5 of 14) both</td><td>$1.68 for 13 papers</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="content">Most of these errors are planted, so real papers may score lower.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
     <h2 class="title is-3 has-text-centered">Ablations</h2>
     <p class="content has-text-centered">Each row changes one component and keeps the rest fixed. Bold marks the variant we kept.</p>
     <div class="table-container">
@@ -263,7 +288,7 @@
             Peddi, Anurag and Y S, Sudheera},
   year   = {2026},
   note   = {Course project report, CL3.410, IIIT Hyderabad},
-  url    = {https://github.com/itikelabhaskar/Research_Paper_auditor}
+  url    = {https://github.com/VA24d/Research_Paper_auditor}
 }</code></pre>
   </div>
 </section>

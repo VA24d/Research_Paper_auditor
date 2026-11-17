@@ -1,0 +1,14 @@
+# Dependencies of the read-only demo on Streamlit Community Cloud (same pins as
+# pyproject.toml, plus the `ui` extra). The package itself is imported from src/.
+httpx>=0.28,<1
+langchain>=1.4,<2
+langchain-core>=1.6,<2
+langchain-google-genai>=4.4,<5
+langchain-openai>=1.7,<2
+langgraph>=1.2,<2
+langgraph-checkpoint-sqlite>=3.1,<4
+pdfplumber>=0.11,<0.12
+pydantic>=2.12,<3
+pydantic-settings>=2.10,<3
+pyyaml>=6.0,<7
+streamlit>=1.40,<2
