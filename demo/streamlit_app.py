@@ -23,5 +23,9 @@ os.environ["PYTHONPATH"] = os.pathsep.join(
     filter(None, [str(ROOT / "src"), os.environ.get("PYTHONPATH")])
 )
 os.chdir(ROOT)
+# Streamlit Cloud keeps the Python process across a redeploy, so modules imported from the
+# old commit would stay in sys.modules; drop them so every run imports the current code.
+for name in [m for m in sys.modules if m == "auditor" or m.startswith("auditor.")]:
+    del sys.modules[name]
 
 runpy.run_path(str(ROOT / "src" / "auditor" / "ui" / "app.py"), run_name="__main__")
