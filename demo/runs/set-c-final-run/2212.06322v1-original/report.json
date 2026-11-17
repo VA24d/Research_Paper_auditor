@@ -1,0 +1,554 @@
+{
+ "paper_id": "2212.06322v1",
+ "variant": "original",
+ "title": "Privacy-Preserving Collaborative Learning through Feature Extraction",
+ "run_id": "p4-setc-full-r1",
+ "notice": "This report was produced automatically and is advisory. A verified flag means that the evidence shown was found again in its source and disagrees with the paper; it does not say why the difference exists, and it may still be wrong. Items for human review are open questions, not findings. A human reviewer decides what, if anything, to raise with the authors.",
+ "tasks": 147,
+ "task_outcomes": {
+  "checked": 139,
+  "unverifiable": 8,
+  "failed": 0
+ },
+ "verified": [
+  {
+   "finding_id": "code-74155701fb1c4095-f0",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "The paper specifies MSE as the loss function for all experiments, but the codebase uses cross-entropy (Classification loss) for classification training.",
+   "explanation": "Loss discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "For all the experiments, Mean Squared Error (MSE) is used as the loss function, and SGD [61] is used as the optimizer with a learning rate of 0.1, and an L2 regularization with a weight of 0.0002."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/data/loss.py:86-90",
+     "text": "class Classification(Loss):\n    \"\"\"A classical NLL loss for classification. Evaluation has the softmax baked in.\n\n    The minimized criterion is cross entropy, the actual metric is total accuracy.\n    \"\"\""
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-74155701fb1c4095-f1",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "The paper evaluates privacy leakage via membership inference attacks, whereas the code implements image reconstruction attacks from gradients using inversefed.GradientReconstructor.",
+   "explanation": "Evaluation discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "The adversary performs a membership inference attack on the trained model to try to identify samples that were present in the training data."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "benchmark/cifar100_attack.py:91-100",
+     "text": "    rec_machine = inversefed.GradientReconstructor(model, (dm, ds), config, num_images=num_images)\n    if opt.data == 'cifar100':\n        shape = (3, 32, 32)\n    elif opt.data == 'FashionMinist':\n        shape = (1, 32, 32)\n\n    if opt.rlabel:\n        output, stats = rec_machine.reconstruct(input_gradient, None, img_shape=shape) # reconstruction label\n    else:\n        output, stats = rec_machine.reconstruct(input_gradient, labels, img_shape=shape) # specify label"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-74155701fb1c4095-f2",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "The paper specifies using a custom semi-sigmoid activation function (ReLU(x) - ReLU(x - 1)) for all layers of LeNet, while the codebase uses standard nn.Sigmoid.",
+   "explanation": "Model discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "For the MNIST dataset, we also evaluated the methods on the LeNet-5 [62] architecture in which the dimension of the feature embeddings is 120."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/nn/models.py:306-317",
+     "text": "    def __init__(self, num_classes=10, num_channels=3):\n        \"\"\"3-Layer sigmoid Conv with large linear layer.\"\"\"\n        super().__init__()\n        act = nn.Sigmoid\n        self.body = nn.Sequential(\n            nn.Conv2d(num_channels, 12, kernel_size=5, padding=5 // 2, stride=2),\n            act(),\n            nn.Conv2d(12, 12, kernel_size=5, padding=5 // 2, stride=2),\n            act(),\n            nn.Conv2d(12, 12, kernel_size=5, padding=5 // 2, stride=1),\n            act(),\n        )"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-c72c808922550f88-f0",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section 1 INTRODUCTION, page 1",
+    "section": "1 INTRODUCTION",
+    "page": 1,
+    "sentence_id": "s24",
+    "text": "These algorithms become computationally expensive when the dataset is large, the network"
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is cut off mid-clause at 'the network' (broken by author bio/affiliation information).",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-88",
+     "text": "These algorithms become computationally expensive when the dataset is large, the network"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-c72c808922550f88-f1",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section 7.2 Information Leakage Using Membership Inference Attack, page 9",
+    "section": "7.2 Information Leakage Using Membership Inference Attack",
+    "page": 9,
+    "sentence_id": "s288",
+    "text": "The attack models against SFE show a level of  and 6 are consistent with each other."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence contains broken grammar and missing words ('a level of and 6 are consistent with each other').",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-84",
+     "text": "The attack models against SFE show a level of  and 6 are consistent with each other."
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-c72c808922550f88-f2",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "page 9",
+    "section": null,
+    "page": 9,
+    "sentence_id": "s417",
+    "text": "Training time (in minutes) of SFE, LTFE, and CTFE on MNIST, synthetic data, and fraud detection dataset.The numbers correspond to one party and 10 epochs of training.Training time in secure and non-secure modes and the ratio between these two modes are reported.themodelsagainst"
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The text ends with a mashed, cut-off phrase ('reported.themodelsagainst') continuing into the next fragment.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": "characters 233-278",
+     "text": "these two modes are reported.themodelsagainst"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-50c88270ac2b8bcc-f0",
+   "error_class": "setting_mismatch",
+   "title": "Setting in the paper differs from the code",
+   "severity": "medium",
+   "uncertain": false,
+   "place": {
+    "description": "page 9",
+    "section": null,
+    "page": 9,
+    "sentence_id": "s417",
+    "text": "Training time (in minutes) of SFE, LTFE, and CTFE on MNIST, synthetic data, and fraud detection dataset.The numbers correspond to one party and 10 epochs of training.Training time in secure and non-secure modes and the ratio between these two modes are reported.themodelsagainst"
+   },
+   "about": "epochs",
+   "summary": "The paper states epochs 10; the repository has 120 (inversefed/optimization_strategy.py:69), 120 (inversefed/options.py:16)",
+   "explanation": "Static scan of https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c; no value found for epochs matches the paper.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "Training time (in minutes) of SFE, LTFE, and CTFE on MNIST, synthetic data, and fraud detection dataset.The numbers correspond to one party and 10 epochs of training.Training time in secure and non-secure modes and the ratio between these two modes are reported.themodelsagainst"
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/optimization_strategy.py:69",
+     "text": "        self.epochs = 120"
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/options.py:16",
+     "text": "    parser.add_argument('--epochs', default=120, type=int, help='If using a trained model, how many epochs was it trained?')"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-2cf1ada1aef213bd-f0",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "searchalg/search_best.py does not compile: invalid character '−' (U+2212)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "searchalg/search_best.py:32",
+     "text": "if result[2] >= −85:"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  }
+ ],
+ "review": [
+  {
+   "finding_id": "code-38228ab615fdca05-f0",
+   "error_class": "data_split_mismatch",
+   "title": "Dataset or split in the paper differs from the code",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "section 6.2 Models, page 6",
+    "section": "6.2 Models",
+    "page": 6,
+    "sentence_id": "s231",
+    "text": "For the MNIST dataset, we also evaluated the methods on the LeNet-5 [62] architecture in which the dimension of the feature embeddings is 120."
+   },
+   "about": "dataset",
+   "summary": "The paper states dataset LeNet-5; the repository's code gives dataset CIFAR10 (inversefed/options.py:11)",
+   "explanation": "Evidence from the repository's code in https://github.com/gaow0007/ATSPrivacy at revision b9bf5da58d515167f94d859e256fd8b18d8a1f7c.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2212.06322v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "For the MNIST dataset, we also evaluated the methods on the LeNet-5 [62] architecture in which the dimension of the feature embeddings is 120."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/options.py:11",
+     "text": "    parser.add_argument('--dataset', default='CIFAR10', type=str)"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-2cf1ada1aef213bd-f1",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "create_tiny_dataset.py uses names defined nowhere: pickle (line 64)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "create_tiny_dataset.py:64",
+     "text": "entry = pickle.load(f)"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-2cf1ada1aef213bd-f2",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "inversefed/data/loss.py uses names defined nowhere: value (line 23), name (line 23)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/data/loss.py:23",
+     "text": "return value, name, format"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-2cf1ada1aef213bd-f3",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "inversefed/nn/models.py uses names defined nowhere: SRNet (line 151), BasicBlock (line 229)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/gaow0007/ATSPrivacy@b9bf5da58d515167f94d859e256fd8b18d8a1f7c",
+     "source_title": null,
+     "url": "https://github.com/gaow0007/ATSPrivacy",
+     "location": "inversefed/nn/models.py:151",
+     "text": "model = SRNet(upscale_factor=3, num_channels=num_channels)"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  }
+ ],
+ "not_checked": [
+  {
+   "task_id": "code-10c673fd862e0643",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no eval_metric found in the repository's code, configs or scripts",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-10c673fd862e0643",
+   "claim": null
+  },
+  {
+   "task_id": "code-8083da09f2a55505",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-8083da09f2a55505",
+   "claim": null
+  },
+  {
+   "task_id": "code-5dc336e103205cbc",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-5dc336e103205cbc",
+   "claim": null
+  },
+  {
+   "task_id": "code-2dc25f8bbf673831",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-2dc25f8bbf673831",
+   "claim": null
+  },
+  {
+   "task_id": "code-8ba43728b7763557",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-8ba43728b7763557",
+   "claim": null
+  },
+  {
+   "task_id": "code-7b83b40b18f33fdb",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-7b83b40b18f33fdb",
+   "claim": null
+  },
+  {
+   "task_id": "code-9eacb2b4e26dc220",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-9eacb2b4e26dc220",
+   "claim": null
+  },
+  {
+   "task_id": "code-9f06e4a855d9d0ee",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "test_overlap needs the data files, which are only read in data analysis mode (AUDITOR_DATA_ANALYSIS_ENABLED)",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-9f06e4a855d9d0ee",
+   "claim": null
+  }
+ ],
+ "dropped": []
+}

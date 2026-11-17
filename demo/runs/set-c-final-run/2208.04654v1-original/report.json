@@ -1,0 +1,213 @@
+{
+ "paper_id": "2208.04654v1",
+ "variant": "original",
+ "title": "Extending GCC-PHAT using Shift Equivariant Neural Networks",
+ "run_id": "p4-setc-full-r1",
+ "notice": "This report was produced automatically and is advisory. A verified flag means that the evidence shown was found again in its source and disagrees with the paper; it does not say why the difference exists, and it may still be wrong. Items for human review are open questions, not findings. A human reviewer decides what, if anything, to raise with the authors.",
+ "tasks": 67,
+ "task_outcomes": {
+  "checked": 67,
+  "unverifiable": 0,
+  "failed": 0
+ },
+ "verified": [
+  {
+   "finding_id": "code-6261fff562f42807-f0",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "In cfg.py, t60_range is set to [0.2, 0.4, 0.6], omitting 0.8 s and 1.0 s from the evaluation grid.",
+   "explanation": "Evaluation discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2208.04654v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "Each recording was evaluated for SNRs ∈ {0, 6, 12, 18, 24, 30} dB and reverberation times T60 ∈ {0.2, 0.4, 0.6, 0.8, 1} s."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/axeber01/ngcc@2210bf55395669c1c39d49f65f286fc9a1523fc9",
+     "source_title": null,
+     "url": "https://github.com/axeber01/ngcc",
+     "location": "cfg.py:27-28",
+     "text": "snr_range = [0, 6, 12, 18, 24, 30]\nt60_range = [0.2, 0.4, 0.6]"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-6261fff562f42807-f1",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "The network g_theta outputs unnormalized raw logits directly from final_conv without applying softmax normalization in the final layer.",
+   "explanation": "Model discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2208.04654v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "In order to output a probability distribution over time shifts, the GCC-PHAT output is fed into another network g θ : R (2τmax+1)×L → R (2τmax+1) , with its own set of parameters θ that combines the L different correlations and applies softmax normalization in the final layer."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/axeber01/ngcc@2210bf55395669c1c39d49f65f286fc9a1523fc9",
+     "source_title": null,
+     "url": "https://github.com/axeber01/ngcc",
+     "location": "model.py:151-155",
+     "text": "        s = cc.shape[2]\n        padding = get_pad(\n            size=s, kernel_size=self.final_kernel, stride=1, dilation=1)\n        cc = F.pad(cc, pad=padding, mode='constant')\n        cc = self.final_conv(cc).reshape([batch_size, -1])"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-6261fff562f42807-f2",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "The hidden layers of g_theta include Dropout(0.5) following LeakyReLU, which is not part of the model architecture described in the paper.",
+   "explanation": "Model discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2208.04654v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "Similarly, g θ consists of 4 convolutional layers with filters of length 11, 9, 7 and 5, all of which has 128 output channels, except for the last layer that has a single output channel which models the log-probabilities for each time delay."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/axeber01/ngcc@2210bf55395669c1c39d49f65f286fc9a1523fc9",
+     "source_title": null,
+     "url": "https://github.com/axeber01/ngcc",
+     "location": "model.py:121-125",
+     "text": "        self.mlp = nn.ModuleList([nn.Sequential(\n                nn.Conv1d(self.channels[i], self.channels[i+1], kernel_size=k),\n                nn.BatchNorm1d(self.channels[i+1]),\n                nn.LeakyReLU(0.2),\n                nn.Dropout(0.5)) for i, k in enumerate(self.mlp_kernels)])"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-6261fff562f42807-f3",
+   "error_class": "method_mismatch",
+   "title": "Method in the paper differs from the code",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "method",
+   "summary": "The dataset is loaded from LibriSpeech test-clean (which has 40 speakers in total); reserving 3 speakers for validation and 3 for testing leaves 34 speakers for training rather than 40.",
+   "explanation": "Data discrepancy, high confidence.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2208.04654v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "We split the data based on speakers, such that 40 speakers were used for training, 3 for validation and 3 for testing."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/axeber01/ngcc@2210bf55395669c1c39d49f65f286fc9a1523fc9",
+     "source_title": null,
+     "url": "https://github.com/axeber01/ngcc",
+     "location": "main.py:99-106",
+     "text": "indices_test = [i for i, ((waveform, sample_rate, transcript, speaker_id, utterance_number), pos, seed)\n                in enumerate(train_set) if speaker_id in TEST_IDS]\nindices_val = [i for i, ((waveform, sample_rate, transcript, speaker_id, utterance_number), pos, seed)\n               in enumerate(train_set) if speaker_id in VAL_IDS]\nindices_train = [i for i, ((waveform, sample_rate, transcript, speaker_id, utterance_number), pos, seed)\n                 in enumerate(train_set) if speaker_id not in TEST_IDS and speaker_id not in VAL_IDS]\n\ntrain_set = data_utils.Subset(train_set, indices_train)"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-63ecb994f99e732b-f0",
+   "error_class": "setting_mismatch",
+   "title": "Setting in the paper differs from the code",
+   "severity": "medium",
+   "uncertain": false,
+   "place": {
+    "description": "section 3. Experiments, page 3",
+    "section": "3. Experiments",
+    "page": 3,
+    "sentence_id": "s94",
+    "text": "We use the Adam optimizer [23] with a batch size of 32, a learning rate of 0.001 with a cosine decay schedule and train the network for 30 epochs."
+   },
+   "about": "optimizer",
+   "summary": "The paper states optimizer Adam; the repository has adamw (main.py:164)",
+   "explanation": "Static scan of https://github.com/axeber01/ngcc@2210bf55395669c1c39d49f65f286fc9a1523fc9; no value found for optimizer matches the paper.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2208.04654v1",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "We use the Adam optimizer [23] with a batch size of 32, a learning rate of 0.001 with a cosine decay schedule and train the network for 30 epochs."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "https://github.com/axeber01/ngcc@2210bf55395669c1c39d49f65f286fc9a1523fc9",
+     "source_title": null,
+     "url": "https://github.com/axeber01/ngcc",
+     "location": "main.py:164",
+     "text": "optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  }
+ ],
+ "review": [],
+ "not_checked": [],
+ "dropped": []
+}

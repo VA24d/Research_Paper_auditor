@@ -1,0 +1,869 @@
+{
+ "paper_id": "2104.01374v2",
+ "variant": "injected",
+ "title": "INTERPRETABLE UNSUPERVISED DIVERSITY DENOISING AND ARTEFACT REMOVAL",
+ "run_id": "p4-setc-full-r1",
+ "notice": "This report was produced automatically and is advisory. A verified flag means that the evidence shown was found again in its source and disagrees with the paper; it does not say why the difference exists, and it may still be wrong. Items for human review are open questions, not findings. A human reviewer decides what, if anything, to raise with the authors.",
+ "tasks": 203,
+ "task_outcomes": {
+  "checked": 177,
+  "unverifiable": 26,
+  "failed": 0
+ },
+ "verified": [
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f0",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section 4 HIERARCHICAL DIVNOISING, page 4",
+    "section": "4 HIERARCHICAL DIVNOISING",
+    "page": 4,
+    "sentence_id": "s100",
+    "text": "We also found that Noise Model."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is cut off mid-thought before the section heading 'Noise Model'.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-31",
+     "text": "We also found that Noise Model."
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f1",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section 5 DENOISING WITH HDN, page 6",
+    "section": "5 DENOISING WITH HDN",
+    "page": 6,
+    "sentence_id": "s110",
+    "text": "We find that performance usually improves with  , 2018)."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is incomplete, missing text and citation details before ', 2018)'.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-56",
+     "text": "We find that performance usually improves with  , 2018)."
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f2",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section A.6 PIXEL-WISE MEDIAN ESTIMATES, page 20",
+    "section": "A.6 PIXEL-WISE MEDIAN ESTIMATES",
+    "page": 20,
+    "sentence_id": "s292",
+    "text": "The MMSE estimates represent   Table 6: Comparison of HIERARCHICAL DIVNOISING MMSE estimate vs HIERARCHICAL DIVNOISING pixel-wise median estimate."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is truncated/cut off by an inserted table header.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-39",
+     "text": "The MMSE estimates represent   Table 6:"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f3",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section Number of Trainable Parameters and Training Times., page 23",
+    "section": "Number of Trainable Parameters and Training Times.",
+    "page": 23,
+    "sentence_id": "s313",
+    "text": "Thus, our networks have a rather small computational footprint compared to many commonly used generative network architectures such as PixelCNN++ (Salimans et al., 2017), BIVA (Maaløe et al., 2019), NVAE (Vahdat & Kautz, 2020) and VDVAE (Child, 2021) with 53 of the standard deviations over all test images in Appendix Fig. 15."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is broken and cut off mid-thought into an unrelated fragment.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 251-294",
+     "text": "with 53 of the standard deviations over all"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f4",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "page 16",
+    "section": null,
+    "page": 16,
+    "sentence_id": "s334",
+    "text": "To better illustrate the structured"
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The caption or text ends abruptly mid-sentence.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-35",
+     "text": "To better illustrate the structured"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f5",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "page 20",
+    "section": null,
+    "page": 20,
+    "sentence_id": "s336",
+    "text": "As explained in the main text,"
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is incomplete and abruptly ends with a comma.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-30",
+     "text": "As explained in the main text,"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f6",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section A.4 VISUALIZING PATTERNS ENCODED BY HDN LATENT LAYERS AND TARGETED DEACTIVATION, page 17",
+    "section": "A.4 VISUALIZING PATTERNS ENCODED BY HDN LATENT LAYERS AND TARGETED DEACTIVATION",
+    "page": 17,
+    "sentence_id": "s450",
+    "text": "In this section we present more details regarding More specifically, we want to visualize what our 6-layered HDN model has learned in Section 6 of the main text."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is cut off after 'regarding' and begins an unmerged thought.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-79",
+     "text": "In this section we present more details regarding More specifically, we want to"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f7",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section A.10 LIMITATIONS OF HDN FOR STRUCTURED NOISE REMOVAL, page 24",
+    "section": "A.10 LIMITATIONS OF HDN FOR STRUCTURED NOISE REMOVAL",
+    "page": 24,
+    "sentence_id": "s472",
+    "text": "However, if the spatial scale of Published as a conference paper at ICLR 2022 Figure 15: Measuring sample diversity with increasing noise levels on imput images."
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is severed across page header artifacts ('if the spatial scale of...').",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-77",
+     "text": "However, if the spatial scale of Published as a conference paper at ICLR 2022"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f8",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "section A.12 HOW DOES NOISE ON IMAGES AFFECT THE SAMPLE DIVERSITY OF HDN?, page 25",
+    "section": "A.12 HOW DOES NOISE ON IMAGES AFFECT THE SAMPLE DIVERSITY OF HDN?",
+    "page": 25,
+    "sentence_id": "s495",
+    "text": "We report the average"
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence is cut off abruptly without completing what is being reported.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 0-21",
+     "text": "We report the average"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "integrity-11075d5016fffd9c-f9",
+   "error_class": "unfinished_or_placeholder_content",
+   "title": "Unfinished or placeholder content",
+   "severity": "high",
+   "uncertain": false,
+   "place": {
+    "description": "page 14",
+    "section": null,
+    "page": 14,
+    "sentence_id": "s499",
+    "text": "A.1.1 DATASETS CORRUPTED WITH PIXEL-WISE NOISE We consider six microscopy datasets namely, the piq FU-PN2V Convallaria dataset from Krull et al. (2020); Prakash et al. (2019b) which shows 1024 ˆ1024 images of a intrinsically real-world noisy Convallaria sections, the piiq FU-PN2V Mouse Nuclei dataset from Prakash et al. (2019b), showing 512 ˆ512 images of a mouse skull nuclei, piiiq FU-PN2V Mouse Actin dataset from Prakash et al. (2019b), showing 1024 ˆ1024 images of actin labeled sample, pivq Two Photon Mice dataset from Zhang et al. (2019) of size 512 ˆ512, pvq Confocal Mice dataset from Zhang et al. (2019) of size 512 ˆ512, and pviq DenoiSeg Flywing dataset from"
+   },
+   "about": "rule unfinished_content",
+   "summary": "Unfinished text: The sentence ends abruptly at 'from' without citation or continuation.",
+   "explanation": "",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": "characters 635-673",
+     "text": "and pviq DenoiSeg Flywing dataset from"
+    }
+   ],
+   "verifier_reason": "Every side of the finding is shown by evidence found again in its source.",
+   "also_reported_as": []
+  }
+ ],
+ "review": [
+  {
+   "finding_id": "code-0da42fd70ce61650-f0",
+   "error_class": "setting_mismatch",
+   "title": "Setting in the paper differs from the code",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "section A.1.3 TRAINING DETAILS OF HIERARCHICAL DIVNOISING, page 16",
+    "section": "A.1.3 TRAINING DETAILS OF HIERARCHICAL DIVNOISING",
+    "page": 16,
+    "sentence_id": "s249",
+    "text": "We use an initial learning rate of 0.003 and always train for 200000 steps using Adamax (Kingma & Ba, 2015)."
+   },
+   "about": "learning rate",
+   "summary": "The paper states learning_rate 0.003; the repository has 0.0003 (examples/Structured_Noise/Convallaria/2-Training.ipynb:186)",
+   "explanation": "Static scan of file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2@content-c50081422c3a04b6; no value found for learning_rate matches the paper.",
+   "evidence": [
+    {
+     "kind": "quote",
+     "source_kind": "submission",
+     "source": "2104.01374v2",
+     "source_title": null,
+     "url": null,
+     "location": null,
+     "text": "We use an initial learning rate of 0.003 and always train for 200000 steps using Adamax (Kingma & Ba, 2015)."
+    },
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2@content-c50081422c3a04b6",
+     "source_title": null,
+     "url": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2",
+     "location": "examples/Structured_Noise/Convallaria/2-Training.ipynb:186",
+     "text": "    \"lr=3e-4\\n\","
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-87c512295e82f3e4-f0",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "boilerplate/boilerplate.py uses names defined nowhere: error (line 431)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2@content-c50081422c3a04b6",
+     "source_title": null,
+     "url": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2",
+     "location": "boilerplate/boilerplate.py:431",
+     "text": "raise RuntimeError('Cannot generate samples of this size, too small, network has too many down/upsamplings') from error"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-87c512295e82f3e4-f1",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "lib/likelihoods.py uses names defined nowhere: _input_check (line 151), _reduce (line 156)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2@content-c50081422c3a04b6",
+     "source_title": null,
+     "url": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2",
+     "location": "lib/likelihoods.py:151",
+     "text": "logvar = _input_check(x, mean, logvar, reduce)"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-87c512295e82f3e4-f2",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "lib/utils.py uses names defined nowhere: F (line 26)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2@content-c50081422c3a04b6",
+     "source_title": null,
+     "url": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2",
+     "location": "lib/utils.py:26",
+     "text": "out = F.interpolate(x,"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  },
+  {
+   "finding_id": "code-87c512295e82f3e4-f3",
+   "error_class": "code_defect",
+   "title": "Released code may not run as published",
+   "severity": "medium",
+   "uncertain": true,
+   "place": {
+    "description": "the paper as a whole",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code defects",
+   "summary": "models/lvae.py uses names defined nowhere: likelihood_form (line 178)",
+   "explanation": "Found by static analysis; nothing in the repository was run.",
+   "evidence": [
+    {
+     "kind": "code",
+     "source_kind": "repository",
+     "source": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2@content-c50081422c3a04b6",
+     "source_title": null,
+     "url": "file:///home/dheeruys/Documents/Github/Research_Paper_auditor/data/set_c/patched/2104.01374v2",
+     "location": "models/lvae.py:178",
+     "text": "msg = \"Unrecognized likelihood '{}'\".format(likelihood_form)"
+    }
+   ],
+   "verifier_reason": "The evidence is in its sources, but the specialist marked it uncertain.",
+   "also_reported_as": []
+  }
+ ],
+ "not_checked": [
+  {
+   "task_id": "code-a5fb27027277e580",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-a5fb27027277e580",
+   "claim": null
+  },
+  {
+   "task_id": "code-bac9d54b218d6868",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-bac9d54b218d6868",
+   "claim": null
+  },
+  {
+   "task_id": "code-373ae1faa3d9275b",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-373ae1faa3d9275b",
+   "claim": null
+  },
+  {
+   "task_id": "code-b103b199ab27388d",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-b103b199ab27388d",
+   "claim": null
+  },
+  {
+   "task_id": "code-1b8eaabcd9840c9a",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-1b8eaabcd9840c9a",
+   "claim": null
+  },
+  {
+   "task_id": "code-ab17233d47300af0",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-ab17233d47300af0",
+   "claim": null
+  },
+  {
+   "task_id": "code-b3cc220cab40e8c4",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-b3cc220cab40e8c4",
+   "claim": null
+  },
+  {
+   "task_id": "code-fb9c3fa8d59581d5",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-fb9c3fa8d59581d5",
+   "claim": null
+  },
+  {
+   "task_id": "code-d998915249b9c703",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-d998915249b9c703",
+   "claim": null
+  },
+  {
+   "task_id": "code-7502cfe283c16dd9",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-7502cfe283c16dd9",
+   "claim": null
+  },
+  {
+   "task_id": "code-12ab972dac796715",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-12ab972dac796715",
+   "claim": null
+  },
+  {
+   "task_id": "code-5863421b964c39e9",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-5863421b964c39e9",
+   "claim": null
+  },
+  {
+   "task_id": "code-ddd7eb9189043881",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-ddd7eb9189043881",
+   "claim": null
+  },
+  {
+   "task_id": "code-ed1d6f656d79389f",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no training_steps found in the repository's code, configs or scripts",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-ed1d6f656d79389f",
+   "claim": null
+  },
+  {
+   "task_id": "code-90261f9a1daa933a",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "every repository value of batch_size was judged to belong to something other than the experiment the sentence describes",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-90261f9a1daa933a",
+   "claim": null
+  },
+  {
+   "task_id": "code-cb09cf8660f50ca0",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "every repository value of batch_size was judged to belong to something other than the experiment the sentence describes",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-cb09cf8660f50ca0",
+   "claim": null
+  },
+  {
+   "task_id": "code-e16077c71f9f14fd",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-e16077c71f9f14fd",
+   "claim": null
+  },
+  {
+   "task_id": "code-4c4077ca990a16ed",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-4c4077ca990a16ed",
+   "claim": null
+  },
+  {
+   "task_id": "code-e6b6313d9b5ea1a6",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-e6b6313d9b5ea1a6",
+   "claim": null
+  },
+  {
+   "task_id": "code-8f537ec9c16ab6dd",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no eval_metric found in the repository's code, configs or scripts",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-8f537ec9c16ab6dd",
+   "claim": null
+  },
+  {
+   "task_id": "code-70571ad5714ac2b8",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no dataset is named in the repository's code, configs or dataset card",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-70571ad5714ac2b8",
+   "claim": null
+  },
+  {
+   "task_id": "code-f96de4c387d8f09f",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no eval_metric found in the repository's code, configs or scripts",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-f96de4c387d8f09f",
+   "claim": null
+  },
+  {
+   "task_id": "code-b03b5f9da4689369",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no eval_metric found in the repository's code, configs or scripts",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-b03b5f9da4689369",
+   "claim": null
+  },
+  {
+   "task_id": "code-ad7e9dd0a63849dc",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no eval_metric found in the repository's code, configs or scripts",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-ad7e9dd0a63849dc",
+   "claim": null
+  },
+  {
+   "task_id": "code-06a337837e94b98a",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "no example or class counts found in the repository's split lists or dataset card; counting them needs the data files, which are not downloaded",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-06a337837e94b98a",
+   "claim": null
+  },
+  {
+   "task_id": "code-803aab1109f0cfb8",
+   "kind": "code",
+   "outcome": "unverifiable",
+   "reason": "test_overlap needs the data files, which are only read in data analysis mode (AUDITOR_DATA_ANALYSIS_ENABLED)",
+   "place": {
+    "description": "unknown",
+    "section": null,
+    "page": null,
+    "sentence_id": null,
+    "text": null
+   },
+   "about": "code-803aab1109f0cfb8",
+   "claim": null
+  }
+ ],
+ "dropped": []
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Research Paper Auditor</title>
+  <meta name="description" content="An evidence-gated agent system that checks a research paper against the papers it cites and its code repository.">
+  <link rel="icon" type="image/png" href="static/img/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="static/css/site.css">
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop has-text-centered">
+      <img class="logo" src="static/img/logo.png" alt="Team logo">
+      <h1 class="title is-1 publication-title">Research Paper Auditor</h1>
+      <p class="subtitle is-4 publication-subtitle">An evidence-gated agent system for checking research papers</p>
+      <div class="publication-authors">
+        <span class="author">Vijay Aravynthan</span>
+        <span class="author">Itikela Bhaskar</span>
+        <span class="author">Anurag Peddi</span>
+        <span class="author">Sudheera Y S</span>
+      </div>
+      <div class="publication-affil">Team Hood Research Department &middot; IIIT Hyderabad</div>
+      <div class="publication-venue">CL3.410 course project, November 2026</div>
+
+      <div class="publication-links">
+        <a class="button is-dark is-rounded" href="static/pdf/report.pdf">
+          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Report</span>
+        </a>
+        <a class="button is-dark is-rounded" href="static/pdf/poster.pdf">
+          <span class="icon"><i class="fas fa-image"></i></span><span>Poster</span>
+        </a>
+        <a class="button is-dark is-rounded" href="https://github.com/itikelabhaskar/Research_Paper_auditor">
+          <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
+        </a>
+        <span class="button is-dark is-rounded soon" title="Coming soon">
+          <span class="icon"><i class="fas fa-desktop"></i></span><span>Demo (coming soon)</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Teaser: one real mismatch the auditor found -->
+<section class="section teaser">
+  <div class="container is-max-desktop">
+    <div class="mismatch">
+      <figure class="paper-side">
+        <div class="mock-paper">
+          <div class="mock-meta">arXiv 2006.06958 &middot; Stable SGD</div>
+          <div class="mock-heading">B.2&nbsp;&nbsp;Continual learning setup</div>
+          <div class="mock-line"></div>
+          <div class="mock-line short"></div>
+          <p class="mock-quote">&hellip; we have not employed any data augmentation technique or <b>shuffling</b>.</p>
+          <div class="mock-line shorter"></div>
+        </div>
+        <figcaption>What the paper says</figcaption>
+      </figure>
+      <div class="neq" aria-label="does not match">&ne;</div>
+      <figure class="code-side">
+        <div class="mock-editor">
+          <div class="editor-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="fname">stable_sgd/data_utils.py</span></div>
+<pre><span class="ln">25</span> mnist_train = MNIST(&hellip;)
+<span class="ln">26</span><span class="hl"><span class="ln">27</span> train_loader = DataLoader(
+<span class="ln">  </span>     mnist_train, &hellip;,
+<span class="ln">  </span>     <b>shuffle=True</b>)</span><span class="ln">28</span> test_loader = DataLoader(&hellip;)</pre>
+        </div>
+        <figcaption>What the code does</figcaption>
+      </figure>
+    </div>
+    <p class="teaser-caption">
+      A mismatch in Mirzadeh et al. (2020) that our labels did not contain. The auditor reported it
+      with both lines quoted: Appendix B.2 says the data were not shuffled, and line 27 of the
+      authors' data loader sets <code>shuffle=True</code>.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Abstract</h2>
+    <div class="content has-text-justified">
+      <p>
+        Reviewers rarely open the papers a submission cites or the code it releases, so a wrong
+        citation or a setting that differs from the code usually goes unnoticed. We built an auditor
+        that checks a paper (PDF or LaTeX) against the papers it cites and its code repository. It
+        splits the paper into small items and sends each item to a specialist checker. It reports a
+        problem only when it can quote the evidence and a verifier finds that quote in the source.
+      </p>
+      <p>
+        We compared it with two baselines on the same model. B0 (LLM) reads the paper once with no
+        tools. B1 (Agent) is a single agent with the same tools but no verifier. The test set has 40
+        papers with their code. Each paper appears twice, as the original and as a copy with planted
+        errors (80 paper versions, 163 labelled errors, 72 unchanged control items). Over three runs
+        the full system scores a Macro-F1 of 0.636, against 0.048 for B0 (LLM) and 0.046 for
+        B1 (Agent). No system flags any control item. The full system also costs about a seventh of
+        B1 (Agent) ($0.079 against $0.542 per paper version). On its own, the citation checker
+        scores an F1 of 0.879 on the HALLMARK reference benchmark.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">How it works</h2>
+    <figure class="figure">
+      <img src="static/img/system.svg" alt="System diagram: parser, planner, four checkers, verifier with three outcomes, report">
+    </figure>
+    <div class="columns is-multiline steps">
+      <div class="column is-half-tablet is-one-quarter-desktop">
+        <p class="step-title"><span class="num">1</span>Read</p>
+        <p>GROBID parses the PDF into sentences, references, citations and tables. A planner turns
+          them into small tasks: one per reference, citation, setting, method and claim.</p>
+      </div>
+      <div class="column is-half-tablet is-one-quarter-desktop">
+        <p class="step-title"><span class="num">2</span>Check</p>
+        <p>Four checkers run in parallel. Citations: the reference exists and supports the sentence.
+          Code and data: settings, metrics and methods match the repository. Theory: claims hold.
+          Integrity: placeholders, impossible means, text against tables.</p>
+      </div>
+      <div class="column is-half-tablet is-one-quarter-desktop">
+        <p class="step-title"><span class="num">3</span>Verify</p>
+        <p>The verifier looks for every quoted line again in its source. A finding whose quote is
+          missing is dropped. One that rests on a record not being found goes to a person.</p>
+      </div>
+      <div class="column is-half-tablet is-one-quarter-desktop">
+        <p class="step-title"><span class="num">4</span>Report</p>
+        <p>Each finding comes with its sentence or code lines and the quote. Verified flags, items
+          for human review and checks that did not finish are listed apart. A person decides.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Evaluation sets</h2>
+    <div class="table-container">
+      <table class="table is-fullwidth is-narrow">
+        <thead><tr><th>Set</th><th>What it tests</th><th>Size</th></tr></thead>
+        <tbody>
+          <tr><td>A: HALLMARK</td><td>Reference exists, details right</td><td>831 entries (524 corrupted, 307 valid)</td></tr>
+          <tr><td>B: claim and source</td><td>Citation existence, details, support, numbers</td><td>60 arXiv papers, 113 planted errors, 46 clean</td></tr>
+          <tr class="main-row"><td>C: paper and code (SciCoQA)</td><td>Settings, metrics and methods against the code</td><td>40 pairs, 80 versions, 163 labelled errors, 72 clean</td></tr>
+          <tr><td>D: integrity plants</td><td>Placeholders, impossible means, text against tables, broken code</td><td>the 40 set C papers, 195 plants</td></tr>
+          <tr><td>SPOT (theory)</td><td>Errors in proofs</td><td>13 papers in the test half, 14 errors</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Main result</h2>
+    <p class="content has-text-centered">Set C, mean over runs. Every system uses the same model, Gemini 3.8 Flash.</p>
+
+    <div class="bars" role="img" aria-label="Macro-F1: full system 0.636, no verifier 0.667, B0 0.048, B1 0.046">
+      <div class="bar-row"><span class="bar-label">Full system</span><span class="bar-track"><span class="bar ours" style="width:63.6%"></span></span><span class="bar-value">0.636</span></div>
+      <div class="bar-row"><span class="bar-label">No verifier</span><span class="bar-track"><span class="bar ours-light" style="width:66.7%"></span></span><span class="bar-value">0.667</span></div>
+      <div class="bar-row"><span class="bar-label">B0 (LLM)</span><span class="bar-track"><span class="bar base" style="width:4.8%"></span></span><span class="bar-value">0.048</span></div>
+      <div class="bar-row"><span class="bar-label">B1 (Agent)</span><span class="bar-track"><span class="bar base" style="width:4.6%"></span></span><span class="bar-value">0.046</span></div>
+      <p class="bar-axis">Macro-F1</p>
+    </div>
+
+    <div class="table-container">
+      <table class="table is-fullwidth is-narrow results">
+        <thead>
+          <tr><th></th><th>Full system</th><th>No verifier</th><th>B0 (LLM)</th><th>B1 (Agent)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Runs</td><td>3</td><td>3</td><td>3</td><td>2</td></tr>
+          <tr><td>Macro-F1</td><td><b>0.636</b> &plusmn; 0.004</td><td>0.667 &plusmn; 0.003</td><td>0.048 &plusmn; 0.015</td><td>0.046 &plusmn; 0.007</td></tr>
+          <tr><td>Recall</td><td>0.368</td><td>0.415</td><td>0.029</td><td>0.028</td></tr>
+          <tr><td>F1: method / metric / setting</td><td>0.34 / 0.80 / 0.77</td><td>0.34 / 0.80 / 0.86</td><td>0 / 0 / 0.14</td><td>0 / 0 / 0.14</td></tr>
+          <tr><td>Clean controls flagged</td><td>0 of 72</td><td>0 of 72</td><td>0 of 72</td><td>0 of 72</td></tr>
+          <tr><td>Unlabelled flags per run</td><td>255</td><td>391</td><td>125</td><td>29</td></tr>
+          <tr><td>Flags backed by evidence</td><td>100%</td><td>100%</td><td>0%</td><td>0%</td></tr>
+          <tr><td>Model calls per version</td><td>13.2</td><td>13.2</td><td>1.0</td><td>20.1</td></tr>
+          <tr><td>Cost per version</td><td>$0.079</td><td>$0.079</td><td>$0.047</td><td>$0.542</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="content">
+      <ul>
+        <li>The target was 10 points of Macro-F1 over the single-pass baseline. The full system is 59 points above it.</li>
+        <li>Neither baseline finds a single method or metric error.</li>
+        <li>The verifier costs 3 points of F1 and cuts the unlabelled flags a reviewer must read by 35% (391 to 255).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Ablations</h2>
+    <p class="content has-text-centered">Each row changes one component and keeps the rest fixed. Bold marks the variant we kept.</p>
+    <div class="table-container">
+      <table class="table is-fullwidth is-narrow ablations">
+        <thead><tr><th>Question</th><th>Variants</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Finding the code for a method sentence (84 known differences, changed line shown)</td><td>word overlap / BM25 / nomic embeddings / BM25 + embeddings / + reranker</td><td>35 / 48 / <b>59</b> / 57 / 57</td></tr>
+          <tr><td>Model reading the code (57 known differences found)</td><td>3.8 Flash / 3.1 Pro / DeepSeek V4.1 / Kimi K2 / GLM-5 / 3.5 Flash-Lite</td><td><b>17</b> / 19 / 19 / 13 / 11 / 7</td></tr>
+          <tr><td>Reading tables from a PDF (numbers recovered, 12 papers)</td><td>GROBID / layout text / both / text in table region / page image</td><td>41 / 20 / 51 / <b>98</b> / 97%</td></tr>
+          <tr><td>Citation fixes on set A</td><td>before / after</td><td>F1 0.80 / <b>0.88</b></td></tr>
+          <tr><td>Theory checker shape (SPOT test half)</td><td>triage then deep check / two triage calls pooled</td><td><b>8</b> / 7 of 14</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="content">We kept 3.8 Flash over 3.1 Pro: it finds 17 differences against 19, and 3.1 Pro costs 3.6 times as much.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">The web app</h2>
+    <div class="shots">
+      <div>
+        <figure class="figure shot">
+          <img src="static/img/app_report.png" alt="Report page with counts of verified flags, items for human review, items not checked and items set aside">
+          <figcaption>Results by outcome</figcaption>
+        </figure>
+      </div>
+      <div>
+        <figure class="figure shot">
+          <img src="static/img/app_finding.png" alt="One finding opened, showing the quote from the paper and the indexed record it disagrees with">
+          <figcaption>Flag with evidence</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Limitations</h2>
+    <div class="content">
+      <ul>
+        <li>Most labelled errors are planted. Only the 8 discrepancies reported by SciCoQA users are real, and they make 16 of the 163 labels.</li>
+        <li>All main runs use one model family (Gemini). B1 (Agent) has two runs, not three.</li>
+        <li>Method recall is low (F1 0.34). Most misses are code the model saw but did not report.</li>
+        <li>We have not checked the unlabelled flags on the original papers by hand, so we cannot yet say how many are real problems.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title is-3">BibTeX</h2>
+<pre><code>@misc{aravynthan2026auditor,
+  title  = {Research Paper Auditor: An Evidence-Gated Agent System
+            for Checking Research Papers},
+  author = {Aravynthan, Vijay and Bhaskar, Itikela and
+            Peddi, Anurag and Y S, Sudheera},
+  year   = {2026},
+  note   = {Course project report, CL3.410, IIIT Hyderabad},
+  url    = {https://github.com/itikelabhaskar/Research_Paper_auditor}
+}</code></pre>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container is-max-desktop has-text-centered">
+    <p>Team Hood Research Department &middot; IIIT Hyderabad &middot; 2026</p>
+  </div>
+</footer>
+
+</body>
+</html>

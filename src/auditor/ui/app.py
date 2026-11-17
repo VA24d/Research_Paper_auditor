@@ -5,6 +5,7 @@ Start it with `uv run auditor ui` (needs `uv sync --extra ui`). An audit runs
 `auditor.ui.audit` for the limits that protect the shared credits.
 """
 
+import os
 import queue
 import subprocess
 import threading
@@ -36,6 +37,8 @@ from auditor.ui.audit import (
 
 ROOT = Path.cwd()
 SETTINGS = Settings()
+# AUDITOR_DEMO=1: the public read-only demo (reports under AUDITOR_RUNS_DIR, no audits).
+DEMO = os.environ.get("AUDITOR_DEMO") == "1"
 UI_DIR = SETTINGS.data_dir / "ui"
 LEDGER = UI_DIR / "ledger.jsonl"
 DEMO_DATASET = ROOT / "configs" / "experiments" / "set_c.jsonl"
@@ -249,6 +252,31 @@ st.caption(
     "formatting. Advisory only; a human reviewer decides."
 )
 
+
+def show_saved_reports(key: str) -> None:
+    found_reports = reports(SETTINGS.runs_dir)
+    if not found_reports:
+        st.write("No audit reports yet.")
+        return
+    names = [f"{p.parent.parent.name} / {p.parent.name}" for p in found_reports]
+    pick = st.selectbox("Report", range(len(found_reports)), format_func=lambda i: names[i])
+    show_report(found_reports[pick], key=key)
+
+
+if DEMO:
+    # Read-only demo for public hosting: no model settings, no project name, no new audits.
+    with st.sidebar:
+        st.header("Demo")
+        st.write(
+            "A read-only demo. It shows reports the auditor wrote on papers from our "
+            "paper-and-code test set. Running a new audit needs a model account, so it is "
+            "turned off here."
+        )
+        st.write("Papers named *injected* are copies with errors we planted.")
+        st.markdown("[Code](https://github.com/itikelabhaskar/Research_Paper_auditor)")
+    show_saved_reports(key="demo")
+    st.stop()
+
 with st.sidebar:
     st.header("Settings")
     use_llm = st.toggle(
@@ -344,10 +372,4 @@ with new:
         show_report(Path(last), key="new")
 
 with past:
-    found_reports = reports(SETTINGS.runs_dir)
-    if not found_reports:
-        st.write("No audit reports yet.")
-    else:
-        names = [f"{p.parent.parent.name} / {p.parent.name}" for p in found_reports]
-        pick = st.selectbox("Report", range(len(found_reports)), format_func=lambda i: names[i])
-        show_report(found_reports[pick], key="past")
+    show_saved_reports(key="past")
