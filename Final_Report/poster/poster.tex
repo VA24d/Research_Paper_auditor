@@ -1,7 +1,7 @@
 % A1 portrait poster (594 x 841 mm) for the Research Paper Auditor final report.
 % Build: latexmk -pdf poster.tex
 \documentclass{article}
-\usepackage[paperwidth=594mm,paperheight=841mm,margin=26mm]{geometry}
+\usepackage[paperwidth=594mm,paperheight=841mm,margin=20mm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[scaled=0.95]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
@@ -47,16 +47,25 @@
 \definecolor{codebg}{HTML}{1E2329}
 
 % ---- type sizes: body 28 pt
-\newcommand{\body}{\fontsize{27}{34}\selectfont}
-\newcommand{\smalltext}{\fontsize{23}{28}\selectfont}
+\newcommand{\body}{\fontsize{22}{27.5}\selectfont}
+\newcommand{\smalltext}{\fontsize{18}{22}\selectfont}
 \newcommand{\hb}[1]{\textbf{\color{blue}#1}}
 % marker-pen highlight for the few phrases that matter most
 \newcommand{\hlmark}[1]{\tikz[baseline=(m.base)]\node[fill=hilite, inner xsep=1.2mm, inner ysep=0.8mm, outer sep=0pt](m){\strut\textbf{#1}};}
 
 % ---- section heading: bold title, full-width rule
 \newcommand{\sect}[1]{%
-  \parbox[c][21mm][c]{\linewidth}{\fontsize{38}{44}\selectfont\bfseries\color{ink}#1}\par
-  {\color{blue}\rule{\linewidth}{1.2mm}}\par\vspace{6mm}\raggedright}
+  \parbox[c][18mm][c]{\linewidth}{\fontsize{32}{38}\selectfont\bfseries\color{ink}#1}\par
+  {\color{blue}\rule{\linewidth}{1.2mm}}\par\vspace{5mm}\raggedright}
+
+% ---- step number in a heading
+\newcommand{\snum}[1]{\tikz[baseline=(n.base)]\node[circle, fill=blue, text=white, minimum size=12mm,
+  inner sep=0pt, font=\sffamily\bfseries\fontsize{24}{24}\selectfont](n){#1};\hspace{4mm}}
+
+% ---- one comparison bar: label, value text, fraction of full width, colour
+\newcommand{\cbar}[4]{%
+  \makebox[37mm][l]{#1}\tikz[baseline=-0.6ex]{\fill[#4] (0,-2.6mm) rectangle (#3*40mm,2.6mm);
+  \node[anchor=west, font=\bfseries] at (#3*40mm,0) {#2};}\par\vspace{1.5mm}}
 
 % ---- page border: one blue line
 \AddToShipoutPictureBG{%
@@ -68,16 +77,17 @@
 % ---- one headline number: colour, number, label, note
 \newcommand{\stat}[4]{%
   \begin{minipage}[t]{\linewidth}\centering
-  {\fontsize{88}{92}\selectfont\bfseries\color{#1}#2}\\[2mm]
-  {\fontsize{30}{36}\selectfont\bfseries\color{ink}#3}\\[1mm]
-  {\fontsize{24}{29}\selectfont\color{black!60}#4}
+  {\fontsize{70}{74}\selectfont\bfseries\color{#1}#2}\\[2mm]
+  {\fontsize{26}{31}\selectfont\bfseries\color{ink}#3}\\[1mm]
+  {\fontsize{21}{25}\selectfont\color{black!60}#4}
   \end{minipage}}
 
-\pgfplotsset{poster/.style={font=\sffamily\fontsize{23}{27}\selectfont,
-  every axis label/.append style={font=\fontsize{24}{28}\selectfont},
-  every tick label/.append style={font=\fontsize{23}{27}\selectfont},
+\pgfplotsset{poster/.style={font=\sffamily\fontsize{20}{24}\selectfont,
+  every axis label/.append style={font=\fontsize{21}{25}\selectfont},
+  every tick label/.append style={font=\fontsize{20}{24}\selectfont},
   major tick length=2.5mm, axis line style={line width=0.8pt, black!60},
-  tick style={black!60}, grid style={black!12,line width=0.6pt}}}
+  tick style={black!60}, grid style={black!12,line width=0.6pt},
+  xticklabel style={text height=1.7ex, text depth=0.5ex}}}
 
 % ---- a section panel: thin border on all four sides; panels in one row share a height
 \newenvironment{col}[2]{\begin{minipage}[t]{#1}\begin{tcolorbox}[enhanced, colback=white,
@@ -88,11 +98,11 @@
 \body\raggedright
 
 % ================================================================ header (white)
-\begin{minipage}[c]{72mm}
-  \includegraphics[width=70mm]{../logo.png}
+\begin{minipage}[c]{64mm}
+  \includegraphics[width=62mm]{../logo.png}
 \end{minipage}\hspace{6mm}%
 \begin{minipage}[c]{\dimexpr\linewidth-222mm\relax}\raggedright
-  {\fontsize{76}{82}\selectfont\bfseries\color{ink}Research Paper Auditor}\\[6mm]
+  {\fontsize{72}{78}\selectfont\bfseries\color{ink}Research Paper Auditor}\\[5mm]
   {\fontsize{38}{46}\selectfont\color{blue} Does the paper match its citations and its code?}\\[6mm]
   {\fontsize{30}{37}\selectfont\color{ink} Vijay Aravynthan \quad Itikela Bhaskar \quad Anurag Peddi \quad Sudheera Y S}
 \end{minipage}\hfill
@@ -104,21 +114,21 @@
 \end{tcolorbox}
 \end{minipage}
 
-\vspace{6mm}
+\vspace{5mm}
 {\color{ink}\rule{\linewidth}{2.2mm}}
 
-\vspace{6mm}
+\vspace{5mm plus 1fill}
 
-% ================================================================ row 1: a real mismatch | headline numbers
+% ================================================================ row 1: problem | data
 \begin{col}{0.625\linewidth}{r1}
-\sect{The paper says one thing. Its code does another.}
-{\centering\resizebox{0.86\linewidth}{!}{%
+\sect{\snum{1}The paper says one thing. Its code does another.}
+{\centering\resizebox{0.72\linewidth}{!}{%
 \begin{tikzpicture}[x=1mm,y=1mm]
   % mock paper page
   \fill[black!10] (2,-2) rectangle (132,-84);
   \draw[rulegrey, line width=0.6mm, fill=white] (0,0) rectangle (130,-82);
   \node[anchor=north west, font=\fontsize{18}{22}\selectfont\rmfamily\color{black!60}] at (6,-5) {arXiv 2006.06958 \quad Stable SGD};
-  \node[anchor=north west, font=\fontsize{24}{28}\selectfont\rmfamily\bfseries] at (6,-14) {5\quad Experimental setup};
+  \node[anchor=north west, font=\fontsize{24}{28}\selectfont\rmfamily\bfseries] at (6,-14) {B.2\quad Continual learning setup};
   \foreach \y/\w in {-27/118,-33/96} \fill[black!14] (6,\y) rectangle (6+\w,\y-2.6);
   \node[anchor=north west, fill=hilite, text width=114mm, inner xsep=3mm, inner ysep=2.5mm,
     font=\fontsize{23}{29}\selectfont\rmfamily\itshape] (quote) at (3,-39)
@@ -146,113 +156,127 @@
   \node[anchor=north, font=\fontsize{22}{26}\selectfont\bfseries\color{ink}] at (234,-87) {What the code does};
 \end{tikzpicture}}\par}
 
-\vspace{9mm}
-The paper says the data is not shuffled, and the released code shuffles it. \hlmark{We did not plant
-this error.} Our auditor found it and quoted both lines.
-
 \vspace{6mm}
-ICLR 2027 received \textbf{62,000+} abstracts, far too many to check by hand.
-\end{col}\hfill
-\begin{col}{0.36\linewidth}{r1}
-\sect{Results}
-\begin{minipage}[t]{0.5\linewidth}\stat{cfull}{0.636}{Macro-F1}{baselines: 0.05}\end{minipage}%
-\begin{minipage}[t]{0.5\linewidth}\stat{good}{0}{false alarms}{on 72 clean items}\end{minipage}
-
-\vspace{14mm}
-\begin{minipage}[t]{0.5\linewidth}\stat{blue}{100\%}{flags with a quote}{baselines: 0\%}\end{minipage}%
-\begin{minipage}[t]{0.5\linewidth}\stat{ink}{\rs7.4}{per paper}{B1 (Agent): \rs51}\end{minipage}
-
-\vspace{14mm}
-{\smalltext\color{black!70} Tested on 40 papers with their code, plus a copy of each with planted errors (163 errors).\par}
-\end{col}
-
-\vspace{6mm}
-
-% ================================================================ row 2: how it works | web app
-\begin{col}{0.77\linewidth}{r2}
-\sect{\raisebox{-0.18em}{\includegraphics[height=1.15em]{../logo.png}}\hspace{0.3em}Our system}
-You give the auditor a paper (PDF or LaTeX) and its code. It checks every reference, citation,
-stated setting and claim against the cited paper or the code, and \textbf{reports a problem only
-when it can quote both sides}.
+\hlmark{Mirzadeh et al., NeurIPS 2020.} A real mismatch that our test set had not labelled. The
+auditor found it and quoted both lines.
 
 \vspace{4mm}
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[x=1mm, y=1mm, font=\sffamily\fontsize{21}{25}\selectfont,
+ICLR 2027 received \textbf{62,000+} abstracts, too many to check by hand.
+\end{col}\hfill
+\begin{col}{0.36\linewidth}{r1}
+\sect{\snum{2}What we tested on}
+\begin{minipage}[t]{0.5\linewidth}\stat{blue}{40}{papers + code}{each also with errors added}\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}\stat{bad}{163}{known errors}{and 72 clean items}\end{minipage}
+
+\vspace{6mm}
+\begin{minipage}[t]{0.5\linewidth}\stat{blue}{831}{references}{HALLMARK}\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}\stat{blue}{13}{papers with proofs}{SPOT}\end{minipage}
+\end{col}
+
+\vspace{5mm plus 1fill}
+
+% ================================================================ row 2: system | choices
+\begin{col}{0.755\linewidth}{r2}
+\sect{\snum{3}Our system}
+Give it a paper and its code. It \textbf{reports a problem only when it can quote both sides}.\\[2mm]
+\hlmark{New:} one run checks references, claims, code and the paper's own numbers. Earlier tools check one.
+
+\vspace{4mm}
+{\centering\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1mm, y=1mm, font=\sffamily\fontsize{25}{30}\selectfont,
   bx/.style={draw=#1, line width=0.6mm, rounded corners=1.5mm, align=left, inner xsep=3.5mm,
     inner ysep=2mm, anchor=north west},
   ar/.style={-{Latex[length=4mm,width=3.4mm]}, line width=0.9mm, black!55},
   ln/.style={line width=0.9mm, black!55},
   stepno/.style={circle, fill=blue, text=white, minimum size=11mm, inner sep=0pt,
     font=\sffamily\bfseries\fontsize{26}{26}\selectfont},
-  stitle/.style={anchor=west, font=\sffamily\bfseries\fontsize{28}{32}\selectfont\color{ink}}]
+  stitle/.style={anchor=west, font=\sffamily\bfseries\fontsize{29}{33}\selectfont\color{ink}}]
 % ---- stage titles
-\foreach \x/\n/\s in {0/1/Read, 98/2/Check, 236/3/Verify, 318/4/Report} {
-  \node[stepno] at (\x+5.5,9) {\n};
-  \node[stitle] at (\x+13,9) {\s};
+\foreach \x/\n/\s in {0/1/Read, 92/2/Check, 334/3/Verify, 420/4/Report} {
+  \node[stitle] at (\x,10) {\s};
 }
 % ---- 1 read
-\node[bx=crev!80!black, fill=crev!25, text width=74mm, minimum height=26mm] (pdf) at (0,0)
+\node[bx=crev!80!black, fill=crev!25, text width=72mm, minimum height=24mm] (pdf) at (0,0)
   {\textbf{Paper}\\ PDF or LaTeX};
-\node[bx=crev!80!black, fill=crev!25, text width=74mm, minimum height=26mm] (repo) at (0,-32)
+\node[bx=crev!80!black, fill=crev!25, text width=72mm, minimum height=24mm] (repo) at (0,-30)
   {\textbf{Code repository}\\ read, never run};
-\node[bx=blue, fill=blue!8, text width=74mm, minimum height=84mm] (parse) at (0,-72)
-  {\textbf{Parser}\\[1mm] splits the paper into items to check: every reference, citation,
-   stated setting and claim};
-\draw[ar] (40,-58.5) -- (40,-71.5);
-\draw[ar] (pdf.west) -- (-6,-13) |- (parse.west);
-% ---- 2 check
-\foreach \y/\name/\what [count=\i] in {
-   0/Citations/{fake reference, wrong year or venue, claim not in the cited paper},
-  -40/Code and data/{learning rate, metric or method differs from the code},
-  -80/Theory/{a wrong step in a proof or derivation},
-  -120/Integrity/{impossible mean, placeholder text, text that contradicts a table}} {
-  \node[bx=blue, fill=white, text width=112mm, minimum height=36mm] (c\i) at (98,\y)
+\node[bx=blue, fill=blue!8, text width=72mm, minimum height=54mm] (parse) at (0,-62)
+  {\textbf{Parser}\\ splits the paper into references, citations, settings and claims};
+\draw[ar] (39,-54.5) -- (39,-61.5);
+\draw[ar] (pdf.west) -- (-6,-12) |- (parse.west);
+% ---- 2 check: four checkers in parallel
+\fill[blue!4, rounded corners=3mm] (88,4) rectangle (328,-120);
+\draw[blue!40, line width=0.6mm, dashed, rounded corners=3mm] (88,4) rectangle (328,-120);
+\foreach \x/\y/\name/\what in {
+   92/0/Citations/{fake reference, wrong year or venue, claim not in the cited paper},
+  211/0/Code and data/{learning rate, metric or method differs from the code},
+   92/-60/Theory/{a wrong step in a proof or derivation},
+  211/-60/Integrity/{impossible mean, placeholder text, text that contradicts a table}} {
+  \node[bx=blue, fill=white, text width=106mm, minimum height=56mm] at (\x,\y)
     {\textbf{\name}\\ {\color{black!70}\what}};
 }
-\draw[ln] (parse.east) -- (91,-114);
-\draw[ln] (91,-18) -- (91,-138);
-\foreach \y in {-18,-58,-98,-138} \draw[ar] (91,\y) -- (97.5,\y);
+\draw[ar] (parse.east) -- (87.5,-89);
 % ---- 3 verify
-\foreach \i/\y in {1/-18, 2/-58, 3/-98, 4/-138} \draw[ln] (c\i.east |- 0,\y) -- (229,\y);
-\draw[ln] (229,-18) -- (229,-138);
-\node[bx=blue, fill=blue!8, text width=66mm, minimum height=96mm] (ver) at (236,-30)
-  {\textbf{Verifier}\\[1mm] looks for every quote again in the paper, the cited paper or the
+\node[bx=blue, fill=blue!8, text width=68mm, minimum height=116mm] (ver) at (336,0)
+  {\textbf{Verifier}\\ looks for every quote again in the paper, the cited paper or the
    code, and merges repeats};
-\draw[ar] (229,-78) -- (235.5,-78);
+\draw[ar] (328,-58) -- (335.5,-58);
 % ---- 4 report
-\node[bx=good, fill=good!12, text width=74mm, minimum height=44mm] (ok) at (318,0)
+\node[bx=good, fill=good!12, text width=72mm, minimum height=32mm] (ok) at (422,0)
   {\textbf{Verified flag}\\ both quotes found};
-\node[bx=crev!80!black, fill=crev!25, text width=74mm, minimum height=44mm] (hum) at (318,-56)
-  {\textbf{Human review}\\ unsure, or a reference no index lists};
-\node[bx=black!50, fill=black!6, text width=74mm, minimum height=44mm] (drop) at (318,-112)
+\node[bx=crev!80!black, fill=crev!25, text width=72mm, minimum height=40mm] (hum) at (422,-38)
+  {\textbf{Human review}\\ unsure, or reference not found};
+\node[bx=black!50, fill=black!6, text width=72mm, minimum height=36mm] (drop) at (422,-84)
   {\textbf{Dropped}\\ quote not in its source};
-\draw[ln] (ver.east) -- (312,-78);
-\draw[ln] (312,-22) -- (312,-134);
-\foreach \y in {-22,-78,-134} \draw[ar] (312,\y) -- (317.5,\y);
-\end{tikzpicture}}
+\draw[ln] (ver.east |- 0,-58) -- (416,-58);
+\draw[ln] (416,-16) -- (416,-102);
+\foreach \y in {-16,-58,-102} \draw[ar] (416,\y) -- (421.5,\y);
+\end{tikzpicture}}\par}
 \end{col}\hfill
-\begin{col}{0.215\linewidth}{r2}
-\sect{The web app}
-\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.6mm}\centering
-\fcolorbox{rulegrey}{white}{\includegraphics[width=\dimexpr\linewidth-1.2mm\relax, trim=273 48 58 60, clip]{../app_screenshots/report_result.png}}\\[3mm]
-{\smalltext Results by outcome}\\[6mm]
-\fcolorbox{rulegrey}{white}{\includegraphics[width=\dimexpr\linewidth-1.2mm\relax]{../app_screenshots/detailed_claim.png}}\\[3mm]
-{\smalltext One flag with its evidence}
+\begin{col}{0.23\linewidth}{r2}
+\sect{\snum{4}Our choices}
+{\smalltext
+\textbf{Finding the code for a method}\par\vspace{2mm}
+\cbar{Embeddings}{59}{0.702}{cfull}
+\cbar{Word overlap}{35}{0.417}{black!30}
+{\color{black!60}changed line shown, of 84}\par\vspace{6mm}
+\textbf{Reading PDF tables}\par\vspace{2mm}
+\cbar{Table region}{98\%}{0.98}{cfull}
+\cbar{GROBID}{41\%}{0.41}{black!30}
+\vspace{4mm}
+\textbf{Model reading code}\par\vspace{2mm}
+\cbar{3.8 Flash}{17, 1$\times$}{0.298}{cfull}
+\cbar{3.1 Pro}{19, 3.6$\times$}{0.333}{black!30}
+{\color{black!60}changes found of 57, and cost}\par\vspace{6mm}
+{\color{cfull}\rule{4.5mm}{4.5mm}} what we kept\par}
 \end{col}
 
-\vspace{6mm}
+\vspace{5mm plus 1fill}
 
-% ================================================================ row 3: three results
+% ================================================================ row 3: results
+\begin{col}{0.33\linewidth}{r3}
+\sect{\snum{5}Results}
+\begin{minipage}[t]{0.5\linewidth}\stat{cfull}{0.636}{Macro-F1}{baselines: 0.05}\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}\stat{good}{0}{false alarms}{on 72 clean items}\end{minipage}
+
+\vspace{6mm}
+\begin{minipage}[t]{0.5\linewidth}\stat{blue}{100\%}{flags with a quote}{baselines: 0\%}\end{minipage}%
+\begin{minipage}[t]{0.5\linewidth}\stat{ink}{\rs7.4}{per paper}{B1 (Agent): \rs51}\end{minipage}
+
+\end{col}\hfill
 \begin{col}{0.335\linewidth}{r3}
-\sect{Finds what an LLM misses}
+\sect{\snum{6}Finds what an LLM misses}
+{\centering
 \begin{tikzpicture}
-\begin{axis}[poster, width=\linewidth-34mm, height=42mm, scale only axis,
-  ybar, bar width=8mm, ymin=0, ymax=1, area legend,
+\begin{axis}[poster, width=\linewidth-36mm, height=46mm, scale only axis,
+  ybar=1mm, bar width=6.5mm, ymin=0, ymax=1,
   symbolic x coords={Method,Metric,Setting,Macro-F1}, xtick=data,
-  enlarge x limits=0.15, ytick={0,0.5,1}, ylabel={F1},
-  legend style={at={(0.5,1.03)}, anchor=south, legend columns=2, draw=none, fill=none,
-    font=\fontsize{22}{27}\selectfont, cells={anchor=west},
-    /tikz/every even column/.append style={column sep=5mm}},
+  enlarge x limits=0.14, ytick={0,0.5,1}, ylabel={F1},
+  legend image code/.code={\fill[#1] (0mm,-2.2mm) rectangle (4.4mm,2.2mm);},
+  legend style={at={(0.5,1.06)}, anchor=south, legend columns=2, draw=none, fill=none,
+    font=\fontsize{20}{24}\selectfont, cells={anchor=west}, row sep=1.5mm,
+    /tikz/every odd column/.append style={column sep=2mm},
+    /tikz/every even column/.append style={column sep=9mm}},
   ymajorgrids, axis x line*=bottom, axis y line*=left]
 \addplot[fill=cfull,draw=none] coordinates {(Method,0.34) (Metric,0.80) (Setting,0.77) (Macro-F1,0.636)};
 \addplot[fill=cnover,draw=none] coordinates {(Method,0.34) (Metric,0.80) (Setting,0.86) (Macro-F1,0.667)};
@@ -260,18 +284,19 @@ when it can quote both sides}.
 \addplot[fill=cbone,draw=none] coordinates {(Method,0) (Metric,0) (Setting,0.14) (Macro-F1,0.046)};
 \legend{Full system, No verifier, B0 (LLM), B1 (Agent)}
 \end{axis}
-\end{tikzpicture}
+\end{tikzpicture}\par}
 
-\vspace{7mm}
+\vspace{5mm}
 We aimed for 10 points of Macro-F1 above the baselines and got \hlmark{59.}
 
 \vspace{4mm}
-{\smalltext Neither baseline finds a method or metric error. On its own, the citation checker scores \textbf{F1 0.879} on HALLMARK.\par}
+{\smalltext Neither baseline finds a method or metric error.\par}
 \end{col}\hfill
 \begin{col}{0.315\linewidth}{r3}
-\sect{Better and cheaper}
+\sect{\snum{7}Better and cheaper}
+{\centering
 \begin{tikzpicture}
-\begin{semilogxaxis}[poster, width=\linewidth-30mm, height=48mm, scale only axis,
+\begin{semilogxaxis}[poster, width=\linewidth-30mm, height=50mm, scale only axis,
   xmin=3, xmax=80, ymin=0, ymax=0.8,
   xtick={4,7,15,30,60}, xticklabels={\rs4,\rs7,\rs15,\rs30,\rs60},
   ytick={0,0.2,0.4,0.6,0.8},
@@ -284,43 +309,79 @@ We aimed for 10 points of Macro-F1 above the baselines and got \hlmark{59.}
 \node[anchor=south west, font=\fontsize{23}{27}\selectfont\bfseries\color{cbzero}] at (axis cs:3.3,0.09) {B0 (LLM)};
 \node[anchor=south east, font=\fontsize{23}{27}\selectfont\bfseries\color{cbone}] at (axis cs:70,0.09) {B1 (Agent)};
 \end{semilogxaxis}
-\end{tikzpicture}
+\end{tikzpicture}\par}
 
-\vspace{7mm}
+\vspace{5mm}
 Ours costs \textbf{\rs7.4} a paper and B1 (Agent) costs \hlmark{\rs51.}
 
 \vspace{4mm}
-{\smalltext B1 sends the whole paper with each of its 20 calls. Converted at \rs94 per US\$.\par}
-\end{col}\hfill
-\begin{col}{0.32\linewidth}{r3}
-\sect{Fewer flags to check}
+{\smalltext At \rs94 per US\$.\par}
+\end{col}
+
+\vspace{5mm plus 1fill}
+
+% ================================================================ row 4: verifier | checks | app
+\begin{col}{0.2\linewidth}{r4}
+\sect{\snum{8}Fewer flags}
+{\centering
 \begin{tikzpicture}
-\begin{axis}[poster, width=\linewidth-40mm, height=40mm, scale only axis,
-  xbar, bar width=13mm, bar shift=0pt, xmin=0, xmax=520, ytick={1,2}, yticklabels={With,Without},
+\begin{axis}[poster, width=\linewidth-46mm, height=42mm, scale only axis,
+  xbar, bar width=11mm, bar shift=0pt, xmin=0, xmax=520, ytick={1,2}, yticklabels={With,Without},
   ymin=0.4, ymax=2.6, xtick={0,200,400},
-  xlabel={Possible false alarms per run}, axis x line*=bottom, axis y line*=left, ytick style={draw=none},
-  nodes near coords, every node near coord/.append style={anchor=west, font=\sffamily\fontsize{26}{30}\selectfont\bfseries}]
+  xlabel={Flags to check per run}, axis x line*=bottom, axis y line*=left, ytick style={draw=none},
+  nodes near coords, every node near coord/.append style={anchor=west, font=\sffamily\fontsize{22}{26}\selectfont\bfseries}]
 \addplot[fill=cfull,draw=none] coordinates {(255,1)};
 \addplot[fill=black!35,draw=none] coordinates {(391,2)};
 \end{axis}
-\end{tikzpicture}
+\end{tikzpicture}\par}
 
-\vspace{7mm}
-With the verifier, a reviewer has \hlmark{35\% fewer} flags to check.
+\vspace{5mm}
+The verifier leaves \hlmark{35\% fewer} flags to check.
 
 \vspace{4mm}
-{\smalltext Of the 203 planted errors found, 180 were verified and 23 went to a human. The verifier costs 3 points of F1.\par}
-\end{col}
+{\smalltext It costs 3 points of F1.\par}
+\end{col}\hfill
+\begin{col}{0.27\linewidth}{r4}
+\sect{\snum{9}Each check alone}
+{\centering
+\begin{tikzpicture}
+\begin{axis}[poster, width=\linewidth-78mm, height=60mm, scale only axis,
+  xbar, bar width=4mm, bar shift=0pt, xmin=0, xmax=112, every tick label/.append style={font=\fontsize{18}{21}\selectfont}, ymin=0.4, ymax=8.6,
+  ytick={1,...,8}, yticklabels={Number vs.\ table, Wrong gain, Proof step, Fake reference (F1),
+    Reversed comparison, Impossible mean, Placeholder text, Setting vs.\ code},
+  xtick={0,25,50,75,100}, xlabel={Errors found (\%)}, axis x line*=bottom, axis y line*=left,
+  ytick style={draw=none}, xmajorgrids,
+  nodes near coords, every node near coord/.append style={anchor=west,
+    font=\sffamily\fontsize{19}{23}\selectfont\bfseries}]
+\addplot[fill=cfull,draw=none] coordinates {(20,1) (55,2) (57,3) (88,4) (94,5) (100,6) (100,7) (100,8)};
+\end{axis}
+\end{tikzpicture}\par}
 
-\vspace{6mm}
-\begin{minipage}[c]{0.6\linewidth}
-  {\fontsize{32}{40}\selectfont\bfseries\color{ink} CL3.410 LMA \quad$\cdot$\quad final project}
+\vspace{4mm}
+Rule checks catch \hlmark{every} planted placeholder and impossible mean.
+
+\vspace{3mm}
+{\smalltext\color{black!70} Mostly planted errors; real papers may score lower.\par}
+\end{col}\hfill
+\begin{col}{0.51\linewidth}{r4}
+\sect{\snum{10}The web app}
+\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.6mm}%
+{\centering
+\fcolorbox{rulegrey}{white}{\includegraphics[width=\dimexpr\linewidth-1.2mm\relax]{../app_screenshots/light_results.png}}\par\vspace{2mm}
+{\smalltext Results by outcome}\par\vspace{5mm}
+\fcolorbox{rulegrey}{white}{\includegraphics[width=\dimexpr\linewidth-1.2mm\relax]{../app_screenshots/light_claim.png}}\par\vspace{2mm}
+{\smalltext Flag with evidence}\par}
+
+\end{col}
+\vspace{5mm plus 1fill}
+\begin{minipage}[b]{0.6\linewidth}
+  {\fontsize{20}{24}\selectfont\color{black!70} CL3.410 LMA}
 \end{minipage}\hfill
-\begin{minipage}[c]{0.38\linewidth}\raggedleft
-  {\fontsize{24}{28}\selectfont\bfseries\color{ink}\faGithub\ Code}\enspace
-  \raisebox{-0.5\height}{\qrcode[height=24mm]{\codeurl}}\hspace{12mm}%
-  {\fontsize{24}{28}\selectfont\bfseries\color{ink}\faGlobe\ Website}\enspace
-  \raisebox{-0.5\height}{\qrcode[height=24mm]{\websiteurl}}
+\begin{minipage}[b]{0.38\linewidth}\raggedleft
+  {\fontsize{26}{30}\selectfont\bfseries\color{ink}\faGithub\ Code}\enspace
+  \raisebox{-1.5mm}{\qrcode[height=28mm]{\codeurl}}\hspace{12mm}%
+  {\fontsize{26}{30}\selectfont\bfseries\color{ink}\faGlobe\ Website}\enspace
+  \raisebox{-1.5mm}{\qrcode[height=28mm]{\websiteurl}}
 \end{minipage}
 
 \end{document}
