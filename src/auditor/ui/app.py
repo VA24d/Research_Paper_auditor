@@ -8,6 +8,7 @@ Start it with `uv run auditor ui` (needs `uv sync --extra ui`). An audit runs
 import os
 import queue
 import subprocess
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -20,6 +21,9 @@ from auditor.reporting import AuditReport
 from auditor.reporting.report import NotChecked, ReportItem, same_text, short_repository
 from auditor.schemas import EvidenceKind, SourceKind
 from auditor.ui.audit import (
+    GEMINI_KEY,
+    MODELS,
+    OPENAI_COMPATIBLE,
     AuditRequest,
     command,
     default_project,
@@ -39,6 +43,10 @@ ROOT = Path.cwd()
 SETTINGS = Settings()
 # AUDITOR_DEMO=1: the public read-only demo (reports under AUDITOR_RUNS_DIR, no audits).
 DEMO = os.environ.get("AUDITOR_DEMO") == "1"
+# The demo's papers (bundled ParsedPaper JSON with their repositories), and where audits
+# run from the demo go: a temporary folder, so one visitor's audit is not listed for others.
+DEMO_PAPERS = ROOT / "demo" / "papers.jsonl"
+DEMO_RUNS = Path(tempfile.gettempdir()) / "auditor-demo-runs"
 UI_DIR = SETTINGS.data_dir / "ui"
 LEDGER = UI_DIR / "ledger.jsonl"
 DEMO_DATASET = ROOT / "configs" / "experiments" / "set_c.jsonl"
@@ -191,7 +199,7 @@ def show_report(path: Path, key: str) -> None:
 def run_audit(request: AuditRequest) -> Path | None:
     """Runs the audit with live progress; returns its report, or None when it failed."""
     run_id = new_run_id()
-    run_dir = SETTINGS.runs_dir / run_id
+    run_dir = (request.runs_dir or SETTINGS.runs_dir) / run_id
     process = subprocess.Popen(
         command(request, run_id),
         cwd=ROOT,
@@ -263,18 +271,98 @@ def show_saved_reports(key: str) -> None:
     show_report(found_reports[pick], key=key)
 
 
+def run_own_model_audit() -> None:
+    """The demo's live audit: the visitor's own Gemini key or OpenAI-compatible server."""
+    st.write(
+        "Bring your own model. The key stays in this session: it goes to the audit process "
+        "and is not saved or logged. A set C paper takes a few minutes and about 13 model "
+        "calls."
+    )
+    entries = demo_papers(DEMO_PAPERS)
+    labels = [
+        f"{Path(e.paper).stem} "
+        f"({'injected copy' if Path(e.paper).parent.name == 'injected' else 'original'})"
+        for e in entries
+    ]
+    paper: Path | None = None
+    repository = commit = ""
+    if entries:
+        choice = st.selectbox("Paper", range(len(entries)), format_func=lambda i: labels[i])
+        paper = Path(entries[choice].paper)
+        repository = entries[choice].repository or ""
+        commit = entries[choice].repository_commit or ""
+        st.caption(f"Code: {repository or 'none'}. Injected copies carry planted errors.")
+    upload = st.file_uploader("Or upload a parsed paper (ParsedPaper JSON)", type=["json"])
+    if upload is not None:
+        paper = save_upload(upload.name, upload.getvalue(), DEMO_RUNS / "uploads")
+        repository = st.text_input("Its code repository (optional)", "")
+        commit = ""
+
+    source = st.radio(
+        "Model",
+        [GEMINI_KEY, OPENAI_COMPATIBLE],
+        format_func=lambda s: {
+            GEMINI_KEY: "Gemini API key",
+            OPENAI_COMPATIBLE: "OpenAI-compatible server (OpenAI, OpenRouter, Ollama, vLLM, ...)",
+        }[s],
+        horizontal=True,
+    )
+    base_url: str | None = None
+    if source == GEMINI_KEY:
+        model = st.selectbox("Gemini model", MODELS)
+        api_key = st.text_input(
+            "Gemini API key", type="password", help="From Google AI Studio (aistudio.google.com)."
+        )
+        ready = bool(api_key)
+    else:
+        base_url = st.text_input("Base URL", "http://localhost:11434/v1")
+        model = st.text_input("Model name", "qwen3:8b")
+        api_key = st.text_input("API key (if the server needs one)", type="password")
+        st.caption(
+            "On the hosted demo, localhost is the server, not your computer. For a model on "
+            "your machine, run the app locally (see demo/README.md in the repository) or "
+            "expose your server with a tunnel. Small local models often fail the "
+            "structured answers the checkers need."
+        )
+        ready = bool(base_url and model)
+    max_cost = st.number_input(
+        "Limit per audit ($, Gemini models only)", 0.05, 5.0, 0.50, 0.05, key="demo_cost"
+    )
+    if st.button("Run audit", type="primary", disabled=paper is None or not ready):
+        assert paper is not None
+        request = AuditRequest(
+            paper=paper,
+            repository=repository.strip() or None,
+            commit=commit.strip() or None,
+            model=model.strip(),
+            source=source,
+            api_key=api_key.strip() or None,
+            base_url=base_url.strip() if base_url else None,
+            max_cost_usd=float(max_cost),
+            runs_dir=DEMO_RUNS,
+        )
+        st.session_state["demo_report"] = run_audit(request)
+    last = st.session_state.get("demo_report")
+    if last is not None and Path(last).is_file():
+        show_report(Path(last), key="demo-live")
+
+
 if DEMO:
     # Read-only demo for public hosting: no model settings, no project name, no new audits.
     with st.sidebar:
         st.header("Demo")
         st.write(
-            "A read-only demo. It shows reports the auditor wrote on papers from our "
-            "paper-and-code test set. Running a new audit needs a model account, so it is "
-            "turned off here."
+            "Saved reports the auditor wrote on papers from our paper-and-code test set. "
+            "To run a new audit, bring your own Gemini key or an OpenAI-compatible server "
+            "in the second tab."
         )
         st.write("Papers named *injected* are copies with errors we planted.")
         st.markdown("[Code](https://github.com/VA24d/Research_Paper_auditor)")
-    show_saved_reports(key="demo")
+    saved, live = st.tabs(["Saved reports", "Run an audit with your own model"])
+    with saved:
+        show_saved_reports(key="demo")
+    with live:
+        run_own_model_audit()
     st.stop()
 
 with st.sidebar:

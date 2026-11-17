@@ -13,7 +13,7 @@ import json
 import os
 import sys
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,6 +28,9 @@ from auditor.schemas import DatasetEntry, LLMCallRecord
 MODELS = ("gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash")
 DEFAULT_PROJECT = "lmaproject6767"
 RUN_PREFIX = "ui-"
+# Where the model comes from: the team's Vertex project, a Gemini API key the user brings,
+# or any OpenAI-compatible server (OpenAI, OpenRouter, Ollama, vLLM, LM Studio, ...).
+VERTEX, GEMINI_KEY, OPENAI_COMPATIBLE = "vertex", "gemini_key", "openai_compatible"
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,13 @@ class AuditRequest:
     ledger: Path = Path("data/ui/ledger.jsonl")
     ledger_limit_usd: float = 5.0
     embed_url: str | None = None
+    source: str = VERTEX
+    # The user's own key: passed to the child process in the provider's own variable,
+    # never in AUDITOR_* settings, so it is not written to the manifest or the cache key.
+    api_key: str | None = field(default=None, repr=False)
+    base_url: str | None = None
+    # Runs folder for this audit; None uses AUDITOR_RUNS_DIR.
+    runs_dir: Path | None = None
 
 
 def model_choices(settings: Settings) -> tuple[str, ...]:
@@ -76,35 +86,65 @@ def command(request: AuditRequest, run_id: str) -> list[str]:
     return args
 
 
+def _default_prices() -> dict[str, tuple[float, float]]:
+    return dict(Settings.model_fields["llm_prices"].get_default(call_default_factory=True))
+
+
 def environment(request: AuditRequest, base: Mapping[str, str] | None = None) -> dict[str, str]:
     """The child process's environment: `base` (the current one by default) with the
     request's model, limits and parts. Settings not named here come from `.env` as usual."""
     env = dict(os.environ if base is None else base)
     env["PYTHONUNBUFFERED"] = "1"
     env["AUDITOR_SKIP_PARTS"] = json.dumps(["citation"] if request.skip_citation else [])
+    if request.runs_dir is not None:
+        env["AUDITOR_RUNS_DIR"] = str(request.runs_dir)
     if not request.use_llm:
         return env
-    options = {
-        "vertexai": True,
-        "project": request.project,
-        "location": "global",
-        "max_output_tokens": 32768,
-    }
+    for name in ("AUDITOR_LLM_BASE_URL", "AUDITOR_LLM_MAX_COST_USD", "AUDITOR_LLM_LEDGER"):
+        env.pop(name, None)
     env.update(
         {
-            "AUDITOR_LLM_PROVIDER": "google_genai",
             "AUDITOR_LLM_MODEL": request.model,
             "AUDITOR_LLM_REVIEW_MODEL": request.model,
-            "AUDITOR_LLM_OPTIONS": json.dumps(options),
             "AUDITOR_LLM_MAX_CONCURRENCY": "4",
             "AUDITOR_LLM_MAX_RETRIES": "5",
-            "AUDITOR_LLM_MAX_COST_USD": f"{request.max_cost_usd:g}",
-            "AUDITOR_LLM_LEDGER": str(request.ledger),
-            "AUDITOR_LLM_LEDGER_LIMIT_USD": f"{request.ledger_limit_usd:g}",
             # With the citation agent left out, its planner pass only costs money.
             "AUDITOR_CITATION_LLM_ENABLED": "false" if request.skip_citation else "true",
         }
     )
+    if request.source == VERTEX:
+        options: dict[str, object] = {
+            "vertexai": True,
+            "project": request.project,
+            "location": "global",
+            "max_output_tokens": 32768,
+        }
+        env["AUDITOR_LLM_PROVIDER"] = "google_genai"
+        # The shared credits: a limit per audit and one for all UI audits together.
+        env["AUDITOR_LLM_MAX_COST_USD"] = f"{request.max_cost_usd:g}"
+        env["AUDITOR_LLM_LEDGER"] = str(request.ledger)
+        env["AUDITOR_LLM_LEDGER_LIMIT_USD"] = f"{request.ledger_limit_usd:g}"
+    elif request.source == GEMINI_KEY:
+        options = {"max_output_tokens": 32768}
+        env["AUDITOR_LLM_PROVIDER"] = "google_genai"
+        env.pop("GOOGLE_GENAI_USE_VERTEXAI", None)
+        env["GOOGLE_API_KEY"] = request.api_key or ""
+    elif request.source == OPENAI_COMPATIBLE:
+        options = {}
+        env["AUDITOR_LLM_PROVIDER"] = "openai"
+        if request.base_url:
+            env["AUDITOR_LLM_BASE_URL"] = request.base_url
+        # The OpenAI client needs some key; local servers ignore it.
+        env["OPENAI_API_KEY"] = request.api_key or "not-needed"
+    else:
+        raise ValueError(f"unknown model source {request.source!r}")
+    if request.source != VERTEX and request.model in _default_prices():
+        # The user's own money: only the per-audit limit, and only for a priced model
+        # (an unpriced one cannot be limited, see StructuredLLM.from_settings).
+        env["AUDITOR_LLM_MAX_COST_USD"] = f"{request.max_cost_usd:g}"
+    if request.source != VERTEX:
+        env.pop("AUDITOR_LLM_LEDGER_LIMIT_USD", None)
+    env["AUDITOR_LLM_OPTIONS"] = json.dumps(options)
     if request.embed_url:
         env["AUDITOR_EMBED_URL"] = request.embed_url
     return env

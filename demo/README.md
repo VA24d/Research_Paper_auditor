@@ -19,3 +19,11 @@ On Streamlit Community Cloud (free): New app, repository `VA24d/Research_Paper_a
 branch `main`, main file `demo/streamlit_app.py`, Python 3.12. It installs
 `demo/requirements.txt` and imports the package from `src/`. Hugging Face Docker Spaces
 need a paid plan, so `demo/space/` is kept only for that route.
+
+The hosted demo is https://researchpaperauditor.streamlit.app. Its second tab runs a new
+audit on one of the ten papers in `demo/papers/` (or an uploaded ParsedPaper JSON) with the
+visitor's own model: a Gemini API key, or any OpenAI-compatible server (base URL, model
+name, optional key). The key is passed to the audit process in `GOOGLE_API_KEY` or
+`OPENAI_API_KEY` only, so it never enters the run manifest or the logs. A model on the
+visitor's own machine works when the app runs locally (command above) or when the server is
+reachable from the internet.

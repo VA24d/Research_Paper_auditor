@@ -10,6 +10,8 @@ from auditor.config import Settings
 from auditor.schemas import LLMCallRecord
 from auditor.ui.audit import (
     DEFAULT_PROJECT,
+    GEMINI_KEY,
+    OPENAI_COMPATIBLE,
     AuditRequest,
     command,
     default_project,
@@ -72,6 +74,44 @@ def test_the_environment_sets_the_model_and_both_spend_limits(tmp_path: Path) ->
     assert json.loads(env["AUDITOR_SKIP_PARTS"]) == ["citation"]
     assert env["AUDITOR_CITATION_LLM_ENABLED"] == "false"
     assert "AUDITOR_EMBED_URL" not in env
+
+
+def test_a_gemini_key_goes_in_the_provider_variable_and_no_shared_ledger(
+    tmp_path: Path,
+) -> None:
+    request = AuditRequest(
+        paper=Path("p.json"),
+        model="gemini-3.8-flash",
+        source=GEMINI_KEY,
+        api_key="secret-key",
+        max_cost_usd=0.4,
+        runs_dir=tmp_path,
+    )
+    env = environment(request, base={"AUDITOR_LLM_LEDGER": "x", "GOOGLE_GENAI_USE_VERTEXAI": "1"})
+    assert env["GOOGLE_API_KEY"] == "secret-key"
+    assert "GOOGLE_GENAI_USE_VERTEXAI" not in env
+    assert env["AUDITOR_LLM_PROVIDER"] == "google_genai"
+    assert "vertexai" not in json.loads(env["AUDITOR_LLM_OPTIONS"])
+    assert env["AUDITOR_LLM_MAX_COST_USD"] == "0.4"
+    assert "AUDITOR_LLM_LEDGER" not in env
+    assert "AUDITOR_LLM_LEDGER_LIMIT_USD" not in env
+    assert env["AUDITOR_RUNS_DIR"] == str(tmp_path)
+    assert all("secret-key" not in v for k, v in env.items() if k.startswith("AUDITOR_"))
+    assert "secret-key" not in repr(request)
+
+
+def test_an_openai_compatible_server_gets_its_url_and_no_cost_limit_when_unpriced() -> None:
+    request = AuditRequest(
+        paper=Path("p.json"),
+        model="qwen3:8b",
+        source=OPENAI_COMPATIBLE,
+        base_url="http://localhost:11434/v1",
+    )
+    env = environment(request, base={"AUDITOR_LLM_MAX_COST_USD": "1"})
+    assert env["AUDITOR_LLM_PROVIDER"] == "openai"
+    assert env["AUDITOR_LLM_BASE_URL"] == "http://localhost:11434/v1"
+    assert env["OPENAI_API_KEY"] == "not-needed"
+    assert "AUDITOR_LLM_MAX_COST_USD" not in env
 
 
 def test_without_the_model_no_model_settings_are_added() -> None:

@@ -1,0 +1,10 @@
+{"paper": "papers/2212.06322v1.json", "repository": "https://github.com/gaow0007/ATSPrivacy", "repository_commit": "b9bf5da58d515167f94d859e256fd8b18d8a1f7c"}
+{"paper": "papers/injected/2212.06322v1.json", "repository": "https://github.com/gaow0007/ATSPrivacy", "repository_commit": "b9bf5da58d515167f94d859e256fd8b18d8a1f7c"}
+{"paper": "papers/2006.06958v1.json", "repository": "https://github.com/imirzadeh/stable-continual-learning", "repository_commit": "be4049c6f1c433e6d4593bf3113280dcbeb127b9"}
+{"paper": "papers/injected/2006.06958v1.json", "repository": "../../data/set_c/patched/2006.06958v1"}
+{"paper": "papers/2104.01374v2.json", "repository": "https://github.com/juglab/HDN", "repository_commit": "4603b7887991033d6aceaa8992fad5d8946504d8"}
+{"paper": "papers/injected/2104.01374v2.json", "repository": "../../data/set_c/patched/2104.01374v2"}
+{"paper": "papers/2208.04654v1.json", "repository": "https://github.com/axeber01/ngcc", "repository_commit": "2210bf55395669c1c39d49f65f286fc9a1523fc9"}
+{"paper": "papers/injected/2208.04654v1.json", "repository": "../../data/set_c/patched/2208.04654v1"}
+{"paper": "papers/2211.00918v1.json", "repository": "https://github.com/kktsubota/universal-dic", "repository_commit": "cc86c1c45f4cfbd834fdac8174da33f8f01ec829"}
+{"paper": "papers/injected/2211.00918v1.json", "repository": "../../data/set_c/patched/2211.00918v1"}
