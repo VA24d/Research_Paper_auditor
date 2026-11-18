@@ -16,6 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import qrcode
+from lxml import etree
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE
@@ -339,7 +340,7 @@ def flow(slide, x, y, w):
     text(slide, x, y + 57, w, 7, ["Four checkers, run in parallel"], size=18, color=PURPLE,
          align=PP_ALIGN.CENTER)
     checkers = [
-        ("Citations", "reference exists, supports the sentence"),
+        ("Citations", "exists, supports the sentence"),
         ("Code and data", "settings, metrics, method vs. code"),
         ("Theory", "claims and proof steps"),
         ("Integrity", "placeholders, impossible means"),
@@ -399,8 +400,17 @@ def ablations(slide, x, y, w):
 
 
 def bullets(slide, x, y, w, h, items, size=20, after=5):
-    text(slide, x, y, w, h, [[("•  ", {"color": PURPLE, "bold": True}), (b, {})]
-                             for b in items], size=size, after=after)
+    """Real bullets with a hanging indent, so wrapped lines line up with the text."""
+    tb = text(slide, x, y, w, h, list(items), size=size, after=after)
+    for p in tb.text_frame.paragraphs:
+        ppr = p._p.get_or_add_pPr()
+        ppr.set("marL", str(Mm(6)))
+        ppr.set("indent", str(-Mm(6)))
+        clr = etree.SubElement(ppr, qn("a:buClr"))
+        etree.SubElement(clr, qn("a:srgbClr")).set("val", PURPLE)
+        etree.SubElement(ppr, qn("a:buFont")).set("typeface", "Arial")
+        etree.SubElement(ppr, qn("a:buChar")).set("char", "•")
+    return tb
 
 
 def build():
@@ -421,13 +431,15 @@ def build():
     text(slide, 12, 8, 380, 32, ["Research Paper Auditor"], size=80, bold=True)
     text(slide, 12, 46, 384, 14, ["Does a paper match the papers it cites and its own code?"],
          size=30, color=PURPLE)
-    picture(slide, HERE.parent / "logo.png", 412, 9, h=52)
-    text(slide, 466, 10, 225, 8, ["Team"], size=18, color=MUTED)
-    text(slide, 466, 18, 225, 18, ["Hood Research Department"], size=36, color=PURPLE,
+    # team box at the top right, beside the IIIT logo that the banner image carries
+    box(slide, 532, 7, 218, 60, fill="FFFFFF", line=PURPLE, line_w=2)
+    picture(slide, HERE.parent / "logo.png", 536, 10, h=54)
+    text(slide, 590, 16, 158, 7, ["Team"], size=18, color=MUTED)
+    text(slide, 590, 23, 158, 13, ["Hood Research Department"], size=32, color=PURPLE,
          bold=True)
-    text(slide, 466, 38, 225, 22,
-         ["CL3.410 Language Models and Agents", "Monsoon 2026 · IIIT Hyderabad"], size=17,
-         color=INK, after=0, spacing=1.0)
+    text(slide, 590, 39, 158, 16,
+         ["CL3.410 Language Models and Agents", "Monsoon 2026 · IIIT Hyderabad"], size=18,
+         after=0, spacing=1.0)
 
     # left column
     box(slide, 11, 80, 237, 182, fill=PANEL_A)
@@ -452,12 +464,12 @@ def build():
     flow(slide, 21, 318, 217)
     box(slide, 19, 515, 221, 39, fill="FFFFFF", line="C9C2D6", line_w=1,
         shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-    text(slide, 23, 518, 213, 34, [
+    text(slide, 24, 517, 212, 35, [
         [("Baselines, same model: ", {"bold": True, "color": PURPLE})],
         [("B0 (LLM)", {"bold": True}), (" reads the whole paper once, no tools.", {})],
         [("B1 (Agent)", {"bold": True}),
          (" one agent with the same tools, no verifier.", {})],
-    ], size=19, after=2, spacing=1.0)
+    ], size=21, after=3, spacing=1.05, anchor=MSO_ANCHOR.MIDDLE)
 
     # middle column: results
     box(slide, 254, 80, 382, 214, fill=PANEL_B)
@@ -476,24 +488,25 @@ def build():
     text(slide, 263, 268, 365, 24, [
         [("Target: +10 points of Macro-F1 over one LLM pass. We got ", {}),
          ("+59.", {"bold": True, "color": PURPLE}),
-         ("  Neither baseline finds a method or metric error.", {})],
+         (" Neither baseline finds a method or metric error.", {})],
     ], size=22)
 
     # middle: what we tested on
     box(slide, 254, 300, 382, 58, fill=PANEL_C)
     heading(slide, 263, 305, 365, "4", "Datasets")
     data = [
-        ("40", "papers + code", "each also with errors added"),
+        ("40", "papers + code", "original + with errors"),
         ("163", "known errors", "and 72 clean items"),
         ("831", "references", "HALLMARK"),
-        ("13", "papers with proofs", "SPOT"),
+        ("13", "papers", "with proofs, SPOT"),
     ]
     dw = 365 / 4
     for i, (num, label, note) in enumerate(data):
         dx = 263 + i * dw
-        text(slide, dx, 321, 30, 30, [num], size=44, color=PURPLE, bold=True,
+        nw = 9 * len(num) + 1  # 44 pt digits are about 8.6 mm wide
+        text(slide, dx, 321, nw, 30, [num], size=44, color=PURPLE, bold=True,
              anchor=MSO_ANCHOR.MIDDLE)
-        text(slide, dx + 31 + (6 if len(num) == 3 else 0), 323, dw - 33, 26,
+        text(slide, dx + nw + 3, 323, dw - nw - 5, 26,
              [[(label, {"bold": True})], [(note, {"size": 16, "color": MUTED})]], size=19,
              after=1, spacing=1.0, anchor=MSO_ANCHOR.MIDDLE)
 
@@ -527,19 +540,19 @@ def build():
 
     box(slide, 642, 275, 188, 285, fill=PANEL_A)
     text(slide, 650, 281, 176, 12, ["CONCLUSION"], size=28, color=PURPLE, bold=True)
-    bullets(slide, 650, 296, 174, 56, size=22, items=[
+    bullets(slide, 650, 297, 174, 58, size=24, after=8, items=[
         "Tools plus verified quotes beat one pass over the whole paper: 0.636 against "
         "under 0.05.",
         "No clean item flagged; every flag carries a quote.",
     ])
-    text(slide, 650, 350, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=28, color=PURPLE,
+    text(slide, 650, 363, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=28, color=PURPLE,
          bold=True)
-    bullets(slide, 650, 365, 174, 80, size=22, items=[
+    bullets(slide, 650, 379, 174, 64, size=24, after=8, items=[
         "Most labels are planted; 16 of 163 are real.",
         "One model family (Gemini). Method recall is low (F1 0.34).",
         "Next: a second model family, and checking unlabelled flags by hand.",
     ])
-    text(slide, 650, 432, 176, 12, ["REFERENCES"], size=28, color=PURPLE, bold=True)
+    text(slide, 650, 447, 176, 12, ["REFERENCES"], size=28, color=PURPLE, bold=True)
     refs = [
         "HALLMARK: fabricated and corrupted references.",
         "SciCoQA: paper–code discrepancies.",
@@ -548,8 +561,8 @@ def build():
         "GROBID: PDF to structured text.",
         "Mirzadeh et al., training regimes in continual learning, NeurIPS 2020.",
     ]
-    text(slide, 650, 447, 176, 110, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=21,
-         after=9, color="333333")
+    text(slide, 650, 463, 176, 94, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=21,
+         after=12, color="333333")
 
     # footer: the template's author names and email fields
     text(slide, 19, 566, 560, 12, [[("Authors: ", {"bold": True}),
@@ -559,9 +572,9 @@ def build():
          align=PP_ALIGN.RIGHT)
 
     # header: one QR code, to the website (it links the code, demo, report and poster)
-    box(slide, 697, 7, 52, 52, fill="FFFFFF")
-    picture(slide, ASSETS / "qr_site.png", 699, 9, w=48)
-    text(slide, 683, 60, 80, 7, ["Website, code and demo"], size=15, color=INK,
+    box(slide, 470, 7, 52, 52, fill="FFFFFF")
+    picture(slide, ASSETS / "qr_site.png", 472, 9, w=48)
+    text(slide, 456, 60, 80, 7, ["Website, code and demo"], size=15, color=INK,
          align=PP_ALIGN.CENTER)
 
     prs.save(OUT)
