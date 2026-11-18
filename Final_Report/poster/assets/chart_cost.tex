@@ -1,0 +1,43 @@
+\documentclass[tikz,border=3mm]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.95]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{pgfplots}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta}
+\pgfplotsset{compat=1.18}
+\definecolor{ink}{HTML}{14213D}
+\definecolor{blue}{HTML}{0B5CAD}
+\definecolor{rulegrey}{HTML}{C9CED6}
+\definecolor{cfull}{HTML}{1F6FB2}
+\definecolor{cnover}{HTML}{8DBBE3}
+\definecolor{cbzero}{HTML}{E08A2E}
+\definecolor{cbone}{HTML}{B5443A}
+\definecolor{crev}{HTML}{F2C14E}
+\definecolor{good}{HTML}{2E7D4F}
+\definecolor{bad}{HTML}{C0392B}
+\definecolor{hilite}{HTML}{FFE066}
+\definecolor{codebg}{HTML}{1E2329}
+\pgfplotsset{poster/.style={font=\sffamily\fontsize{14}{17}\selectfont,
+  every axis label/.append style={font=\sffamily\fontsize{15}{18}\selectfont},
+  every tick label/.append style={font=\sffamily\fontsize{13}{16}\selectfont},
+  major tick length=2mm, axis line style={line width=0.8pt, black!60},
+  tick style={black!60}, grid style={black!12,line width=0.6pt}}}
+\begin{document}
+
+\begin{tikzpicture}
+\begin{semilogxaxis}[poster, width=130mm, height=75mm, scale only axis,
+  xmin=3, xmax=80, ymin=0, ymax=0.8,
+  xtick={4,7,15,30,60}, xticklabels={Rs 4,Rs 7,Rs 15,Rs 30,Rs 60},
+  ytick={0,0.2,0.4,0.6,0.8},
+  xlabel={Cost per paper (INR, log scale)}, ylabel={Macro-F1},
+  grid=major, axis x line*=bottom, axis y line*=left]
+\addplot[only marks, mark=*, mark size=6pt, cfull] coordinates {(7.4,0.636)};
+\addplot[only marks, mark=*, mark size=6pt, cbzero] coordinates {(4.4,0.048)};
+\addplot[only marks, mark=*, mark size=6pt, cbone] coordinates {(50.9,0.046)};
+\node[anchor=south west, font=\fontsize{15}{18}\selectfont\bfseries\color{cfull}] at (axis cs:7.6,0.64) {Ours (Rs 7.4)};
+\node[anchor=south west, font=\fontsize{14}{17}\selectfont\bfseries\color{cbzero}] at (axis cs:3.2,0.08) {B0 (Rs 4.4)};
+\node[anchor=south east, font=\fontsize{14}{17}\selectfont\bfseries\color{cbone}] at (axis cs:65,0.08) {B1 Agent (Rs 50.9)};
+\end{semilogxaxis}
+\end{tikzpicture}
+\end{document}

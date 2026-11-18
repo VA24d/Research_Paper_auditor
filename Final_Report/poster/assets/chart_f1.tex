@@ -1,0 +1,46 @@
+\documentclass[tikz,border=3mm]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.95]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{pgfplots}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta}
+\pgfplotsset{compat=1.18}
+\definecolor{ink}{HTML}{14213D}
+\definecolor{blue}{HTML}{0B5CAD}
+\definecolor{rulegrey}{HTML}{C9CED6}
+\definecolor{cfull}{HTML}{1F6FB2}
+\definecolor{cnover}{HTML}{8DBBE3}
+\definecolor{cbzero}{HTML}{E08A2E}
+\definecolor{cbone}{HTML}{B5443A}
+\definecolor{crev}{HTML}{F2C14E}
+\definecolor{good}{HTML}{2E7D4F}
+\definecolor{bad}{HTML}{C0392B}
+\definecolor{hilite}{HTML}{FFE066}
+\definecolor{codebg}{HTML}{1E2329}
+\pgfplotsset{poster/.style={font=\sffamily\fontsize{14}{17}\selectfont,
+  every axis label/.append style={font=\sffamily\fontsize{15}{18}\selectfont},
+  every tick label/.append style={font=\sffamily\fontsize{13}{16}\selectfont},
+  major tick length=2mm, axis line style={line width=0.8pt, black!60},
+  tick style={black!60}, grid style={black!12,line width=0.6pt}}}
+\begin{document}
+
+\begin{tikzpicture}
+\begin{axis}[poster, width=155mm, height=75mm, scale only axis,
+  ybar=1.5mm, bar width=8mm, ymin=0, ymax=1.05,
+  symbolic x coords={Method,Metric,Setting,Macro-F1}, xtick=data,
+  enlarge x limits=0.18, ytick={0,0.25,0.5,0.75,1.0}, ylabel={F1 Score},
+  legend image code/.code={\fill[#1] (0mm,-2mm) rectangle (5mm,2mm);},
+  legend style={at={(0.5,1.05)}, anchor=south, legend columns=4, draw=none, fill=none,
+    font=\fontsize{14}{17}\selectfont, cells={anchor=west},
+    /tikz/every odd column/.append style={column sep=2mm},
+    /tikz/every even column/.append style={column sep=6mm}},
+  ymajorgrids, axis x line*=bottom, axis y line*=left]
+\addplot[fill=cfull,draw=none] coordinates {(Method,0.34) (Metric,0.80) (Setting,0.77) (Macro-F1,0.636)};
+\addplot[fill=cnover,draw=none] coordinates {(Method,0.34) (Metric,0.80) (Setting,0.86) (Macro-F1,0.667)};
+\addplot[fill=cbzero,draw=none] coordinates {(Method,0) (Metric,0) (Setting,0.14) (Macro-F1,0.048)};
+\addplot[fill=cbone,draw=none] coordinates {(Method,0) (Metric,0) (Setting,0.14) (Macro-F1,0.046)};
+\legend{Full system, No verifier, B0 (LLM), B1 (Agent)}
+\end{axis}
+\end{tikzpicture}
+\end{document}

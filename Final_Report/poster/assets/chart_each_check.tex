@@ -1,0 +1,40 @@
+\documentclass[tikz,border=3mm]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.95]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{pgfplots}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta}
+\pgfplotsset{compat=1.18}
+\definecolor{ink}{HTML}{14213D}
+\definecolor{blue}{HTML}{0B5CAD}
+\definecolor{rulegrey}{HTML}{C9CED6}
+\definecolor{cfull}{HTML}{1F6FB2}
+\definecolor{cnover}{HTML}{8DBBE3}
+\definecolor{cbzero}{HTML}{E08A2E}
+\definecolor{cbone}{HTML}{B5443A}
+\definecolor{crev}{HTML}{F2C14E}
+\definecolor{good}{HTML}{2E7D4F}
+\definecolor{bad}{HTML}{C0392B}
+\definecolor{hilite}{HTML}{FFE066}
+\definecolor{codebg}{HTML}{1E2329}
+\pgfplotsset{poster/.style={font=\sffamily\fontsize{14}{17}\selectfont,
+  every axis label/.append style={font=\sffamily\fontsize{15}{18}\selectfont},
+  every tick label/.append style={font=\sffamily\fontsize{13}{16}\selectfont},
+  major tick length=2mm, axis line style={line width=0.8pt, black!60},
+  tick style={black!60}, grid style={black!12,line width=0.6pt}}}
+\begin{document}
+
+\begin{tikzpicture}
+\begin{axis}[poster, width=150mm, height=85mm, scale only axis,
+  xbar, bar width=6mm, bar shift=0pt, xmin=0, xmax=118, ymin=0.4, ymax=8.6,
+  ytick={1,...,8}, yticklabels={Number vs table, Wrong gain, Proof step, Fake reference (F1),
+    Reversed comparison, Impossible mean, Placeholder text, Setting vs code},
+  xtick={0,25,50,75,100}, xlabel={Planted errors caught (\%)}, axis x line*=bottom, axis y line*=left,
+  ytick style={draw=none}, xmajorgrids,
+  nodes near coords, every node near coord/.append style={anchor=west,
+    font=\sffamily\fontsize{14}{17}\selectfont\bfseries}]
+\addplot[fill=cfull,draw=none] coordinates {(20,1) (55,2) (57,3) (88,4) (94,5) (100,6) (100,7) (100,8)};
+\end{axis}
+\end{tikzpicture}
+\end{document}
