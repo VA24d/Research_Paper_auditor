@@ -144,10 +144,9 @@
   \fill[black!70!codebg, rounded corners=1.5mm] (164,0) rectangle (304,-11);
   \foreach \i/\c in {0/bad,1/crev,2/good} \fill[\c] (171+\i*6,-5.5) circle (1.6);
   \node[anchor=west, font=\fontsize{18}{22}\selectfont\ttfamily\color{white!80}] at (194,-5.5) {stable\_sgd/data\_utils.py};
-  \fill[bad!40!codebg] (164,-32.5) rectangle (304,-62);
+  \fill[bad!40!codebg] (164,-23) rectangle (304,-52.5);
   \node[anchor=north west, align=left, font=\fontsize{20}{27}\selectfont\ttfamily\color{white!90}] at (168,-14)
-    {{\color{white!45}25}\ mnist\_train = MNIST(\ldots)\\
-     {\color{white!45}26}\ \\
+    {{\color{white!45}26}\ mnist\_train = MNIST(\ldots)\\
      {\color{white!45}27}\ train\_loader = DataLoader(\\
      {\color{white!45}\phantom{27}}\ \ \ mnist\_train, \ldots,\\
      {\color{white!45}\phantom{27}}\ \ \ \textbf{\color{hilite}shuffle=True})\\
