@@ -1,8 +1,9 @@
 # Research Paper Auditor: Evidence-Gated Verification
 
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Pages](https://img.shields.io/badge/Project%20Page-GitHub%20Pages-blue.svg)](https://va24d.github.io/Research_Paper_auditor/)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-Live%20Demo-FF4B4B.svg)](https://researchpaperauditor.streamlit.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Streamlit App](https://img.shields.io/badge/Streamlit-Web%20UI-FF4B4B.svg)](http://localhost:8501)
 [![Model: Gemini 3.8 Flash](https://img.shields.io/badge/Model-Gemini%203.8%20Flash-purple.svg)](https://cloud.google.com/vertex-ai)
 
 > **Course Project:** CL3.410 Language Models and Agents (Monsoon 2026)  
@@ -15,8 +16,8 @@
 
 ## Deliverables & Links
 
-- 🌐 **Project Website**: Open [`website/index.html`](./website/index.html) or host on GitHub Pages.
-- 🖥️ **Live Web UI**: [http://localhost:8501](http://localhost:8501) (Start with `uv run auditor ui`).
+- 🌐 **Project Website (GitHub Pages)**: [https://va24d.github.io/Research_Paper_auditor/](https://va24d.github.io/Research_Paper_auditor/) *(source in [`website/`](./website/))*
+- 🖥️ **Live Web UI (Streamlit)**: [https://researchpaperauditor.streamlit.app](https://researchpaperauditor.streamlit.app) *(or run locally at `http://localhost:8501` via `uv run auditor ui`)*
 - 📄 **Final Research Report (PDF)**: [`Final_Report/report.pdf`](./Final_Report/report.pdf)
 - 🖼️ **Research Poster (ISO A1 Landscape)**: [`Final_Report/poster/A1 size Landscape Research poster - new.pptx`](./Final_Report/poster/A1%20size%20Landscape%20Research%20poster%20-%20new.pptx) ([PDF Export](./website/static/pdf/poster.pdf))
 - 📋 **Design Decisions & Contracts**: [`docs/decisions.md`](./docs/decisions.md)
