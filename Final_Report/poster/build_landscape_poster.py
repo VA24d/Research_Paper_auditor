@@ -475,11 +475,13 @@ def build():
     box(slide, 11, 80, 237, 182, fill=PANEL_A)
     heading(slide, 19, 86, 224, "1", "The problem")
     text(slide, 19, 104, 222, 78, [
-        [("Reviewers rarely open the papers a submission cites or the code it releases. ",
-          {}), ("ICLR 2027 received 62,000+ abstracts.", {"bold": True})],
-        [("Our auditor checks a paper against both, and ", {}),
+        [("Reviewers ", {}), ("rarely open the papers a submission cites or the code it "
+                                "releases.", {"bold": True}),
+         (" ICLR 2027 received ", {}), ("62,000+", {"bold": True, "color": PURPLE}),
+         (" abstracts.", {})],
+        [("Our auditor ", {}), ("checks a paper against both", {"bold": True}), (", and ", {}),
          ("reports a problem only when it can quote both sides.", {"bold": True})],
-        [("A real case it found ", {}),
+        [("A real case it found ", {"bold": True, "color": PURPLE}),
          ("(Mirzadeh et al., NeurIPS 2020)", {"color": MUTED}), (":", {})],
     ], size=24, after=10)
     hook(slide, 18, 182)
