@@ -487,9 +487,9 @@ def build():
     box(slide, 11, 268, 237, 292, fill=PANEL_A)
     heading(slide, 19, 274, 224, "2", "Our system")
     text(slide, 19, 292, 222, 22, [
-        [("New: ", {"bold": True, "color": PURPLE}),
-         ("one run checks references, claims, code and the paper's own numbers. "
-          "Earlier tools check one of these.", {})],
+        [("New: ", {"bold": True, "color": PURPLE}), ("one run checks ", {}),
+         ("references, claims, code and the paper's own numbers.", {"bold": True}),
+         (" Earlier tools check one of these.", {})],
     ], size=22)
     flow(slide, 21, 318, 217)
     box(slide, 19, 515, 221, 39, fill="FFFFFF", line="C9C2D6", line_w=1,
@@ -516,9 +516,10 @@ def build():
     picture(slide, ASSETS / "f1.png", 258, 154, w=220)
     picture(slide, ASSETS / "cost.png", 482, 154, w=128)
     text(slide, 263, 268, 365, 24, [
-        [("Target: +10 points of Macro-F1 over one LLM pass. We got ", {}),
+        [("Target: ", {"bold": True, "color": PURPLE}),
+         ("+10 points of Macro-F1 over one LLM pass. We got ", {}),
          ("+59.", {"bold": True, "color": PURPLE}),
-         (" Neither baseline finds a method or metric error.", {})],
+         (" Neither baseline finds ", {}), ("a single method or metric error.", {"bold": True})],
     ], size=22)
 
     # middle: what we tested on
@@ -552,8 +553,8 @@ def build():
     heading(slide, 455, 370, 176, "6", "Checker results")
     picture(slide, ASSETS / "each_check.png", 452, 386, w=178)
     text(slide, 455, 512, 175, 44, [
-        [("Rule checks catch ", {}), ("every", {"bold": True}),
-         (" planted placeholder and impossible mean.", {})],
+        [("Rule checks", {"bold": True, "color": PURPLE}), (" catch ", {}),
+         ("every", {"bold": True}), (" planted placeholder and impossible mean.", {})],
         [("Mostly planted errors; real papers may score lower.",
           {"color": MUTED, "size": 17})],
     ], size=20, after=3)
@@ -565,33 +566,41 @@ def build():
     picture(slide, SHOTS / "demo_flag_shuffle.png", 650, 124, w=172)
     text(slide, 650, 247, 172, 18, [
         [("The same case in the app. ", {"bold": True}),
-         ("Demo: saved reports, or audit with your own Gemini key or local model.", {})],
+         ("Demo: ", {"bold": True, "color": PURPLE}), ("saved reports, or audit with ", {}),
+         ("your own Gemini key or local model.", {"bold": True})],
     ], size=17)
 
     box(slide, 642, 275, 188, 285, fill=PANEL_A)
     text(slide, 650, 281, 176, 12, ["CONCLUSION"], size=28, color=PURPLE, bold=True)
     bullets(slide, 650, 297, 174, 58, size=24, after=8, items=[
-        "Tools plus verified quotes beat one pass over the whole paper: 0.636 against "
-        "under 0.05.",
-        "No clean item flagged; every flag carries a quote.",
+        [("Tools plus verified quotes", {"bold": True}),
+         (" beat one pass over the paper: ", {}),
+         ("0.636", {"bold": True, "color": PURPLE}), (" against under 0.05.", {})],
+        [("No clean item flagged", {"bold": True}), ("; ", {}),
+         ("every flag carries a quote.", {"bold": True})],
     ])
     text(slide, 650, 363, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=28, color=PURPLE,
          bold=True)
     bullets(slide, 650, 379, 174, 64, size=24, after=8, items=[
-        "Most labels are planted; 16 of 163 are real.",
-        "One model family (Gemini). Method recall is low (F1 0.34).",
-        "Next: a second model family, and checking unlabelled flags by hand.",
+        [("Most labels are planted; ", {}), ("16 of 163", {"bold": True}),
+         (" are real.", {})],
+        [("One model family", {"bold": True}), (" (Gemini). Method recall is low ", {}),
+         ("(F1 0.34).", {"bold": True})],
+        [("Next: ", {"bold": True, "color": PURPLE}),
+         ("a second model family, and checking unlabelled flags by hand.", {})],
     ])
     text(slide, 650, 447, 176, 12, ["REFERENCES"], size=28, color=PURPLE, bold=True)
     refs = [
-        "HALLMARK: fabricated and corrupted references.",
-        "SciCoQA: paper–code discrepancies.",
-        "SPOT: errors in scientific papers.",
-        "Brown & Heathers, the GRIM test, 2017.",
-        "GROBID: PDF to structured text.",
-        "Mirzadeh et al., training regimes in continual learning, NeurIPS 2020.",
+        ("HALLMARK", ": fabricated and corrupted references."),
+        ("SciCoQA", ": paper–code discrepancies."),
+        ("SPOT", ": errors in scientific papers."),
+        ("GRIM test", ", Brown & Heathers, 2017."),
+        ("GROBID", ": PDF to structured text."),
+        ("Mirzadeh et al.", ", training regimes in continual learning, NeurIPS 2020."),
     ]
-    text(slide, 650, 463, 176, 94, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=21,
+    text(slide, 650, 463, 176, 94,
+         [[(f"[{i + 1}] ", {"color": MUTED}), (name, {"bold": True}), (rest, {})]
+          for i, (name, rest) in enumerate(refs)], size=21,
          after=12, color="333333")
 
     # footer: the template's author names and email fields
