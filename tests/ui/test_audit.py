@@ -6,6 +6,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from auditor.config import Settings
 from auditor.schemas import LLMCallRecord
 from auditor.ui.audit import (
@@ -93,8 +95,8 @@ def test_a_gemini_key_goes_in_the_provider_variable_and_no_shared_ledger(
     assert env["AUDITOR_LLM_PROVIDER"] == "google_genai"
     assert "vertexai" not in json.loads(env["AUDITOR_LLM_OPTIONS"])
     assert env["AUDITOR_LLM_MAX_COST_USD"] == "0.4"
-    assert "AUDITOR_LLM_LEDGER" not in env
-    assert "AUDITOR_LLM_LEDGER_LIMIT_USD" not in env
+    assert env["AUDITOR_LLM_LEDGER"] == "null"
+    assert env["AUDITOR_LLM_LEDGER_LIMIT_USD"] == "null"
     assert env["AUDITOR_RUNS_DIR"] == str(tmp_path)
     assert all("secret-key" not in v for k, v in env.items() if k.startswith("AUDITOR_"))
     assert "secret-key" not in repr(request)
@@ -111,7 +113,19 @@ def test_an_openai_compatible_server_gets_its_url_and_no_cost_limit_when_unprice
     assert env["AUDITOR_LLM_PROVIDER"] == "openai"
     assert env["AUDITOR_LLM_BASE_URL"] == "http://localhost:11434/v1"
     assert env["OPENAI_API_KEY"] == "not-needed"
-    assert "AUDITOR_LLM_MAX_COST_USD" not in env
+    assert env["AUDITOR_LLM_MAX_COST_USD"] == "null"
+
+
+def test_null_in_the_environment_unsets_a_limit_from_dotenv(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("AUDITOR_LLM_MAX_COST_USD=2\nAUDITOR_LLM_LEDGER_LIMIT_USD=5\n")
+    monkeypatch.setenv("AUDITOR_LLM_MAX_COST_USD", "null")
+    monkeypatch.setenv("AUDITOR_LLM_LEDGER_LIMIT_USD", "null")
+    settings = Settings(_env_file=dotenv)  # type: ignore[call-arg]
+    assert settings.llm_max_cost_usd is None
+    assert settings.llm_ledger_limit_usd is None
 
 
 def test_without_the_model_no_model_settings_are_added() -> None:

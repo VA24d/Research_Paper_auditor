@@ -100,8 +100,10 @@ def environment(request: AuditRequest, base: Mapping[str, str] | None = None) ->
         env["AUDITOR_RUNS_DIR"] = str(request.runs_dir)
     if not request.use_llm:
         return env
+    # "null" unsets what `.env` may hold for these (see Settings.model_config).
     for name in ("AUDITOR_LLM_BASE_URL", "AUDITOR_LLM_MAX_COST_USD", "AUDITOR_LLM_LEDGER"):
-        env.pop(name, None)
+        env[name] = "null"
+    env["AUDITOR_LLM_LEDGER_LIMIT_USD"] = "null"
     env.update(
         {
             "AUDITOR_LLM_MODEL": request.model,
@@ -143,7 +145,8 @@ def environment(request: AuditRequest, base: Mapping[str, str] | None = None) ->
         # (an unpriced one cannot be limited, see StructuredLLM.from_settings).
         env["AUDITOR_LLM_MAX_COST_USD"] = f"{request.max_cost_usd:g}"
     if request.source != VERTEX:
-        env.pop("AUDITOR_LLM_LEDGER_LIMIT_USD", None)
+        # Vertex-only prompt caching, which `.env` may switch on.
+        env["AUDITOR_LLM_EXPLICIT_CACHE"] = "false"
     env["AUDITOR_LLM_OPTIONS"] = json.dumps(options)
     if request.embed_url:
         env["AUDITOR_EMBED_URL"] = request.embed_url

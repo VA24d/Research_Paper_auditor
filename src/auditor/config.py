@@ -122,6 +122,9 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        # "null" in an environment variable unsets a field that `.env` sets, such as a
+        # spend limit (the web UI does this for a user's own model).
+        env_parse_none_str="null",
     )
 
     @classmethod
