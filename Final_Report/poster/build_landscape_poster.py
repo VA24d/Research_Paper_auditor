@@ -3,12 +3,15 @@
     uv run --with python-pptx --with matplotlib --with "qrcode[pil]" \
         python Final_Report/poster/build_landscape_poster.py
 
-Starts from the untouched IIIT template (`template_A1_landscape_IIITH.pptx`), keeps its banner,
-logo, footer rule, fonts and panel colours, and writes `poster_A1_landscape.pptx`
-next to this file. Charts are drawn with matplotlib into `assets/landscape/`.
-Every shape stays editable in PowerPoint.
+Starts from the untouched IIIT template (`template_A1_landscape_IIITH.pptx`), keeps its fonts
+and panel colours, and writes `poster_A1_landscape.pptx` next to this file. The slide hides
+the master's graphics and carries its own copies instead: the banner (cut short, with the
+"R&D Showcase" text removed), the IIIT logo cut from the banner, and the footer rule. So every
+shape, these included, can be moved in PowerPoint. Charts are drawn with matplotlib into
+`assets/landscape/`.
 """
 
+import io
 from pathlib import Path
 
 import matplotlib
@@ -16,6 +19,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import qrcode
+from PIL import Image
 from lxml import etree
 from pptx import Presentation
 from pptx.dml.color import RGBColor
@@ -413,6 +417,31 @@ def bullets(slide, x, y, w, h, items, size=20, after=5):
     return tb
 
 
+BANNER_W = 612  # mm; the team box sits on white to the right of the purple banner
+BANNER_SHIFT = 124  # mm of the master banner's left edge left off, so its swirl sits nearer the title
+MASTER_PX_PER_MM = 2036 / 840.76  # the master banner image is 2036 px across the slide
+
+
+def master_assets(prs, banner_path, logo_path):
+    """Cut the master banner into a plain banner and the IIIT logo."""
+    master = prs.slides[0].slide_layout.slide_master
+    blob = next(s.image.blob for s in master.shapes if s.shape_type == 13)
+    im = Image.open(io.BytesIO(blob)).convert("RGB")
+    bg = im.getpixel((5, 5))
+    # the logo, as drawn in the banner (pixels 1838-2002 across, 44-125 down)
+    im.crop((1832, 38, 2010, 131)).save(logo_path)
+    # From pixel 1400 on, the banner holds the R&D text and the logo, both darker than the
+    # background, over the white swirl lines; paint the darker pixels over, keep the lines.
+    clean = im.copy()
+    px = clean.load()
+    for x in range(1400, im.width):
+        for y in range(im.height):
+            if sum(px[x, y]) < sum(bg) - 6:
+                px[x, y] = bg
+    left = round(BANNER_SHIFT * MASTER_PX_PER_MM)
+    clean.crop((left, 0, left + round(BANNER_W * MASTER_PX_PER_MM), im.height)).save(banner_path)
+
+
 def build():
     ASSETS.mkdir(parents=True, exist_ok=True)
     grouped_f1(ASSETS / "f1.png")
@@ -422,24 +451,25 @@ def build():
 
     prs = Presentation(str(TEMPLATE))
     slide = prs.slides[0]
-    # Keep only the IIIT logo picture; the banner and footer rule live in the layout.
     for shape in list(slide.shapes):
-        if shape.shape_type != 13:
-            shape._element.getparent().remove(shape._element)
+        shape._element.getparent().remove(shape._element)
+    # hide the master's banner and footer rule; the slide carries editable copies
+    slide._element.set("showMasterSp", "0")
+    master_assets(prs, ASSETS / "banner.png", ASSETS / "iiit_logo.png")
+    picture(slide, ASSETS / "banner.png", 0, 0, w=BANNER_W, h=69)
+    logo_w = 178 / MASTER_PX_PER_MM
+    picture(slide, ASSETS / "iiit_logo.png", BANNER_W - 8 - logo_w, 15.3, w=logo_w)
+    box(slide, 14, 564.4, 810, 1.5, fill=PURPLE)  # footer rule, as in the master
 
     # header: title on the left, the team beside it, QR code and IIIT logo on the right
     text(slide, 12, 8, 380, 32, ["Research Paper Auditor"], size=80, bold=True)
     text(slide, 12, 46, 384, 14, ["Does a paper match the papers it cites and its own code?"],
          size=30, color=PURPLE)
-    # team box at the top right, beside the IIIT logo that the banner image carries
-    box(slide, 532, 7, 218, 60, fill="FFFFFF", line=PURPLE, line_w=2)
-    picture(slide, HERE.parent / "logo.png", 536, 10, h=54)
-    text(slide, 590, 16, 158, 7, ["Team"], size=18, color=MUTED)
-    text(slide, 590, 23, 158, 13, ["Hood Research Department"], size=32, color=PURPLE,
-         bold=True)
-    text(slide, 590, 39, 158, 16,
-         ["CL3.410 Language Models and Agents", "Monsoon 2026 · IIIT Hyderabad"], size=18,
-         after=0, spacing=1.0)
+    # team box on white, right of the purple banner
+    box(slide, 618, 4.5, 212, 60, fill="FFFFFF", line=PURPLE, line_w=2)
+    picture(slide, HERE.parent / "logo.png", 622, 7.5, h=54)
+    text(slide, 678, 4.5, 150, 60, ["Hood Research Department"], size=30, color=PURPLE,
+         bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
     # left column
     box(slide, 11, 80, 237, 182, fill=PANEL_A)
@@ -565,16 +595,18 @@ def build():
          after=12, color="333333")
 
     # footer: the template's author names and email fields
-    text(slide, 19, 566, 560, 12, [[("Authors: ", {"bold": True}),
+    text(slide, 17, 569, 560, 12, [[("Authors: ", {"bold": True}),
                                     ("Vijay Aravynthan · Itikela Bhaskar · Anurag Peddi · "
-                                     "Sudheera Y S", {})]], size=26)
-    text(slide, 580, 566, 248, 12, [[("Email: ", {"bold": True}), (EMAIL, {})]], size=26,
-         align=PP_ALIGN.RIGHT)
+                                     "Sudheera Y S", {})]], size=26, after=0)
+    text(slide, 17, 583, 560, 10, ["CL3.410 Language Models and Agents · Monsoon 2026 · "
+                                   "IIIT Hyderabad"], size=24, after=0)
+    text(slide, 580, 569, 248, 12, [[("Email: ", {"bold": True}), (EMAIL, {})]], size=26,
+         align=PP_ALIGN.RIGHT, after=0)
 
     # header: one QR code, to the website (it links the code, demo, report and poster)
-    box(slide, 470, 7, 52, 52, fill="FFFFFF")
-    picture(slide, ASSETS / "qr_site.png", 472, 9, w=48)
-    text(slide, 456, 60, 80, 7, ["Website, code and demo"], size=15, color=INK,
+    box(slide, 393, 7, 52, 52, fill="FFFFFF")
+    picture(slide, ASSETS / "qr_site.png", 395, 9, w=48)
+    text(slide, 379, 60, 80, 7, ["Website, code and demo"], size=15, color=INK,
          align=PP_ALIGN.CENTER)
 
     prs.save(OUT)
