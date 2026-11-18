@@ -26,8 +26,9 @@
         <span class="author">Vijay Aravynthan</span>
         <span class="author">Itikela Bhaskar</span>
         <span class="author">Anurag Peddi</span>
+        <span class="author">Sudheera Y S</span>
       </div>
-      <div class="publication-affil">Team Hood Research Department &middot; IIIT Hyderabad</div>
+      <div class="publication-affil">Team Hood Research Department &middot; SERC & CVIT Labs &middot; IIIT Hyderabad</div>
       <div class="publication-venue">Course project, CL3.410 Language Models and Agents, Monsoon 2026</div>
 
       <div class="publication-links">
@@ -40,9 +41,33 @@
         <a class="button is-dark is-rounded" href="https://github.com/VA24d/Research_Paper_auditor">
           <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
         </a>
-        <a class="button is-dark is-rounded" href="https://researchpaperauditor.streamlit.app">
-          <span class="icon"><i class="fas fa-desktop"></i></span><span>Demo</span>
+        <a class="button is-dark is-rounded" href="http://localhost:8501">
+          <span class="icon"><i class="fas fa-desktop"></i></span><span>Live Web App</span>
         </a>
+      </div>
+
+      <!-- Key Metrics Strip -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-val">0.636</div>
+          <div class="metric-lbl">Macro-F1 Score</div>
+          <div class="metric-sub">13&times; higher than zero-shot baseline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">0</div>
+          <div class="metric-lbl">False Alarms</div>
+          <div class="metric-sub">100% Precision on 72 clean controls</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">100%</div>
+          <div class="metric-lbl">Dual-Quote Grounding</div>
+          <div class="metric-sub">Every flag verified in paper & repo</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">&dollar;0.079</div>
+          <div class="metric-lbl">Audit Cost / Paper</div>
+          <div class="metric-sub">7&times; cheaper than ReAct agent</div>
+        </div>
       </div>
     </div>
   </div>
@@ -266,6 +291,25 @@
 
 <section class="section">
   <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Research Poster</h2>
+    <p class="content has-text-centered">
+      Presented at IIIT Hyderabad. Standard ISO A1 Landscape (841 mm &times; 594 mm).
+    </p>
+    <figure class="figure shot">
+      <a href="static/pdf/poster.pdf" target="_blank" title="Click to view full-resolution poster PDF">
+        <img src="static/img/poster_preview.png" alt="A1 Landscape Research Poster preview: Research Paper Auditor" style="box-shadow: 0 4px 14px rgba(0,0,0,0.12); border-radius: 6px;">
+      </a>
+      <figcaption style="margin-top: 0.8rem;">
+        <a class="button is-small is-rounded is-primary is-outlined" href="static/pdf/poster.pdf" target="_blank">
+          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Open High-Resolution Poster PDF</span>
+        </a>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
     <h2 class="title is-3 has-text-centered">Limitations</h2>
     <div class="content">
       <ul>
@@ -284,10 +328,10 @@
 <pre><code>@misc{aravynthan2026auditor,
   title  = {Research Paper Auditor: An Evidence-Gated Agent System
             for Checking Research Papers},
-  author = {Aravynthan, Vijay and Bhaskar, Itikela and Peddi, Anurag},
+  author = {Aravynthan, Vijay and Bhaskar, Itikela and Peddi, Anurag and {Y S}, Sudheera},
   year   = {2026},
   note   = {Course project, CL3.410 Language Models and Agents,
-            Monsoon 2026, IIIT Hyderabad},
+            Monsoon 2026, SERC & CVIT Labs, IIIT Hyderabad},
   url    = {https://github.com/VA24d/Research_Paper_auditor}
 }</code></pre>
   </div>

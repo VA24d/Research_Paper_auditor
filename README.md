@@ -1,61 +1,99 @@
-# Evidence-Gated Verification Agent for Research Paper Auditing
+# Research Paper Auditor: Evidence-Gated Verification
 
-Group project for **CL3.410: Language Models and Agents (Monsoon 2026)**.
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-Web%20UI-FF4B4B.svg)](http://localhost:8501)
+[![Model: Gemini 3.8 Flash](https://img.shields.io/badge/Model-Gemini%203.8%20Flash-purple.svg)](https://cloud.google.com/vertex-ai)
 
-## Team: Hood Research Department
+> **Course Project:** CL3.410 Language Models and Agents (Monsoon 2026)  
+> **Team:** Hood Research Department  
+> **Affiliations:** Software Engineering Research Center (SERC) & Center for Visual Information Technology (CVIT), IIIT Hyderabad  
+> **Authors:** Vijay Aravynthan (2023111007), Itikela Bhaskar (2023111032), Anurag Peddi (2023101090), Sudheera Y S (2023111002)  
+> **Repository:** [https://github.com/VA24d/Research_Paper_auditor](https://github.com/VA24d/Research_Paper_auditor)
 
-- Vijay Aravynthan (2023111007)
-- Anurag Peddi (2023101090)
-- Itikela Bhaskar (2023111032)
-- Sudheera Y S (2023111002)
+---
+
+## Deliverables & Links
+
+- 🌐 **Project Website**: Open [`website/index.html`](./website/index.html) or host on GitHub Pages.
+- 🖥️ **Live Web UI**: [http://localhost:8501](http://localhost:8501) (Start with `uv run auditor ui`).
+- 📄 **Final Research Report (PDF)**: [`Final_Report/report.pdf`](./Final_Report/report.pdf)
+- 🖼️ **Research Poster (ISO A1 Landscape)**: [`Final_Report/poster/A1 size Landscape Research poster - new.pptx`](./Final_Report/poster/A1%20size%20Landscape%20Research%20poster%20-%20new.pptx) ([PDF Export](./website/static/pdf/poster.pdf))
+- 📋 **Design Decisions & Contracts**: [`docs/decisions.md`](./docs/decisions.md)
+
+---
 
 ## Overview
 
-An automated verification system that audits research conference submissions for factual correctness (specifically citations and data) before human review. The system decomposes submissions into checkable items, inspects cited full texts and code repositories, and enforces evidence-gated verification where flagged discrepancies must be backed by verbatim quotes.
+Over 62,000 papers are submitted to major AI conferences annually. Reviewers have only 15–20 minutes per paper and rarely clone released code repositories or read cited papers in depth. Consequently, factual discrepancies slip into publication undetected.
 
-## Documents
+The **Research Paper Auditor** is an evidence-gated verification agent that audits research conference submissions (PDF or LaTeX) against their **cited full texts and GitHub code repositories**. 
 
-- [Project Proposal (Markdown)](./LMA_Group_Project_Proposal.md)
-- [Project Proposal (PDF)](./LMA%20group%20project%20proposal.pdf)
-- [Team Plan](./docs/team_plan.md): who does what, task list, timeline
-- [Design Decisions](./docs/decisions.md): contracts and rules every part follows
+### Core Guarantee: Evidence Gating
+**A discrepancy is flagged ONLY when backed by dual verbatim quotes** (from the manuscript and from the raw repository source). If a candidate claim lacks a verifiable quote, it is dropped to prevent false accusations.
 
-## System Pipeline
+---
 
-1. **Submission & Venue Profile**: Paper text, bibliography, repository, and venue rules.
-2. **Planner & State Tracker**: Extracts claims, citations, numbers, and code settings; tracks audit items.
-3. **Specialists**:
-   - **Citation Agent**: Reference lookup, full-text retrieval, and claim validity check.
-   - **Code Agent**: Static repository search for settings, splits, and metrics.
-   - **Template Checker**: Deterministic format rules check (no LLM call).
-4. **Verifier Agent**: Tests suspected errors against source evidence; rejects flags lacking verbatim quotes.
-5. **Output States**: Verified flag (quoted evidence), Needs human review, or Dropped.
+## Key Results (Set C Benchmark: 80 Paper Versions)
+
+| System / Model | Method F1 | Metric F1 | Setting F1 | **Macro-F1** | Clean Control False Alarms | Dual-Quote Grounding | Cost / Paper |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Full System (Ours)** | **0.34** | **0.80** | **0.77** | **0.636 ± 0.004** | **0 / 72 (100% P)** | **100%** | **$0.079 (₹7.4)** |
+| No Verifier (Ablation) | 0.34 | 0.80 | 0.86 | 0.667 ± 0.003 | 0 / 72 | 100% | $0.079 (₹7.4) |
+| B0: Zero-Shot LLM | 0.00 | 0.00 | 0.14 | 0.048 ± 0.015 | 0 / 72 | 0% | $0.047 (₹4.4) |
+| B1: ReAct Agent | 0.00 | 0.00 | 0.14 | 0.046 ± 0.007 | 0 / 72 | 0% | $0.542 (₹50.9) |
+
+- **13× Performance Gain**: Baselines fail completely on method and metric checks ($0.00$ F1).
+- **Zero False Alarms**: Across 72 clean control papers, 0 false alarms were raised.
+- **7× Cost Reduction**: Specialist routing costs $0.079/paper vs $0.542 for ReAct agents.
+
+---
+
+## Examples of Code Claims Checked
+
+### 1. Real Accepted Paper Contradiction (Mirzadeh et al., NeurIPS 2020)
+- **Paper Claim (§B.2 Continual Learning Setup)**:
+  > *"… we have not employed any data augmentation or shuffling."*
+- **Code Reality (`stable_sgd/data_utils.py:28`)**:
+  ```python
+  train_loader = DataLoader(mnist_train, batch_size=64, shuffle=True)
+  ```
+- **Auditor Outcome**: `VERIFIED_FLAG` (`SETTING_MISMATCH`). Both lines quoted verbatim without prompt engineering.
+
+### 2. Hyperparameter & Architecture Settings
+- **Learning Rates**: Paper states `lr = 0.0001`; code configuration parses `parser.add_argument("--lr", default=0.001)`.
+- **Batch Sizes**: Paper claims `batch_size = 64`; training script executes `python train.py --batch_size 32`.
+- **Optimizers**: Paper specifies `AdamW`; constructor initializes `torch.optim.SGD(lr=0.01)`.
+
+### 3. Metric Mismatch Claims
+- **Metric Scope**: Paper reports achieving `F1 = 89.2%` without specifying type; code strictly computes `sklearn.metrics.f1_score(..., average="micro")` rather than standard macro-averaged F1.
+- **Loss Formulations**: Paper claims optimizing cross-entropy with label smoothing; code optimizes standard NLL loss without smoothing.
+
+### 4. Method & Algorithmic Consistency
+- **Data Augmentation**: Paper text specifies random horizontal flips and color jittering; the PyTorch `transforms.Compose` pipeline only applies `ToTensor()` and `Normalize()`.
+- **Freezing / Fine-Tuning**: Paper claims the image encoder backbone was frozen; code leaves `requires_grad=True` across all transformer layers.
+
+### 5. Directional Table-to-Text Errors
+- **arXiv:2312.11580**: Paper text claims *"PlaNet-S (0.73) is higher than U-Net (0.78)"*. Caught automatically as a reversed arithmetic comparison against Table 2.
+
+---
 
 ## Development Setup
 
-Works on Windows, macOS and Linux. Run every command from the repository root.
+Works on macOS, Linux, and Windows. Run commands from the repository root.
 
 ### Prerequisites
 
 - Git
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) 0.9 or newer. uv installs
-  the right Python version (3.13) by itself.
-  - Windows (PowerShell): `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
-  - macOS / Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS)
-- Docker Desktop (Docker Engine on Linux), only if you work on PDF parsing. It runs GROBID
-  and the math sandbox.
-- Poppler, optional: its `pdftotext` lets the parser read table columns from the PDF
-  (`brew install poppler`, `sudo apt install poppler-utils`, or `choco install poppler` on
-  Windows). Without it, pages with tables are read from page images, at a few model calls
-  per paper.
+- [uv](https://docs.astral.sh/uv/) 0.9 or newer (installs Python 3.13 automatically).
+- Docker Desktop (for GROBID PDF parsing).
 
-### First-time setup
+### First-Time Setup
 
 ```bash
-git clone https://github.com/itikelabhaskar/Research_Paper_auditor.git
+git clone https://github.com/VA24d/Research_Paper_auditor.git
 cd Research_Paper_auditor
 uv sync
-uv run pre-commit install
 uv run pytest
 ```
 

@@ -91,3 +91,6 @@ AGENTS.md
 Final_Report/*.aux
 Final_Report/*.log
 Final_Report/*.out
+Final_Report/**/*.aux
+Final_Report/**/*.log
+Final_Report/**/*.out
