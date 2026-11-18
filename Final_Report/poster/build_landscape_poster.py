@@ -218,30 +218,56 @@ def cost_scatter(path):
 
 
 def each_check(path):
-    plt.rcParams.update({"font.family": ["Arial", "Noto Sans Kannada"], "font.size": 21})
-    fig, ax = plt.subplots(figsize=(172 * MM, 122 * MM), dpi=300)
-    rows = [
-        ("Number vs. table", 20),
-        ("Wrong gain", 55),
-        ("Proof step (SPOT)", 57),
-        ("Fake reference (F1)", 88),
-        ("Reversed comparison", 94),
-        ("Impossible mean", 100),
-        ("Placeholder text", 100),
-        ("Setting vs. code", 100),
+    """Each checker run alone on its own test set: share of the known errors it finds."""
+    plt.rcParams.update({"font.family": ["Arial", "Noto Sans Kannada"], "font.size": 17})
+    fig, ax = plt.subplots(figsize=(178 * MM, 130 * MM), dpi=300)
+    count_x = ax.get_yaxis_transform()  # x in axes fractions, y in data
+    groups = [
+        ("Code and data checker", [("Setting differs from code", 60, 60)]),
+        ("Citation checker", [("Fake or corrupted reference", 449, 524)]),
+        ("Theory checker (SPOT)", [("Wrong step in a proof", 8, 14)]),
+        ("Integrity checker", [
+            ("Leftover placeholder text", 40, 40),
+            ("Impossible mean (GRIM)", 40, 40),
+            ("Text reverses its table", 31, 33),
+            ("Wrong gain in text", 18, 33),
+            ("Number differs from table", 2, 10),
+        ]),
     ]
-    values = [r[1] for r in rows]
-    colors = [C_FULL if v >= 85 else C_NOVER for v in values]
-    ax.barh(range(len(rows)), values, 0.68, color=colors)
-    for i, v in enumerate(values):
-        ax.text(v + 1.5, i, f"{v}", va="center", fontsize=20, weight="bold", color="#333333")
-    ax.set_yticks(range(len(rows)), [r[0] for r in rows])
-    ax.set_xlim(0, 112)
+    y, ticks, labels, styles = 0, [], [], []
+    for name, rows in groups:
+        ticks.append(y)
+        labels.append(name)
+        styles.append("head")
+        y -= 0.85
+        for label, found, total in rows:
+            pct = round(100 * found / total)
+            ax.barh(y, pct, 0.7, color=C_FULL if pct >= 85 else C_NOVER)
+            ax.text(pct + 2, y, f"{pct}%", va="center", fontsize=17, weight="bold",
+                    color="#333333")
+            ax.text(1.0, y, f"{found} of {total}", va="center", ha="right", fontsize=15,
+                    color="#777777", transform=count_x)
+            ticks.append(y)
+            labels.append(label)
+            styles.append("row")
+            y -= 1
+        y -= 0.15
+    ax.set_yticks(ticks, labels)
+    for tick, style in zip(ax.get_yticklabels(), styles):
+        if style == "head":
+            tick.set_fontweight("bold")
+            tick.set_color("#" + PURPLE)
+            tick.set_fontsize(16)
+    ax.text(1.0, 0.0, "found", va="center", ha="right", fontsize=15, color="#777777",
+            style="italic", transform=count_x)
+    ax.set_ylim(y + 0.4, 0.5)
+    ax.set_xlim(0, 190)
     ax.set_xticks([0, 25, 50, 75, 100])
-    ax.set_xlabel("Errors found (%)")
+    ax.set_xlabel("Known errors found (%)")
     ax.xaxis.grid(True, color="#DDDDDD", linewidth=1)
     ax.set_axisbelow(True)
     chart_style(ax)
+    ax.spines["left"].set_visible(False)
     fig.tight_layout()
     fig.savefig(path, transparent=True)
     plt.close(fig)
@@ -382,6 +408,11 @@ def ablations(slide, x, y, w):
     bar_w = w - 54 - 20
     yy = y
     for title, sub, bars, scale, note in rows:
+        if title == "Verifier":
+            text(slide, x, yy, w, 8, ["Ablation: the full system without one part"], size=19,
+                 color=PURPLE, bold=True)
+            box(slide, x, yy + 8.5, w, 0.6, fill="C9C2D6")
+            yy += 12
         text(slide, x, yy, w, 8, [[(title, {"bold": True}),
                                    (f"   {sub}", {"size": 17, "color": MUTED})]], size=21)
         yy += 9.5
@@ -392,11 +423,19 @@ def ablations(slide, x, y, w):
             box(slide, bar_x0, yy + 0.8, length, 6.4, fill=color.lstrip("#"))
             text(slide, bar_x0 + length + 2, yy, 18, 8, [str(value)], size=18,
                  anchor=MSO_ANCHOR.MIDDLE, bold=True)
-            yy += 8.5
+            yy += 7.8
         if note:
             text(slide, x, yy + 0.5, w, 7, [note], size=18, color=PURPLE, bold=True)
             yy += 8.5
-        yy += 13
+        if title == "Verifier":
+            # only the verifier is an ablation; the rest are pilots behind design choices
+            yy += 4
+            text(slide, x, yy, w, 8, ["Pilot studies behind our design choices"], size=19,
+                 color=PURPLE, bold=True)
+            box(slide, x, yy + 8.5, w, 0.6, fill="C9C2D6")
+            yy += 12
+            continue
+        yy += 8
     return yy
 
 
@@ -500,7 +539,7 @@ def build():
         [("Baselines, same model: ", {"bold": True, "color": PURPLE})],
         [("B0 (LLM)", {"bold": True}), (" reads the whole paper once, no tools.", {})],
         [("B1 (Agent)", {"bold": True}),
-         (" one agent with the same tools, no verifier.", {})],
+         (" one agent, same tools, no planner or verifier.", {})],
     ], size=21, after=3, spacing=1.05, anchor=MSO_ANCHOR.MIDDLE)
 
     # middle column: results
@@ -545,7 +584,7 @@ def build():
 
     # middle bottom: ablations and checkers
     box(slide, 254, 364, 188, 196, fill=PANEL_C)
-    heading(slide, 262, 370, 175, "5", "Ablations")
+    heading(slide, 262, 370, 175, "5", "Ablation and pilots")
     ablations(slide, 262, 388, 175)
     text(slide, 262, 548, 175, 8,
          [[("Purple", {"bold": True, "color": PURPLE}), (": the variant we kept.", {})]],
@@ -553,45 +592,44 @@ def build():
 
     box(slide, 447, 364, 189, 196, fill=PANEL_C)
     heading(slide, 455, 370, 176, "6", "Checker results")
-    picture(slide, ASSETS / "each_check.png", 452, 386, w=178)
-    text(slide, 455, 512, 175, 44, [
-        [("Rule checks", {"bold": True, "color": PURPLE}), (" catch ", {}),
-         ("every", {"bold": True}), (" planted placeholder and impossible mean.", {})],
-        [("Mostly planted errors; real papers may score lower.",
-          {"color": MUTED, "size": 17})],
-    ], size=20, after=3)
+    text(slide, 455, 386, 176, 10, [
+        [("Each checker run by itself on its own test set: ", {}),
+         ("how many known errors of each kind it finds.", {"bold": True})],
+    ], size=17, after=0, spacing=1.0)
+    picture(slide, ASSETS / "each_check.png", 450, 397, w=182)
+    text(slide, 455, 531, 175, 26, [
+        [("Rule checks", {"bold": True, "color": PURPLE}), (" catch every placeholder and "
+         "impossible mean; ", {}), ("numbers against tables are the weak spot.",
+                                    {"bold": True})],
+        [("Integrity errors are planted by us, so real papers may score lower.",
+          {"color": MUTED, "size": 16})],
+    ], size=19, after=2, spacing=1.0)
 
     # right column
     box(slide, 642, 80, 188, 189, fill=PANEL_A)
     heading(slide, 650, 86, 176, "7", "The web app")
     picture(slide, SHOTS / "demo_counts.png", 650, 103, w=172)
     picture(slide, SHOTS / "demo_flag_shuffle.png", 650, 124, w=172)
-    text(slide, 650, 247, 172, 18, [
-        [("The same case in the app. ", {"bold": True}),
-         ("Demo: ", {"bold": True, "color": PURPLE}), ("saved reports, or audit with ", {}),
-         ("your own Gemini key or local model.", {"bold": True})],
-    ], size=17)
+    text(slide, 650, 246, 174, 18, [
+        [("Panel 1's Stable SGD case, as the app reports it.", {"bold": True})],
+        [("Demo: ", {"bold": True, "color": PURPLE}), ("saved reports, or your own ", {}),
+         ("Gemini key or local LLM.", {"bold": True})],
+    ], size=17, after=1, spacing=1.0)
 
     box(slide, 642, 275, 188, 285, fill=PANEL_A)
     text(slide, 650, 281, 176, 12, ["CONCLUSION"], size=28, color=PURPLE, bold=True)
-    bullets(slide, 650, 297, 174, 58, size=24, after=8, items=[
+    bullets(slide, 650, 298, 174, 120, size=25, after=18, items=[
         [("Tools plus verified quotes", {"bold": True}),
          (" beat one pass over the paper: ", {}),
          ("0.636", {"bold": True, "color": PURPLE}), (" against under 0.05.", {})],
         [("No clean item flagged", {"bold": True}), ("; ", {}),
          ("every flag carries a quote.", {"bold": True})],
+        [("The verifier", {"bold": True}), (" cuts the flags to check by ", {}),
+         ("35%", {"bold": True, "color": PURPLE}), (", at a cost of 3 points of F1.", {})],
+        [("₹7.4 per paper", {"bold": True, "color": PURPLE}),
+         (", about a seventh of one agent's ", {}), ("(B1, ₹51).", {})],
     ])
-    text(slide, 650, 363, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=28, color=PURPLE,
-         bold=True)
-    bullets(slide, 650, 379, 174, 64, size=24, after=8, items=[
-        [("Most labels are planted; ", {}), ("16 of 163", {"bold": True}),
-         (" are real.", {})],
-        [("One model family", {"bold": True}), (" (Gemini). Method recall is low ", {}),
-         ("(F1 0.34).", {"bold": True})],
-        [("Next: ", {"bold": True, "color": PURPLE}),
-         ("a second model family, and checking unlabelled flags by hand.", {})],
-    ])
-    text(slide, 650, 447, 176, 12, ["REFERENCES"], size=28, color=PURPLE, bold=True)
+    text(slide, 650, 428, 176, 12, ["REFERENCES"], size=28, color=PURPLE, bold=True)
     refs = [
         ("HALLMARK", ": fabricated and corrupted references."),
         ("SciCoQA", ": paper–code discrepancies."),
@@ -600,10 +638,10 @@ def build():
         ("GROBID", ": PDF to structured text."),
         ("Mirzadeh et al.", ", training regimes in continual learning, NeurIPS 2020."),
     ]
-    text(slide, 650, 463, 176, 94,
+    text(slide, 650, 444, 176, 112,
          [[(f"[{i + 1}] ", {"color": MUTED}), (name, {"bold": True}), (rest, {})]
           for i, (name, rest) in enumerate(refs)], size=21,
-         after=12, color="333333")
+         after=16, color="333333")
 
     # footer: the template's author names and email fields
     text(slide, 17, 569, 560, 12, [[("Authors: ", {"bold": True}),
