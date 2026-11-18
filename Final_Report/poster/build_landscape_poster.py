@@ -481,7 +481,7 @@ def build():
 
     # middle: what we tested on
     box(slide, 254, 300, 382, 58, fill=PANEL_C)
-    heading(slide, 263, 305, 365, "4", "What we tested on")
+    heading(slide, 263, 305, 365, "4", "Datasets")
     data = [
         ("40", "papers + code", "each also with errors added"),
         ("163", "known errors", "and 72 clean items"),
@@ -506,7 +506,7 @@ def build():
          size=17, color=MUTED)
 
     box(slide, 447, 364, 189, 196, fill=PANEL_C)
-    heading(slide, 455, 370, 176, "6", "Each check alone")
+    heading(slide, 455, 370, 176, "6", "Checker results")
     picture(slide, ASSETS / "each_check.png", 452, 386, w=178)
     text(slide, 455, 512, 175, 44, [
         [("Rule checks catch ", {}), ("every", {"bold": True}),
