@@ -417,13 +417,17 @@ def build():
         if shape.shape_type != 13:
             shape._element.getparent().remove(shape._element)
 
-    # header: title on the left, names beside it, IIIT logo on the right
+    # header: title on the left, the team beside it, QR code and IIIT logo on the right
     text(slide, 12, 8, 380, 32, ["Research Paper Auditor"], size=80, bold=True)
     text(slide, 12, 46, 384, 14, ["Does a paper match the papers it cites and its own code?"],
          size=30, color=PURPLE)
-    text(slide, 500, 10, 185, 60,
-         ["Vijay Aravynthan", "Itikela Bhaskar", "Anurag Peddi", "Sudheera Y S"],
-         size=28, align=PP_ALIGN.RIGHT, after=2, spacing=1.0, anchor=MSO_ANCHOR.MIDDLE)
+    picture(slide, HERE.parent / "logo.png", 412, 9, h=52)
+    text(slide, 466, 10, 225, 8, ["Team"], size=18, color=MUTED)
+    text(slide, 466, 18, 225, 18, ["Hood Research Department"], size=36, color=PURPLE,
+         bold=True)
+    text(slide, 466, 38, 225, 22,
+         ["CL3.410 Language Models and Agents", "Monsoon 2026 · IIIT Hyderabad"], size=17,
+         color=INK, after=0, spacing=1.0)
 
     # left column
     box(slide, 11, 80, 237, 182, fill=PANEL_A)
@@ -512,36 +516,30 @@ def build():
     ], size=20, after=3)
 
     # right column
-    box(slide, 642, 79, 188, 54, fill="FFFFFF", line=PURPLE, line_w=2)
-    picture(slide, HERE.parent / "logo.png", 648, 83, h=46)
-    text(slide, 696, 84, 130, 8, ["Team"], size=20, color=MUTED)
-    text(slide, 696, 92, 130, 36, ["Hood Research Department"], size=34, color=PURPLE,
-         anchor=MSO_ANCHOR.MIDDLE, spacing=0.95, bold=True)
-
-    box(slide, 642, 139, 188, 187, fill=PANEL_A)
-    heading(slide, 650, 145, 176, "7", "The web app")
-    picture(slide, SHOTS / "demo_counts.png", 650, 162, w=172)
-    picture(slide, SHOTS / "demo_flag_shuffle.png", 650, 183, w=172)
-    text(slide, 650, 305, 172, 18, [
+    box(slide, 642, 80, 188, 189, fill=PANEL_A)
+    heading(slide, 650, 86, 176, "7", "The web app")
+    picture(slide, SHOTS / "demo_counts.png", 650, 103, w=172)
+    picture(slide, SHOTS / "demo_flag_shuffle.png", 650, 124, w=172)
+    text(slide, 650, 247, 172, 18, [
         [("The same case in the app. ", {"bold": True}),
          ("Demo: saved reports, or audit with your own Gemini key or local model.", {})],
     ], size=17)
 
-    box(slide, 642, 332, 188, 228, fill=PANEL_A)
-    text(slide, 650, 337, 176, 12, ["CONCLUSION"], size=26, color=PURPLE, bold=True)
-    bullets(slide, 650, 351, 174, 40, [
+    box(slide, 642, 275, 188, 285, fill=PANEL_A)
+    text(slide, 650, 281, 176, 12, ["CONCLUSION"], size=28, color=PURPLE, bold=True)
+    bullets(slide, 650, 296, 174, 56, size=22, items=[
         "Tools plus verified quotes beat one pass over the whole paper: 0.636 against "
         "under 0.05.",
         "No clean item flagged; every flag carries a quote.",
     ])
-    text(slide, 650, 384, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=26, color=PURPLE,
+    text(slide, 650, 350, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=28, color=PURPLE,
          bold=True)
-    bullets(slide, 650, 398, 174, 66, [
+    bullets(slide, 650, 365, 174, 80, size=22, items=[
         "Most labels are planted; 16 of 163 are real.",
         "One model family (Gemini). Method recall is low (F1 0.34).",
         "Next: a second model family, and checking unlabelled flags by hand.",
     ])
-    text(slide, 650, 458, 176, 12, ["REFERENCES"], size=26, color=PURPLE, bold=True)
+    text(slide, 650, 432, 176, 12, ["REFERENCES"], size=28, color=PURPLE, bold=True)
     refs = [
         "HALLMARK: fabricated and corrupted references.",
         "SciCoQA: paper–code discrepancies.",
@@ -550,13 +548,14 @@ def build():
         "GROBID: PDF to structured text.",
         "Mirzadeh et al., training regimes in continual learning, NeurIPS 2020.",
     ]
-    text(slide, 650, 472, 176, 86, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=18,
-         after=3, color="333333")
+    text(slide, 650, 447, 176, 110, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=21,
+         after=9, color="333333")
 
-    # footer: course on the left, contact in place of the template's email field
-    text(slide, 19, 566, 520, 12,
-         ["CL3.410 Language Models and Agents · Monsoon 2026 · IIIT Hyderabad"], size=26)
-    text(slide, 540, 566, 288, 12, [[("Email: ", {"bold": True}), (EMAIL, {})]], size=26,
+    # footer: the template's author names and email fields
+    text(slide, 19, 566, 560, 12, [[("Authors: ", {"bold": True}),
+                                    ("Vijay Aravynthan · Itikela Bhaskar · Anurag Peddi · "
+                                     "Sudheera Y S", {})]], size=26)
+    text(slide, 580, 566, 248, 12, [[("Email: ", {"bold": True}), (EMAIL, {})]], size=26,
          align=PP_ALIGN.RIGHT)
 
     # header: one QR code, to the website (it links the code, demo, report and poster)
