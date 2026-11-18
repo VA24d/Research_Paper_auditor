@@ -32,6 +32,7 @@ SHOTS = HERE.parent / "app_screenshots"
 CODE_URL = "https://github.com/VA24d/Research_Paper_auditor"
 SITE_URL = "https://va24d.github.io/Research_Paper_auditor/"
 DEMO_URL = "https://researchpaperauditor.streamlit.app"
+EMAIL = "vijay.s@research.iiit.ac.in"
 
 # Template colours.
 PURPLE = "47247B"
@@ -213,7 +214,7 @@ def cost_scatter(path):
 
 def each_check(path):
     plt.rcParams.update({"font.family": ["Arial", "Noto Sans Kannada"], "font.size": 21})
-    fig, ax = plt.subplots(figsize=(172 * MM, 150 * MM), dpi=300)
+    fig, ax = plt.subplots(figsize=(172 * MM, 122 * MM), dpi=300)
     rows = [
         ("Number vs. table", 20),
         ("Wrong gain", 55),
@@ -376,24 +377,30 @@ def ablations(slide, x, y, w):
     bar_w = w - 54 - 20
     yy = y
     for title, sub, bars, scale, note in rows:
-        text(slide, x, yy, w, 8, [[(title, {"bold": True})]], size=22)
-        text(slide, x, yy + 8.5, w, 7, [sub], size=17, color=MUTED)
-        yy += 16.5
+        text(slide, x, yy, w, 8, [[(title, {"bold": True}),
+                                   (f"   {sub}", {"size": 17, "color": MUTED})]], size=21)
+        yy += 9.5
         for label, value, color in bars:
             text(slide, x, yy, label_w, 8, [label], size=18, align=PP_ALIGN.RIGHT,
                  anchor=MSO_ANCHOR.MIDDLE)
             length = bar_w * value / scale
-            box(slide, bar_x0, yy + 0.6, length, 6.6, fill=color.lstrip("#"))
+            box(slide, bar_x0, yy + 0.8, length, 6.4, fill=color.lstrip("#"))
             text(slide, bar_x0 + length + 2, yy, 18, 8, [str(value)], size=18,
                  anchor=MSO_ANCHOR.MIDDLE, bold=True)
             yy += 8.5
         if note:
             text(slide, x, yy + 0.5, w, 7, [note], size=18, color=PURPLE, bold=True)
-            yy += 8
-        yy += 12
+            yy += 8.5
+        yy += 13
+    return yy
 
 
 # --- poster ----------------------------------------------------------------------------
+
+
+def bullets(slide, x, y, w, h, items, size=20, after=5):
+    text(slide, x, y, w, h, [[("•  ", {"color": PURPLE, "bold": True}), (b, {})]
+                             for b in items], size=size, after=after)
 
 
 def build():
@@ -401,9 +408,7 @@ def build():
     grouped_f1(ASSETS / "f1.png")
     cost_scatter(ASSETS / "cost.png")
     each_check(ASSETS / "each_check.png")
-    qr(ASSETS / "qr_code.png", CODE_URL)
     qr(ASSETS / "qr_site.png", SITE_URL)
-    qr(ASSETS / "qr_demo.png", DEMO_URL)
 
     prs = Presentation(str(TEMPLATE))
     slide = prs.slides[0]
@@ -412,17 +417,18 @@ def build():
         if shape.shape_type != 13:
             shape._element.getparent().remove(shape._element)
 
-    # title
-    text(slide, 12, 8, 560, 30, ["Research Paper Auditor"], size=72, bold=True)
-    text(slide, 12, 40, 600, 14, ["Does a paper match the papers it cites and its own code?"],
-         size=38, color=PURPLE)
-    text(slide, 12, 57, 600, 12, ["Vijay Aravynthan   ·   Itikela Bhaskar   ·   Anurag Peddi"],
-         size=28)
+    # header: title on the left, names beside it, IIIT logo on the right
+    text(slide, 12, 8, 380, 32, ["Research Paper Auditor"], size=80, bold=True)
+    text(slide, 12, 46, 384, 14, ["Does a paper match the papers it cites and its own code?"],
+         size=30, color=PURPLE)
+    text(slide, 500, 10, 185, 60,
+         ["Vijay Aravynthan", "Itikela Bhaskar", "Anurag Peddi", "Sudheera Y S"],
+         size=28, align=PP_ALIGN.RIGHT, after=2, spacing=1.0, anchor=MSO_ANCHOR.MIDDLE)
 
     # left column
-    box(slide, 11, 80, 237, 191, fill=PANEL_A)
+    box(slide, 11, 80, 237, 182, fill=PANEL_A)
     heading(slide, 19, 86, 224, "1", "The problem")
-    text(slide, 19, 104, 222, 80, [
+    text(slide, 19, 104, 222, 78, [
         [("Reviewers rarely open the papers a submission cites or the code it releases. ",
           {}), ("ICLR 2027 received 62,000+ abstracts.", {"bold": True})],
         [("Our auditor checks a paper against both, and ", {}),
@@ -430,19 +436,27 @@ def build():
         [("A real case it found ", {}),
          ("(Mirzadeh et al., NeurIPS 2020)", {"color": MUTED}), (":", {})],
     ], size=24, after=10)
-    hook(slide, 18, 186)
+    hook(slide, 18, 182)
 
-    box(slide, 11, 277, 237, 283, fill=PANEL_A)
-    heading(slide, 19, 283, 224, "2", "Our system")
-    text(slide, 19, 301, 222, 30, [
+    box(slide, 11, 268, 237, 292, fill=PANEL_A)
+    heading(slide, 19, 274, 224, "2", "Our system")
+    text(slide, 19, 292, 222, 22, [
         [("New: ", {"bold": True, "color": PURPLE}),
          ("one run checks references, claims, code and the paper's own numbers. "
           "Earlier tools check one of these.", {})],
     ], size=22)
-    flow(slide, 21, 336, 217)
+    flow(slide, 21, 318, 217)
+    box(slide, 19, 515, 221, 39, fill="FFFFFF", line="C9C2D6", line_w=1,
+        shape=MSO_SHAPE.ROUNDED_RECTANGLE)
+    text(slide, 23, 518, 213, 34, [
+        [("Baselines, same model: ", {"bold": True, "color": PURPLE})],
+        [("B0 (LLM)", {"bold": True}), (" reads the whole paper once, no tools.", {})],
+        [("B1 (Agent)", {"bold": True}),
+         (" one agent with the same tools, no verifier.", {})],
+    ], size=19, after=2, spacing=1.0)
 
     # middle column: results
-    box(slide, 254, 80, 382, 225, fill=PANEL_B)
+    box(slide, 254, 80, 382, 214, fill=PANEL_B)
     heading(slide, 263, 86, 365, "3", "Results on 80 paper versions")
     tiles = [
         ("0.636", "Macro-F1", "baselines 0.05"),
@@ -452,32 +466,50 @@ def build():
     ]
     tw = (365 - 3 * 6) / 4
     for i, (num, label, note) in enumerate(tiles):
-        stat(slide, 263 + i * (tw + 6), 104, tw, 48, num, label, note)
-    picture(slide, ASSETS / "f1.png", 258, 158, w=220)
-    picture(slide, ASSETS / "cost.png", 482, 158, w=128)
-    text(slide, 263, 276, 365, 26, [
-        [("Same model (Gemini 3.8 Flash) for every system. Target: +10 points of Macro-F1. "
-          "We got ", {}), ("+59.", {"bold": True, "color": PURPLE}),
+        stat(slide, 263 + i * (tw + 6), 103, tw, 48, num, label, note)
+    picture(slide, ASSETS / "f1.png", 258, 154, w=220)
+    picture(slide, ASSETS / "cost.png", 482, 154, w=128)
+    text(slide, 263, 268, 365, 24, [
+        [("Target: +10 points of Macro-F1 over one LLM pass. We got ", {}),
+         ("+59.", {"bold": True, "color": PURPLE}),
          ("  Neither baseline finds a method or metric error.", {})],
     ], size=22)
 
-    # middle bottom: ablations and checkers
-    box(slide, 254, 311, 188, 249, fill=PANEL_C)
-    heading(slide, 262, 317, 175, "4", "Ablations")
-    ablations(slide, 262, 336, 175)
-    text(slide, 262, 540, 175, 14,
-         [[("Purple", {"bold": True, "color": PURPLE}), (": the variant we kept.", {})]],
-         size=18, color=MUTED)
+    # middle: what we tested on
+    box(slide, 254, 300, 382, 58, fill=PANEL_C)
+    heading(slide, 263, 305, 365, "4", "What we tested on")
+    data = [
+        ("40", "papers + code", "each also with errors added"),
+        ("163", "known errors", "and 72 clean items"),
+        ("831", "references", "HALLMARK"),
+        ("13", "papers with proofs", "SPOT"),
+    ]
+    dw = 365 / 4
+    for i, (num, label, note) in enumerate(data):
+        dx = 263 + i * dw
+        text(slide, dx, 321, 30, 30, [num], size=44, color=PURPLE, bold=True,
+             anchor=MSO_ANCHOR.MIDDLE)
+        text(slide, dx + 31 + (6 if len(num) == 3 else 0), 323, dw - 33, 26,
+             [[(label, {"bold": True})], [(note, {"size": 16, "color": MUTED})]], size=19,
+             after=1, spacing=1.0, anchor=MSO_ANCHOR.MIDDLE)
 
-    box(slide, 447, 311, 189, 249, fill=PANEL_C)
-    heading(slide, 455, 317, 176, "5", "Each check alone")
-    picture(slide, ASSETS / "each_check.png", 452, 333, w=178)
-    text(slide, 455, 492, 175, 60, [
+    # middle bottom: ablations and checkers
+    box(slide, 254, 364, 188, 196, fill=PANEL_C)
+    heading(slide, 262, 370, 175, "5", "Ablations")
+    ablations(slide, 262, 388, 175)
+    text(slide, 262, 548, 175, 8,
+         [[("Purple", {"bold": True, "color": PURPLE}), (": the variant we kept.", {})]],
+         size=17, color=MUTED)
+
+    box(slide, 447, 364, 189, 196, fill=PANEL_C)
+    heading(slide, 455, 370, 176, "6", "Each check alone")
+    picture(slide, ASSETS / "each_check.png", 452, 386, w=178)
+    text(slide, 455, 512, 175, 44, [
         [("Rule checks catch ", {}), ("every", {"bold": True}),
          (" planted placeholder and impossible mean.", {})],
         [("Mostly planted errors; real papers may score lower.",
-          {"color": MUTED, "size": 18})],
-    ], size=21)
+          {"color": MUTED, "size": 17})],
+    ], size=20, after=3)
 
     # right column
     box(slide, 642, 79, 188, 54, fill="FFFFFF", line=PURPLE, line_w=2)
@@ -486,55 +518,52 @@ def build():
     text(slide, 696, 92, 130, 36, ["Hood Research Department"], size=34, color=PURPLE,
          anchor=MSO_ANCHOR.MIDDLE, spacing=0.95, bold=True)
 
-    box(slide, 642, 140, 188, 421, fill=PANEL_A)
-    heading(slide, 650, 146, 176, "6", "The web app")
-    picture(slide, SHOTS / "demo_counts.png", 650, 163, w=172)
-    picture(slide, SHOTS / "demo_flag_shuffle.png", 650, 184, w=172)
-    text(slide, 650, 306, 172, 16, [
-        [("The same case in the app, with both quotes. ", {}),
-         ("Live demo: ", {"bold": True}),
-         ("saved reports, or run an audit with your own Gemini key or local model.", {})],
-    ], size=18)
+    box(slide, 642, 139, 188, 187, fill=PANEL_A)
+    heading(slide, 650, 145, 176, "7", "The web app")
+    picture(slide, SHOTS / "demo_counts.png", 650, 162, w=172)
+    picture(slide, SHOTS / "demo_flag_shuffle.png", 650, 183, w=172)
+    text(slide, 650, 305, 172, 18, [
+        [("The same case in the app. ", {"bold": True}),
+         ("Demo: saved reports, or audit with your own Gemini key or local model.", {})],
+    ], size=17)
 
-    text(slide, 650, 333, 176, 12, ["CONCLUSION AND FUTURE WORK"], size=26, color=PURPLE,
+    box(slide, 642, 332, 188, 228, fill=PANEL_A)
+    text(slide, 650, 337, 176, 12, ["CONCLUSION"], size=26, color=PURPLE, bold=True)
+    bullets(slide, 650, 351, 174, 40, [
+        "Tools plus verified quotes beat one pass over the whole paper: 0.636 against "
+        "under 0.05.",
+        "No clean item flagged; every flag carries a quote.",
+    ])
+    text(slide, 650, 384, 176, 12, ["LIMITATIONS AND NEXT STEPS"], size=26, color=PURPLE,
          bold=True)
-    bullets = [
-        "Checking each item with tools and verified quotes beats one pass over the whole "
-        "paper, with or without tools.",
-        "No clean item flagged; every flag is backed by a quote.",
-        "Next: raise method recall (F1 0.34), add a second model family, check unlabelled "
-        "flags by hand.",
-    ]
-    text(slide, 650, 347, 174, 72,
-         [[("•  ", {"color": PURPLE, "bold": True}), (b, {})] for b in bullets], size=19,
-         after=6)
-
-    text(slide, 650, 420, 176, 12, ["ACKNOWLEDGMENT"], size=26, color=PURPLE, bold=True)
-    text(slide, 650, 433, 174, 16,
-         ["We thank the CL3.410 instructors and TAs for their feedback."], size=18)
-
-    text(slide, 650, 453, 176, 12, ["REFERENCES"], size=26, color=PURPLE, bold=True)
+    bullets(slide, 650, 398, 174, 66, [
+        "Most labels are planted; 16 of 163 are real.",
+        "One model family (Gemini). Method recall is low (F1 0.34).",
+        "Next: a second model family, and checking unlabelled flags by hand.",
+    ])
+    text(slide, 650, 458, 176, 12, ["REFERENCES"], size=26, color=PURPLE, bold=True)
     refs = [
-        "HALLMARK: fabricated and corrupted references (set A).",
-        "SciCoQA: paper–code discrepancies (set C).",
-        "SPOT: errors in scientific papers (theory).",
+        "HALLMARK: fabricated and corrupted references.",
+        "SciCoQA: paper–code discrepancies.",
+        "SPOT: errors in scientific papers.",
         "Brown & Heathers, the GRIM test, 2017.",
         "GROBID: PDF to structured text.",
-        "Mirzadeh et al., Understanding the role of training regimes in continual "
-        "learning, NeurIPS 2020.",
+        "Mirzadeh et al., training regimes in continual learning, NeurIPS 2020.",
     ]
-    text(slide, 650, 466, 174, 92, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=15,
+    text(slide, 650, 472, 176, 86, [f"[{i + 1}] {r}" for i, r in enumerate(refs)], size=18,
          after=3, color="333333")
 
-    # footer: QR codes in place of the template's email field
-    text(slide, 19, 566, 560, 12,
+    # footer: course on the left, contact in place of the template's email field
+    text(slide, 19, 566, 520, 12,
          ["CL3.410 Language Models and Agents · Monsoon 2026 · IIIT Hyderabad"], size=26)
-    for i, (label, img) in enumerate((("Code", "qr_code.png"), ("Website", "qr_site.png"),
-                                      ("Demo", "qr_demo.png"))):
-        qx = 620 + i * 72
-        text(slide, qx, 571, 38, 10, [label], size=24, align=PP_ALIGN.RIGHT,
-             anchor=MSO_ANCHOR.MIDDLE, bold=True)
-        picture(slide, ASSETS / img, qx + 40, 565, w=22)
+    text(slide, 540, 566, 288, 12, [[("Email: ", {"bold": True}), (EMAIL, {})]], size=26,
+         align=PP_ALIGN.RIGHT)
+
+    # header: one QR code, to the website (it links the code, demo, report and poster)
+    box(slide, 697, 7, 52, 52, fill="FFFFFF")
+    picture(slide, ASSETS / "qr_site.png", 699, 9, w=48)
+    text(slide, 683, 60, 80, 7, ["Website, code and demo"], size=15, color=INK,
+         align=PP_ALIGN.CENTER)
 
     prs.save(OUT)
     print(OUT)
