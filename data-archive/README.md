@@ -29,3 +29,13 @@ zstd -dc data-archive/spot.tar.zst | tar -xf -         # recreates data/spot/
 
 Sizes are the compressed sizes. The set C runs were packed on 31 October 2026 and the rest
 on 6 November 2026, so runs made after those dates are not included.
+
+## local-extras (added 18 November 2026)
+
+`local-extras.tar.zst` (0.3 MB) holds git-ignored local files that the other archives miss:
+`data/runs/`, `data/ledger-2026-10-20.jsonl`, `.trail/learnings/`, `AGENTS.md`, `gemini.md`,
+`.claude/settings*.json`, `.agents/`, `.gemini/`. `.env` is left out; its keys are listed in
+`gemini.md`.
+
+    git lfs pull --include="data-archive/local-extras.tar.zst"
+    zstd -dc data-archive/local-extras.tar.zst | tar -xf -
