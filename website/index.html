@@ -245,26 +245,33 @@
       </table>
     </div>
 
-    <!-- Case Study: Real Retracted Paper Audit -->
+    <!-- Case Studies: Real Retracted & Withdrawn Papers -->
     <div class="box" style="margin-top: 1.5rem; background-color: #fafbfc; border-left: 4px solid #485fc7;">
       <h3 class="title is-5" style="margin-bottom: 0.5rem;">
-        <span class="icon-text"><span class="icon has-text-info"><i class="fas fa-microchip"></i></span><span>Real Case Study: Auditing a Retracted Paper (arXiv:2408.16162v2)</span></span>
+        <span class="icon-text"><span class="icon has-text-info"><i class="fas fa-microchip"></i></span><span>Real Case Studies: Auditing Withdrawn Frontier Manuscripts</span></span>
       </h3>
-      <p class="content is-small" style="margin-bottom: 0.6rem;">
-        To evaluate neurosymbolic verification on non-synthetic scientific errors, we ran the Theory specialist on 
-        <b>arXiv:2408.16162v2</b> (<i>"Every Polish group has a non-trivial topological group automorphism"</i>), a manuscript 
-        formally <b>retracted</b> due to a fatal flaw in Theorem 1.1.
+      <p class="content is-small" style="margin-bottom: 0.8rem;">
+        To evaluate neurosymbolic verification on real-world scientific errors rather than synthetic bugs, we audited preprints that were formally retracted or withdrawn:
       </p>
+
+      <div class="content is-small" style="margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px dashed #dbdbdb;">
+        <p class="has-text-weight-bold" style="color: #363636; margin-bottom: 0.3rem;">
+          1. OpenAI Math Drop: <i>"Algebraicity of Weil classes on split abelian eightfolds"</i> (Withdrawn Oct 6, 2026)
+        </p>
+        <ul style="margin-top: 0.2rem;">
+          <li><b>Paper Claim (§3.4, Page 13, Eq. 3.6)</b>: In source dimension 2<i>k</i> = 8, a reverse stabilization trace is claimed to have sign (-1)<sup><i>k</i></sup> = +1. Setting <i>m</i> = -<i>I</i>(<i>f</i><sub>1</sub>) > 0, inserting <i>m</i> reverse traces is claimed to yield total signed double count <i>I</i>(<i>f</i><sub>1</sub>) + <i>m</i> = 0, satisfying the Eliashberg–Murphy cancellation hypothesis.</li>
+          <li><b>Referee Witness (Sign Error Breakdown)</b>: Reversing cobordism orientation flips the coordinate on both meeting branches ((-1) &times; (-1) = +1), leaving the intersection sign (-1)<sup><i>k</i>-1</sup> = -1 unchanged. Inserting <i>m</i> reverse traces yields <i>I</i><sub>total</sub> = <i>I</i>(<i>f</i><sub>1</sub>) - <i>m</i> = -2<i>m</i> &ne; 0. The hypothesis fails, collapsing the subsequent Lagrangian embedding surgery.</li>
+          <li><b>Outcome</b>: Matches the exact cause cited by OpenAI in their official withdrawal of the 3-paper Hodge conjecture chain.</li>
+        </ul>
+      </div>
+
       <div class="content is-small">
-        <ul style="margin-top: 0;">
-          <li><b>Paper Claim (§2 / Theorem 1.1)</b>: The authors construct an automorphism &phi; on subspace <i>L</i> and claim it extends to <i>H</i> by setting &phi;(<i>y</i>) = <i>y</i> for <i>y</i> &isin; <i>Y</i> (a maximal independent subset).</li>
-          <li><b>Neurosymbolic Counterexample (Witness)</b>:
-            Running within the sandboxed Python execution engine, the model constructed a concrete finite counterexample in 
-            <code>(&Zopf;<sub>2</sub>)<sup>3</sup></code>: setting <i>L</i> = span{(1,0,0)} and <i>U</i> = {0, (0,1,0), (0,0,1), (1,1,1)}. 
-            Because (1,0,0) = (0,1,0) + (0,0,1) + (1,1,1), span(<i>Y</i>) &cap; <i>L</i> = <i>L</i>. 
-            Fixing &phi;(<i>y</i>) = <i>y</i> therefore forces &phi;|<sub><i>L</i></sub> = id<sub><i>L</i></sub>, <b>contradicting</b> the initial premise of a non-trivial automorphism.
-          </li>
-          <li><b>Verbatim Anchoring</b>: The auditor automatically extracted and pinned the 75-word deduction directly to the concluding proof paragraph of §2, matching the official retraction notice.</li>
+        <p class="has-text-weight-bold" style="color: #363636; margin-bottom: 0.3rem;">
+          2. Topology / Algebra: <i>"Every Polish group has a non-trivial topological group automorphism"</i> (arXiv:2408.16162v2, Retracted)
+        </p>
+        <ul style="margin-top: 0.2rem;">
+          <li><b>Paper Claim (§2 / Theorem 1.1)</b>: Extends an automorphism &phi; on subspace <i>L</i> to <i>H</i> by setting &phi;(<i>y</i>) = <i>y</i> for <i>y</i> &isin; <i>Y</i> (a maximal independent subset).</li>
+          <li><b>Neurosymbolic Counterexample</b>: The solver constructed a finite counterexample in <code>(&Zopf;<sub>2</sub>)<sup>3</sup></code> where <i>L</i> = span{(1,0,0)} and <i>U</i> = {0, (0,1,0), (0,0,1), (1,1,1)}. Because (1,0,0) = (0,1,0) + (0,0,1) + (1,1,1), span(<i>Y</i>) &cap; <i>L</i> = <i>L</i>, forcing &phi;|<sub><i>L</i></sub> = id<sub><i>L</i></sub> and contradicting the premise of a non-trivial automorphism.</li>
         </ul>
       </div>
     </div>
