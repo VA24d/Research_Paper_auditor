@@ -1,9 +1,0 @@
-2026-10-17 22:14:05,203 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: unknown bibliography entry b27
-2026-10-17 22:17:03,286 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: unknown bibliography entry b17
-2026-10-17 22:17:10,117 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: unknown bibliography entry p25-0
-2026-10-17 22:26:54,616 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: unknown bibliography entry p14-10
-2026-10-17 22:28:58,750 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: unknown bibliography entry b11
-2026-10-17 22:30:34,674 WARNING auditor.baselines.common [- -] dropped a reported error: error 0: unknown bibliography entry p11-5
-2026-10-17 22:30:34,674 WARNING auditor.baselines.common [- -] dropped a reported error: error 1: unknown bibliography entry p11-6
-2026-10-17 22:30:34,675 WARNING auditor.baselines.common [- -] dropped a reported error: error 2: unknown bibliography entry p11-7
-2026-10-17 22:32:21,200 WARNING auditor.baselines.common [- -] dropped a reported error: error 2: unknown bibliography entry p10-1

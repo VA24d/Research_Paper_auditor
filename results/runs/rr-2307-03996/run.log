@@ -1,3 +1,0 @@
-2026-10-16 10:36:47,413 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
-2026-10-16 10:36:47,413 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
-2026-10-16 10:36:49,119 INFO    auditor.infra.snapshots.snapshot [rr-2307-03996 code-91c68af97b30d79d] snapshot of https://github.com/saifarnab/code_review at 43d1745c85b6dcc0a62319556933e4a336403f55: 9 files, 3 skipped

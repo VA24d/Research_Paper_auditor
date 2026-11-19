@@ -1,3 +1,0 @@
-2026-10-20 02:20:08,033 WARNING auditor.orchestration.registry [- -] using placeholder specialists for: citation
-2026-10-20 02:20:08,033 WARNING auditor.orchestration.registry [- -] using the placeholder verifier: every finding goes to human review
-2026-10-20 02:20:09,623 WARNING auditor.infra.prefix_cache [spot-one-ds-full-r1 -] no context cache for deepseek-ai/deepseek-v4.1-flash-maas (400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'The publisher `deepseek-ai` in model name `projects/lmaproject6767/locations/global/publishers/deepseek-ai/models/deepseek-v4.1-flash-maas` is unsupported', 'status': 'INVALID_ARGUMENT'}}); sending it whole

@@ -1,2 +1,0 @@
-{"schema_version":1,"task_id":"theory-b852ea33e1520a22","paper_id":"2401.09543v2","variant":"original","kind":"theory","outcome":"checked","reason":null,"error":null,"findings":[],"attempts":1}
-{"schema_version":1,"task_id":"theory-36568a289e38a7eb","paper_id":"2401.09543v2","variant":"original","kind":"theory","outcome":"failed","reason":null,"error":"CallLimitReachedError: the run's 12 model calls are used up (AUDITOR_LLM_MAX_CALLS)","findings":[],"attempts":1}

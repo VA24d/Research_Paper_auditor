@@ -1,7 +1,0 @@
-{"error_id":"2401.16191v2-e0","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
-{"error_id":"2401.16191v2-e1","paper_id":"2401.16191v2","matched":[],"reason":"","human_agrees":null}
-{"error_id":"2405.01133v3-e0","paper_id":"2405.01133v3","matched":[],"reason":"The reported issue discusses an algebraic sign contradiction involving J^2 in the proof of Theorem 3.3(1), which is unrelated to the annotated error regarding Proposition 2.3 and its impact on Lemmas 3 and 4.","human_agrees":null}
-{"error_id":"2406.01892v2-e0","paper_id":"2406.01892v2","matched":[],"reason":"The annotated error is in Section 4.2.3, whereas the reported issue concerns Lemma 4.1.7 in Section 4.1.","human_agrees":null}
-{"error_id":"2406.11623v4-e0","paper_id":"2406.11623v4","matched":[],"reason":"","human_agrees":null}
-{"error_id":"2407.06913v2-e0","paper_id":"2407.06913v2","matched":[],"reason":"None of the reported issues identify the flawed assumption that the shortest path tree topology is public or the inappropriate application of Lemma 2.4.","human_agrees":null}
-{"error_id":"2408.16162v2-e0","paper_id":"2408.16162v2","matched":[],"reason":"","human_agrees":null}
