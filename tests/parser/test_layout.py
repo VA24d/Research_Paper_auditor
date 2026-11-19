@@ -5,7 +5,7 @@ import pytest
 from auditor.parser.layout import LayoutError, extract_layout
 
 # A PDF the team wrote, so it can live in the repository (decision D13).
-PROPOSAL = Path(__file__).parents[2] / "LMA group project proposal.pdf"
+PROPOSAL = Path(__file__).parents[2] / "docs" / "proposal" / "proposal.pdf"
 
 
 def test_layout_of_the_proposal_pdf() -> None:

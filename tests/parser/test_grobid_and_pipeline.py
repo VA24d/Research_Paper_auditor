@@ -14,7 +14,7 @@ from auditor.schemas import Layout, LinkSource, PageLayout
 
 FIXTURES = Path(__file__).parents[1] / "fixtures"
 SAMPLE_TEI = (FIXTURES / "tei" / "sample.tei.xml").read_bytes()
-PROPOSAL = Path(__file__).parents[2] / "LMA group project proposal.pdf"
+PROPOSAL = Path(__file__).parents[2] / "docs" / "proposal" / "proposal.pdf"
 GROBID_URL = "http://localhost:8070"
 
 

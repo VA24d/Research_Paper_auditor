@@ -11,7 +11,7 @@ from auditor.parser.grobid import GrobidClient
 from auditor.parser.pipeline import parse_pdf
 from auditor.schemas import ParsedPaper, SentenceKind
 
-PROPOSAL = Path(__file__).parents[2] / "LMA group project proposal.pdf"
+PROPOSAL = Path(__file__).parents[2] / "docs" / "proposal" / "proposal.pdf"
 
 
 @pytest.fixture
