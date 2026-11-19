@@ -3,9 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light only">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12161c" media="(prefers-color-scheme: dark)">
   <title>Research Paper Auditor</title>
   <meta name="description" content="An evidence-gated agent system that checks a research paper against the papers it cites and its code repository.">
+  <link rel="canonical" href="https://va24d.github.io/Research_Paper_auditor/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Research Paper Auditor">
+  <meta property="og:title" content="Research Paper Auditor">
+  <meta property="og:description" content="An evidence-gated agent system that checks a research paper against the papers it cites and its code repository. Every flag quotes its source.">
+  <meta property="og:url" content="https://va24d.github.io/Research_Paper_auditor/">
+  <meta property="og:image" content="https://va24d.github.io/Research_Paper_auditor/static/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Research Paper Auditor: a paper sentence saying the data were not shuffled, next to code that sets shuffle=True">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Research Paper Auditor">
+  <meta name="twitter:description" content="Checks a research paper against the papers it cites and its code. Every flag quotes its source.">
+  <meta name="twitter:image" content="https://va24d.github.io/Research_Paper_auditor/static/img/og.png">
   <link rel="icon" type="image/png" href="static/img/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,42 +48,40 @@
 
       <div class="publication-links">
         <a class="button is-dark is-rounded" href="static/pdf/report.pdf">
-          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Report</span>
+          <span class="icon"><i class="fas fa-file-pdf" aria-hidden="true"></i></span><span>Report</span>
         </a>
         <a class="button is-dark is-rounded" href="static/pdf/poster.pdf">
-          <span class="icon"><i class="fas fa-image"></i></span><span>Poster</span>
+          <span class="icon"><i class="fas fa-image" aria-hidden="true"></i></span><span>Poster</span>
         </a>
         <a class="button is-dark is-rounded" href="https://github.com/VA24d/Research_Paper_auditor">
-          <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
+          <span class="icon"><i class="fab fa-github" aria-hidden="true"></i></span><span>Code</span>
         </a>
         <a class="button is-dark is-rounded" href="https://researchpaperauditor.streamlit.app">
-          <span class="icon"><i class="fas fa-desktop"></i></span><span>Live Web App</span>
+          <span class="icon"><i class="fas fa-desktop" aria-hidden="true"></i></span><span>Live Web App</span>
         </a>
       </div>
-
-      <a class="featured-link" href="#real-papers"><img src="static/img/openai.svg" alt="">New: the auditor on OpenAI's withdrawn Hodge-conjecture paper</a>
 
       <!-- Key Metrics Strip -->
       <div class="metrics-grid">
         <div class="metric-card">
           <div class="metric-val">0.636</div>
           <div class="metric-lbl">Macro-F1 Score</div>
-          <div class="metric-sub">13&times; higher than zero-shot baseline</div>
+          <div class="metric-sub">13&times; the single-pass baseline (0.048)</div>
         </div>
         <div class="metric-card">
           <div class="metric-val">0</div>
-          <div class="metric-lbl">False Alarms</div>
-          <div class="metric-sub">100% Precision on 72 clean controls</div>
+          <div class="metric-lbl">Clean Controls Flagged</div>
+          <div class="metric-sub">0 of 72 unchanged items, over 3 runs</div>
         </div>
         <div class="metric-card">
           <div class="metric-val">100%</div>
-          <div class="metric-lbl">Dual-Quote Grounding</div>
-          <div class="metric-sub">Every flag verified in paper & repo</div>
+          <div class="metric-lbl">Flags Backed by Evidence</div>
+          <div class="metric-sub">Every flag quotes its source</div>
         </div>
         <div class="metric-card">
           <div class="metric-val">&dollar;0.079</div>
           <div class="metric-lbl">Audit Cost / Paper</div>
-          <div class="metric-sub">7&times; cheaper than ReAct agent</div>
+          <div class="metric-sub">7&times; cheaper than a single tool-using agent</div>
         </div>
       </div>
     </div>
@@ -109,68 +123,81 @@
   </div>
 </section>
 
-<!-- Real papers: one withdrawn, one retracted -->
+<!-- Real papers with known errors -->
 <section class="section" id="real-papers">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 has-text-centered">Two real papers with known errors</h2>
-    <p class="content has-text-centered">Our test sets use planted errors. These two papers had real errors that led to their withdrawal or retraction, so we know the right answer.</p>
+    <h2 class="title is-3 has-text-centered">Real papers with known errors</h2>
+    <p class="content has-text-centered">Our test sets use planted errors. These papers had real ones, reported in the news, in retraction notices or in the SPOT benchmark&rsquo;s annotations, and the auditor found them.</p>
 
-    <div class="case">
+    <div class="case news">
       <div class="case-head">
-        <img src="static/img/openai.svg" alt="OpenAI logo">
         <div>
-          <div class="case-kicker">Withdrawn preprint &middot; OpenAI</div>
-          <div class="case-title">Algebraicity of Weil classes on split abelian eightfolds</div>
-          <div class="case-meta">81 pages, dated 18 September 2026. Withdrawn on 6 October 2026 together with two papers that build on it.
-            <a href="https://github.com/openai/math/tree/main/preprints/Algebraicity-of-Weil-classes-on-split-abelian-eightfolds-September-18-2026">Withdrawal notice</a> &middot;
-            <a href="https://github.com/openai/math/blob/main/history.md">openai/math history</a></div>
+          <div class="case-kicker">In the news &middot; NeurIPS 2025</div>
+          <div class="case-title">Fabricated references in accepted NeurIPS papers</div>
+          <div class="case-meta">In January 2026 <a href="https://gptzero.me/news/neurips/">GPTZero</a> listed 100 fabricated citations in 51 accepted NeurIPS 2025 papers (<a href="https://www.theregister.com/2026/01/22/neurips_papers_contaiminated_ai_hallucinations/">The Register</a>). ACL 2026 later desk-rejected more than 100 accepted papers for the same reason.</div>
         </div>
       </div>
-
+      <p>We ran the citation checker on two of the listed papers, using the arXiv versions from before their authors fixed the references. It flagged all three references GPTZero named.</p>
       <div class="case-cols">
         <div>
-          <h4>What the paper says (&sect;3.4, p.&nbsp;13)</h4>
-          <p class="case-quote">&ldquo;a trace going outward from a Legendrian link &phi; to its loose stabilization &phi;<sub>1</sub> has one double point of sign (&minus;1)<sup><i>k</i>&minus;1</sup>; the reverse trace has sign (&minus;1)<sup><i>k</i></sup>. &hellip; Put <i>m</i> = &minus;<i>I</i>(<i>f</i><sub>1</sub>) &gt; 0. Insert <i>m</i> reverse traces &hellip; the total signed double count is <i>I</i>(<i>f</i><sub>1</sub>) + <i>m</i> = 0.&rdquo;</p>
+          <h3 class="case-h">arXiv:2510.21310v1 &middot; semantic uncertainty</h3>
+          <p class="case-quote">&ldquo;Nuo Lou and et al. Dsp: Diffusion-based span prediction for masked text modeling. arXiv preprint arXiv:2305.XXXX, 2023.&rdquo;</p>
+          <p class="case-quote" style="margin-top:0.5rem">&ldquo;&hellip; Efficient few-shot learning with efl: A single transformer for all tasks. In arXiv preprint arXiv:2107.13586, 2021.&rdquo;</p>
+          <p style="margin-top:0.5rem"><b>Auditor:</b> no work with either title in the indexes it searched (OpenAlex, Crossref, arXiv, Semantic Scholar). Both went to a person for review.</p>
         </div>
         <div>
-          <h4>The error, from OpenAI's notice</h4>
-          <p>Each reverse trace has sign &minus;1, not +1, because the two branches of the cusp have opposite orientations. The count is <i>I</i>(<i>f</i><sub>1</sub>) &minus; <i>m</i> = &minus;2<i>m</i> &ne; 0, so the Eliashberg&ndash;Murphy cancellation theorem does not apply and the rest of the construction fails.</p>
+          <h3 class="case-h">arXiv:2506.12241v2 &middot; privacy reasoning</h3>
+          <p class="case-quote">&ldquo;Zayne Sprague, Xi Ye, Kyle Richardson, and Greg Durrett. MuSR: Testing the limits of chain-of-thought with multistep soft reasoning. In EMNLP, 2023.&rdquo;</p>
+          <p style="margin-top:0.5rem"><b>Auditor:</b> the paper exists, but Kyle Richardson is listed as an author. The real paper has five authors, and he is not one of them. This was a verified flag.</p>
         </div>
       </div>
-
-      <div class="case-verdict">
-        <p><b>What our auditor did: it missed the error.</b> We ran only the math checker, twice.</p>
-        <ul>
-          <li><b>On all of Section 3</b> (pp.&nbsp;6&ndash;14): triage picked a single claim, on p.&nbsp;8, about a differential in a minimal model. The deep check found nothing wrong there. Equation 3.6 was never selected.</li>
-          <li><b>On &sect;3.4 alone</b> (pp.&nbsp;13&ndash;14). We told it where to look but not what was wrong. Triage picked the right paragraph, &ldquo;Put <i>m</i> = &minus;<i>I</i>(<i>f</i><sub>1</sub>) &gt; 0&rdquo;, but suspected something else: that <i>I</i>(<i>f</i><sub>1</sub>) need not be negative. The deep check agreed with high confidence, but gave no worked counterexample. The checker drops a math flag that has none, so nothing was reported. Neither pass questioned the sign of the reverse trace.</li>
-        </ul>
-        <p>The wrong sign comes from a lemma in a cited paper, and checking it needs the orientations of the cusp's two branches, which the paper does not write out. Our checker reads only the paper, so it accepted the sign as given. 18 model calls, under $0.50 in total.</p>
-      </div>
-      <p class="case-note">We are not affiliated with OpenAI. The logo only identifies whose paper this is.</p>
+      <p class="case-note">Each paper also got other reference flags for a person to check (38 and 22). Some come from lookups that the Semantic Scholar rate limit cut short.</p>
     </div>
 
-    <div class="case secondary">
+    <div class="case" style="margin-top:1.25rem">
       <div class="case-head">
         <div>
-          <div class="case-kicker" style="color: var(--blue);">Retracted preprint &middot; SPOT benchmark</div>
+          <div class="case-kicker">Retracted preprint &middot; SPOT benchmark</div>
           <div class="case-title">Every Polish group has a non-trivial topological group automorphism</div>
           <div class="case-meta"><a href="https://arxiv.org/abs/2408.16162v2">arXiv:2408.16162v2</a>, retracted. One of the papers in SPOT's math set.</div>
         </div>
       </div>
       <div class="case-cols">
         <div>
-          <h4>What the paper says (proof of Theorem 1.1)</h4>
+          <h3 class="case-h">What the paper says (proof of Theorem 1.1)</h3>
           <p class="case-quote">&ldquo;we take any non-trivial automorphism &phi; of span{<i>x<sub>i</sub></i>}<sub><i>i</i>&lt;<i>n</i></sub> and extend it to a &Zopf;<sub>2</sub>-automorphism of <i>H</i> by setting &phi;(<i>y</i>) = <i>y</i> for <i>y</i> &isin; <i>Y</i>.&rdquo;</p>
         </div>
         <div>
-          <h4>What the auditor reported</h4>
+          <h3 class="case-h">What the auditor reported</h3>
           <p>Take <i>G</i> = (&Zopf;<sub>2</sub>)<sup>&omega;</sup> and <i>L</i> = span{<i>x</i><sub>1</sub>, <i>x</i><sub>2</sub>}. If <i>y</i><sub>1</sub> + <i>y</i><sub>2</sub> + <i>y</i><sub>3</sub> = <i>x</i><sub>1</sub> for some <i>y</i><sub><i>j</i></sub> &isin; <i>Y</i>, then any map that fixes <i>Y</i> also fixes <i>x</i><sub>1</sub>, so an automorphism of <i>L</i> that moves <i>x</i><sub>1</sub> cannot be extended this way.</p>
         </div>
       </div>
-      <div class="case-verdict" style="background: #eef3fa;">
+      <div class="case-verdict">
         <p><b>Found.</b> SPOT's annotation gives the same cause: fixing <i>Y</i> can redefine the automorphism on elements of <i>L</i> that <i>Y</i> generates. The judge model matched our report to it. The run marked it for a person to review rather than reporting it outright.</p>
       </div>
     </div>
+
+    <div class="more-cases">
+      <div class="mini-case">
+        <div class="case-kicker">Retracted &middot; <a href="https://arxiv.org/abs/2403.01085v2">arXiv:2403.01085v2</a></div>
+        <div class="mini-title">A strongly subcubic combinatorial algorithm for triangle detection</div>
+        <p><b>Paper:</b> if one triangle vertex <i>a</i> is on BFS level 1, then <i>b</i> and <i>c</i> are on level 2 and the triangle is found while scanning <i>b</i>.</p>
+        <p><b>Auditor:</b> a counterexample. Let the start vertex also reach <i>b</i> through another vertex <i>u</i> processed before <i>a</i>. Then <i>b</i>&rsquo;s parent is <i>u</i>, and scanning <i>b</i> does not reveal the triangle. This is the flaw in Case 2.1 that led to the retraction.</p>
+      </div>
+      <div class="mini-case">
+        <div class="case-kicker">Retracted &middot; <a href="https://arxiv.org/abs/2407.18406v2">arXiv:2407.18406v2</a></div>
+        <div class="mini-title">A refined Roth&rsquo;s theorem and its application to the <i>abc</i> conjecture</div>
+        <p><b>Paper:</b> by Dirichlet&rsquo;s unit theorem there is a constant <i>c</i>(&kappa;) with |<i>y</i>|<sub><i>v</i></sub> &le; <i>c</i>(&kappa;)|<i>y</i>|<sub><i>w</i></sub> for any Archimedean <i>v</i>, <i>w</i>.</p>
+        <p><b>Auditor:</b> in &Qopf;(&radic;2), <i>y<sub>n</sub></i> = (1+&radic;2)<sup><i>n</i></sup> makes the ratio of the two absolute values (1+&radic;2)<sup>2<i>n</i></sup>, which is unbounded, so no such constant exists. The step that would have implied the <i>abc</i> conjecture fails.</p>
+      </div>
+      <div class="mini-case">
+        <div class="case-kicker">Kept after a correction &middot; <a href="https://arxiv.org/abs/2312.11580v1">arXiv:2312.11580v1</a></div>
+        <div class="mini-title">PlaNet-S: placenta segmentation</div>
+        <p><b>Paper</b>, in the abstract and twice in the results: &ldquo;PlaNet-S had significantly higher IoU (0.73 &plusmn; 0.13) than that of U-Net (0.78 &plusmn; 0.01).&rdquo;</p>
+        <p><b>Auditor:</b> the text says PlaNet-S is higher, and the numbers say the opposite. The authors&rsquo; v2 corrected the standard deviation but kept this sentence.</p>
+      </div>
+    </div>
+    <p class="case-note">For the two retracted papers, both judge models matched the auditor&rsquo;s report to the annotated error. All four findings were marked for a person to review rather than reported outright.</p>
   </div>
 </section>
 
@@ -393,6 +420,10 @@
 <section class="section">
   <div class="container is-max-desktop">
     <h2 class="title is-3 has-text-centered">The web app</h2>
+    <figure class="figure demo">
+      <img src="static/img/app_demo.gif" width="640" height="533" loading="lazy" alt="Screen recording of the web app: a saved report opens, the shuffle mismatch in 2006.06958 expands to show the paper's sentence and the line of code, then the report on the retracted paper 2408.16162 shows its proof finding">
+      <figcaption>Two saved reports in the app: the shuffle mismatch from the top of this page, and the retracted paper above. <a href="https://researchpaperauditor.streamlit.app">Try it live</a>.</figcaption>
+    </figure>
     <div class="shots">
       <div>
         <figure class="figure shot">
@@ -422,7 +453,7 @@
       </a>
       <figcaption style="margin-top: 0.8rem;">
         <a class="button is-small is-rounded is-primary is-outlined" href="static/pdf/poster.pdf" target="_blank">
-          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Open High-Resolution Poster PDF</span>
+          <span class="icon"><i class="fas fa-file-pdf" aria-hidden="true"></i></span><span>Open High-Resolution Poster PDF</span>
         </a>
       </figcaption>
     </figure>
@@ -446,15 +477,18 @@
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title is-3">BibTeX</h2>
-<pre><code>@misc{aravynthan2026auditor,
+    <div class="bib">
+      <button class="copy-btn" type="button" aria-label="Copy BibTeX to clipboard"><i class="far fa-copy" aria-hidden="true"></i> <span>Copy</span></button>
+<pre><code id="bibtex">@misc{aravynthan2026auditor,
   title  = {Research Paper Auditor: An Evidence-Gated Agent System
             for Checking Research Papers},
   author = {Aravynthan, Vijay and Bhaskar, Itikela and Peddi, Anurag},
   year   = {2026},
   note   = {Course project, CL3.410 Language Models and Agents,
-            Monsoon 2026, SERC & CVIT Labs, IIIT Hyderabad},
+            Monsoon 2026, SERC &amp; CVIT Labs, IIIT Hyderabad},
   url    = {https://github.com/VA24d/Research_Paper_auditor}
 }</code></pre>
+    </div>
   </div>
 </section>
 
@@ -464,5 +498,14 @@
   </div>
 </footer>
 
+<script>
+  document.querySelector(".copy-btn").addEventListener("click", function () {
+    var btn = this, label = btn.querySelector("span");
+    navigator.clipboard.writeText(document.getElementById("bibtex").textContent).then(function () {
+      label.textContent = "Copied";
+      setTimeout(function () { label.textContent = "Copy"; }, 1800);
+    }, function () { label.textContent = "Press Ctrl+C"; });
+  });
+</script>
 </body>
 </html>

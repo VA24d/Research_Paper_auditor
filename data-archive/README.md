@@ -39,3 +39,14 @@ on 6 November 2026, so runs made after those dates are not included.
 
     git lfs pull --include="data-archive/local-extras.tar.zst"
     zstd -dc data-archive/local-extras.tar.zst | tar -xf -
+
+## delta-2026-11-19 (added 19 November 2026)
+
+`delta-2026-11-19.tar.zst` (12 MB, 555 files) holds every file in `data/` changed between
+6 and 19 November 2026, which the archives above miss: new cache entries, the set B runs,
+the UI demo files, the ledger, and the math-checker runs on OpenAI's withdrawn
+Weil-classes paper (`data/openai_papers/`). Unpack it after the others, so its newer files
+replace theirs.
+
+    git lfs pull --include="data-archive/delta-2026-11-19.tar.zst"
+    zstd -dc data-archive/delta-2026-11-19.tar.zst | tar -xf -
