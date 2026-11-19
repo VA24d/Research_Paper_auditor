@@ -1,10 +1,16 @@
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import Field, JsonValue, SecretStr, field_validator
 from pydantic.fields import FieldInfo
-from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 DEFAULT_ALLOWED_HOSTS = (
     "localhost",
@@ -136,11 +142,27 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        return (
+        sources: tuple[PydanticBaseSettingsSource, ...] = (
             init_settings,
             _Unless(env_settings, init_settings),
             _Unless(dotenv_settings, init_settings, env_settings),
             file_secret_settings,
+        )
+        # A YAML file of settings that are not secret (model, limits, local services), read
+        # only when AUDITOR_CONFIG_FILE names it, below the environment and `.env`. It is
+        # opt-in so a deployment that runs from the repository root does not pick it up.
+        name = os.environ.get("AUDITOR_CONFIG_FILE") or getattr(
+            dotenv_settings, "env_vars", {}
+        ).get("auditor_config_file")
+        if not name:
+            return sources
+        path = Path(name)
+        if not path.is_file():
+            raise FileNotFoundError(f"AUDITOR_CONFIG_FILE names {path}, which does not exist")
+        yaml_settings = YamlConfigSettingsSource(settings_cls, yaml_file=path)
+        return (
+            *sources,
+            _Unless(yaml_settings, init_settings, env_settings, dotenv_settings),
         )
 
     data_dir: Path = Path("data")

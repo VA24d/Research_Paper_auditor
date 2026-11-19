@@ -1,0 +1,39 @@
+# Settings for the auditor that are not secret: the model, spending limits and local
+# services. Load this file by naming it in `.env` or the environment:
+#
+#     AUDITOR_CONFIG_FILE=configs/auditor.yaml
+#
+# The environment and `.env` override any value here. Keep secrets and account details
+# (API keys, the Google Cloud project) in `.env`, which git ignores. For Vertex AI, `.env`
+# holds the whole option set, because a value given there replaces `llm_options` below:
+#
+#     AUDITOR_LLM_OPTIONS={"vertexai": true, "project": "<your project>", "location": "global", "max_output_tokens": 32768}
+
+# Local services
+grobid_url: http://localhost:8070
+embed_url: http://localhost:1234   # LM Studio serving nomic-embed-text
+scratch_dir: data/scratch
+
+# Model. Every run uses Gemini with these settings; pass --no-llm to audit or batch for a
+# run without it. The team project runs on shared credits.
+llm_provider: google_genai
+llm_model: gemini-3.8-flash
+llm_options:
+  vertexai: true
+  location: global
+  max_output_tokens: 32768
+llm_max_retries: 3
+llm_max_concurrency: 4
+# Cached input is billed at a fraction of the input price (Gemini lists about 10%);
+# 0.25 leaves a margin.
+llm_cached_input_share: 0.25
+llm_explicit_cache: true          # Vertex context caches of the paper message
+
+# Spending limits. Hard stops for one command's model calls (cache hits do not count) and
+# dollars (main and review model together): papers that run out fail and are reported as
+# incomplete. Estimate the calls first; the team guide asks before more than about 50.
+llm_max_calls: 50
+llm_max_cost_usd: 3
+# One budget across runs: every run appends its spending to this ledger.
+llm_ledger: data/ledger-2026-10-20.jsonl
+llm_ledger_limit_usd: 30

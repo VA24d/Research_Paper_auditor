@@ -75,3 +75,52 @@ def test_an_environment_value_replaces_the_dotenv_value_instead_of_merging(
     settings = Settings()
     assert settings.llm_options == {"max_output_tokens": 64}
     assert settings.llm_review_options == {"temperature": 0}
+
+
+def test_yaml_file_named_in_environment_is_read(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / "local.yaml").write_text("llm_model: m-yaml\nllm_max_calls: 7\n", encoding="utf-8")
+    monkeypatch.setenv("AUDITOR_CONFIG_FILE", "local.yaml")
+    settings = Settings()
+    assert settings.llm_model == "m-yaml"
+    assert settings.llm_max_calls == 7
+
+
+def test_yaml_file_named_in_dotenv_is_read(tmp_path: Path) -> None:
+    (tmp_path / "local.yaml").write_text("log_level: ERROR\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("AUDITOR_CONFIG_FILE=local.yaml\n", encoding="utf-8")
+    assert Settings().log_level == "ERROR"
+
+
+def test_yaml_file_is_not_read_unless_named(tmp_path: Path) -> None:
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "local.yaml").write_text("log_level: ERROR\n", encoding="utf-8")
+    assert Settings().log_level == "INFO"
+
+
+def test_environment_and_dotenv_win_over_yaml(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / "local.yaml").write_text(
+        "log_level: ERROR\ngrobid_url: http://yaml:1\n"
+        "llm_options: {vertexai: true, location: global}\n",
+        encoding="utf-8",
+    )
+    (tmp_path / ".env").write_text(
+        "AUDITOR_CONFIG_FILE=local.yaml\nAUDITOR_GROBID_URL=http://dotenv:2\n"
+        'AUDITOR_LLM_OPTIONS={"project": "p"}\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AUDITOR_LOG_LEVEL", "WARNING")
+    settings = Settings()
+    assert settings.log_level == "WARNING"
+    assert settings.grobid_url == "http://dotenv:2"
+    # A dict set at a higher level replaces the YAML one whole, as with the environment.
+    assert settings.llm_options == {"project": "p"}
+
+
+def test_missing_yaml_file_is_an_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUDITOR_CONFIG_FILE", "absent.yaml")
+    with pytest.raises(FileNotFoundError, match=r"absent\.yaml"):
+        Settings()
